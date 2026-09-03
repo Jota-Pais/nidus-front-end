@@ -1,0 +1,100 @@
+/**
+ * Fonte única da codificação visual de estado.
+ *
+ * `RNF-10`: **nenhuma informação só por cor.** Todo estado carrega segundo
+ * canal — `marcador` (forma) e `sigla` (texto) — para leitor de tela,
+ * daltonismo e impressão em preto e branco.
+ *
+ * `RF-INF-03` e `RF-CIC-04` pedem a mesma leitura na grade, no quadro e na
+ * ficha. Uma legenda compartilhada pelas três telas, não três legendas
+ * diferentes: é o que este arquivo garante.
+ */
+import type { EstadoCaixa, GrauCerteza } from './tipos'
+
+export interface CodificacaoVisual {
+  rotulo: string
+  /** Segundo canal 1 — forma. Legível em P&B. */
+  marcador: string
+  /** Segundo canal 2 — texto curto, para o card e o leitor de tela. */
+  sigla: string
+  /** Token de cor do Ant Design. Nunca o único canal. */
+  cor: string
+  descricao: string
+}
+
+export const ESTADO_CAIXA: Record<EstadoCaixa, CodificacaoVisual> = {
+  em_reproducao: {
+    rotulo: 'Em reprodução',
+    marcador: '●',
+    sigla: 'REP',
+    cor: 'blue',
+    descricao: 'Casal ativo, nenhuma cria comprometida.',
+  },
+  parcialmente_comprometida: {
+    rotulo: 'Parcialmente comprometida',
+    marcador: '◐',
+    sigla: 'PAR',
+    cor: 'gold',
+    descricao: 'Parte da ninhada reservada; ainda há saldo ofertável.',
+  },
+  totalmente_comprometida: {
+    rotulo: 'Totalmente comprometida',
+    marcador: '◼',
+    sigla: 'TOT',
+    cor: 'volcano',
+    descricao: 'Toda a ninhada disponível está reservada.',
+  },
+  preparada_para_envio: {
+    rotulo: 'Preparada para envio',
+    marcador: '▲',
+    sigla: 'ENV',
+    cor: 'purple',
+    descricao: 'Animais separados e conferidos, aguardando expedição.',
+  },
+  expedida: {
+    rotulo: 'Expedida',
+    marcador: '✓',
+    sigla: 'EXP',
+    cor: 'default',
+    descricao: 'Entregues; saíram da tutela do CPMR.',
+  },
+}
+
+/** Ordem das 5 colunas do quadro (`RF-CIC-01`). */
+export const COLUNAS_DO_QUADRO: EstadoCaixa[] = [
+  'em_reproducao',
+  'parcialmente_comprometida',
+  'totalmente_comprometida',
+  'preparada_para_envio',
+  'expedida',
+]
+
+/**
+ * `RN-08` — grau de certeza. A ordem aqui é a de consumo do `RF-MOT-04`:
+ * confirmado primeiro, projetado por último.
+ */
+export const GRAU_CERTEZA: Record<GrauCerteza, CodificacaoVisual> = {
+  confirmado: {
+    rotulo: 'Confirmado',
+    marcador: '■',
+    sigla: 'CONF',
+    cor: 'green',
+    descricao: 'Já nasceu e já desmamou — contagem real.',
+  },
+  previsto: {
+    rotulo: 'Previsto',
+    marcador: '◧',
+    sigla: 'PREV',
+    cor: 'gold',
+    descricao: 'Já nasceu, desmame estimado: quantidade real, data estimada.',
+  },
+  projetado: {
+    rotulo: 'Projetado',
+    marcador: '□',
+    sigla: 'PROJ',
+    cor: 'red',
+    descricao: 'Ainda não nasceu: quantidade e data estimadas.',
+  },
+}
+
+export const ORDEM_GRAU_CERTEZA: GrauCerteza[] = ['confirmado', 'previsto', 'projetado']

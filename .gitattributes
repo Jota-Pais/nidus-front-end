@@ -1,0 +1,13 @@
+# Quebra de linha normalizada para LF no repositorio.
+#
+# Sem isto, quem tem core.autocrlf=true no Windows grava CRLF e quem nao tem
+# grava LF: o diff enche de linha alterada sem mudanca de conteudo. Pior para
+# docs/, que a regra do projeto exige byte a byte igual ao nidus-back-end.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
