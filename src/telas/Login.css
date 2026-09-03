@@ -1,0 +1,176 @@
+/*
+ * Composição visual da tela de login.
+ *
+ * Autoria do Gabriel Ugione (UX/UI), do commit `dbfb26f`. Preservada na
+ * migração do scaffold para a raiz do repositório: a paleta e o recorte da
+ * imagem são identidade visual do Nidus.
+ *
+ * Mudou em relação ao original: os três cards de acesso viraram um só — quem
+ * decide o perfil é o servidor (`RF-ACS-02`), não o usuário na tela.
+ */
+
+.loginContainer {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #091a13, #164132);
+  display: flex;
+  overflow: hidden;
+}
+
+.leftPanel {
+  position: relative;
+  z-index: 1;
+  width: 64%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mainContent {
+  padding: 40px 48px 24px 48px;
+}
+
+.headerSection {
+  margin-bottom: 28px;
+}
+
+.headerTitle {
+  color: #ffffff !important;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+}
+
+.headerIcon {
+  margin-right: 12px;
+  color: #6b9e7c;
+}
+
+.headerSubtitle {
+  color: #a3c2b5;
+  font-size: 15px;
+}
+
+.loginCard {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.loginCard .ant-card-head-title {
+  color: #164132;
+  font-weight: 600;
+}
+
+.btnSubmit {
+  background-color: #164132;
+  border-color: #164132;
+}
+
+.infoBox {
+  height: 100%;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.infoBoxHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.infoIcon {
+  color: #6b9e7c;
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.infoTitle {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.infoText {
+  color: #a3c2b5;
+  font-size: 13px;
+  line-height: 1.5;
+  display: block;
+}
+
+.devBox {
+  margin-top: 20px;
+  border: 1px dashed #6b9e7c;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.devTitle {
+  color: #a3c2b5;
+  font-size: 13px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.bottomWhiteBar {
+  background-color: #ffffff;
+  padding: 36px 48px;
+  width: 100%;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.bottomBarContent {
+  max-width: 60%;
+}
+
+.bottomBarTitle {
+  margin: 0 !important;
+  color: #164132 !important;
+}
+
+.bottomBarText {
+  margin: 8px 0 0 0 !important;
+  color: #555555;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.sideImage {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 42%;
+  height: 100%;
+  background-image: url('/roedores.jpg');
+  background-size: cover;
+  background-position: center;
+  clip-path: polygon(35% 0%, 110% 0%, 90% 100%, 9% 100%);
+  z-index: 2;
+}
+
+/* Abaixo de 992px a imagem lateral sai e o painel ocupa a tela toda: o
+   RNF-03 fala de tela pequena, e a foto não pode comer o formulário. */
+@media (max-width: 992px) {
+  .leftPanel {
+    width: 100%;
+  }
+
+  .sideImage {
+    display: none;
+  }
+
+  .mainContent {
+    padding: 24px 20px 16px 20px;
+  }
+
+  .bottomWhiteBar {
+    padding: 24px 20px;
+  }
+
+  .bottomBarContent {
+    max-width: 100%;
+  }
+}
