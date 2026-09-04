@@ -25,9 +25,9 @@ export const ITENS_DE_MENU: ItemDeMenu[] = [
     perfis: ['tecnico', 'gestor'],
   },
   {
-    chave: 'grade',
+    chave: 'estantes',
     rotulo: 'Grade de estantes',
-    caminho: '/grade',
+    caminho: '/estantes',
     perfis: ['tecnico', 'gestor'],
   },
   {

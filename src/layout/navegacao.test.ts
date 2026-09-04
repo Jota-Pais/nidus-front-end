@@ -9,7 +9,7 @@ describe('menuDoPerfil — RF-ACS-02, conveniência e não permissão', () => {
 
   it('o técnico opera a colônia mas não parametriza', () => {
     const chaves = menuDoPerfil('tecnico').map((i) => i.chave)
-    expect(chaves).toContain('grade')
+    expect(chaves).toContain('estantes')
     expect(chaves).toContain('registros')
     expect(chaves).not.toContain('infraestrutura')
     expect(chaves).not.toContain('projetos')

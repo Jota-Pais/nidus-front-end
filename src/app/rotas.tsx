@@ -39,7 +39,18 @@ export const rotas = createBrowserRouter([
         ),
       },
       {
-        path: 'grade',
+        // O card "Layout base" nomeia as duas: a segunda permite mandar link
+        // direto para uma estante, que é como o técnico vai compartilhar
+        // "olha a E-03".
+        path: 'estantes',
+        element: (
+          <RotaProtegida perfis={['tecnico', 'gestor']}>
+            <GradeEstantes />
+          </RotaProtegida>
+        ),
+      },
+      {
+        path: 'estantes/:id',
         element: (
           <RotaProtegida perfis={['tecnico', 'gestor']}>
             <GradeEstantes />
