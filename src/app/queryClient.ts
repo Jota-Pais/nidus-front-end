@@ -6,11 +6,41 @@
  * divergir**. Alterar pela ficha tem que refletir nas outras duas — é o que
  * `invalidateQueries` resolve por desenho.
  */
-import { QueryClient } from '@tanstack/react-query'
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
 import { ErroDeApi } from '@/lib/api'
+import { chaves } from './chaves'
+
+/**
+ * Tratamento global de 401, pedido pelo card "Camada de acesso à API".
+ *
+ * Zerar a sessão em cache é o que manda o usuário ao login: `ProvedorDePerfil`
+ * passa a ver `perfil: null` e `RotaProtegida` redireciona. Fazer isso aqui, e
+ * não em cada tela, garante que **qualquer** requisição que pegue sessão
+ * expirada derruba o acesso — inclusive uma que rodou em segundo plano
+ * enquanto o técnico estava na sala.
+ *
+ * O 403 é diferente e não vem para cá: autenticado, mas o perfil não alcança o
+ * recurso. Derrubar a sessão seria errado; quem trata é a tela, com
+ * `EstadoDaConsulta`.
+ */
+function aoFalhar(cliente: QueryClient, erro: unknown, chaveDaConsulta?: readonly unknown[]) {
+  if (!(erro instanceof ErroDeApi) || !erro.ehNaoAutenticado) return
+
+  // A própria consulta de sessão já devolve null no 401: entrar aqui faria
+  // laço de invalidação.
+  if (chaveDaConsulta?.[0] === chaves.sessao[0]) return
+
+  cliente.setQueryData(chaves.sessao, null)
+}
 
 export function criarQueryClient(): QueryClient {
-  return new QueryClient({
+  const cliente: QueryClient = new QueryClient({
+    queryCache: new QueryCache({
+      onError: (erro, consulta) => aoFalhar(cliente, erro, consulta.queryKey),
+    }),
+    mutationCache: new MutationCache({
+      onError: (erro) => aoFalhar(cliente, erro),
+    }),
     defaultOptions: {
       queries: {
         /**
@@ -42,4 +72,6 @@ export function criarQueryClient(): QueryClient {
       },
     },
   })
+
+  return cliente
 }

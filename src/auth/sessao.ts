@@ -8,6 +8,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
+import { chaves } from '@/app/chaves'
 import type { Perfil } from '@/dominio/tipos'
 import { ErroDeApi, api } from '@/lib/api'
 
@@ -23,8 +24,6 @@ export interface Credenciais {
   senha: string
 }
 
-export const CHAVE_SESSAO = ['sessao'] as const
-
 /**
  * Quem sou eu. `null` quando não há sessão — **não** é erro.
  *
@@ -34,7 +33,7 @@ export const CHAVE_SESSAO = ['sessao'] as const
  */
 export function useSessao(): UseQueryResult<Usuario | null> {
   return useQuery<Usuario | null>({
-    queryKey: CHAVE_SESSAO,
+    queryKey: chaves.sessao,
     queryFn: async () => {
       try {
         const { usuario } = await api<{ usuario: Usuario }>('/api/sessao')
@@ -64,7 +63,7 @@ export function useLogin(): UseMutationResult<Usuario, Error, Credenciais> {
       return usuario
     },
     onSuccess: (usuario) => {
-      cliente.setQueryData(CHAVE_SESSAO, usuario)
+      cliente.setQueryData(chaves.sessao, usuario)
     },
   })
 }
@@ -88,7 +87,7 @@ export function useLogout(): UseMutationResult<void, Error, void> {
   return useMutation({
     mutationFn: () => api<void>('/api/sessao', { metodo: 'DELETE' }),
     onSettled: () => {
-      cliente.setQueryData(CHAVE_SESSAO, null)
+      cliente.setQueryData(chaves.sessao, null)
       cliente.clear()
     },
   })
