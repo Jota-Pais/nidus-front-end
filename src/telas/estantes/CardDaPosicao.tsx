@@ -66,6 +66,11 @@ export function CardDaPosicao({
 
         <span className="posicao__linhagem">{caixa.linhagem}</span>
 
+        {/* O card do backlog pede a identificação do casal no card, não só no
+            tooltip: é a dupla de grupos genéticos, e o primeiro caractere é o
+            grupo do macho (RN-02). */}
+        {caixa.casal && <span className="posicao__casal">{caixa.casal.identificacao}</span>}
+
         <span className="posicao__rodape">
           {/* Terceiro canal: texto. RF-CIC-04 pede o ciclo visível no card. */}
           <span className="posicao__sigla">{visual.sigla}</span>

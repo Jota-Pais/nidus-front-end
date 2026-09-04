@@ -4,7 +4,7 @@ import { config } from '@/app/config'
 import { Legenda } from '@/dominio/Legenda'
 import { porLinha } from '@/dominio/estante'
 import type { Estante, FaceDaGrade, Grade } from '@/dominio/estante'
-import { Carregando } from '@/layout/Carregando'
+import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { ErroDeRede } from '@/lib/api'
 import { CardDaPosicao } from './CardDaPosicao'
 import { ESTANTES_DEMO, gradeDemo } from './demonstracao'
@@ -76,13 +76,20 @@ export function GradeEstantes() {
     console.info('Abrir ficha da caixa', idCaixa)
   }
 
-  if (estantes.isLoading) return <Carregando rotulo="Carregando as estantes…" />
-
-  if (estantes.error && !semApi) {
-    return <Alert type="error" showIcon message={(estantes.error as Error).message} />
+  // Em demonstração a consulta falhou de propósito: não passar por
+  // EstadoDaConsulta, senão a tela mostraria o aviso em vez da grade.
+  if (!semApi) {
+    return (
+      <EstadoDaConsulta consulta={estantes} rotulo="Carregando as estantes…">
+        {conteudo()}
+      </EstadoDaConsulta>
+    )
   }
 
-  return (
+  return conteudo()
+
+  function conteudo() {
+   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
       <div>
         <Typography.Title level={3} style={{ marginBottom: 4 }}>
@@ -133,10 +140,10 @@ export function GradeEstantes() {
         <Legenda />
       </Card>
 
-      {grade.isLoading && !semApi && <Carregando rotulo="Carregando a grade…" />}
-
-      {grade.error && !semApi && (
-        <Alert type="error" showIcon message={(grade.error as Error).message} />
+      {!semApi && !gradeAtual && (
+        <EstadoDaConsulta consulta={grade} rotulo="Carregando a grade…">
+          <></>
+        </EstadoDaConsulta>
       )}
 
       {gradeAtual ? (
@@ -151,8 +158,9 @@ export function GradeEstantes() {
           </div>
         </Card>
       ) : (
-        !grade.isLoading && <Empty description="Nenhuma estante cadastrada." />
+        !grade.isPending && <Empty description="Nenhuma estante cadastrada." />
       )}
     </Space>
-  )
+   )
+  }
 }
