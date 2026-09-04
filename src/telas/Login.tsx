@@ -6,12 +6,12 @@ import {
 } from '@ant-design/icons'
 import { Alert, Button, Card, Col, Form, Input, Row, Space, Typography } from 'antd'
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { usePerfil } from '@/auth/contexto'
 import { useLogin } from '@/auth/sessao'
 import { PERFIS } from '@/dominio/tipos'
 import type { Perfil } from '@/dominio/tipos'
-import { rotaInicial } from '@/layout/navegacao'
+import { destinoAposLogin } from '@/layout/destino'
 import { validadorDeCampo } from './login.schema'
 import type { Credenciais } from './login.schema'
 import './Login.css'
@@ -45,16 +45,19 @@ const { Title, Paragraph, Text } = Typography
 export function Login() {
   const { perfil, entrarComoDesenvolvimento } = usePerfil()
   const navegar = useNavigate()
+  const { state } = useLocation()
   const login = useLogin()
   const [erro, setErro] = useState<string | null>(null)
 
-  if (perfil) return <Navigate to={rotaInicial(perfil)} replace />
+  const destino = (perfilDoUsuario: Perfil) => destinoAposLogin(state, perfilDoUsuario)
+
+  if (perfil) return <Navigate to={destino(perfil)} replace />
 
   function aoEnviar(valores: Credenciais) {
     setErro(null)
     login.mutate(valores, {
       // O perfil vem do servidor (RF-ACS-02), nunca da tela.
-      onSuccess: (usuario) => navegar(rotaInicial(usuario.perfil)),
+      onSuccess: (usuario) => navegar(destino(usuario.perfil), { replace: true }),
       // A mensagem já sai pronta de @/lib/erros: no 401 ela não distingue
       // e-mail inexistente de senha errada.
       onError: (falha) => setErro(falha.message),
@@ -63,7 +66,7 @@ export function Login() {
 
   function entrarSemApi(escolhido: Perfil) {
     entrarComoDesenvolvimento(escolhido)
-    navegar(rotaInicial(escolhido))
+    navegar(destino(escolhido), { replace: true })
   }
 
   return (

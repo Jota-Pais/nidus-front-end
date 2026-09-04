@@ -15,22 +15,32 @@
  * Sai do repositório quando o back-end entregar `GET /api/estantes/:id/grade`.
  */
 import type { CaixaNaGrade, Estante, FaceDaGrade, Grade, Posicao } from '@/dominio/estante'
+import { COLUNAS_DO_QUADRO } from '@/dominio/estados'
 import type { EstadoCaixa } from '@/dominio/tipos'
-import { ESPECIES } from '@/fixtures/catalogo'
+import { ESPECIES, PARES_GENETICOS_VALIDOS } from '@/fixtures/catalogo'
 import { MODELOS_ESTANTE, enderecosDaEstante } from '@/fixtures/estantes'
 import { hoje, somarDias } from '@/lib/data'
 
+/**
+ * Sorteio de estado, derivado de `COLUNAS_DO_QUADRO` — nenhuma chave de estado
+ * escrita à mão aqui.
+ *
+ * O card "Legenda e segundo canal visual" tem como critério de pronto que um
+ * `grep` por string de estado literal fora de `estados.ts` não ache nada. E
+ * derivar não é só disciplina: um estado novo no domínio entra na demonstração
+ * sozinho, em vez de ficar faltando sem ninguém notar.
+ *
+ * A primeira coluna (`em reprodução`) entra com peso 3: na colônia real a
+ * maioria das caixas só está criando, sem cria comprometida.
+ */
+const [PRIMEIRA, ...DEMAIS] = COLUNAS_DO_QUADRO
 const ESTADOS: EstadoCaixa[] = [
-  'em_reproducao',
-  'em_reproducao',
-  'em_reproducao',
-  'parcialmente_comprometida',
-  'totalmente_comprometida',
-  'preparada_para_envio',
-  'expedida',
+  ...Array.from({ length: 3 }, () => PRIMEIRA!),
+  ...DEMAIS,
 ]
 
-const PARES = ['AB', 'BC', 'CD', 'DE', 'EA']
+/** `RN-02` — a rotação em anel. Vem do catálogo, não é lista solta. */
+const PARES = PARES_GENETICOS_VALIDOS
 
 /** Determinístico: a mesma estante gera sempre a mesma grade, entre recargas. */
 function pseudoAleatorio(semente: number): number {
