@@ -8,6 +8,7 @@ import { Alert, Button, Card, Col, Form, Input, Row, Space, Typography } from 'a
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { usePerfil } from '@/auth/contexto'
+import { useLogin } from '@/auth/sessao'
 import { PERFIS } from '@/dominio/tipos'
 import type { Perfil } from '@/dominio/tipos'
 import { rotaInicial } from '@/layout/navegacao'
@@ -37,31 +38,31 @@ const { Title, Paragraph, Text } = Typography
  * administrativo independente do SSO, para não perder o sistema se o ID-UFSC
  * cair — e o ID-UFSC depende do SETIC (`PEN-09`).
  *
- * ⚠️ A API ainda não existe: o card "Camada de acesso à API" é o próximo do
- * backlog. `aoEnviar` já está na forma final; falta a chamada.
+ * O formulário chama `POST /api/sessao` de verdade. Enquanto o back-end não
+ * sobe, ele responde com erro de rede e o acesso de desenvolvimento ao lado é
+ * que navega — os dois caminhos convivem sem `if` de ambiente.
  */
 export function Login() {
-  const { perfil, entrar } = usePerfil()
+  const { perfil, entrarComoDesenvolvimento } = usePerfil()
   const navegar = useNavigate()
+  const login = useLogin()
   const [erro, setErro] = useState<string | null>(null)
-  const [enviando, setEnviando] = useState(false)
 
   if (perfil) return <Navigate to={rotaInicial(perfil)} replace />
 
   function aoEnviar(valores: Credenciais) {
     setErro(null)
-    setEnviando(true)
-    // Card "Camada de acesso à API": POST /api/sessao, credentials include,
-    // 200 devolve usuario.perfil e o Set-Cookie da sessão. No erro, a mensagem
-    // sai de mensagemDeErro(status, corpo) em @/lib/erros — que já trata o 401
-    // sem distinguir e-mail inexistente de senha errada.
-    void valores
-    setErro('A API de sessão ainda não está conectada. Use o acesso de desenvolvimento.')
-    setEnviando(false)
+    login.mutate(valores, {
+      // O perfil vem do servidor (RF-ACS-02), nunca da tela.
+      onSuccess: (usuario) => navegar(rotaInicial(usuario.perfil)),
+      // A mensagem já sai pronta de @/lib/erros: no 401 ela não distingue
+      // e-mail inexistente de senha errada.
+      onError: (falha) => setErro(falha.message),
+    })
   }
 
-  function entrarComoDesenvolvimento(escolhido: Perfil) {
-    entrar(escolhido)
+  function entrarSemApi(escolhido: Perfil) {
+    entrarComoDesenvolvimento(escolhido)
     navegar(rotaInicial(escolhido))
   }
 
@@ -95,7 +96,7 @@ export function Login() {
                   layout="vertical"
                   onFinish={aoEnviar}
                   requiredMark={false}
-                  disabled={enviando}
+                  disabled={login.isPending}
                 >
                   <Form.Item
                     name="email"
@@ -128,7 +129,7 @@ export function Login() {
                     htmlType="submit"
                     block
                     className="btnSubmit"
-                    loading={enviando}
+                    loading={login.isPending}
                   >
                     Entrar
                   </Button>
@@ -159,7 +160,7 @@ export function Login() {
                       <Button
                         key={chave}
                         size="small"
-                        onClick={() => entrarComoDesenvolvimento(chave)}
+                        onClick={() => entrarSemApi(chave)}
                       >
                         {PERFIS[chave].rotulo}
                       </Button>
