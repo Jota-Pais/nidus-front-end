@@ -4,13 +4,15 @@ import {
   LockOutlined,
   UserOutlined,
 } from '@ant-design/icons'
-import { App as AntApp, Button, Card, Col, Form, Input, Row, Space, Typography } from 'antd'
+import { Alert, Button, Card, Col, Form, Input, Row, Space, Typography } from 'antd'
+import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { z } from 'zod'
 import { usePerfil } from '@/auth/contexto'
 import { PERFIS } from '@/dominio/tipos'
 import type { Perfil } from '@/dominio/tipos'
 import { rotaInicial } from '@/layout/navegacao'
+import { validadorDeCampo } from './login.schema'
+import type { Credenciais } from './login.schema'
 import './Login.css'
 
 const { Title, Paragraph, Text } = Typography
@@ -18,42 +20,44 @@ const { Title, Paragraph, Text } = Typography
 /**
  * `RF-ACS-01` — autenticação pela identidade institucional.
  *
- * Composição visual de Gabriel Ugione (commit `dbfb26f`), preservada. Duas
- * mudanças em relação ao original:
+ * Composição visual de Gabriel Ugione (commit `dbfb26f`), preservada.
+ *
+ * Três correções em relação ao original, todas de requisito:
  *
  * 1. **Um formulário, não três.** O original tinha um card de acesso por perfil,
- *    com o usuário escolhendo se entra como gestor, técnico ou pesquisador.
- *    O `RF-ACS-02` não permite: o perfil vem do servidor, junto da sessão
- *    (`POST /api/sessao` devolve `usuario.perfil`). Deixar o usuário escolher
- *    seria autorização decidida no cliente.
- * 2. **Validação por Zod**, que é o padrão da equipe para formulário.
+ *    o usuário escolhendo se entra como gestor, técnico ou pesquisador. O
+ *    `RF-ACS-02` não permite: o perfil vem do servidor junto da sessão
+ *    (`POST /api/sessao` devolve `usuario.perfil`). Escolher o próprio perfil na
+ *    tela é autorização decidida no cliente.
+ * 2. **Mensagem de erro**, que o card do Trello pede e não existia. Com
+ *    `role="alert"`, para o leitor de tela anunciar (`RNF-10`).
+ * 3. **Validação por Zod**, o padrão da equipe para formulário.
+ *
+ * ⚠️ **O acesso local não é gambiarra de semestre.** O `RF-ACS-01` exige acesso
+ * administrativo independente do SSO, para não perder o sistema se o ID-UFSC
+ * cair — e o ID-UFSC depende do SETIC (`PEN-09`).
  *
  * ⚠️ A API ainda não existe: o card "Camada de acesso à API" é o próximo do
- * backlog. Até lá o formulário valida mas não envia, e os botões de
- * desenvolvimento abaixo dele é que navegam.
- *
- * O `RF-ACS-01` também exige **acesso administrativo local** independente do
- * SSO, para não perder o sistema se o ID-UFSC cair. Não é gambiarra temporária.
+ * backlog. `aoEnviar` já está na forma final; falta a chamada.
  */
-
-const credenciais = z.object({
-  email: z.string().min(1, 'Informe o e-mail institucional').email('E-mail inválido'),
-  senha: z.string().min(1, 'Informe a senha'),
-})
-
-type Credenciais = z.infer<typeof credenciais>
-
 export function Login() {
   const { perfil, entrar } = usePerfil()
   const navegar = useNavigate()
-  const { message } = AntApp.useApp()
+  const [erro, setErro] = useState<string | null>(null)
+  const [enviando, setEnviando] = useState(false)
 
   if (perfil) return <Navigate to={rotaInicial(perfil)} replace />
 
   function aoEnviar(valores: Credenciais) {
-    const resultado = credenciais.safeParse(valores)
-    if (!resultado.success) return
-    message.info('A API de sessão ainda não está conectada — card "Camada de acesso à API".')
+    setErro(null)
+    setEnviando(true)
+    // Card "Camada de acesso à API": POST /api/sessao, credentials include,
+    // 200 devolve usuario.perfil e o Set-Cookie da sessão. No erro, a mensagem
+    // sai de mensagemDeErro(status, corpo) em @/lib/erros — que já trata o 401
+    // sem distinguir e-mail inexistente de senha errada.
+    void valores
+    setErro('A API de sessão ainda não está conectada. Use o acesso de desenvolvimento.')
+    setEnviando(false)
   }
 
   function entrarComoDesenvolvimento(escolhido: Perfil) {
@@ -65,56 +69,67 @@ export function Login() {
     <div className="loginContainer">
       <div className="leftPanel">
         <div className="mainContent">
-          <div className="headerSection">
+          <header className="headerSection">
             <Title level={2} className="headerTitle">
-              <ExperimentOutlined className="headerIcon" /> Nidus
+              <ExperimentOutlined className="headerIcon" aria-hidden="true" /> Nidus
             </Title>
             <Text className="headerSubtitle">Sistema de Gestão de Biotério — CPMR / UFSC</Text>
-          </div>
+          </header>
 
           <Row gutter={[20, 20]}>
             <Col xs={24} md={12}>
               <Card title="Acesso ao sistema" size="small" className="loginCard">
-                <Form<Credenciais> layout="vertical" onFinish={aoEnviar} requiredMark={false}>
+                {/* RNF-10: role="alert" faz o leitor de tela anunciar o erro
+                    assim que ele aparece, sem o usuário ter que procurar. */}
+                {erro && (
+                  <Alert
+                    type="error"
+                    showIcon
+                    message={erro}
+                    role="alert"
+                    style={{ marginBottom: 16 }}
+                  />
+                )}
+
+                <Form<Credenciais>
+                  layout="vertical"
+                  onFinish={aoEnviar}
+                  requiredMark={false}
+                  disabled={enviando}
+                >
                   <Form.Item
                     name="email"
                     label="E-mail institucional"
-                    rules={[
-                      {
-                        validator: (_, valor) => {
-                          const r = credenciais.shape.email.safeParse(valor ?? '')
-                          return r.success
-                            ? Promise.resolve()
-                            : Promise.reject(new Error(r.error.issues[0]?.message))
-                        },
-                      },
-                    ]}
+                    rules={[{ validator: validadorDeCampo('email') }]}
                   >
-                    <Input prefix={<UserOutlined />} placeholder="nome@ufsc.br" autoComplete="username" />
+                    <Input
+                      prefix={<UserOutlined aria-hidden="true" />}
+                      placeholder="nome@ufsc.br"
+                      autoComplete="username"
+                      inputMode="email"
+                      autoFocus
+                    />
                   </Form.Item>
 
                   <Form.Item
                     name="senha"
                     label="Senha"
-                    rules={[
-                      {
-                        validator: (_, valor) => {
-                          const r = credenciais.shape.senha.safeParse(valor ?? '')
-                          return r.success
-                            ? Promise.resolve()
-                            : Promise.reject(new Error(r.error.issues[0]?.message))
-                        },
-                      },
-                    ]}
+                    rules={[{ validator: validadorDeCampo('senha') }]}
                   >
                     <Input.Password
-                      prefix={<LockOutlined />}
+                      prefix={<LockOutlined aria-hidden="true" />}
                       placeholder="Senha"
                       autoComplete="current-password"
                     />
                   </Form.Item>
 
-                  <Button type="primary" htmlType="submit" block className="btnSubmit">
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    block
+                    className="btnSubmit"
+                    loading={enviando}
+                  >
                     Entrar
                   </Button>
                 </Form>
@@ -125,7 +140,7 @@ export function Login() {
               <div className="infoBox">
                 <div>
                   <div className="infoBoxHeader">
-                    <InfoCircleOutlined className="infoIcon" />{' '}
+                    <InfoCircleOutlined className="infoIcon" aria-hidden="true" />{' '}
                     <Text className="infoTitle">Biotério Central UFSC</Text>
                   </div>
                   <Text className="infoText">
@@ -135,13 +150,17 @@ export function Login() {
                 </div>
 
                 <div className="devBox">
-                  <Text className="devTitle">
+                  <Text className="devTitle" id="rotulo-acesso-dev">
                     Acesso de desenvolvimento — o login pelo ID-UFSC depende do SETIC e entra como
                     mock no semestre.
                   </Text>
-                  <Space size={8} wrap>
+                  <Space size={8} wrap role="group" aria-labelledby="rotulo-acesso-dev">
                     {(Object.keys(PERFIS) as Perfil[]).map((chave) => (
-                      <Button key={chave} size="small" onClick={() => entrarComoDesenvolvimento(chave)}>
+                      <Button
+                        key={chave}
+                        size="small"
+                        onClick={() => entrarComoDesenvolvimento(chave)}
+                      >
                         {PERFIS[chave].rotulo}
                       </Button>
                     ))}
@@ -152,7 +171,7 @@ export function Login() {
           </Row>
         </div>
 
-        <div className="bottomWhiteBar">
+        <footer className="bottomWhiteBar">
           <div className="bottomBarContent">
             <Title level={4} className="bottomBarTitle">
               Centro de Pesquisas Biológicas
@@ -163,10 +182,11 @@ export function Login() {
               do CPMR / UFSC.
             </Paragraph>
           </div>
-        </div>
+        </footer>
       </div>
 
-      <div className="sideImage" />
+      {/* Decorativa: o conteúdo não depende dela, então fica fora da leitura. */}
+      <div className="sideImage" role="presentation" />
     </div>
   )
 }
