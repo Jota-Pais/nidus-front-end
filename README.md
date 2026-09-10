@@ -34,7 +34,8 @@ npm run dev
 
 ## Stack
 
-Definida pela equipe em 20/08/2026 (entrega de 27/08).
+Definida pela equipe na entrega de infraestrutura e registrada em
+`docs/decisoes-de-stack.md`.
 
 | Camada | Escolha |
 |---|---|
@@ -47,18 +48,17 @@ Definida pela equipe em 20/08/2026 (entrega de 27/08).
 | Testes | **Vitest** |
 | Deploy | **Vercel**, a partir do GitHub |
 
-### Decidido em 03/09/2026, ainda não instalado
+### Decisões que este repo aplica
 
-Registro completo em `docs/decisoes-de-stack.md`. As três que afetam este repo:
+As três que mais aparecem no código do dia a dia:
 
-| Decisão | Escolha | Quando entra |
-|---|---|---|
-| Autenticação | **Cookie de sessão `httpOnly`** — toda requisição com `credentials: 'include'` | Card "Tela de login", implementação real |
-| Estado de servidor | **TanStack Query** — `invalidateQueries` é o que cumpre o `RF-CIC-02` | Card "Camada de acesso à API" |
-| Drag-and-drop | **`@dnd-kit`, depois da N2** — até lá, botão "mover para" no card | Card do quadro, segunda passada |
+| Decisão | Escolha |
+|---|---|
+| Autenticação | **Cookie de sessão `httpOnly`** — toda requisição com `credentials: 'include'` |
+| Estado de servidor | **TanStack Query** — `invalidateQueries` é o que cumpre o `RF-CIC-02` |
+| Drag-and-drop do quadro | **`@dnd-kit`**, numa segunda passada — até lá, botão "mover para" no card |
 
-Nenhuma das três está no scaffold: ele para no que não toca em rede. A camada de
-API é o próximo card, e é ela que instala o TanStack Query.
+Decisão fechada não se rediscute sem a equipe.
 
 ⚠️ **`SameSite=None; Secure` não é detalhe.** Front na Vercel e API na Render
 ficam em domínios diferentes: sem isso o login funciona em `localhost` e quebra
@@ -87,9 +87,11 @@ chave desses dois arquivos quebra a API.
 
 ## Telas
 
-Lista alinhada ao documento de requisitos em vigor
-(`requisitos-v0.2-spec-cliente-v2.4.md`) e ao backlog do Trello. Cada tela
-existe como card próprio no quadro.
+Lista alinhada a `docs/requisitos.md` e ao backlog do Trello — cada tela existe
+como card próprio no quadro. Tela que ainda não começou já existe como arquivo em
+`src/telas/`, renderizando o stub `EmConstrucao` com ator, requisitos e o que
+ela vai fazer. **O que já está pronto é o Kanban e o histórico de commits que
+respondem, não este arquivo.**
 
 ### MVP
 
@@ -132,7 +134,7 @@ docs/         documentos espelhados com o back-end (ver acima)
 src/
   app/        configuração da aplicação: rotas, tema, ambiente validado por Zod
   layout/     casca: navegação por perfil, rota protegida, erro e carregamento
-  auth/       perfil da sessão — andaime até o cookie httpOnly entrar
+  auth/       perfil da sessão do usuário
   dominio/    tipos e legenda de estado (fonte única do RNF-10 e do contrato)
   lib/        datas e idade (fonte única do RNF-04)
   fixtures/   dados de carga inicial do Anexo A, para desenvolver sem API
@@ -156,17 +158,15 @@ desenvolvimento**. Em produção quem gera é o back-end: `GET
 `caixa: null`, porque não existe tabela `slot` (decisão D-04). O front desenha o
 que recebe.
 
-## Perguntas abertas que afetam tela
+## Requisito em aberto que afeta tela
 
-Estão no backlog do Trello como cards de cliente. Onde o código precisa de uma
-resposta que ainda não existe, a escolha entra como **parâmetro**, nunca como
-constante:
-
-| # | Questão | Como o código lida hoje |
-|---|---|---|
-| `CONF-01` | Idade conta do nascimento ou do desmame? São 22 dias de diferença | `idadeEmDias()` recebe a data-base como argumento |
-| `CONF-07` | A letra da estante é linha ou coluna? | `EIXO_DA_LETRA` em `fixtures/estantes.ts`, um lugar só |
-| `PEN-08` | Rotina real do técnico na sala: dispositivo, momento do registro | Define o desenho das telas de registro (`RNF-03`) |
+O que ainda depende de resposta do cliente tem ID `CONF-` ou `PEN-` em
+`docs/requisitos.md` e card no Trello. A regra aqui é uma: onde a tela precisa de
+uma resposta que não existe ainda, a escolha entra como **parâmetro num lugar
+só** — argumento de função ou constante nomeada de um módulo —, nunca como número
+literal no meio do componente. É por isso que `idadeEmDias()` recebe a data-base
+como argumento e o eixo da letra da estante mora em `EIXO_DA_LETRA`. Quando o
+cliente responder, muda um lugar.
 
 ## Repositório irmão
 
