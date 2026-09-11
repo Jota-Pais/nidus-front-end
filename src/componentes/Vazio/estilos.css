@@ -1,0 +1,16 @@
+.vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.vazio__texto {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--cor-suave-frente);
+  line-height: 1.625;
+}

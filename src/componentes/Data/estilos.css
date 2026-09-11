@@ -1,0 +1,10 @@
+.data {
+  font-family: var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+.data--ausente {
+  color: var(--cor-suave-frente);
+}

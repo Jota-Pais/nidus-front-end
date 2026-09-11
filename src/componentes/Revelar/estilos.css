@@ -1,0 +1,12 @@
+/*
+ * `animation-fill-mode: both` é o que segura o elemento invisível durante o
+ * atraso: sem ele, o conteúdo pisca visível antes de a animação começar, que
+ * é justamente o defeito que o escalonamento deveria evitar.
+ */
+.revelar {
+  opacity: 0;
+}
+
+.revelar--visivel {
+  animation: nidusEntrarDeBaixo var(--movimento-entrada) var(--movimento-curva) both;
+}

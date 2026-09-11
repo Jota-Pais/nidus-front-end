@@ -1,0 +1,42 @@
+.iconeEmCaixa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: var(--raio-md);
+  background: var(--gradiente-marca);
+  color: var(--cor-acento-frente);
+  box-shadow: var(--sombra-acento);
+  transition: transform var(--movimento-normal) var(--movimento-curva);
+}
+
+.iconeEmCaixa--sm {
+  width: 32px;
+  height: 32px;
+  font-size: 15px;
+  border-radius: var(--raio-sm);
+}
+
+.iconeEmCaixa--md {
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+}
+
+.iconeEmCaixa--lg {
+  width: 56px;
+  height: 56px;
+  font-size: 26px;
+  border-radius: var(--raio-lg);
+}
+
+.iconeEmCaixa--neutro {
+  background: var(--cor-suave);
+  color: var(--cor-suave-frente);
+  box-shadow: none;
+}
+
+/* Cresce quando o cartão que o contém é apontado. */
+.cartao--clicavel:hover .iconeEmCaixa {
+  transform: scale(1.08);
+}

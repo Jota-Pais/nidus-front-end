@@ -1,0 +1,40 @@
+/*
+ * A textura (`.padraoDePontos`) e o brilho (`.brilhoDeAcento`) vêm de
+ * `@/app/tokens.css`: são efeitos-assinatura, usados em mais de um lugar.
+ *
+ * `overflow: hidden` é o que segura o brilho de 420px dentro da faixa — sem
+ * ele, o desfoque vaza e cria barra de rolagem horizontal.
+ */
+.secaoInvertida {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--raio-lg);
+  background: var(--cor-invertido);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--sombra-lg);
+}
+
+.secaoInvertida__conteudo {
+  position: relative;
+  z-index: 1;
+  padding: 28px;
+}
+
+@media (max-width: 575px) {
+  .secaoInvertida__conteudo {
+    padding: 20px;
+  }
+}
+
+/*
+ * O Ant Design escreve a cor do texto direto no elemento. Dentro da faixa
+ * escura isso resultaria em slate sobre slate, então aqui a cor é recuperada
+ * — inclusive a secundária, que fica em branco a 60%.
+ */
+.secaoInvertida :where(.ant-typography, .ant-statistic-content, h1, h2, h3, h4) {
+  color: inherit;
+}
+
+.secaoInvertida :where(.ant-statistic-title, .ant-typography-secondary) {
+  color: rgba(255, 255, 255, 0.6);
+}

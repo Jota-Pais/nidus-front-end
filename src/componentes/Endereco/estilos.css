@@ -1,0 +1,35 @@
+.endereco {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--fonte-mono);
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+.endereco__estante {
+  font-weight: 600;
+}
+
+.endereco__sala,
+.endereco__face {
+  color: var(--cor-suave-frente);
+}
+
+.endereco__separador {
+  color: var(--cor-borda);
+}
+
+/*
+ * O código da posição é o dado que o técnico compara varrendo a grade com o
+ * olho: caixa alta, tabular e destacado do resto.
+ */
+.endereco__codigo {
+  padding: 1px 7px;
+  border-radius: var(--raio-sm);
+  background: var(--cor-frente);
+  color: var(--cor-cartao);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}

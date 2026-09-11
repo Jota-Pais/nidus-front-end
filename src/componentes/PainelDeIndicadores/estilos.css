@@ -1,0 +1,83 @@
+/*
+ * Duas colunas no celular, uma linha no desktop — a adaptação que o design
+ * system pede para bloco de estatística. As divisórias somem no celular:
+ * linha vertical entre itens empilhados não separa nada.
+ */
+.painelDeIndicadores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+}
+
+@media (min-width: 768px) {
+  .painelDeIndicadores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+  }
+
+  .painelDeIndicadores > * + * {
+    padding-inline-start: 28px;
+    margin-inline-start: 28px;
+    border-inline-start: 1px solid var(--cor-borda);
+  }
+
+  .secaoInvertida .painelDeIndicadores > * + * {
+    border-inline-start-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.indicador__rotulo {
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cor-suave-frente);
+}
+
+.secaoInvertida .indicador__rotulo {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Mono e tabular: quatro números lado a lado precisam alinhar. */
+.indicador__valor {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: inherit;
+}
+
+.indicador--destaque .indicador__valor {
+  background: var(--gradiente-acento-horizontal);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Na faixa escura o gradiente perde contraste: vira o azul claro do fim. */
+.secaoInvertida .indicador--destaque .indicador__valor {
+  background: none;
+  color: var(--cor-acento-secundario);
+}
+
+.indicador__sufixo {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--cor-suave-frente);
+}
+
+.secaoInvertida .indicador__sufixo {
+  color: rgba(255, 255, 255, 0.6);
+}

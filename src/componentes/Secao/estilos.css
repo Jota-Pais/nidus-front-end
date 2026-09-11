@@ -1,0 +1,38 @@
+.secao__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.secao__identificacao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.secao__titulo {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.secao__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Conteúdo rente à borda: a tabela e a grade desenham o próprio respiro. */
+.secao--rente {
+  padding: 0;
+}
+
+.secao--rente .secao__cabecalho {
+  margin: 0;
+  padding: 20px 20px 16px;
+}
