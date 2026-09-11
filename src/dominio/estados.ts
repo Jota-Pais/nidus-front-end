@@ -17,8 +17,6 @@ export interface CodificacaoVisual {
   marcador: string
   /** Segundo canal 2 — texto curto, para o card e o leitor de tela. */
   sigla: string
-  /** Token de cor do Ant Design. Nunca o único canal. */
-  cor: string
   descricao: string
 }
 
@@ -27,35 +25,30 @@ export const ESTADO_CAIXA: Record<EstadoCaixa, CodificacaoVisual> = {
     rotulo: 'Em reprodução',
     marcador: '●',
     sigla: 'REP',
-    cor: 'blue',
     descricao: 'Casal ativo, nenhuma cria comprometida.',
   },
   parcialmente_comprometida: {
     rotulo: 'Parcialmente comprometida',
     marcador: '◐',
     sigla: 'PAR',
-    cor: 'gold',
     descricao: 'Parte da ninhada reservada; ainda há saldo ofertável.',
   },
   totalmente_comprometida: {
     rotulo: 'Totalmente comprometida',
     marcador: '◼',
     sigla: 'TOT',
-    cor: 'volcano',
     descricao: 'Toda a ninhada disponível está reservada.',
   },
   preparada_para_envio: {
     rotulo: 'Preparada para envio',
     marcador: '▲',
     sigla: 'ENV',
-    cor: 'purple',
     descricao: 'Animais separados e conferidos, aguardando expedição.',
   },
   expedida: {
     rotulo: 'Expedida',
     marcador: '✓',
     sigla: 'EXP',
-    cor: 'default',
     descricao: 'Entregues; saíram da tutela do CPMR.',
   },
 }
@@ -78,21 +71,18 @@ export const GRAU_CERTEZA: Record<GrauCerteza, CodificacaoVisual> = {
     rotulo: 'Confirmado',
     marcador: '■',
     sigla: 'CONF',
-    cor: 'green',
     descricao: 'Já nasceu e já desmamou — contagem real.',
   },
   previsto: {
     rotulo: 'Previsto',
     marcador: '◧',
     sigla: 'PREV',
-    cor: 'gold',
     descricao: 'Já nasceu, desmame estimado: quantidade real, data estimada.',
   },
   projetado: {
     rotulo: 'Projetado',
     marcador: '□',
     sigla: 'PROJ',
-    cor: 'red',
     descricao: 'Ainda não nasceu: quantidade e data estimadas.',
   },
 }

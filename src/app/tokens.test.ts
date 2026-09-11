@@ -10,6 +10,7 @@ import {
   MOVIMENTO,
   RAIO,
   SOMBRA,
+  SUPERFICIE_DE_RETORNO,
   TAMANHO_DE_FONTE,
   UFSC,
 } from './tokens'
@@ -63,6 +64,7 @@ function esperado(): Map<string, string> {
   por('ufsc', UFSC)
   por('cor', COR)
   por('cor', COR_DE_RETORNO)
+  por('superficie', SUPERFICIE_DE_RETORNO)
   por('gradiente', GRADIENTE)
   por('fonte', FONTE)
   por('raio', RAIO, 'px')
@@ -188,6 +190,25 @@ describe('RNF-10 — contraste, onde a paleta de vinil não serve para tela', ()
     const brancoSobreVerde = contraste(COR.acentoFrente, COR.institucional)
     expect(brancoSobreVerde).toBeGreaterThanOrEqual(AA_GRAFICO)
     expect(brancoSobreVerde).toBeLessThan(AA_TEXTO)
+  })
+
+  /**
+   * O par que o Ant Design erraria sozinho: ele deriva o fundo do aviso da
+   * cor do texto, e o amarelo institucional escurecido produz oliva.
+   */
+  it('cada tom de retorno é legível sobre a própria superfície', () => {
+    const pares = [
+      ['sucesso', COR_DE_RETORNO.sucesso, SUPERFICIE_DE_RETORNO.sucessoFundo],
+      ['aviso', COR_DE_RETORNO.aviso, SUPERFICIE_DE_RETORNO.avisoFundo],
+      ['erro', COR_DE_RETORNO.erro, SUPERFICIE_DE_RETORNO.erroFundo],
+      ['informacao', COR_DE_RETORNO.informacao, SUPERFICIE_DE_RETORNO.informacaoFundo],
+    ] as const
+
+    for (const [nome, texto, fundo] of pares) {
+      expect(contraste(texto, fundo), `${nome}: ${texto} sobre ${fundo}`).toBeGreaterThanOrEqual(
+        AA_TEXTO,
+      )
+    }
   })
 
   it('a faixa invertida é legível com texto branco', () => {

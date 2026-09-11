@@ -1,0 +1,29 @@
+.texto {
+  color: var(--cor-frente);
+}
+
+.texto--secundario {
+  color: var(--cor-suave-frente);
+}
+
+.texto--forte {
+  font-weight: 600;
+}
+
+/* Tabular: coluna de números precisa alinhar dígito sob dígito. */
+.texto--numero {
+  font-family: var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9em;
+}
+
+/* O rótulo do design system: mono, caixa alta, espaçado. Mesma família do
+   RotuloDeSecao, um degrau abaixo em tamanho. */
+.texto--rotulo {
+  display: block;
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cor-suave-frente);
+}

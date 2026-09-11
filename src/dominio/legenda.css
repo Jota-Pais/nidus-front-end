@@ -1,0 +1,43 @@
+/*
+ * Superfície das marcas de estado.
+ *
+ * As mesmas variáveis que o card da grade e o do quadro usam — é o que
+ * garante, na folha de estilo, que as três telas mostrem o mesmo estado da
+ * mesma cor (RF-CIC-02). A `Etiqueta` de dentro herda tudo.
+ */
+
+.marcaDeEstado .etiqueta {
+  background: var(--superficie);
+  border-color: var(--contorno);
+  color: var(--texto);
+}
+
+.marcaDeEstado--em_reproducao {
+  --superficie: var(--estado-em_reproducao-fundo);
+  --contorno: var(--estado-em_reproducao-borda);
+  --texto: var(--estado-em_reproducao-texto);
+}
+
+.marcaDeEstado--parcialmente_comprometida {
+  --superficie: var(--estado-parcialmente_comprometida-fundo);
+  --contorno: var(--estado-parcialmente_comprometida-borda);
+  --texto: var(--estado-parcialmente_comprometida-texto);
+}
+
+.marcaDeEstado--totalmente_comprometida {
+  --superficie: var(--estado-totalmente_comprometida-fundo);
+  --contorno: var(--estado-totalmente_comprometida-borda);
+  --texto: var(--estado-totalmente_comprometida-texto);
+}
+
+.marcaDeEstado--preparada_para_envio {
+  --superficie: var(--estado-preparada_para_envio-fundo);
+  --contorno: var(--estado-preparada_para_envio-borda);
+  --texto: var(--estado-preparada_para_envio-texto);
+}
+
+.marcaDeEstado--expedida {
+  --superficie: var(--estado-expedida-fundo);
+  --contorno: var(--estado-expedida-borda);
+  --texto: var(--estado-expedida-texto);
+}

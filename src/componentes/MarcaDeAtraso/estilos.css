@@ -3,9 +3,9 @@
   align-items: center;
   gap: 6px;
   padding: 2px 9px;
-  border: 1px solid color-mix(in srgb, var(--cor-erro) 35%, transparent);
+  border: 1px solid var(--superficie-erro-borda);
   border-radius: var(--raio-sm);
-  background: color-mix(in srgb, var(--cor-erro) 8%, transparent);
+  background: var(--superficie-erro-fundo);
   color: var(--cor-erro);
   font-size: 12px;
   font-weight: 500;

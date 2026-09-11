@@ -126,6 +126,36 @@ função sem JSX se testa sem montar nada.
 
 ## O catálogo
 
+### Elementos de base, sobre o Ant Design
+
+Existem para que **tela não importe de `antd`**. Cada um traz um padrão do
+projeto — não são apelidos.
+
+| Componente | Antd | O que acrescenta |
+|---|---|---|
+| `Titulo` | Typography.Title | Calistoga em peso normal; realce em gradiente |
+| `Texto` | Typography.Text | Tons `rotulo` (mono, caixa alta) e `numero` (tabular) |
+| `Paragrafo` | Typography.Paragraph | Entrelinha 1.625 e medida de 68ch |
+| `Entrada` | Input | `.Senha`, `.Area` (autoSize), `.Busca` |
+| `EntradaNumero` | InputNumber | `inputMode` numérico, `precision={0}`, `min={0}` |
+| `Seletor` | Select | Largura 100%, busca por rótulo, "nada encontrado" |
+| `Formulario` + `.Campo` | Form / Form.Item | Vertical, sem asterisco, rola até o erro, marca "(opcional)" |
+| `Escolha` | Radio.Group | Até 4 opções visíveis; `como="botoes"` |
+| `CaixaDeSelecao` | Checkbox | Escolha que só vale ao salvar |
+| `Interruptor` | Switch | Só para efeito imediato; exige rótulo |
+| `Aviso` | Alert | `role="alert"` sempre; 4 tons da paleta |
+| `Etiqueta` | Tag | Tons da UFSC no lugar dos presets do Ant Design |
+| `Selo` | Badge | Corta em 99+; zero não vira selo |
+| `Dica` | Tooltip | Nunca a única fonte de um dado que decide |
+| `Resultado` | Result | `semPermissao` não é falha (`RF-ACS-02`) |
+| `Esqueleto` | Skeleton | Espera com a forma do conteúdo |
+| `Abas` | Tabs | Aba ativa controlada de fora, para caber na URL |
+| `Passos` | Steps | Mostra, não navega |
+| `Gaveta` | Drawer | Painel lateral: a tela de trás continua visível |
+| `Recolhivel` | Collapse | Nunca recolhe o que precisa ser lido antes de agir |
+| `Divisor` | Divider | Usar pouco: o respiro já separa |
+| `Linha` / `Colunas` | Flex / Row+Col | Quebra e empilha por padrão (`RNF-03`) |
+
 ### Fundação do design system
 
 | Componente | Para quê |
