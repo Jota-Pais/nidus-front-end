@@ -1,19 +1,27 @@
 import { LogoutOutlined } from '@ant-design/icons'
-import { Button, Layout, Menu, Select, Space, Tag, Tooltip, Typography } from 'antd'
+import { Layout, Menu } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Botao, Dica, Etiqueta, Linha, Seletor, Texto } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
 import { usePerfil } from '@/auth/contexto'
 import { PERFIS } from '@/dominio/tipos'
 import type { Perfil } from '@/dominio/tipos'
 import { menuDoPerfil, rotaInicial } from './navegacao'
+import './appLayout.css'
 
 const { Header, Content, Sider } = Layout
 
 /**
  * Casca da aplicação: cabeçalho, navegação por perfil e área de conteúdo.
  *
- * O seletor de perfil só aparece quando **não há sessão real** — é o andaime de
- * desenvolvimento, para percorrer as telas dos três atores sem API. Havendo
+ * O cabeçalho é a faixa invertida do design system — azul institucional
+ * escuro, a mesma cor da tela de entrada. É a moldura que o usuário tem
+ * diante dos olhos o turno inteiro, então carrega a identidade e mais nada:
+ * nenhum número, nenhum alerta, nada que mude sozinho e puxe o olho para
+ * fora do trabalho.
+ *
+ * O seletor de perfil só aparece quando **não há sessão real** — é o andaime
+ * de desenvolvimento, para percorrer as telas dos três atores sem API. Havendo
  * usuário logado, o cabeçalho mostra o nome e o perfil que o servidor
  * devolveu, sem opção de trocar: quem decide o perfil é o servidor
  * (`RF-ACS-02`).
@@ -38,70 +46,65 @@ export function AppLayout() {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 16,
-          paddingInline: 20,
-        }}
-      >
-        <Space align="center" size={12}>
-          <Typography.Text strong style={{ color: '#fff', fontSize: 18 }}>
-            Nidus
-          </Typography.Text>
-          <Typography.Text style={{ color: 'rgba(255,255,255,.65)' }}>CPMR/UFSC</Typography.Text>
-          {mostrarRotuloDeAmbiente && <Tag color="orange">{config.ambiente}</Tag>}
-        </Space>
+    <Layout className="casca">
+      <Header className="casca__topo">
+        <Linha espaco={12}>
+          {/* A marca leva as duas cores principais: o símbolo em Verde
+              Bandeira, o nome em branco sobre o azul institucional. */}
+          <span className="casca__marca" aria-hidden="true" />
+          <span className="casca__nome">Nidus</span>
+          <Texto tom="secundario" className="casca__instituicao">
+            CPMR/UFSC
+          </Texto>
+          {mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>}
+        </Linha>
 
-        <Space align="center" size={12}>
+        <Linha espaco={12}>
           {usuario ? (
-            <Typography.Text style={{ color: 'rgba(255,255,255,.85)' }}>
+            <Texto className="casca__usuario">
               {usuario.nome} · {PERFIS[usuario.perfil].rotulo}
-            </Typography.Text>
+            </Texto>
           ) : (
-            <Space align="center" size={8}>
-              <Tooltip title="Sem sessão no servidor: perfil de desenvolvimento, para percorrer as telas.">
-                <Typography.Text style={{ color: 'rgba(255,255,255,.65)' }}>Perfil</Typography.Text>
-              </Tooltip>
-              <Select<Perfil>
+            <Linha espaco={8}>
+              <Dica texto="Sem sessão no servidor: perfil de desenvolvimento, para percorrer as telas.">
+                <Texto className="casca__usuario">Perfil</Texto>
+              </Dica>
+              <Seletor<Perfil>
                 value={perfil}
                 onChange={trocarPerfilDeDesenvolvimento}
-                style={{ width: 170 }}
+                style={{ width: 180 }}
                 options={Object.entries(PERFIS).map(([valor, meta]) => ({
                   value: valor as Perfil,
                   label: meta.rotulo,
                 }))}
               />
-            </Space>
+            </Linha>
           )}
 
-          <Button
-            type="text"
+          <Botao
+            variante="fantasma"
             icon={<LogoutOutlined aria-hidden="true" />}
             onClick={sair}
             loading={saindo}
-            style={{ color: 'rgba(255,255,255,.85)' }}
+            className="casca__sair"
           >
             Sair
-          </Button>
-        </Space>
+          </Botao>
+        </Linha>
       </Header>
 
       <Layout>
-        <Sider width={240} breakpoint="lg" collapsedWidth={0} theme="light">
+        <Sider width={248} breakpoint="lg" collapsedWidth={0} theme="light" className="casca__lado">
           <Menu
             mode="inline"
             items={itens}
             {...(selecionado ? { selectedKeys: [selecionado] } : {})}
             onClick={({ key }) => navegar(key)}
-            style={{ height: '100%', borderInlineEnd: 0 }}
+            className="casca__menu"
           />
         </Sider>
 
-        <Content style={{ padding: 24 }}>
+        <Content className="casca__conteudo">
           <Outlet />
         </Content>
       </Layout>

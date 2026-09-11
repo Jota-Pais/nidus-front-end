@@ -1,0 +1,81 @@
+/*
+ * Casca da aplicação.
+ *
+ * O cabeçalho é a faixa invertida do design system, na mesma cor da tela de
+ * entrada: quem entra não sente que mudou de sistema depois do login.
+ */
+
+.casca {
+  min-height: 100vh;
+}
+
+.casca__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-inline: 20px;
+}
+
+/* O símbolo da marca em Verde Bandeira — a segunda cor principal, no lugar
+   em que ela fica o turno inteiro diante dos olhos. */
+.casca__marca {
+  width: 10px;
+  height: 24px;
+  border-radius: 3px;
+  background: var(--cor-institucional);
+}
+
+.casca__nome {
+  font-family: var(--fonte-titulo);
+  font-size: 20px;
+  color: #fff;
+}
+
+.casca__instituicao,
+.casca__usuario {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.casca__usuario {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.casca__sair.botao--fantasma:not(:disabled) {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.casca__sair.botao--fantasma:not(:disabled):hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.casca__lado {
+  border-inline-end: 1px solid var(--cor-borda);
+}
+
+.casca__menu {
+  height: 100%;
+  padding-top: 12px;
+  border-inline-end: 0;
+}
+
+.casca__conteudo {
+  padding: 24px;
+}
+
+/* No tablet o respiro lateral encolhe: 24px de cada lado numa tela de 768
+   come um oitavo da largura útil (RNF-03). */
+@media (max-width: 768px) {
+  .casca__conteudo {
+    padding: 16px;
+  }
+
+  .casca__topo {
+    padding-inline: 12px;
+  }
+
+  .casca__instituicao {
+    display: none;
+  }
+}

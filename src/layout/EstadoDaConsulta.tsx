@@ -1,6 +1,6 @@
-import { Alert, Result } from 'antd'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
+import { Aviso, Resultado } from '@/componentes'
 import { ErroDeApi, ErroDeRede } from '@/lib/api'
 import { Carregando } from './Carregando'
 
@@ -55,12 +55,10 @@ export function EstadoDaConsulta({
 
   if (consulta.isPending) {
     return demorou ? (
-      <Alert
-        type="info"
-        showIcon
-        message="Acordando o servidor"
-        description="A primeira requisição do dia pode levar até um minuto: a API entra em repouso por inatividade. Não é erro — pode aguardar."
-      />
+      <Aviso tom="informacao" titulo="Acordando o servidor">
+        A primeira requisição do dia pode levar até um minuto: a API entra em repouso por
+        inatividade. Não é erro — pode aguardar.
+      </Aviso>
     ) : (
       <Carregando {...(rotulo ? { rotulo } : {})} />
     )
@@ -70,20 +68,24 @@ export function EstadoDaConsulta({
 
   if (erro instanceof ErroDeApi && erro.status === 403) {
     return (
-      <Result
-        status="403"
-        title="Sem permissão"
-        subTitle={erro.message || 'Seu perfil não alcança esta tela.'}
+      <Resultado
+        tipo="semPermissao"
+        titulo="Sem permissão"
+        detalhe={erro.message || 'Seu perfil não alcança esta tela.'}
       />
     )
   }
 
   if (erro instanceof ErroDeRede) {
-    return <Alert type="warning" showIcon message="Servidor indisponível" description={erro.message} />
+    return (
+      <Aviso tom="atencao" titulo="Servidor indisponível">
+        {erro.message}
+      </Aviso>
+    )
   }
 
   if (erro) {
-    return <Alert type="error" showIcon message={(erro as Error).message} />
+    return <Aviso tom="erro" titulo={(erro as Error).message} />
   }
 
   return <>{children}</>

@@ -1,5 +1,5 @@
 import { WarningFilled } from '@ant-design/icons'
-import { Tooltip } from 'antd'
+import { Dica } from '@/componentes'
 import { ESTADO_CAIXA } from '@/dominio/estados'
 import { ROTULO_EVENTO } from '@/dominio/estante'
 import type { Posicao } from '@/dominio/estante'
@@ -49,7 +49,7 @@ export function CardDaPosicao({
     .join(' · ')
 
   return (
-    <Tooltip title={descricao}>
+    <Dica texto={descricao}>
       <button
         type="button"
         className={`posicao posicao--${caixa.estado}${atrasado ? ' posicao--atrasada' : ''}`}
@@ -85,6 +85,6 @@ export function CardDaPosicao({
           <WarningFilled className="posicao__alerta" aria-hidden="true" />
         )}
       </button>
-    </Tooltip>
+    </Dica>
   )
 }
