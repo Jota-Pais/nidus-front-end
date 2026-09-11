@@ -70,3 +70,16 @@ export interface Endereco {
   /** Como a etiqueta aparece na estante real. Ex.: `C3`. */
   codigo: string
 }
+
+/**
+ * Quantidade por sexo, a forma em que o contrato conta animal em todo lugar:
+ * nascido, eutanasiado de seleção, desmamado, disponível, comprometido e
+ * pedido da solicitação (`contrato-api.md` §6 e §8).
+ *
+ * Contar em dois números separados, e não num total, não é detalhe de
+ * modelagem: o pesquisador pede por sexo e o motor atende por sexo (`RN-09`).
+ */
+export interface PorSexo {
+  m: number
+  f: number
+}
