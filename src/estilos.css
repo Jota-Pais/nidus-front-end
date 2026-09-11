@@ -1,9 +1,17 @@
-/* O reset e a tipografia vêm do Ant Design. Aqui fica só o que é da aplicação. */
+/*
+ * Estilo global.
+ *
+ * O reset e a tipografia vêm do Ant Design, e os valores vêm de
+ * `@/app/tokens.css`. Aqui fica só o que é da aplicação inteira — nada de
+ * cor, raio ou sombra literal.
+ */
 
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
 }
 
 html,
@@ -13,9 +21,44 @@ body,
   height: 100%;
 }
 
-/* RNF-10 — foco de teclado sempre visível: as telas de registro precisam ser
-   operáveis por teclado. */
+body {
+  background: var(--cor-fundo);
+  color: var(--cor-frente);
+  font-family: var(--fonte-interface);
+}
+
+/*
+ * Título é a voz da personalidade do design system: serifa morna, entrelinha
+ * apertada, tracking negativo. Vale para os títulos do Ant Design também, que
+ * é o que a aplicação usa.
+ */
+h1,
+h2,
+h3,
+.ant-typography h1,
+.ant-typography h2,
+.ant-typography h3,
+h1.ant-typography,
+h2.ant-typography,
+h3.ant-typography {
+  font-family: var(--fonte-titulo);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+/*
+ * RNF-10 — foco de teclado sempre visível: as telas de registro precisam ser
+ * operáveis por teclado. O anel usa o acento, como o design system pede, e
+ * tem deslocamento para não colar na borda do controle.
+ */
 :focus-visible {
-  outline: 2px solid #164132;
+  outline: 2px solid var(--cor-acento);
   outline-offset: 2px;
+  border-radius: var(--raio-sm);
+}
+
+/* Seleção de texto no azul institucional, em vez do azul do sistema. */
+::selection {
+  background: color-mix(in srgb, var(--cor-acento) 16%, transparent);
 }
