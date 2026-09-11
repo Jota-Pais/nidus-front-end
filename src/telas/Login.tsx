@@ -70,7 +70,10 @@ export function Login() {
   }
 
   return (
-    <div className="loginContainer">
+    // `padraoDePontos` e `brilhoDeAcento` são os efeitos de textura do design
+    // system, definidos em `@/app/tokens.css`: é o que impede o painel escuro
+    // de ficar chapado. Decorativos — nada de conteúdo depende deles.
+    <div className="loginContainer padraoDePontos brilhoDeAcento">
       <div className="leftPanel">
         <div className="mainContent">
           <header className="headerSection">

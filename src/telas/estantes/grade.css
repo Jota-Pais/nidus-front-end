@@ -2,8 +2,13 @@
  * Grade de estantes — RF-INF-03.
  *
  * As duas faces lado a lado, reproduzindo a estante real. Container flexível:
- * numa estante de 128 posições a grade rola dentro do próprio container, nunca
- * empurra a página para o lado.
+ * numa estante de 128 posições a grade rola dentro do próprio container,
+ * nunca empurra a página para o lado.
+ *
+ * Os valores vêm de `@/app/tokens.css` — inclusive as superfícies por estado,
+ * que são as mesmas do card do quadro (`componentes/CardDaCaixa`). Grade e
+ * quadro mostrando o mesmo estado em cores diferentes seria o `RF-CIC-02`
+ * quebrado pela folha de estilo.
  */
 
 .faces {
@@ -19,8 +24,13 @@
 }
 
 .face__titulo {
-  font-weight: 600;
+  display: block;
   margin-bottom: 8px;
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cor-suave-frente);
 }
 
 .face__rolagem {
@@ -44,21 +54,29 @@
   gap: 2px;
   min-height: 62px;
   padding: 4px 5px;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+  background: var(--cor-cartao);
   font-size: 11px;
   line-height: 1.25;
   text-align: left;
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  transition:
+    box-shadow var(--movimento-rapido) var(--movimento-curva),
+    transform var(--movimento-rapido) var(--movimento-curva);
+}
+
+.posicao:hover:not(.posicao--vazia) {
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-md);
 }
 
 .posicao--vazia {
-  background: #fafafa;
+  background: var(--cor-fundo);
   border-style: dashed;
-  color: #bfbfbf;
+  color: var(--cor-suave-frente);
   cursor: default;
   justify-content: flex-start;
 }
@@ -71,6 +89,7 @@
 }
 
 .posicao__codigo {
+  font-family: var(--fonte-mono);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -84,7 +103,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #595959;
+  color: var(--cor-suave-frente);
 }
 
 .posicao__rodape {
@@ -92,6 +111,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 4px;
+  font-family: var(--fonte-mono);
   font-size: 10px;
   letter-spacing: 0.02em;
 }
@@ -102,67 +122,89 @@
 
 .posicao__ciclo {
   font-variant-numeric: tabular-nums;
-  color: #595959;
+  color: var(--cor-suave-frente);
 }
 
 /* Estados. A cor é reforço; marcador e sigla no card e a legenda ao lado da
    grade é que carregam a informação (RNF-10). */
 .posicao--em_reproducao {
-  background: #e6f4ff;
-  border-color: #91caff;
+  background: var(--estado-em_reproducao-fundo);
+  border-color: var(--estado-em_reproducao-borda);
+}
+
+.posicao--em_reproducao .posicao__sigla {
+  color: var(--estado-em_reproducao-texto);
 }
 
 .posicao--parcialmente_comprometida {
-  background: #fffbe6;
-  border-color: #ffe58f;
+  background: var(--estado-parcialmente_comprometida-fundo);
+  border-color: var(--estado-parcialmente_comprometida-borda);
+}
+
+.posicao--parcialmente_comprometida .posicao__sigla {
+  color: var(--estado-parcialmente_comprometida-texto);
 }
 
 .posicao--totalmente_comprometida {
-  background: #fff2e8;
-  border-color: #ffbb96;
+  background: var(--estado-totalmente_comprometida-fundo);
+  border-color: var(--estado-totalmente_comprometida-borda);
+}
+
+.posicao--totalmente_comprometida .posicao__sigla {
+  color: var(--estado-totalmente_comprometida-texto);
 }
 
 .posicao--preparada_para_envio {
-  background: #f9f0ff;
-  border-color: #d3adf7;
+  background: var(--estado-preparada_para_envio-fundo);
+  border-color: var(--estado-preparada_para_envio-borda);
+}
+
+.posicao--preparada_para_envio .posicao__sigla {
+  color: var(--estado-preparada_para_envio-texto);
 }
 
 .posicao--expedida {
-  background: #f5f5f5;
-  border-color: #d9d9d9;
-  color: #8c8c8c;
+  background: var(--estado-expedida-fundo);
+  border-color: var(--estado-expedida-borda);
+  color: var(--estado-expedida-texto);
+}
+
+.posicao--expedida .posicao__sigla {
+  color: var(--estado-expedida-texto);
 }
 
 /*
- * RF-REP-07: previsão vencida sem confirmação "precisa gritar" — é o principal
- * ponto de erosão silenciosa da confiabilidade dos dados. Borda grossa,
- * vermelha, mais o ícone de aviso no canto: três canais, nenhum só de cor.
+ * RF-REP-07: previsão vencida sem confirmação "precisa gritar" — é o
+ * principal ponto de erosão silenciosa da confiabilidade dos dados. Borda
+ * grossa, vermelha, mais o ícone de aviso no canto: três canais, nenhum só
+ * de cor.
  */
 .posicao--atrasada {
-  border: 2px solid #cf1322;
+  border: 2px solid var(--cor-erro);
 }
 
 .posicao__alerta {
   position: absolute;
   right: 3px;
   bottom: 3px;
-  color: #cf1322;
+  color: var(--cor-erro);
   font-size: 11px;
 }
 
 .posicao:focus-visible {
-  outline: 2px solid #164132;
+  outline: 2px solid var(--cor-acento);
   outline-offset: 1px;
   z-index: 1;
 }
 
 .posicao__casal {
+  font-family: var(--fonte-mono);
   font-weight: 600;
   font-size: 10px;
   letter-spacing: 0.08em;
-  color: #164132;
+  color: var(--cor-frente);
 }
 
 .posicao--expedida .posicao__casal {
-  color: #8c8c8c;
+  color: var(--estado-expedida-texto);
 }

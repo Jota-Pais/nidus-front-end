@@ -7,13 +7,19 @@
  *
  * Mudou em relação ao original: os três cards de acesso viraram um só — quem
  * decide o perfil é o servidor (`RF-ACS-02`), não o usuário na tela.
+ *
+ * E a paleta passou a sair de `@/app/tokens.css`, com a chegada do design
+ * system. **A composição é a mesma**: o recorte da foto, a divisão 64/42, a
+ * barra branca do rodapé e o respiro são do original — trocaram as cores, não
+ * o desenho. O painel escuro agora é a faixa invertida do design system, com
+ * a malha de pontos e o brilho de acento que ela leva em todo lugar.
  */
 
 .loginContainer {
   position: relative;
   width: 100%;
   min-height: 100vh;
-  background: linear-gradient(135deg, #091a13, #164132);
+  background: var(--cor-invertido);
   display: flex;
   overflow: hidden;
 }
@@ -45,27 +51,28 @@
 
 .headerIcon {
   margin-right: 12px;
-  color: #6b9e7c;
+  color: var(--cor-institucional);
 }
 
 .headerSubtitle {
-  color: #a3c2b5;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 15px;
 }
 
 .loginCard {
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border-radius: var(--raio-lg);
+  box-shadow: var(--sombra-xl);
 }
 
 .loginCard .ant-card-head-title {
-  color: #164132;
+  color: var(--cor-frente);
   font-weight: 600;
 }
 
 .btnSubmit {
-  background-color: #164132;
-  border-color: #164132;
+  background: var(--gradiente-acento-horizontal);
+  border-color: transparent;
+  box-shadow: var(--sombra-acento);
 }
 
 .infoBox {
@@ -83,7 +90,7 @@
 }
 
 .infoIcon {
-  color: #6b9e7c;
+  color: var(--cor-institucional);
   font-size: 18px;
   margin-right: 8px;
 }
@@ -95,7 +102,7 @@
 }
 
 .infoText {
-  color: #a3c2b5;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 13px;
   line-height: 1.5;
   display: block;
@@ -103,20 +110,20 @@
 
 .devBox {
   margin-top: 20px;
-  border: 1px dashed #6b9e7c;
-  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, var(--cor-acento-secundario) 50%, transparent);
+  border-radius: var(--raio-md);
   padding: 14px 16px;
 }
 
 .devTitle {
-  color: #a3c2b5;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 13px;
   display: block;
   margin-bottom: 10px;
 }
 
 .bottomWhiteBar {
-  background-color: #ffffff;
+  background-color: var(--cor-cartao);
   padding: 36px 48px;
   width: 100%;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
@@ -128,12 +135,12 @@
 
 .bottomBarTitle {
   margin: 0 !important;
-  color: #164132 !important;
+  color: var(--cor-frente) !important;
 }
 
 .bottomBarText {
   margin: 8px 0 0 0 !important;
-  color: #555555;
+  color: var(--cor-suave-frente);
   font-size: 13px;
   line-height: 1.6;
 }
