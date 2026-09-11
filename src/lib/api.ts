@@ -28,6 +28,18 @@ export class ErroDeApi extends Error {
   readonly campos: Record<string, string>
   readonly requisito: string | null
 
+  /**
+   * O objeto `erro` cru da resposta, como veio.
+   *
+   * Alguns erros trazem campo extra que só o domínio sabe ler — o `409
+   * TRANSICAO_CONTRARIA_COMPROMISSO` vem com `compromissosAfetados`
+   * (`contrato-api.md` §8). Esta classe é genérica e não conhece o quadro, e
+   * não deve conhecer: quem interpreta é `@/dominio/quadro`, a partir daqui.
+   *
+   * `unknown` de propósito — quem lê valida a forma antes de usar.
+   */
+  readonly corpoDoErro: unknown
+
   constructor(status: number, corpo: unknown) {
     super(mensagemDeErro(status, corpo))
     this.name = 'ErroDeApi'
@@ -41,6 +53,7 @@ export class ErroDeApi extends Error {
 
     this.codigo = erro?.codigo ?? null
     this.requisito = erro?.requisito ?? null
+    this.corpoDoErro = erro
   }
 
   /** `contrato-api.md` §2.1: 409 é sempre regra de negócio — mostrar e não recarregar. */
