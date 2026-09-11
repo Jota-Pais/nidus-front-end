@@ -1,12 +1,19 @@
-import {
-  ExperimentOutlined,
-  InfoCircleOutlined,
-  LockOutlined,
-  UserOutlined,
-} from '@ant-design/icons'
-import { Alert, Button, Card, Col, Form, Input, Row, Space, Typography } from 'antd'
+import { ExperimentOutlined, InfoCircleOutlined, LockOutlined, UserOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import {
+  Aviso,
+  Botao,
+  Cartao,
+  Colunas,
+  Entrada,
+  Formulario,
+  Linha,
+  Paragrafo,
+  Pilha,
+  Texto,
+  Titulo,
+} from '@/componentes'
 import { usePerfil } from '@/auth/contexto'
 import { useLogin } from '@/auth/sessao'
 import { PERFIS } from '@/dominio/tipos'
@@ -16,27 +23,28 @@ import { validadorDeCampo } from './login.schema'
 import type { Credenciais } from './login.schema'
 import './Login.css'
 
-const { Title, Paragraph, Text } = Typography
-
 /**
  * `RF-ACS-01` — autenticação pela identidade institucional.
  *
- * Composição visual de Gabriel Ugione (commit `dbfb26f`), preservada.
+ * Composição visual de Gabriel Ugione (commit `dbfb26f`), preservada: o
+ * recorte da foto, a divisão do painel e a barra branca do rodapé são dele.
+ * A paleta passou a sair dos tokens com a chegada do design system, e o
+ * conteúdo passou a usar os componentes do projeto — o desenho é o mesmo.
  *
  * Três correções em relação ao original, todas de requisito:
  *
- * 1. **Um formulário, não três.** O original tinha um card de acesso por perfil,
- *    o usuário escolhendo se entra como gestor, técnico ou pesquisador. O
- *    `RF-ACS-02` não permite: o perfil vem do servidor junto da sessão
- *    (`POST /api/sessao` devolve `usuario.perfil`). Escolher o próprio perfil na
- *    tela é autorização decidida no cliente.
- * 2. **Mensagem de erro**, que o card do Trello pede e não existia. Com
- *    `role="alert"`, para o leitor de tela anunciar (`RNF-10`).
+ * 1. **Um formulário, não três.** O original tinha um card de acesso por
+ *    perfil, o usuário escolhendo se entra como gestor, técnico ou
+ *    pesquisador. O `RF-ACS-02` não permite: o perfil vem do servidor junto
+ *    da sessão (`POST /api/sessao` devolve `usuario.perfil`). Escolher o
+ *    próprio perfil na tela é autorização decidida no cliente.
+ * 2. **Mensagem de erro**, que o card do Trello pede e não existia. O `Aviso`
+ *    já entra com `role="alert"`, para o leitor de tela anunciar (`RNF-10`).
  * 3. **Validação por Zod**, o padrão da equipe para formulário.
  *
- * ⚠️ **O acesso local não é gambiarra de semestre.** O `RF-ACS-01` exige acesso
- * administrativo independente do SSO, para não perder o sistema se o ID-UFSC
- * cair — e o ID-UFSC depende do SETIC (`PEN-09`).
+ * ⚠️ **O acesso local não é gambiarra de semestre.** O `RF-ACS-01` exige
+ * acesso administrativo independente do SSO, para não perder o sistema se o
+ * ID-UFSC cair — e o ID-UFSC depende do SETIC (`PEN-09`).
  *
  * O formulário chama `POST /api/sessao` de verdade. Enquanto o back-end não
  * sobe, ele responde com erro de rede e o acesso de desenvolvimento ao lado é
@@ -77,117 +85,97 @@ export function Login() {
       <div className="leftPanel">
         <div className="mainContent">
           <header className="headerSection">
-            <Title level={2} className="headerTitle">
-              <ExperimentOutlined className="headerIcon" aria-hidden="true" /> Nidus
-            </Title>
-            <Text className="headerSubtitle">Sistema de Gestão de Biotério — CPMR / UFSC</Text>
+            <Linha espaco={12}>
+              <ExperimentOutlined className="headerIcon" aria-hidden="true" />
+              <Titulo nivel={1}>Nidus</Titulo>
+            </Linha>
+            <Texto className="headerSubtitle">Sistema de Gestão de Biotério — CPMR / UFSC</Texto>
           </header>
 
-          <Row gutter={[20, 20]}>
-            <Col xs={24} md={12}>
-              <Card title="Acesso ao sistema" size="small" className="loginCard">
-                {/* RNF-10: role="alert" faz o leitor de tela anunciar o erro
-                    assim que ele aparece, sem o usuário ter que procurar. */}
-                {erro && (
-                  <Alert
-                    type="error"
-                    showIcon
-                    message={erro}
-                    role="alert"
-                    style={{ marginBottom: 16 }}
-                  />
-                )}
+          <Colunas minimo={300} espaco={20}>
+            <Cartao className="loginCard">
+              <Pilha espaco={16}>
+                <Titulo nivel={4}>Acesso ao sistema</Titulo>
 
-                <Form<Credenciais>
-                  layout="vertical"
-                  onFinish={aoEnviar}
-                  requiredMark={false}
-                  disabled={login.isPending}
-                >
-                  <Form.Item
+                {erro && <Aviso tom="erro" titulo={erro} />}
+
+                <Formulario<Credenciais> onFinish={aoEnviar} disabled={login.isPending}>
+                  <Formulario.Campo
                     name="email"
-                    label="E-mail institucional"
+                    rotulo="E-mail institucional"
                     rules={[{ validator: validadorDeCampo('email') }]}
                   >
-                    <Input
+                    <Entrada
                       prefix={<UserOutlined aria-hidden="true" />}
                       placeholder="nome@ufsc.br"
                       autoComplete="username"
                       inputMode="email"
                       autoFocus
                     />
-                  </Form.Item>
+                  </Formulario.Campo>
 
-                  <Form.Item
+                  <Formulario.Campo
                     name="senha"
-                    label="Senha"
+                    rotulo="Senha"
                     rules={[{ validator: validadorDeCampo('senha') }]}
                   >
-                    <Input.Password
+                    <Entrada.Senha
                       prefix={<LockOutlined aria-hidden="true" />}
                       placeholder="Senha"
                       autoComplete="current-password"
                     />
-                  </Form.Item>
+                  </Formulario.Campo>
 
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    block
-                    className="btnSubmit"
-                    loading={login.isPending}
-                  >
+                  <Botao variante="primario" htmlType="submit" block loading={login.isPending}>
                     Entrar
-                  </Button>
-                </Form>
-              </Card>
-            </Col>
+                  </Botao>
+                </Formulario>
+              </Pilha>
+            </Cartao>
 
-            <Col xs={24} md={12}>
-              <div className="infoBox">
-                <div>
-                  <div className="infoBoxHeader">
-                    <InfoCircleOutlined className="infoIcon" aria-hidden="true" />{' '}
-                    <Text className="infoTitle">Biotério Central UFSC</Text>
-                  </div>
-                  <Text className="infoText">
+            <div className="infoBox">
+              <div>
+                <Linha espaco={8}>
+                  <InfoCircleOutlined className="infoIcon" aria-hidden="true" />
+                  <Texto tom="forte" className="infoTitle">
+                    Biotério Central UFSC
+                  </Texto>
+                </Linha>
+                <Paragrafo>
+                  <span className="infoText">
                     Unidade dedicada à criação, controle e suporte na manutenção de roedores para
                     atividades de pesquisa e ensino da universidade.
-                  </Text>
-                </div>
+                  </span>
+                </Paragrafo>
+              </div>
 
-                <div className="devBox">
-                  <Text className="devTitle" id="rotulo-acesso-dev">
-                    Acesso de desenvolvimento — o login pelo ID-UFSC depende do SETIC e entra como
-                    mock no semestre.
-                  </Text>
-                  <Space size={8} wrap role="group" aria-labelledby="rotulo-acesso-dev">
+              <div className="devBox">
+                <Texto className="devTitle" id="rotulo-acesso-dev">
+                  Acesso de desenvolvimento — o login pelo ID-UFSC depende do SETIC e entra como
+                  mock no semestre.
+                </Texto>
+                <div role="group" aria-labelledby="rotulo-acesso-dev">
+                  <Linha espaco={8}>
                     {(Object.keys(PERFIS) as Perfil[]).map((chave) => (
-                      <Button
-                        key={chave}
-                        size="small"
-                        onClick={() => entrarSemApi(chave)}
-                      >
+                      <Botao key={chave} size="small" onClick={() => entrarSemApi(chave)}>
                         {PERFIS[chave].rotulo}
-                      </Button>
+                      </Botao>
                     ))}
-                  </Space>
+                  </Linha>
                 </div>
               </div>
-            </Col>
-          </Row>
+            </div>
+          </Colunas>
         </div>
 
         <footer className="bottomWhiteBar">
           <div className="bottomBarContent">
-            <Title level={4} className="bottomBarTitle">
-              Centro de Pesquisas Biológicas
-            </Title>
-            <Paragraph className="bottomBarText">
+            <Titulo nivel={3}>Centro de Pesquisas Biológicas</Titulo>
+            <Paragrafo secundario>
               Plataforma restrita para controle de matrizes, linhagens e alocação de roedores. Para
               dúvidas operacionais ou cadastro de pesquisadores, entre em contato com a administração
               do CPMR / UFSC.
-            </Paragraph>
+            </Paragrafo>
           </div>
         </footer>
       </div>

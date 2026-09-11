@@ -1,10 +1,22 @@
-import { Alert, Card, Empty, Select, Space, Statistic, Typography } from 'antd'
 import { useMemo, useState } from 'react'
+import {
+  Aviso,
+  BarraDeFiltros,
+  CabecalhoDaTela,
+  CampoDeFiltro,
+  EstadoDaConsulta,
+  Legenda,
+  PainelDeIndicadores,
+  Pilha,
+  Recolhivel,
+  Secao,
+  SeletorDeEstante,
+  Texto,
+  Vazio,
+} from '@/componentes'
 import { config } from '@/app/config'
-import { Legenda } from '@/dominio/Legenda'
 import { porLinha } from '@/dominio/estante'
 import type { Estante, FaceDaGrade, Grade } from '@/dominio/estante'
-import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { ErroDeRede } from '@/lib/api'
 import { CardDaPosicao } from './CardDaPosicao'
 import { ESTANTES_DEMO, gradeDemo } from './demonstracao'
@@ -21,10 +33,11 @@ function FaceDaEstante({
   aoAbrir: (idCaixa: number) => void
 }) {
   const linhas = porLinha(face)
+  const rotulo = ROTULO_FACE[face.face] ?? face.face
 
   return (
-    <section className="face" aria-label={ROTULO_FACE[face.face] ?? face.face}>
-      <Typography.Text className="face__titulo">{ROTULO_FACE[face.face] ?? face.face}</Typography.Text>
+    <section className="face" aria-label={rotulo}>
+      <Texto tom="rotulo">{rotulo}</Texto>
       <div className="face__rolagem">
         <div
           className="face__grade"
@@ -50,6 +63,11 @@ function FaceDaEstante({
  * existe tabela `slot` (decisão D-04 do modelo de dados), o back-end monta as
  * posições a partir da topologia e devolve as vazias com `caixa: null`. O front
  * desenha o que recebe — `RNF-01`.
+ *
+ * A legenda fica recolhida: quem usa a tela todo dia aprende os cinco estados
+ * na primeira semana, e um bloco fixo de explicação rouba altura da grade,
+ * que é o que a tela existe para mostrar. Aberta por um clique, e sem esconder
+ * nada que decida — o card já carrega marcador e sigla (`RNF-10`).
  */
 export function GradeEstantes() {
   const estantes = useEstantes()
@@ -89,78 +107,86 @@ export function GradeEstantes() {
   return conteudo()
 
   function conteudo() {
-   return (
-    <Space direction="vertical" size={16} style={{ width: '100%' }}>
-      <div>
-        <Typography.Title level={3} style={{ marginBottom: 4 }}>
-          Grade de estantes
-        </Typography.Title>
-        <Typography.Text type="secondary">
-          As duas faces da estante, como ela está na sala. Clique numa caixa para abrir a ficha.
-        </Typography.Text>
-      </div>
-
-      {semApi && (
-        <Alert
-          type="warning"
-          showIcon
-          message="Dados de demonstração"
-          description="A API não respondeu, então a grade abaixo é gerada localmente a partir das topologias do Anexo A. Nenhum número aqui é dado do CPMR."
+    return (
+      <Pilha>
+        <CabecalhoDaTela
+          titulo="Grade de"
+          realce="estantes"
+          rotulo="Infraestrutura"
+          descricao="As duas faces da estante, como ela está na sala. Clique numa caixa para abrir a ficha."
         />
-      )}
 
-      <Space size={12} wrap align="end">
-        <div>
-          <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>
-            Estante
-          </Typography.Text>
-          <Select<number>
-            {...(idAtual === null ? {} : { value: idAtual })}
-            onChange={setIdSelecionado}
-            style={{ minWidth: 320 }}
-            options={lista.map((e) => ({
-              value: e.id,
-              label: `${e.numeroVisivel} · ${e.sala} · ${e.fabricante} ${e.modelo} (${e.topologia.capacidade} posições)`,
-            }))}
-          />
-        </div>
+        {semApi && (
+          <Aviso tom="atencao" titulo="Dados de demonstração">
+            A API não respondeu, então a grade abaixo é gerada localmente a partir das topologias do
+            Anexo A. Nenhum número aqui é dado do CPMR.
+          </Aviso>
+        )}
+
+        <Secao>
+          <BarraDeFiltros>
+            <CampoDeFiltro rotulo="Estante" largura={360}>
+              {(id) => (
+                <SeletorDeEstante
+                  id={id}
+                  estantes={lista}
+                  value={idAtual}
+                  onChange={setIdSelecionado}
+                  carregando={estantes.isPending}
+                />
+              )}
+            </CampoDeFiltro>
+          </BarraDeFiltros>
+        </Secao>
 
         {/* RF-INF-06 — capacidade instalada, ocupada e livre: insumo direto
-            para decidir se cabe acasalamento novo. */}
+            para decidir se cabe acasalamento novo. Na faixa invertida porque
+            é o número que o técnico consulta antes de montar casal. */}
         {estanteAtual && (
-          <Space size={24}>
-            <Statistic title="Capacidade" value={estanteAtual.ocupacao.capacidade} />
-            <Statistic title="Ocupada" value={estanteAtual.ocupacao.ocupada} />
-            <Statistic title="Livre" value={estanteAtual.ocupacao.livre} />
-          </Space>
+          <PainelDeIndicadores
+            invertido
+            indicadores={[
+              {
+                rotulo: 'Capacidade',
+                valor: estanteAtual.ocupacao.capacidade,
+                ajuda: 'Posições instaladas nas duas faces desta estante.',
+              },
+              { rotulo: 'Ocupada', valor: estanteAtual.ocupacao.ocupada },
+              {
+                rotulo: 'Livre',
+                valor: estanteAtual.ocupacao.livre,
+                emDestaque: true,
+                ajuda: 'Calculada no servidor. O front não subtrai nada.',
+              },
+            ]}
+          />
         )}
-      </Space>
 
-      <Card size="small" title="Legenda">
-        <Legenda />
-      </Card>
+        {!semApi && !gradeAtual && (
+          <EstadoDaConsulta consulta={grade} rotulo="Carregando a grade…">
+            <></>
+          </EstadoDaConsulta>
+        )}
 
-      {!semApi && !gradeAtual && (
-        <EstadoDaConsulta consulta={grade} rotulo="Carregando a grade…">
-          <></>
-        </EstadoDaConsulta>
-      )}
-
-      {gradeAtual ? (
-        <Card
-          size="small"
-          title={`${gradeAtual.estante.numeroVisivel} · ${gradeAtual.estante.sala} · ${gradeAtual.estante.fabricante} ${gradeAtual.estante.modelo}`}
-        >
-          <div className="faces">
-            {gradeAtual.faces.map((face) => (
-              <FaceDaEstante key={face.face} face={face} aoAbrir={abrirFicha} />
-            ))}
-          </div>
-        </Card>
-      ) : (
-        !grade.isPending && <Empty description="Nenhuma estante cadastrada." />
-      )}
-    </Space>
-   )
+        {gradeAtual ? (
+          <Secao
+            titulo={`${gradeAtual.estante.numeroVisivel} · ${gradeAtual.estante.sala} · ${gradeAtual.estante.fabricante} ${gradeAtual.estante.modelo}`}
+          >
+            <Pilha espaco={12}>
+              <Recolhivel
+                paineis={[{ chave: 'legenda', titulo: 'Legenda', conteudo: <Legenda /> }]}
+              />
+              <div className="faces">
+                {gradeAtual.faces.map((face) => (
+                  <FaceDaEstante key={face.face} face={face} aoAbrir={abrirFicha} />
+                ))}
+              </div>
+            </Pilha>
+          </Secao>
+        ) : (
+          !grade.isPending && <Vazio descricao="Nenhuma estante cadastrada." />
+        )}
+      </Pilha>
+    )
   }
 }
