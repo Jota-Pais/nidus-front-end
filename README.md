@@ -132,7 +132,8 @@ Valem para grade, quadro e ficha ao mesmo tempo — tratados numa fonte única e
 ```
 docs/         documentos espelhados com o back-end (ver acima)
 src/
-  app/        configuração da aplicação: rotas, tema, ambiente validado por Zod
+  app/        configuração da aplicação: rotas, tema, tokens, ambiente por Zod
+  componentes/ biblioteca de componentes do projeto — ver o README de lá
   layout/     casca: navegação por perfil, rota protegida, erro e carregamento
   auth/       perfil da sessão do usuário
   dominio/    tipos e legenda de estado (fonte única do RNF-10 e do contrato)
@@ -140,6 +141,39 @@ src/
   fixtures/   dados de carga inicial do Anexo A, para desenvolver sem API
   telas/      uma tela por linha da tabela acima
 ```
+
+### Sobre `componentes/`
+
+Tela nova não decide de novo o que já foi decidido: formato de data, marcador
+de estado, altura de controle, conversão de `Dayjs` para `aaaa-mm-dd`. Um
+import resolve:
+
+```tsx
+import { CabecalhoDaTela, DataPrevistaOuReal, Pilha, Secao } from '@/componentes'
+```
+
+Entra na biblioteca o que serve a **mais de uma tela**, ou o que carrega
+decisão que não pode variar entre telas. Componente de uma tela só mora ao
+lado da tela. O catálogo completo e as regras estão em
+`src/componentes/README.md`.
+
+### Design system e tokens
+
+Cor, tipografia, raio, sombra, altura de controle e movimento saem de um lugar
+só: `src/app/tokens.ts` (para o tema do Ant Design) e `src/app/tokens.css`
+(para o CSS dos componentes). Os dois são conferidos por `tokens.test.ts` —
+mudar um sem o outro quebra o teste.
+
+**Nenhum componente escreve cor, raio, sombra ou fonte literal.** Se o valor
+não está em `tokens.ts`, ele não é do design system.
+
+Duas coisas do design system que também são requisito, e por isso não se
+negociam por preferência visual:
+
+| Token | Valor | Requisito |
+|---|---|---|
+| Altura de controle | `48px` | `RNF-03` — técnico de luvas, tela pequena |
+| Anel de foco | acento, sempre visível | `RNF-10` — operável por teclado |
 
 ### Sobre `fixtures/`
 
