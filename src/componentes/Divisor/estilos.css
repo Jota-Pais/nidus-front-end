@@ -1,0 +1,27 @@
+.divisor {
+  border: 0;
+  border-top: 1px solid var(--cor-borda);
+  margin: 20px 0;
+}
+
+.divisor--comRotulo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+}
+
+.divisor--comRotulo::before,
+.divisor--comRotulo::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.divisor__rotulo {
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cor-suave-frente);
+}

@@ -21,6 +21,7 @@ import {
   FONTE,
   RAIO,
   SOMBRA,
+  SUPERFICIE_DE_RETORNO,
   TAMANHO_DE_FONTE,
 } from './tokens'
 
@@ -31,6 +32,23 @@ export const tema: ThemeConfig = {
     colorSuccess: COR_DE_RETORNO.sucesso,
     colorWarning: COR_DE_RETORNO.aviso,
     colorError: COR_DE_RETORNO.erro,
+
+    /*
+     * ⚠️ Superfície e contorno de cada tom, explícitos.
+     *
+     * Sem isto o Ant Design deriva o fundo do `Alert` a partir da cor do
+     * texto -- e a cor do texto é a variante **escurecida** (o amarelo
+     * institucional a 4.5:1). O resultado é um aviso cor de oliva, que não
+     * lembra nem o amarelo da UFSC nem coisa nenhuma.
+     */
+    colorSuccessBg: SUPERFICIE_DE_RETORNO.sucessoFundo,
+    colorSuccessBorder: SUPERFICIE_DE_RETORNO.sucessoBorda,
+    colorWarningBg: SUPERFICIE_DE_RETORNO.avisoFundo,
+    colorWarningBorder: SUPERFICIE_DE_RETORNO.avisoBorda,
+    colorErrorBg: SUPERFICIE_DE_RETORNO.erroFundo,
+    colorErrorBorder: SUPERFICIE_DE_RETORNO.erroBorda,
+    colorInfoBg: SUPERFICIE_DE_RETORNO.informacaoFundo,
+    colorInfoBorder: SUPERFICIE_DE_RETORNO.informacaoBorda,
 
     colorBgLayout: COR.fundo,
     colorLink: COR.acento,

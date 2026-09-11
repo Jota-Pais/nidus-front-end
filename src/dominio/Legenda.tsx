@@ -1,64 +1,90 @@
-import { Space, Tag, Tooltip, Typography } from 'antd'
+import { Dica } from '@/componentes/Dica'
+import { Etiqueta } from '@/componentes/Etiqueta'
+import { Linha } from '@/componentes/Linha'
+import { Pilha } from '@/componentes/Pilha'
+import { Texto } from '@/componentes/Texto'
 import { COLUNAS_DO_QUADRO, ESTADO_CAIXA, GRAU_CERTEZA, ORDEM_GRAU_CERTEZA } from './estados'
 import type { CodificacaoVisual } from './estados'
 import type { EstadoCaixa, GrauCerteza } from './tipos'
+import './legenda.css'
 
 /**
  * `RNF-10` — a legenda compartilhada por grade, quadro e ficha.
  *
- * Uma legenda só, não três. Cada marca leva cor **e** marcador **e** sigla, de
- * forma que a informação sobreviva a daltonismo, leitor de tela e impressão em
- * preto e branco.
+ * Uma legenda só, não três. Cada marca leva **marcador** (forma), **sigla**
+ * (texto) e superfície (cor), de modo que a informação sobreviva a
+ * daltonismo, leitor de tela e impressão em preto e branco.
+ *
+ * ⚠️ **A cor vem dos tokens, não do Ant Design.** Antes cada marca usava um
+ * preset (`blue`, `gold`, `volcano`), que é outra paleta: ao lado do azul e do
+ * verde da UFSC, ficava parecendo outro sistema. Agora o estado da caixa usa
+ * exatamente a mesma superfície que o card da grade e o do quadro — é o que
+ * garante, na folha de estilo, o que o `RF-CIC-02` exige no dado.
  */
 
-function Marca({ visual, titulo }: { visual: CodificacaoVisual; titulo?: string }) {
+function Marca({ visual, tom }: { visual: CodificacaoVisual; tom?: string }) {
   return (
-    <Tooltip title={visual.descricao}>
-      <Tag color={visual.cor} aria-label={`${titulo ?? visual.rotulo}: ${visual.descricao}`}>
-        <span aria-hidden="true">{visual.marcador}</span> {visual.sigla}
-      </Tag>
-    </Tooltip>
+    <Dica texto={visual.descricao}>
+      <span
+        className={tom ? `marcaDeEstado marcaDeEstado--${tom}` : undefined}
+        aria-label={`${visual.rotulo}: ${visual.descricao}`}
+      >
+        <Etiqueta>
+          <span aria-hidden="true">{visual.marcador}</span> {visual.sigla}
+        </Etiqueta>
+      </span>
+    </Dica>
   )
 }
 
 export function MarcaEstadoCaixa({ estado }: { estado: EstadoCaixa }) {
-  return <Marca visual={ESTADO_CAIXA[estado]} />
+  return <Marca visual={ESTADO_CAIXA[estado]} tom={estado} />
 }
 
+/**
+ * `RN-08` — grau de certeza da oferta.
+ *
+ * ⚠️ O `projetado` sai em vermelho não por ser um erro, e sim por ser o de
+ * maior risco: quantidade e data estimadas, animal que ainda não nasceu. Quem
+ * carrega o significado é a sigla e a descrição — a cor é o terceiro canal.
+ */
 export function MarcaGrauCerteza({ grau }: { grau: GrauCerteza }) {
-  return <Marca visual={GRAU_CERTEZA[grau]} />
+  const tom = grau === 'confirmado' ? 'sucesso' : grau === 'previsto' ? 'atencao' : 'erro'
+  return (
+    <Dica texto={GRAU_CERTEZA[grau].descricao}>
+      <Etiqueta tom={tom}>
+        <span aria-hidden="true">{GRAU_CERTEZA[grau].marcador}</span> {GRAU_CERTEZA[grau].sigla}
+      </Etiqueta>
+    </Dica>
+  )
 }
 
 export function Legenda() {
   return (
-    <Space direction="vertical" size={12} style={{ width: '100%' }}>
+    <Pilha espaco={12}>
       <div>
-        <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 6 }}>
-          Estado da caixa
-        </Typography.Text>
-        <Space size={[8, 8]} wrap>
+        <Texto tom="rotulo">Estado da caixa</Texto>
+        <Linha espaco={12} estilo={{ marginTop: 6 }}>
           {COLUNAS_DO_QUADRO.map((estado) => (
-            <Space key={estado} size={4}>
+            <Linha key={estado} espaco={6}>
               <MarcaEstadoCaixa estado={estado} />
-              <Typography.Text>{ESTADO_CAIXA[estado].rotulo}</Typography.Text>
-            </Space>
+              <Texto tom="secundario">{ESTADO_CAIXA[estado].rotulo}</Texto>
+            </Linha>
           ))}
-        </Space>
+        </Linha>
       </div>
 
       <div>
-        <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 6 }}>
-          Grau de certeza da oferta
-        </Typography.Text>
-        <Space size={[8, 8]} wrap>
+        <Texto tom="rotulo">Grau de certeza da oferta</Texto>
+        <Linha espaco={12} estilo={{ marginTop: 6 }}>
           {ORDEM_GRAU_CERTEZA.map((grau) => (
-            <Space key={grau} size={4}>
+            <Linha key={grau} espaco={6}>
               <MarcaGrauCerteza grau={grau} />
-              <Typography.Text>{GRAU_CERTEZA[grau].rotulo}</Typography.Text>
-            </Space>
+              <Texto tom="secundario">{GRAU_CERTEZA[grau].rotulo}</Texto>
+            </Linha>
           ))}
-        </Space>
+        </Linha>
       </div>
-    </Space>
+    </Pilha>
   )
 }

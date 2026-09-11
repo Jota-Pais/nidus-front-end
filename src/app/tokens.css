@@ -39,6 +39,17 @@
   --cor-erro: #CC0007;
   --cor-informacao: #003893;
 
+  /* Superfície de cada tom de retorno. A cor de texto e a de fundo sao
+     diferentes de proposito: ver tokens.ts */
+  --superficie-sucesso-fundo: #E9F7EB;
+  --superficie-sucesso-borda: #B6E4BE;
+  --superficie-aviso-fundo: #FFF8DB;
+  --superficie-aviso-borda: #F5E08A;
+  --superficie-erro-fundo: #FDEBEC;
+  --superficie-erro-borda: #F5B5B8;
+  --superficie-informacao-fundo: #E4EDFA;
+  --superficie-informacao-borda: #AFC8EC;
+
   /* Gradientes. `marca` é a assinatura (verde → azul) e não aceita texto
      pequeno em cima; `acento` é o de trabalho, branco legível o percurso todo */
   --gradiente-marca: linear-gradient(135deg, #009206, #003893);

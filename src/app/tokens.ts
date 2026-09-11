@@ -125,6 +125,29 @@ export const COR_DE_RETORNO = {
 } as const
 
 /**
+ * Superfície de cada tom de retorno — fundo e contorno.
+ *
+ * ⚠️ **Existe porque a cor de texto não serve de fundo.** `COR_DE_RETORNO` é
+ * a cor **escurecida**, a que passa em AA como texto; o Ant Design, se
+ * deixado sozinho, deriva o fundo do `Alert` a partir dela e o amarelo
+ * institucional escurecido vira um fundo cor de oliva. Aqui o par é
+ * explícito: superfície clara da cor original, texto escuro por cima.
+ *
+ * Os valores coincidem de propósito com as superfícies de estado da caixa que
+ * usam a mesma cor — um amarelo claro só no sistema inteiro.
+ */
+export const SUPERFICIE_DE_RETORNO = {
+  sucessoFundo: '#E9F7EB',
+  sucessoBorda: '#B6E4BE',
+  avisoFundo: '#FFF8DB',
+  avisoBorda: '#F5E08A',
+  erroFundo: '#FDEBEC',
+  erroBorda: '#F5B5B8',
+  informacaoFundo: '#E4EDFA',
+  informacaoBorda: '#AFC8EC',
+} as const
+
+/**
  * Os dois gradientes, e a razão de serem dois.
  *
  * - **`marca`** é a assinatura: verde → azul, as duas principais da UFSC numa
