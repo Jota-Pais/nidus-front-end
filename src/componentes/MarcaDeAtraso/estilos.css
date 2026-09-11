@@ -1,0 +1,20 @@
+.marcaDeAtraso {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  border: 1px solid color-mix(in srgb, var(--cor-erro) 35%, transparent);
+  border-radius: var(--raio-sm);
+  background: color-mix(in srgb, var(--cor-erro) 8%, transparent);
+  color: var(--cor-erro);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.marcaDeAtraso--compacta {
+  padding: 2px;
+  border: 0;
+  background: none;
+}

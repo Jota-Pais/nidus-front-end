@@ -1,0 +1,21 @@
+.proximoEvento {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.proximoEvento__tipo {
+  color: var(--cor-suave-frente);
+  font-size: 0.9em;
+}
+
+.proximoEvento__vazio {
+  color: var(--cor-suave-frente);
+  font-size: 0.9em;
+}
+
+.proximoEvento--atrasado .data {
+  color: var(--cor-erro);
+  font-weight: 600;
+}

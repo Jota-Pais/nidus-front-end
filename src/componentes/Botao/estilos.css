@@ -1,0 +1,68 @@
+/*
+ * Botão — as variantes do design system sobre o `Button` do Ant Design.
+ *
+ * Tudo aqui sai de `@/app/tokens.css`. Nenhum valor literal.
+ */
+
+.botao {
+  transition:
+    transform var(--movimento-rapido) var(--movimento-curva),
+    box-shadow var(--movimento-rapido) var(--movimento-curva),
+    filter var(--movimento-rapido) var(--movimento-curva);
+}
+
+.botao:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+/* Retorno tátil do clique. Sem isto um alvo de 48px parece que não respondeu. */
+.botao:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: 80ms;
+}
+
+/* ---- Primário: o gradiente-assinatura ---------------------------------- */
+
+.botao--primario:not(:disabled),
+.botao--primario:not(:disabled):hover {
+  background: var(--gradiente-acento-horizontal);
+  border-color: transparent;
+  color: var(--cor-acento-frente);
+  box-shadow: var(--sombra-sm);
+}
+
+.botao--primario:not(:disabled):hover {
+  box-shadow: var(--sombra-acento-forte);
+  filter: brightness(1.08);
+}
+
+/* ---- Secundário: contorno que ganha acento no hover -------------------- */
+
+.botao--secundario:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--cor-acento) 30%, transparent);
+  color: var(--cor-acento);
+  box-shadow: var(--sombra-md);
+}
+
+/* ---- Fantasma: sem peso nenhum até ser olhado -------------------------- */
+
+.botao--fantasma:not(:disabled) {
+  color: var(--cor-suave-frente);
+}
+
+.botao--fantasma:not(:disabled):hover {
+  color: var(--cor-frente);
+  background: var(--cor-suave);
+}
+
+/* ---- Seta ------------------------------------------------------------- */
+
+.botao__seta {
+  display: inline-block;
+  margin-inline-start: 6px;
+  transition: transform var(--movimento-rapido) var(--movimento-curva);
+}
+
+.botao:hover:not(:disabled) .botao__seta {
+  transform: translateX(4px);
+}

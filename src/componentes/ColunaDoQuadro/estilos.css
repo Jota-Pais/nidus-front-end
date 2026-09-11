@@ -1,0 +1,109 @@
+/*
+ * Coluna do quadro.
+ *
+ * Rola dentro de si mesma: com cinco colunas e centenas de caixas, deixar a
+ * página inteira rolar tiraria o cabeçalho das colunas da vista, e é o
+ * cabeçalho que diz em que estado se está olhando.
+ */
+
+.colunaDoQuadro {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-suave);
+}
+
+.colunaDoQuadro__cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--cor-borda);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-radius: var(--raio-md) var(--raio-md) 0 0;
+  background: var(--cor-cartao);
+}
+
+.colunaDoQuadro__marcador {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.colunaDoQuadro__rotulo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* O total é o do servidor. Mono e tabular para as cinco colunas alinharem. */
+.colunaDoQuadro__total {
+  flex: none;
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: var(--raio-pilula);
+  background: var(--cor-suave);
+  color: var(--cor-suave-frente);
+  font-family: var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.colunaDoQuadro__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  overflow-y: auto;
+  max-height: 68vh;
+}
+
+.colunaDoQuadro__vazia {
+  padding: 24px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--cor-suave-frente);
+}
+
+/* Faixa fina de estado no topo: dá a cor sem tingir a coluna inteira. */
+.colunaDoQuadro__cabecalho::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  border-radius: var(--raio-md) var(--raio-md) 0 0;
+}
+
+.colunaDoQuadro {
+  position: relative;
+}
+
+.colunaDoQuadro--em_reproducao .colunaDoQuadro__cabecalho::before {
+  background: var(--estado-em_reproducao-borda);
+}
+
+.colunaDoQuadro--parcialmente_comprometida .colunaDoQuadro__cabecalho::before {
+  background: var(--estado-parcialmente_comprometida-borda);
+}
+
+.colunaDoQuadro--totalmente_comprometida .colunaDoQuadro__cabecalho::before {
+  background: var(--estado-totalmente_comprometida-borda);
+}
+
+.colunaDoQuadro--preparada_para_envio .colunaDoQuadro__cabecalho::before {
+  background: var(--estado-preparada_para_envio-borda);
+}
+
+.colunaDoQuadro--expedida .colunaDoQuadro__cabecalho::before {
+  background: var(--estado-expedida-borda);
+}
