@@ -462,7 +462,59 @@ livre para novo casal.
 
 ---
 
-## 8. Quadro de acompanhamento
+## 8. Alertas do ciclo
+
+### `GET /api/alertas` — o que vence hoje e nos próximos dias
+Autenticado: **técnico, gestor**. `RF-REP-07`.
+
+Query opcional: `especie` (`rato` | `camundongo` — omitido, traz as duas) e
+`dias` (inteiro, default `7` — a janela de antecedência).
+
+Painel do técnico: o que vence hoje e nos próximos `dias`, mais **tudo que já
+venceu sem confirmação**, não importa há quanto tempo — é o alerta mais
+importante do `RF-REP-07`, a erosão silenciosa da confiabilidade dos dados.
+
+**200**
+```json
+{
+  "partosPrevistos": [
+    {
+      "idCaixa": 812, "codigo": "A1", "numeroVisivel": "E-03", "sala": "Sala 1",
+      "linhagem": "Wistar",
+      "casal": { "identificacao": "AB", "cicloAtual": 3, "maxCiclos": 5 },
+      "data": "2026-09-21", "atrasado": false
+    }
+  ],
+  "desmamesPrevistos": [
+    { "idCaixa": 640, "codigo": "C4", "numeroVisivel": "E-02", "sala": "Sala 1",
+      "linhagem": "SHR", "casal": { "identificacao": "BC", "cicloAtual": 2, "maxCiclos": 5 },
+      "data": "2026-09-18", "atrasado": true }
+  ],
+  "reacasalamentosLiberados": [
+    { "idCaixa": 701, "codigo": "B2", "numeroVisivel": "E-02", "sala": "Sala 1",
+      "linhagem": "Wistar", "casal": { "identificacao": "AB", "cicloAtual": 1, "maxCiclos": 5 },
+      "data": "2026-09-19", "atrasado": false }
+  ],
+  "casaisNoUltimoCiclo": [
+    { "idCaixa": 812, "codigo": "A1", "numeroVisivel": "E-03", "sala": "Sala 1",
+      "linhagem": "Wistar", "casal": { "identificacao": "AB", "cicloAtual": 5, "maxCiclos": 5 } }
+  ]
+}
+```
+
+- As três primeiras listas vêm ordenadas por `data` crescente;
+  `casaisNoUltimoCiclo` não tem data, vem por `codigo`.
+- `atrasado: true` é o mesmo sinal do `proximoEvento` da grade e do quadro
+  (seções 5 e 9) — mesma fonte, calculado uma vez só (`RF-CIC-02`).
+  `reacasalamentosLiberados` vem sempre com `atrasado: false`: não há o que
+  confirmar num reacasalamento liberado, só uma janela que abriu.
+- `casaisNoUltimoCiclo` lista casais **ativos** cujo ciclo corrente é o último
+  permitido (`RN-04`) — para planejar reposição antes do encerramento, não
+  depois.
+
+---
+
+## 9. Quadro de acompanhamento
 
 ### `GET /api/quadro?especie=rato` — as 5 colunas
 **Técnico, gestor.** `especie` é **obrigatório**.
@@ -537,7 +589,7 @@ data, origem e destino.
 
 ---
 
-## 9. Healthcheck
+## 10. Healthcheck
 
 ### `GET /saude`
 Público, **fora de `/api`**. Usado pela Render e pelo front para detectar que a
@@ -551,7 +603,7 @@ API está acordando.
 
 ---
 
-## 10. O que ainda não está neste contrato
+## 11. O que ainda não está neste contrato
 
 O MVP até a N2 (24/09) é o que está acima. Entra depois, e **só depois de
 acrescentado aqui**:
