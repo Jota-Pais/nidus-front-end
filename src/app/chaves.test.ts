@@ -10,6 +10,7 @@ describe('chaves', () => {
     expect(chaves.grade(3)).toEqual(['grade', 3])
     expect(chaves.caixa(812)).toEqual(['caixa', 812])
     expect(chaves.quadro('rato')).toEqual(['quadro', 'rato'])
+    expect(chaves.alertas).toEqual(['alertas'])
   })
 
   it('grade e caixa são planas, para invalidar por prefixo', () => {
@@ -21,14 +22,14 @@ describe('chaves', () => {
 })
 
 describe('invalidarColonia — RF-CIC-02', () => {
-  it('derruba estantes, grade e quadro de uma vez', async () => {
+  it('derruba estantes, grade, quadro e alertas de uma vez', async () => {
     const cliente = new QueryClient()
     const espia = vi.spyOn(cliente, 'invalidateQueries').mockResolvedValue()
 
     await invalidarColonia(cliente)
 
     const alvos = espia.mock.calls.map((c) => c[0]?.queryKey)
-    expect(alvos).toEqual([['estantes'], ['grade'], ['quadro']])
+    expect(alvos).toEqual([['estantes'], ['grade'], ['quadro'], ['alertas']])
   })
 
   it('inclui a ficha quando a alteração foi numa caixa específica', async () => {
@@ -41,6 +42,7 @@ describe('invalidarColonia — RF-CIC-02', () => {
       ['estantes'],
       ['grade'],
       ['quadro'],
+      ['alertas'],
       ['caixa', 812],
     ])
   })

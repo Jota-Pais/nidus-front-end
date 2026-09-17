@@ -18,6 +18,7 @@ export const chaves = {
   grade: (idEstante: number) => ['grade', idEstante] as const,
   caixa: (idCaixa: number) => ['caixa', idCaixa] as const,
   quadro: (especie: CodigoEspecie) => ['quadro', especie] as const,
+  alertas: ['alertas'] as const,
 }
 
 /**
@@ -35,6 +36,7 @@ export function invalidarColonia(cliente: QueryClient, idCaixa?: number): Promis
     [...chaves.estantes],
     ['grade'],
     ['quadro'],
+    [...chaves.alertas],
     ...(idCaixa === undefined ? [] : [[...chaves.caixa(idCaixa)]]),
   ]
 
