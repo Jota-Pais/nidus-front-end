@@ -1,37 +1,50 @@
-import { ExperimentOutlined, InfoCircleOutlined, LockOutlined, UserOutlined } from '@ant-design/icons'
+import { LockOutlined, UserOutlined } from '@ant-design/icons'
+import { Layout } from 'antd'
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
   Aviso,
   Botao,
+  CabecalhoDaTela,
   Cartao,
-  Colunas,
   Entrada,
+  Etiqueta,
   Formulario,
   Linha,
   Paragrafo,
   Pilha,
+  Secao,
   Texto,
-  Titulo,
 } from '@/componentes'
+import { config, mostrarRotuloDeAmbiente } from '@/app/config'
 import { usePerfil } from '@/auth/contexto'
 import { useLogin } from '@/auth/sessao'
 import { PERFIS } from '@/dominio/tipos'
 import type { Perfil } from '@/dominio/tipos'
+import '@/layout/appLayout.css'
 import { destinoAposLogin } from '@/layout/destino'
 import { validadorDeCampo } from './login.schema'
 import type { Credenciais } from './login.schema'
 import './Login.css'
 
+const { Header, Content } = Layout
+
 /**
  * `RF-ACS-01` — autenticação pela identidade institucional.
  *
- * Composição visual de Gabriel Ugione (commit `dbfb26f`), preservada: o
- * recorte da foto, a divisão do painel e a barra branca do rodapé são dele.
- * A paleta passou a sair dos tokens com a chegada do design system, e o
- * conteúdo passou a usar os componentes do projeto — o desenho é o mesmo.
+ * Usa a **mesma casca** da aplicação logada (`@/layout/AppLayout`), não uma
+ * composição própria: o cabeçalho é literalmente o `casca__topo` — mesmas
+ * classes, mesma marca, mesma faixa azul institucional — porque antes do
+ * login era a única tela sem essa faixa, e por isso a única que não parecia
+ * o mesmo sistema. Sem `Sider` (não há navegação antes de entrar), o
+ * conteúdo usa `CabecalhoDaTela` + `Secao` como qualquer outra tela.
  *
- * Três correções em relação ao original, todas de requisito:
+ * A composição anterior (painel escuro de canto a canto, foto recortada em
+ * diagonal) também contrariava a própria regra do design system: o
+ * `SecaoInvertida` avisa para não pôr fundo escuro atrás de formulário, pelo
+ * contraste que o `RNF-10` cobra.
+ *
+ * Três correções em relação ao rascunho original, todas de requisito:
  *
  * 1. **Um formulário, não três.** O original tinha um card de acesso por
  *    perfil, o usuário escolhendo se entra como gestor, técnico ou
@@ -78,110 +91,105 @@ export function Login() {
   }
 
   return (
-    // `padraoDePontos` e `brilhoDeAcento` são os efeitos de textura do design
-    // system, definidos em `@/app/tokens.css`: é o que impede o painel escuro
-    // de ficar chapado. Decorativos — nada de conteúdo depende deles.
-    <div className="loginContainer padraoDePontos brilhoDeAcento">
-      <div className="leftPanel">
-        <div className="mainContent">
-          <header className="headerSection">
-            <Linha espaco={12}>
-              <ExperimentOutlined className="headerIcon" aria-hidden="true" />
-              <Titulo nivel={1}>Nidus</Titulo>
-            </Linha>
-            <Texto className="headerSubtitle">Sistema de Gestão de Biotério — CPMR / UFSC</Texto>
-          </header>
+    <Layout className="casca">
+      {/* Idêntico ao cabeçalho do `AppLayout`: mesma marca, mesma faixa —
+          é o que deixa visível que é o mesmo sistema antes de entrar. */}
+      <Header className="casca__topo">
+        <Linha espaco={12}>
+          <span className="casca__marca" aria-hidden="true" />
+          <span className="casca__nome">Nidus</span>
+          <Texto tom="secundario" className="casca__instituicao">
+            CPMR/UFSC
+          </Texto>
+          {mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>}
+        </Linha>
+      </Header>
 
-          <Colunas minimo={300} espaco={20}>
-            <Cartao className="loginCard">
-              <Pilha espaco={16}>
-                <Titulo nivel={4}>Acesso ao sistema</Titulo>
+      <Content className="casca__conteudo loginPagina__conteudo">
+        <div className="loginPagina__miolo">
+          <CabecalhoDaTela
+            rotulo="Acesso"
+            titulo="Entrar no sistema"
+            descricao="Use sua identidade institucional para controlar matrizes, linhagens e alocação de roedores."
+          />
 
-                {erro && <Aviso tom="erro" titulo={erro} />}
+          <div className="loginPagina__grade">
+            <Pilha espaco={20}>
+              <Secao titulo="Acesso ao sistema">
+                <Pilha espaco={16}>
+                  {erro && <Aviso tom="erro" titulo={erro} />}
 
-                <Formulario<Credenciais> onFinish={aoEnviar} disabled={login.isPending}>
-                  <Formulario.Campo
-                    name="email"
-                    rotulo="E-mail institucional"
-                    rules={[{ validator: validadorDeCampo('email') }]}
-                  >
-                    <Entrada
-                      prefix={<UserOutlined aria-hidden="true" />}
-                      placeholder="nome@ufsc.br"
-                      autoComplete="username"
-                      inputMode="email"
-                      autoFocus
-                    />
-                  </Formulario.Campo>
+                  <Formulario<Credenciais> onFinish={aoEnviar} disabled={login.isPending}>
+                    <Formulario.Campo
+                      name="email"
+                      rotulo="E-mail institucional"
+                      rules={[{ validator: validadorDeCampo('email') }]}
+                    >
+                      <Entrada
+                        prefix={<UserOutlined aria-hidden="true" />}
+                        placeholder="nome@ufsc.br"
+                        autoComplete="username"
+                        inputMode="email"
+                        autoFocus
+                      />
+                    </Formulario.Campo>
 
-                  <Formulario.Campo
-                    name="senha"
-                    rotulo="Senha"
-                    rules={[{ validator: validadorDeCampo('senha') }]}
-                  >
-                    <Entrada.Senha
-                      prefix={<LockOutlined aria-hidden="true" />}
-                      placeholder="Senha"
-                      autoComplete="current-password"
-                    />
-                  </Formulario.Campo>
+                    <Formulario.Campo
+                      name="senha"
+                      rotulo="Senha"
+                      rules={[{ validator: validadorDeCampo('senha') }]}
+                    >
+                      <Entrada.Senha
+                        prefix={<LockOutlined aria-hidden="true" />}
+                        placeholder="Senha"
+                        autoComplete="current-password"
+                      />
+                    </Formulario.Campo>
 
-                  <Botao variante="primario" htmlType="submit" block loading={login.isPending}>
-                    Entrar
-                  </Botao>
-                </Formulario>
-              </Pilha>
-            </Cartao>
+                    <Botao variante="primario" htmlType="submit" block loading={login.isPending}>
+                      Entrar
+                    </Botao>
+                  </Formulario>
+                </Pilha>
+              </Secao>
 
-            <div className="infoBox">
-              <div>
-                <Linha espaco={8}>
-                  <InfoCircleOutlined className="infoIcon" aria-hidden="true" />
-                  <Texto tom="forte" className="infoTitle">
-                    Biotério Central UFSC
+              <Aviso tom="informacao" titulo="Acesso de desenvolvimento">
+                <Pilha espaco={10}>
+                  <Texto tom="secundario" id="rotulo-acesso-dev">
+                    O login pelo ID-UFSC depende do SETIC e entra como mock no semestre.
                   </Texto>
-                </Linha>
-                <Paragrafo>
-                  <span className="infoText">
-                    Unidade dedicada à criação, controle e suporte na manutenção de roedores para
-                    atividades de pesquisa e ensino da universidade.
-                  </span>
+                  <div role="group" aria-labelledby="rotulo-acesso-dev">
+                    <Linha espaco={8}>
+                      {(Object.keys(PERFIS) as Perfil[]).map((chave) => (
+                        <Botao key={chave} size="small" onClick={() => entrarSemApi(chave)}>
+                          {PERFIS[chave].rotulo}
+                        </Botao>
+                      ))}
+                    </Linha>
+                  </div>
+                </Pilha>
+              </Aviso>
+
+              <Paragrafo secundario>
+                Plataforma restrita para controle de matrizes, linhagens e alocação de roedores.
+                Para dúvidas operacionais ou cadastro de pesquisadores, entre em contato com a
+                administração do CPMR / UFSC.
+              </Paragrafo>
+            </Pilha>
+
+            <Cartao className="loginPagina__cartaoImagem">
+              <div className="loginPagina__imagem" role="presentation" />
+              <div className="loginPagina__imagemLegenda">
+                <Texto tom="forte">Biotério Central UFSC</Texto>
+                <Paragrafo secundario>
+                  Unidade dedicada à criação, controle e suporte na manutenção de roedores para
+                  atividades de pesquisa e ensino da universidade.
                 </Paragrafo>
               </div>
-
-              <div className="devBox">
-                <Texto className="devTitle" id="rotulo-acesso-dev">
-                  Acesso de desenvolvimento — o login pelo ID-UFSC depende do SETIC e entra como
-                  mock no semestre.
-                </Texto>
-                <div role="group" aria-labelledby="rotulo-acesso-dev">
-                  <Linha espaco={8}>
-                    {(Object.keys(PERFIS) as Perfil[]).map((chave) => (
-                      <Botao key={chave} size="small" onClick={() => entrarSemApi(chave)}>
-                        {PERFIS[chave].rotulo}
-                      </Botao>
-                    ))}
-                  </Linha>
-                </div>
-              </div>
-            </div>
-          </Colunas>
-        </div>
-
-        <footer className="bottomWhiteBar">
-          <div className="bottomBarContent">
-            <Titulo nivel={3}>Centro de Pesquisas Biológicas</Titulo>
-            <Paragrafo secundario>
-              Plataforma restrita para controle de matrizes, linhagens e alocação de roedores. Para
-              dúvidas operacionais ou cadastro de pesquisadores, entre em contato com a administração
-              do CPMR / UFSC.
-            </Paragrafo>
+            </Cartao>
           </div>
-        </footer>
-      </div>
-
-      {/* Decorativa: o conteúdo não depende dela, então fica fora da leitura. */}
-      <div className="sideImage" role="presentation" />
-    </div>
+        </div>
+      </Content>
+    </Layout>
   )
 }

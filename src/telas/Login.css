@@ -1,183 +1,72 @@
 /*
  * Composição visual da tela de login.
  *
- * Autoria do Gabriel Ugione (UX/UI), do commit `dbfb26f`. Preservada na
- * migração do scaffold para a raiz do repositório: a paleta e o recorte da
- * imagem são identidade visual do Nidus.
- *
- * Mudou em relação ao original: os três cards de acesso viraram um só — quem
- * decide o perfil é o servidor (`RF-ACS-02`), não o usuário na tela.
- *
- * E a paleta passou a sair de `@/app/tokens.css`, com a chegada do design
- * system. **A composição é a mesma**: o recorte da foto, a divisão 64/42, a
- * barra branca do rodapé e o respiro são do original — trocaram as cores, não
- * o desenho. O painel escuro agora é a faixa invertida do design system, com
- * a malha de pontos e o brilho de acento que ela leva em todo lugar.
+ * O cabeçalho (`casca__topo`) e o preenchimento do conteúdo (`casca__conteudo`)
+ * vêm de `@/layout/appLayout.css` — são os mesmos do `AppLayout`, sem cópia.
+ * Aqui fica só o que é específico do login: o miolo mais largo que o de uma
+ * tela comum (não tem `Sider` disputando espaço), a grade de duas colunas e
+ * o cartão da foto do biotério esticado para acompanhar a altura do
+ * formulário — em vez de uma faixa fina de imagem sobrando espaço em branco.
  */
 
-.loginContainer {
-  position: relative;
-  width: 100%;
-  min-height: 100vh;
-  background: var(--cor-invertido);
+.loginPagina__conteudo {
   display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loginPagina__miolo {
+  width: 100%;
+  max-width: 1180px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.loginPagina__grade {
+  display: grid;
+  grid-template-columns: minmax(320px, 460px) 1fr;
+  align-items: stretch;
+  gap: 24px;
+}
+
+.loginPagina__cartaoImagem {
+  height: 100%;
+  padding: 0;
   overflow: hidden;
-}
-
-.leftPanel {
-  position: relative;
-  z-index: 1;
-  width: 64%;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 }
 
-.mainContent {
-  padding: 40px 48px 24px 48px;
-}
-
-.headerSection {
-  margin-bottom: 28px;
-}
-
-.headerTitle {
-  color: #ffffff !important;
-  margin: 0 !important;
-  display: flex;
-  align-items: center;
-}
-
-.headerIcon {
-  margin-right: 12px;
-  color: var(--cor-institucional);
-}
-
-.headerSubtitle {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 15px;
-}
-
-.loginCard {
-  border-radius: var(--raio-lg);
-  box-shadow: var(--sombra-xl);
-}
-
-.loginCard .ant-card-head-title {
-  color: var(--cor-frente);
-  font-weight: 600;
-}
-
-.btnSubmit {
-  background: var(--gradiente-acento-horizontal);
-  border-color: transparent;
-  box-shadow: var(--sombra-acento);
-}
-
-.infoBox {
-  height: 100%;
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.infoBoxHeader {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.infoIcon {
-  color: var(--cor-institucional);
-  font-size: 18px;
-  margin-right: 8px;
-}
-
-.infoTitle {
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.infoText {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
-  line-height: 1.5;
-  display: block;
-}
-
-.devBox {
-  margin-top: 20px;
-  border: 1px dashed color-mix(in srgb, var(--cor-acento-secundario) 50%, transparent);
-  border-radius: var(--raio-md);
-  padding: 14px 16px;
-}
-
-.devTitle {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
-  display: block;
-  margin-bottom: 10px;
-}
-
-.bottomWhiteBar {
-  background-color: var(--cor-cartao);
-  padding: 36px 48px;
-  width: 100%;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.bottomBarContent {
-  max-width: 60%;
-}
-
-.bottomBarTitle {
-  margin: 0 !important;
-  color: var(--cor-frente) !important;
-}
-
-.bottomBarText {
-  margin: 8px 0 0 0 !important;
-  color: var(--cor-suave-frente);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.sideImage {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 42%;
-  height: 100%;
+.loginPagina__imagem {
+  flex: 1;
+  min-height: 280px;
   background-image: url('/roedores.jpg');
   background-size: cover;
   background-position: center;
-  clip-path: polygon(35% 0%, 110% 0%, 90% 100%, 9% 100%);
-  z-index: 2;
 }
 
-/* Abaixo de 992px a imagem lateral sai e o painel ocupa a tela toda: o
-   RNF-03 fala de tela pequena, e a foto não pode comer o formulário. */
-@media (max-width: 992px) {
-  .leftPanel {
-    width: 100%;
+.loginPagina__imagemLegenda {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Abaixo de 900px a coluna da foto sai de lado e empilha embaixo do
+   formulário: com uma coluna só ela ia esticar bem mais alto que o
+   formulário, criando um vazio em vez de aproveitar espaço (RNF-03). */
+@media (max-width: 900px) {
+  .loginPagina__grade {
+    grid-template-columns: 1fr;
   }
 
-  .sideImage {
-    display: none;
+  .loginPagina__cartaoImagem {
+    height: auto;
   }
 
-  .mainContent {
-    padding: 24px 20px 16px 20px;
-  }
-
-  .bottomWhiteBar {
-    padding: 24px 20px;
-  }
-
-  .bottomBarContent {
-    max-width: 100%;
+  .loginPagina__imagem {
+    flex: none;
+    height: 200px;
   }
 }
