@@ -110,8 +110,7 @@ export function GradeEstantes() {
     return (
       <Pilha>
         <CabecalhoDaTela
-          titulo="Grade de"
-          realce="estantes"
+          titulo="Grade de estantes"
           rotulo="Infraestrutura"
           descricao="As duas faces da estante, como ela está na sala. Clique numa caixa para abrir a ficha."
         />
