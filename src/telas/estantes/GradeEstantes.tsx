@@ -5,6 +5,7 @@ import {
   CabecalhoDaTela,
   CampoDeFiltro,
   EstadoDaConsulta,
+  FichaDaCaixa,
   Legenda,
   PainelDeIndicadores,
   Pilha,
@@ -12,6 +13,7 @@ import {
   Secao,
   SeletorDeEstante,
   Texto,
+  useAbrirFicha,
   Vazio,
 } from '@/componentes'
 import { config } from '@/app/config'
@@ -72,6 +74,7 @@ function FaceDaEstante({
 export function GradeEstantes() {
   const estantes = useEstantes()
   const [idSelecionado, setIdSelecionado] = useState<number | null>(null)
+  const abrirFicha = useAbrirFicha()
 
   // Só cai em demonstração por falha de rede, e nunca em produção. Erro de
   // contrato (401, 403, 500) é erro e aparece como erro.
@@ -87,12 +90,6 @@ export function GradeEstantes() {
     if (semApi) return estanteAtual ? gradeDemo(estanteAtual) : null
     return grade.data ?? null
   }, [semApi, estanteAtual, grade.data])
-
-  function abrirFicha(idCaixa: number) {
-    // Card "Ficha da posição em modal" (RF-INF-04 + RF-REP-02), próximo do
-    // backlog. Abre daqui e do quadro, com o mesmo componente.
-    console.info('Abrir ficha da caixa', idCaixa)
-  }
 
   // Em demonstração a consulta falhou de propósito: não passar por
   // EstadoDaConsulta, senão a tela mostraria o aviso em vez da grade.
@@ -185,6 +182,8 @@ export function GradeEstantes() {
         ) : (
           !grade.isPending && <Vazio descricao="Nenhuma estante cadastrada." />
         )}
+
+        <FichaDaCaixa />
       </Pilha>
     )
   }

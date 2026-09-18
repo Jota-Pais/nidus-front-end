@@ -124,6 +124,10 @@ export { CardDaCaixa } from './CardDaCaixa'
 export { ColunaDoQuadro } from './ColunaDoQuadro'
 export { DialogoDeExcecao } from './DialogoDeExcecao'
 
+/* -- Ficha da posição - abre da grade e do quadro, RF-CIC-02 -------------- */
+export { FichaDaCaixa } from './FichaDaCaixa'
+export { useAbrirFicha } from '@/dominio/useFicha'
+
 /*
  * Reexportados de onde já moravam.
  *
