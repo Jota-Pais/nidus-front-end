@@ -6,11 +6,13 @@ import {
   ColunaDoQuadro,
   DialogoDeExcecao,
   EstadoDaConsulta,
+  FichaDaCaixa,
   Legenda,
   Pilha,
   Recolhivel,
   Secao,
   SeletorDeEspecie,
+  useAbrirFicha,
   Vazio,
 } from '@/componentes'
 import type { CodigoEspecie, EstadoCaixa } from '@/dominio/tipos'
@@ -28,15 +30,15 @@ interface MovimentoPendente {
  *
  * A tela não decide se uma transição é livre: pede a mudança, e se o servidor
  * devolver `409 TRANSICAO_CONTRARIA_COMPROMISSO` mostra o `DialogoDeExcecao` e
- * só reenvia com `confirmar: true` se o usuário insistir (`RF-CIC-03`). Não há
- * ficha da caixa aqui ainda — abrir do card é o card "Ficha da posição em
- * modal" (`RF-INF-04` + `RF-REP-02`), próximo do backlog, e vai reaproveitar o
- * mesmo componente que a grade de estantes vai abrir.
+ * só reenvia com `confirmar: true` se o usuário insistir (`RF-CIC-03`). Abrir
+ * o card leva à mesma `FichaDaCaixa` que a grade de estantes abre (`RF-CIC-02`
+ * — as duas visões nunca divergem, nem na ficha que abrem).
  */
 export function Quadro() {
   const [especie, setEspecie] = useState<CodigoEspecie>('rato')
   const quadro = useQuadro(especie)
   const mover = useMoverCaixa()
+  const abrirFicha = useAbrirFicha()
   const [pendente, setPendente] = useState<MovimentoPendente | null>(null)
 
   function moverPara(idCaixa: number, destino: EstadoCaixa) {
@@ -92,6 +94,7 @@ export function Quadro() {
                       key={card.idCaixa}
                       card={card}
                       estado={coluna.estado}
+                      aoAbrir={abrirFicha}
                       acoes={
                         <BotaoDeMoverEstado
                           atual={coluna.estado}
@@ -114,6 +117,8 @@ export function Quadro() {
         aoCancelar={cancelarExcecao}
         confirmando={mover.isPending}
       />
+
+      <FichaDaCaixa />
     </Pilha>
   )
 }
