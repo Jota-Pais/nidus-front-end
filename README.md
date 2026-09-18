@@ -209,7 +209,7 @@ Projeto a partir do GitHub, framework **Vite** (detectado sozinho), build
 
 | Variável | Valor em produção |
 |---|---|
-| `VITE_API_URL` | A **própria URL de produção do front** (ex.: `https://nidus-front-end.vercel.app`), sem barra no final — ver "API pelo mesmo domínio" abaixo |
+| `VITE_API_URL` | A **própria URL de produção do front**: `https://thenidus.vercel.app`, sem barra no final — ver "API pelo mesmo domínio" abaixo |
 | `VITE_AMBIENTE` | `producao` |
 
 As duas são gravadas no build, então mudar o valor exige um redeploy. Sem
