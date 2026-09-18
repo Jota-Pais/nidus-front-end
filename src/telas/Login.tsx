@@ -19,7 +19,6 @@ import {
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
 import { usePerfil } from '@/auth/contexto'
 import { useLogin } from '@/auth/sessao'
-import { PERFIS } from '@/dominio/tipos'
 import type { Perfil } from '@/dominio/tipos'
 import '@/layout/appLayout.css'
 import { destinoAposLogin } from '@/layout/destino'
@@ -59,12 +58,12 @@ const { Header, Content } = Layout
  * acesso administrativo independente do SSO, para não perder o sistema se o
  * ID-UFSC cair — e o ID-UFSC depende do SETIC (`PEN-09`).
  *
- * O formulário chama `POST /api/sessao` de verdade. Enquanto o back-end não
- * sobe, ele responde com erro de rede e o acesso de desenvolvimento ao lado é
- * que navega — os dois caminhos convivem sem `if` de ambiente.
+ * O formulário chama `POST /api/sessao` de verdade — é a única porta de
+ * entrada. Sem API no ar, a mensagem de erro é a de rede
+ * (`ErroDeRede`, `@/lib/api`), não uma tela alternativa.
  */
 export function Login() {
-  const { perfil, entrarComoDesenvolvimento } = usePerfil()
+  const { perfil } = usePerfil()
   const navegar = useNavigate()
   const { state } = useLocation()
   const login = useLogin()
@@ -83,11 +82,6 @@ export function Login() {
       // e-mail inexistente de senha errada.
       onError: (falha) => setErro(falha.message),
     })
-  }
-
-  function entrarSemApi(escolhido: Perfil) {
-    entrarComoDesenvolvimento(escolhido)
-    navegar(destino(escolhido), { replace: true })
   }
 
   return (
@@ -153,21 +147,9 @@ export function Login() {
                 </Pilha>
               </Secao>
 
-              <Aviso tom="informacao" titulo="Acesso de desenvolvimento">
-                <Pilha espaco={10}>
-                  <Texto tom="secundario" id="rotulo-acesso-dev">
-                    O login pelo ID-UFSC depende do SETIC e entra como mock no semestre.
-                  </Texto>
-                  <div role="group" aria-labelledby="rotulo-acesso-dev">
-                    <Linha espaco={8}>
-                      {(Object.keys(PERFIS) as Perfil[]).map((chave) => (
-                        <Botao key={chave} size="small" onClick={() => entrarSemApi(chave)}>
-                          {PERFIS[chave].rotulo}
-                        </Botao>
-                      ))}
-                    </Linha>
-                  </div>
-                </Pilha>
+              <Aviso tom="informacao" titulo="Login pelo ID-UFSC">
+                O login pelo ID-UFSC depende do SETIC e entra como mock no semestre (`PEN-09`) —
+                por enquanto, entre com e-mail e senha institucionais.
               </Aviso>
 
               <Paragrafo secundario>

@@ -9,18 +9,13 @@ import type { Usuario } from './sessao'
 export interface Sessao {
   /** Perfil corrente. Vem do servidor; `null` = não logado. */
   perfil: Perfil | null
-  /** Usuário da sessão real. `null` quando só há o acesso de desenvolvimento. */
+  /** Usuário da sessão real. `null` = não logado. */
   usuario: Usuario | null
-  /** ⚠️ Andaime: só enquanto a API não existe. Ver `ProvedorDePerfil`. */
-  entrarComoDesenvolvimento: (perfil: Perfil) => void
   sair: () => void
   saindo: boolean
 }
 
 export const PerfilContext = createContext<Sessao | null>(null)
-
-/** Chave do perfil de desenvolvimento no `localStorage`. Some com o andaime. */
-export const CHAVE_PERFIL_DEV = 'nidus.perfil-dev'
 
 export function usePerfil(): Sessao {
   const contexto = useContext(PerfilContext)
