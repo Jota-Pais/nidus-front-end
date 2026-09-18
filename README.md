@@ -202,6 +202,28 @@ literal no meio do componente. É por isso que `idadeEmDias()` recebe a data-bas
 como argumento e o eixo da letra da estante mora em `EIXO_DA_LETRA`. Quando o
 cliente responder, muda um lugar.
 
+## Deploy na Vercel
+
+Projeto a partir do GitHub, framework **Vite** (detectado sozinho), build
+`npm run build`, saída em `dist/`.
+
+| Variável | Valor em produção |
+|---|---|
+| `VITE_API_URL` | URL pública da API na Render, sem barra no final |
+| `VITE_AMBIENTE` | `producao` |
+
+Não definir `NODE_ENV` na Vercel: com `NODE_ENV=production` ela deixa de
+instalar as devDependencies, e `vite` e `typescript` estão lá.
+
+O `vercel.json` na raiz reescreve toda rota para `index.html`. Sem ele, abrir
+`/quadro` direto ou dar F5 em `/estantes/3` devolve 404 da Vercel, porque quem
+resolve rota é o `createBrowserRouter`, no navegador.
+
+Depois de publicar, voltar na Render e colocar a URL de produção em
+`CORS_ORIGEM`. O teste que prova o arranjo: login em produção grava o cookie
+`nidus_sessao` e ele sobrevive a um F5 — é o `SameSite=None; Secure`
+funcionando entre domínios.
+
 ## Repositório irmão
 
 Back-end: https://github.com/Jota-Pais/nidus-back-end
