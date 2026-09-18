@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://nidus-api.onrender.com/api/:path*" },
-    { "source": "/saude", "destination": "https://nidus-api.onrender.com/saude" },
+    { "source": "/api/:path*", "destination": "https://nidus-cpmr-api.onrender.com/api/:path*" },
+    { "source": "/saude", "destination": "https://nidus-cpmr-api.onrender.com/saude" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

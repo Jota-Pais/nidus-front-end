@@ -238,9 +238,14 @@ Faz duas coisas, nesta ordem:
    `/quadro` direto ou dar F5 em `/estantes/3` devolve 404 da Vercel, porque
    quem resolve rota é o `createBrowserRouter`.
 
-A URL da Render está fixa no `vercel.json`. Se o serviço nascer com outro nome
-(a Render acrescenta um sufixo quando `nidus-api` já está em uso), trocar ali e
-fazer commit.
+⚠️ **A URL da Render está fixa no `vercel.json`** (`nidus-cpmr-api`, o `name`
+do `render.yaml` do back), e a Vercel não expande variável de ambiente dentro
+desse arquivo. Como todo `/api/*` passa por esse destino, inclusive o login com
+e-mail e senha, **só publicar o front depois** que
+`curl https://nidus-cpmr-api.onrender.com/saude` devolver `{"status":"ok",…}`
+do nosso serviço. Se a Render der outro nome ao serviço (nome ocupado ganha
+sufixo aleatório), trocar o host nos dois `destination` e fazer commit antes
+de ligar a Vercel. O nome `nidus-api` já pertence a outro serviço na Render.
 
 Para voltar ao arranjo direto (navegador falando com a Render), basta apontar
 `VITE_API_URL` para a URL da Render: o back já responde com
