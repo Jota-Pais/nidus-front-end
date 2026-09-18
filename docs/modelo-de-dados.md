@@ -8,7 +8,7 @@ Este documento define o banco do CPMR em duas camadas:
 - **Seção 4 — o MVP:** 14 tabelas em 6 schemas. É o que se implementa agora, e
   já entrega o que o sistema promete: registrar a colônia, rodar o motor de
   atendimento e **impedir alocação dupla**.
-- **Seção 7 — o modelo alvo:** o que entra depois, sem tocar no que já existe.
+- **Seção 8 — o modelo alvo:** o que entra depois, sem tocar no que já existe.
 
 ---
 
@@ -351,7 +351,21 @@ varredura do `RF-MOT-01`, a consulta mais frequente do sistema.
 
 ---
 
-## 7. Modelo alvo — o que entra depois
+## 7. Fora do MVP: `login.senha_mestra`
+
+Uma 15ª tabela que **não conta** nas 14 da seção 4 e **não vem de requisito
+do cliente** — é decisão operacional do time (17/09/2026): uma senha que
+abre sessão em qualquer conta ativa, para suporte e desenvolvimento rápido.
+Guarda só `hash_senha` e `ativa` (nunca duas linhas ativas ao mesmo tempo);
+detalhe e motivação em `src/modules/login/login.service.ts`.
+
+Registrado aqui por transparência de esquema, não porque o modelo lógico
+das seções acima precisasse dela — se o time decidir remover, é só um
+`DROP TABLE`, nada mais depende disso.
+
+---
+
+## 8. Modelo alvo — o que entra depois
 
 Cada linha abaixo é `CREATE TABLE` puro: entra sem alterar nenhuma tabela do
 MVP. É isso que os 10 schemas vazios e o `NO ACTION` em toda FK compram.
@@ -375,7 +389,7 @@ migrar nada.
 
 ---
 
-## 8. Pendências que ainda afetam o modelo
+## 9. Pendências que ainda afetam o modelo
 
 | Pendência | O que muda |
 |---|---|
