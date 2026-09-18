@@ -209,20 +209,50 @@ Projeto a partir do GitHub, framework **Vite** (detectado sozinho), build
 
 | Variável | Valor em produção |
 |---|---|
-| `VITE_API_URL` | URL pública da API na Render, sem barra no final |
+| `VITE_API_URL` | A **própria URL de produção do front** (ex.: `https://nidus-front-end.vercel.app`), sem barra no final — ver "API pelo mesmo domínio" abaixo |
 | `VITE_AMBIENTE` | `producao` |
+
+As duas são gravadas no build, então mudar o valor exige um redeploy. Sem
+`VITE_API_URL` a página abre em branco (a validação do ambiente falha antes do
+React montar). Sem `VITE_AMBIENTE=producao` o cabeçalho mostra o rótulo
+`local` e a grade de estantes cai nos dados de demonstração quando a API falha.
 
 Não definir `NODE_ENV` na Vercel: com `NODE_ENV=production` ela deixa de
 instalar as devDependencies, e `vite` e `typescript` estão lá.
 
-O `vercel.json` na raiz reescreve toda rota para `index.html`. Sem ele, abrir
-`/quadro` direto ou dar F5 em `/estantes/3` devolve 404 da Vercel, porque quem
-resolve rota é o `createBrowserRouter`, no navegador.
+### O `vercel.json`
 
-Depois de publicar, voltar na Render e colocar a URL de produção em
+Faz duas coisas, nesta ordem:
+
+1. **API pelo mesmo domínio.** `/api/*` e `/saude` são reescritos para a API
+   na Render. A Vercel age como proxy, então o navegador só fala com
+   `*.vercel.app` e o cookie `nidus_sessao` passa a ser de **primeira parte**.
+   Sem isso o cookie é de terceiro (front em `vercel.app`, API em
+   `onrender.com`) e o Safari, todo iPhone, o Chrome anônimo e o Brave o
+   descartam por padrão: o login responde 200 e a próxima requisição volta 401,
+   jogando o usuário de volta para `/login` sem mensagem. Chrome e Firefox em
+   janela normal funcionam nos dois arranjos. O cabeçalho
+   `x-vercel-enable-rewrite-caching: 0` impede a CDN da Vercel de guardar
+   resposta da API, que é sempre por usuário.
+2. **Rota do navegador.** Tudo o mais vai para `index.html`. Sem isso, abrir
+   `/quadro` direto ou dar F5 em `/estantes/3` devolve 404 da Vercel, porque
+   quem resolve rota é o `createBrowserRouter`.
+
+A URL da Render está fixa no `vercel.json`. Se o serviço nascer com outro nome
+(a Render acrescenta um sufixo quando `nidus-api` já está em uso), trocar ali e
+fazer commit.
+
+Para voltar ao arranjo direto (navegador falando com a Render), basta apontar
+`VITE_API_URL` para a URL da Render: o back já responde com
+`SameSite=None; Secure` e CORS com credenciais. Só perde os navegadores que
+bloqueiam cookie de terceiro.
+
+Depois de publicar, voltar na Render e colocar a URL de produção do front em
 `CORS_ORIGEM`. O teste que prova o arranjo: login em produção grava o cookie
-`nidus_sessao` e ele sobrevive a um F5 — é o `SameSite=None; Secure`
-funcionando entre domínios.
+`nidus_sessao` e ele sobrevive a um F5. Vale abrir num iPhone também.
+
+Preview deploy da Vercel tem outra URL e não é suportado: `VITE_API_URL` e
+`CORS_ORIGEM` apontam para produção.
 
 ## Repositório irmão
 
