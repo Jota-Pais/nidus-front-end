@@ -1,12 +1,11 @@
 import { LogoutOutlined } from '@ant-design/icons'
 import { Layout, Menu } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Botao, Dica, Etiqueta, Linha, Seletor, Texto } from '@/componentes'
+import { Botao, Etiqueta, Linha, Texto } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
 import { usePerfil } from '@/auth/contexto'
 import { PERFIS } from '@/dominio/tipos'
-import type { Perfil } from '@/dominio/tipos'
-import { menuDoPerfil, rotaInicial } from './navegacao'
+import { menuDoPerfil } from './navegacao'
 import './appLayout.css'
 
 const { Header, Content, Sider } = Layout
@@ -20,18 +19,16 @@ const { Header, Content, Sider } = Layout
  * nenhum número, nenhum alerta, nada que mude sozinho e puxe o olho para
  * fora do trabalho.
  *
- * O seletor de perfil só aparece quando **não há sessão real** — é o andaime
- * de desenvolvimento, para percorrer as telas dos três atores sem API. Havendo
- * usuário logado, o cabeçalho mostra o nome e o perfil que o servidor
- * devolveu, sem opção de trocar: quem decide o perfil é o servidor
- * (`RF-ACS-02`).
+ * O cabeçalho mostra o nome e o perfil que o servidor devolveu, sem opção de
+ * trocar: quem decide o perfil é o servidor (`RF-ACS-02`). Só chega até aqui
+ * quem tem sessão real — sem ela, `RotaProtegida` já mandou para o login.
  */
 export function AppLayout() {
-  const { perfil, usuario, entrarComoDesenvolvimento, sair, saindo } = usePerfil()
+  const { perfil, usuario, sair, saindo } = usePerfil()
   const navegar = useNavigate()
   const { pathname } = useLocation()
 
-  if (!perfil) return null
+  if (!perfil || !usuario) return null
 
   const itens = menuDoPerfil(perfil).map((item) => ({
     key: item.caminho,
@@ -39,11 +36,6 @@ export function AppLayout() {
   }))
 
   const selecionado = itens.find((i) => pathname.startsWith(i.key))?.key
-
-  function trocarPerfilDeDesenvolvimento(novo: Perfil) {
-    entrarComoDesenvolvimento(novo)
-    navegar(rotaInicial(novo))
-  }
 
   return (
     <Layout className="casca">
@@ -60,26 +52,9 @@ export function AppLayout() {
         </Linha>
 
         <Linha espaco={12}>
-          {usuario ? (
-            <Texto className="casca__usuario">
-              {usuario.nome} · {PERFIS[usuario.perfil].rotulo}
-            </Texto>
-          ) : (
-            <Linha espaco={8}>
-              <Dica texto="Sem sessão no servidor: perfil de desenvolvimento, para percorrer as telas.">
-                <Texto className="casca__usuario">Perfil</Texto>
-              </Dica>
-              <Seletor<Perfil>
-                value={perfil}
-                onChange={trocarPerfilDeDesenvolvimento}
-                style={{ width: 180 }}
-                options={Object.entries(PERFIS).map(([valor, meta]) => ({
-                  value: valor as Perfil,
-                  label: meta.rotulo,
-                }))}
-              />
-            </Linha>
-          )}
+          <Texto className="casca__usuario">
+            {usuario.nome} · {PERFIS[usuario.perfil].rotulo}
+          </Texto>
 
           <Botao
             variante="fantasma"
