@@ -58,7 +58,7 @@ describe('enderecosDaEstante — RF-INF-02 e RF-INF-03', () => {
     expect(porColuna).toHaveLength(porLinha.length)
     expect(porColuna[0]!.codigo).toBe('A1')
     expect(porLinha[0]!.codigo).toBe('A1')
-    // linha 1, coluna 2: com a letra na coluna vira B1; na linha, A2.
+    // linha 1, coluna 2: com a letra na coluna vira B1; na linha, A2
     expect(porColuna[1]!.codigo).toBe('B1')
     expect(porLinha[1]!.codigo).toBe('A2')
   })

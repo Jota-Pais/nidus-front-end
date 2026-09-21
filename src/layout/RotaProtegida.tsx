@@ -4,12 +4,7 @@ import { usePerfil } from '@/auth/contexto'
 import { rotaInicial } from './navegacao'
 import type { Perfil } from '@/dominio/tipos'
 
-/**
- * Barra rota por perfil **na navegação**, não na autorização.
- *
- * `RF-ACS-02`: a autorização é decidida no servidor. Isto evita que o usuário
- * caia numa tela que não é dele e veja um erro feio — não protege dado nenhum.
- */
+/** Barra rota por perfil na navegação, não na autorização */
 export function RotaProtegida({
   perfis,
   children,

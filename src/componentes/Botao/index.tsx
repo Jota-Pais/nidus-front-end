@@ -3,12 +3,7 @@ import type { ButtonProps } from 'antd'
 import type { ReactNode } from 'react'
 import './estilos.css'
 
-/**
- * As variantes de botão do design system.
- *
- * `primario` é o gradiente-assinatura e **só existe um por tela** — é a ação
- * que a tela existe para fazer. Se duas coisas são primárias, nenhuma é.
- */
+/** As variantes de botão do design system */
 export type VarianteDeBotao = 'primario' | 'secundario' | 'fantasma' | 'perigo'
 
 const TIPO_ANT: Record<VarianteDeBotao, ButtonProps['type']> = {
@@ -18,26 +13,7 @@ const TIPO_ANT: Record<VarianteDeBotao, ButtonProps['type']> = {
   perigo: 'primary',
 }
 
-/**
- * Botão.
- *
- * Por cima do `Button` do Ant Design, não no lugar dele: `loading`, `disabled`,
- * `htmlType="submit"` e o comportamento de foco já estão certos lá, e
- * reescrever isso à mão é como se perde acessibilidade sem perceber.
- *
- * O que o design system acrescenta, e mora no CSS ao lado:
- *
- * - **gradiente** no primário, em vez de cor chapada;
- * - **subida de 2px no hover**, com a sombra tingida de acento — a impressão
- *   é de que o botão está mais alto que o resto da tela;
- * - **encolhimento no clique** (`scale(.98)`), que é o retorno tátil que falta
- *   num alvo de 48px;
- * - **seta que anda** para a direita quando o botão leva a algum lugar.
- *
- * ⚠️ **48px de altura não é estética** (`RNF-03`): o técnico opera de luvas,
- * dentro da sala. Vem de `ALTURA_DE_CONTROLE`, pelo tema — não sobrescrever
- * com `size="small"` em tela de registro.
- */
+/** Botão */
 export function Botao({
   variante = 'secundario',
   comSeta = false,
@@ -46,7 +22,7 @@ export function Botao({
   ...resto
 }: Omit<ButtonProps, 'type' | 'danger'> & {
   variante?: VarianteDeBotao
-  /** Para ação que leva a outro lugar. A seta anda no hover. */
+  /** para ação que leva a outro lugar. A seta anda no hover. */
   comSeta?: boolean
   children?: ReactNode
 }) {

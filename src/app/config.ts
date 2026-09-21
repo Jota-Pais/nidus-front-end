@@ -1,17 +1,10 @@
-/**
- * Ambiente validado por Zod no boot.
- *
- * Decisão de stack da equipe: Zod cobre corpo de requisição, query params,
- * **variáveis de ambiente no boot** e os formulários do front. Falhar aqui, com
- * mensagem clara, é melhor que descobrir a variável faltando na terceira tela —
- * e melhor ainda que descobrir na hora de apresentar para a banca.
- */
+// ambiente validado por Zod no boot
 import { z } from 'zod'
 
 /**
- * `z.url()` sozinho não basta: `new URL('localhost:3000')` é válido — trata
- * `localhost:` como esquema. Passaria na validação e só falharia no primeiro
- * fetch, com erro que não aponta para a causa. Daí a checagem de protocolo.
+ * 'z.url()' sozinho não basta: 'new URL('localhost:3000')' é válido - trata
+ * localhost: como esquema. Passaria na validação e só falharia no primeiro fetch,
+ * com erro que não aponta para a causa
  */
 const urlHttp = z
   .string()
@@ -38,8 +31,8 @@ export interface Ambiente {
 }
 
 /**
- * Separado de `config` para ser testável: `import.meta.env` só existe dentro do
- * Vite, então o teste chama esta função com um objeto qualquer.
+ * Separado de config para ser testável: import.meta.env só existe dentro do Vite então o
+ * teste chama esta função com um objeto qualquer
  */
 export function validarAmbiente(bruto: unknown): Ambiente {
   const resultado = esquema.safeParse(bruto)

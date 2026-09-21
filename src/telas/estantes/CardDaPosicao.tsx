@@ -6,17 +6,7 @@ import type { Posicao } from '@/dominio/estante'
 import { formatarData } from '@/lib/data'
 import './grade.css'
 
-/**
- * Um card por posição da estante — `RF-INF-03`.
- *
- * "Comunica de relance: vazia · com casal · estágio do ciclo · situação de
- * comprometimento."
- *
- * ⚠️ **A codificação não depende de cor** (`RNF-10`). Cada card carrega, além
- * da cor de fundo: o **marcador** do estado (forma), a **sigla** e o **ciclo**
- * em texto. Em preto e branco, ou para quem não distingue as cores, o card
- * continua legível — e o `RF-CIC-04` pede exatamente o ciclo visível no card.
- */
+/** Um card por posição da estante - RF-INF-03 */
 export function CardDaPosicao({
   posicao,
   aoAbrir,

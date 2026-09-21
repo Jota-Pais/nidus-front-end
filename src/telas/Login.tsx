@@ -28,40 +28,7 @@ import './Login.css'
 
 const { Header, Content } = Layout
 
-/**
- * `RF-ACS-01` — autenticação pela identidade institucional.
- *
- * Usa a **mesma casca** da aplicação logada (`@/layout/AppLayout`), não uma
- * composição própria: o cabeçalho é literalmente o `casca__topo` — mesmas
- * classes, mesma marca, mesma faixa azul institucional — porque antes do
- * login era a única tela sem essa faixa, e por isso a única que não parecia
- * o mesmo sistema. Sem `Sider` (não há navegação antes de entrar), o
- * conteúdo usa `CabecalhoDaTela` + `Secao` como qualquer outra tela.
- *
- * A composição anterior (painel escuro de canto a canto, foto recortada em
- * diagonal) também contrariava a própria regra do design system: o
- * `SecaoInvertida` avisa para não pôr fundo escuro atrás de formulário, pelo
- * contraste que o `RNF-10` cobra.
- *
- * Três correções em relação ao rascunho original, todas de requisito:
- *
- * 1. **Um formulário, não três.** O original tinha um card de acesso por
- *    perfil, o usuário escolhendo se entra como gestor, técnico ou
- *    pesquisador. O `RF-ACS-02` não permite: o perfil vem do servidor junto
- *    da sessão (`POST /api/sessao` devolve `usuario.perfil`). Escolher o
- *    próprio perfil na tela é autorização decidida no cliente.
- * 2. **Mensagem de erro**, que o card do Trello pede e não existia. O `Aviso`
- *    já entra com `role="alert"`, para o leitor de tela anunciar (`RNF-10`).
- * 3. **Validação por Zod**, o padrão da equipe para formulário.
- *
- * ⚠️ **O acesso local não é gambiarra de semestre.** O `RF-ACS-01` exige
- * acesso administrativo independente do SSO, para não perder o sistema se o
- * ID-UFSC cair — e o ID-UFSC depende do SETIC (`PEN-09`).
- *
- * O formulário chama `POST /api/sessao` de verdade — é a única porta de
- * entrada. Sem API no ar, a mensagem de erro é a de rede
- * (`ErroDeRede`, `@/lib/api`), não uma tela alternativa.
- */
+/** RF-ACS-01 - autenticação pela identidade institucional. */
 export function Login() {
   const { perfil } = usePerfil()
   const navegar = useNavigate()
@@ -76,10 +43,10 @@ export function Login() {
   function aoEnviar(valores: Credenciais) {
     setErro(null)
     login.mutate(valores, {
-      // O perfil vem do servidor (RF-ACS-02), nunca da tela.
+      // O perfil vem do servidor (RF-ACS-02), nunca da tela
       onSuccess: (usuario) => navegar(destino(usuario.perfil), { replace: true }),
-      // A mensagem já sai pronta de @/lib/erros: no 401 ela não distingue
-      // e-mail inexistente de senha errada.
+      // A mensagem já sai pronta de @/lib/erros: no 401 ela não distingue e-mail
+      // inexistente de senha errada
       onError: (falha) => setErro(falha.message),
     })
   }

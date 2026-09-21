@@ -4,16 +4,7 @@ import type { VarianteDeCartao } from '../Cartao'
 import { RotuloDeSecao } from '../RotuloDeSecao'
 import './estilos.css'
 
-/**
- * Bloco de conteúdo da tela: um `Cartao` com cabeçalho.
- *
- * O `rotulo` é a pílula monoespaçada do design system, e é opcional — usar em
- * seção que o olho precisa achar rolando a página, não em toda caixinha.
- *
- * Existe para que metade das telas não acabe com um espaçamento de cabeçalho
- * e a outra metade com outro, que é a diferença entre parecer um sistema e
- * parecer três pessoas trabalhando separadas.
- */
+/** bloco de conteúdo da tela: um 'Cartao' com cabeçalho. */
 export function Secao({
   titulo,
   rotulo,
@@ -27,7 +18,7 @@ export function Secao({
   acoes?: ReactNode
   children: ReactNode
   variante?: VarianteDeCartao
-  /** Para conteúdo que desenha o próprio respiro — tabela, grade de estante. */
+  /** Para conteúdo que desenha o próprio respiro - tabela, grade de estante. */
   semPreenchimento?: boolean
 }) {
   const temCabecalho = titulo !== undefined || rotulo !== undefined || acoes !== undefined

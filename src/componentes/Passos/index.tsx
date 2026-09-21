@@ -6,21 +6,7 @@ export interface Passo {
   descricao?: ReactNode
 }
 
-/**
- * Onde a coisa está num caminho de várias etapas.
- *
- * Serve à solicitação (`RF-DEM-05`: o pesquisador acompanha em que ponto o
- * pedido está) e ao ciclo reprodutivo — acasalamento, parto, seleção,
- * desmame — que é uma cadeia temporal de verdade (`RN-05`), não uma metáfora.
- *
- * ⚠️ **Só mostra; não navega.** O estado da solicitação é do servidor
- * (`RNF-01`) e clicar num passo não pode mudá-lo. Voltar uma etapa é um
- * registro novo, com autor e data (`RNF-06`), e isso é botão explícito — não
- * um clique num diagrama.
- *
- * ⚠️ Passo com problema usa `comFalha`, que o Ant Design marca com ícone e
- * cor: dois canais, como o `RNF-10` pede.
- */
+/** Onde a coisa está num caminho de várias etapas */
 export function Passos({
   passos,
   atual,
@@ -28,7 +14,7 @@ export function Passos({
   vertical = false,
 }: {
   passos: Passo[]
-  /** Índice do passo em andamento, base zero. */
+  /** índice do passo em andamento, base zero. */
   atual: number
   comFalha?: boolean
   vertical?: boolean

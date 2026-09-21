@@ -9,26 +9,7 @@ import { ProximoEvento } from '../ProximoEvento'
 import { QuantidadePorSexo } from '../QuantidadePorSexo'
 import './estilos.css'
 
-/**
- * O card de uma caixa no quadro de comprometimento — `RF-CIC-04`.
- *
- * Mostra, numa olhada: onde a caixa está, que linhagem é, em que ciclo o
- * casal está, quanto há disponível **por sexo**, com que grau de certeza, e o
- * que vem a seguir.
- *
- * ⚠️ **A codificação não depende de cor** (`RNF-10`). O estado entra por
- * quatro canais: a superfície (cor), o **marcador** (forma), a **sigla**
- * (texto) e a coluna em que o card está. Em preto e branco continua legível,
- * e é o mesmo vocabulário de `@/dominio/estados` que a grade usa — uma
- * legenda para as três telas, não três legendas diferentes.
- *
- * ⚠️ **Abre a mesma ficha da grade.** O `RF-CIC-02` diz que quadro e grade
- * leem da mesma fonte e nunca divergem; abrir fichas diferentes seria começar
- * a divergir pela interface.
- *
- * ⚠️ `disponivel` já vem líquido, com os compromissos descontados (`RN-09`).
- * O card exibe o que recebeu — subtrair aqui subtrairia duas vezes.
- */
+/** O card de uma caixa no quadro de comprometimento - RF-CIC-04 */
 export function CardDaCaixa({
   card,
   estado,
@@ -36,10 +17,10 @@ export function CardDaCaixa({
   acoes,
 }: {
   card: CardDoQuadro
-  /** Vem da coluna: o contrato não repete o estado dentro de cada card. */
+  /** vem da coluna: o contrato não repete o estado dentro de cada card */
   estado: EstadoCaixa
   aoAbrir?: (idCaixa: number) => void
-  /** Ex.: o `BotaoDeMoverEstado`. Fica fora do botão que abre a ficha. */
+  /** ex: o BotaoDeMoverEstado. Fica fora do botão que abre a ficha */
   acoes?: ReactNode
 }) {
   const visual = ESTADO_CAIXA[estado]

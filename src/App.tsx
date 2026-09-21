@@ -9,8 +9,8 @@ import { tema } from '@/app/tema'
 import { ProvedorDePerfil } from '@/auth/ProvedorDePerfil'
 
 export function App() {
-  // Criado uma vez, no estado: criar no corpo do componente faria um cliente
-  // novo a cada render e o cache seria descartado junto.
+  // Criado uma vez, no estado: criar no corpo do componente faria um
+  // cliente novo a cada render e o cache seria descartado junto
   const [queryClient] = useState(criarQueryClient)
 
   return (
