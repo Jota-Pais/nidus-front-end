@@ -1,15 +1,4 @@
-/**
- * Dados de referência — `contrato-api.md` §4, `GET /api/catalogo`.
- *
- * É a carga inicial do Anexo A vinda do servidor: espécies, linhagens,
- * parâmetros do ciclo biológico, tabela de tolerância de idade e pares
- * genéticos válidos.
- *
- * ⚠️ **Nada disto é constante de código.** O `RNF-05` exige parametrização sem
- * deploy e o `RN-01` exige histórico — cálculo feito no passado precisa
- * continuar reproduzível. Os valores em `@/fixtures/catalogo` existem só para
- * desenvolver sem API; em produção quem manda é esta consulta.
- */
+// dados de referência - 'contrato-api.md' §4, 'GET /api/catalogo'
 import { useQuery } from '@tanstack/react-query'
 import type { UseQueryResult } from '@tanstack/react-query'
 import { chaves } from '@/app/chaves'
@@ -50,9 +39,9 @@ export function useCatalogo(): UseQueryResult<Catalogo> {
     queryKey: chaves.catalogo,
     queryFn: () => api<Catalogo>('/api/catalogo'),
     /**
-     * Uma hora. É cadastro que o gestor muda de vez em quando, não estado da
-     * colônia: revalidar a cada meio minuto seria requisição jogada fora numa
-     * tela que o técnico deixa aberta o turno inteiro.
+     * Uma hora. É cadastro que o gestor muda de vez em quando, não estado da colônia: revalidar
+     * a cada meio minuto seria requisição jogada fora numa tela que o técnico deixa aberta o
+     * turno inteiro
      */
     staleTime: 60 * 60_000,
   })

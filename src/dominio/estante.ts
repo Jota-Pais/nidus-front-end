@@ -1,10 +1,4 @@
-/**
- * Tipos da infraestrutura física, na forma que a API devolve.
- *
- * Escritos a partir do `contrato-api.md` §5. Os dois repositórios não
- * compartilham tipos: cada lado escreve os seus a partir do mesmo documento.
- * Mudou a API, muda o contrato nos dois repos e depois estes tipos.
- */
+// tipos da infraestrutura física, na forma que a API devolve.
 import type { EstadoCaixa, Face, FinalidadeCaixa } from './tipos'
 
 export interface Topologia {
@@ -25,17 +19,17 @@ export interface Estante {
   sala: string
   fabricante: string
   modelo: string
-  /** Como a estante está numerada no mundo físico. Ex.: `E-03`. */
+  /** Como a estante está numerada no mundo físico. ex: E-03 */
   numeroVisivel: string
   topologia: Topologia
-  /** `RF-INF-06` — capacidade instalada, ocupada e livre. */
+  /** RF-INF-06 - capacidade instalada, ocupada e livre */
   ocupacao: Ocupacao
   ativa: boolean
 }
 
 export interface CasalNaGrade {
   id: number
-  /** Dupla de grupos genéticos; o primeiro caractere é o do macho. Ex.: `AB`. */
+  /** Dupla de grupos genéticos; o primeiro caractere é o do macho. ex: 'AB' */
   identificacao: string
   cicloAtual: number
   maxCiclos: number
@@ -46,13 +40,7 @@ export type TipoDeEvento = 'parto_previsto' | 'desmame_previsto' | 'reacasalamen
 export interface ProximoEvento {
   tipo: TipoDeEvento
   data: string
-  /**
-   * A data prevista passou sem confirmação.
-   *
-   * ⚠️ **É o alerta mais importante do `RF-REP-07`** — erosão silenciosa da
-   * confiabilidade dos dados. O contrato diz, com estas palavras, que o front
-   * tem que fazer isso gritar.
-   */
+  /** A data prevista passou sem confirmação. */
   atrasado: boolean
 }
 
@@ -69,9 +57,9 @@ export interface CaixaNaGrade {
 export interface Posicao {
   linha: number
   coluna: number
-  /** Endereço como aparece na etiqueta física (`RF-INF-02`). */
+  /** Endereço como aparece na etiqueta física (RF-INF-02). */
   codigo: string
-  /** `null` = posição vazia. O back-end gera a grade completa; o front desenha. */
+  /** null = posição vazia. O back-end gera a grade completa; o front desenha. */
   caixa: CaixaNaGrade | null
 }
 
@@ -79,7 +67,7 @@ export interface FaceDaGrade {
   face: Face
   linhas: number
   colunas: number
-  /** Vem completo: `linhas × colunas` itens, em ordem linha-major. */
+  /** vem completo: 'linhas × colunas' itens, em ordem linha-major */
   posicoes: Posicao[]
 }
 
@@ -94,14 +82,7 @@ export const ROTULO_EVENTO: Record<TipoDeEvento, string> = {
   reacasalamento_liberado: 'Reacasalamento liberado',
 }
 
-/**
- * Divide as posições de uma face em linhas, para a grade desenhar.
- *
- * O contrato garante ordem linha-major, mas garantir não é confiar: uma
- * resposta fora de ordem produziria uma estante desenhada errada, e o técnico
- * procuraria a caixa no lugar errado. Agrupar pelo campo `linha` é imune a
- * isso.
- */
+/** divide as posições de uma face em linhas, para a grade desenhar */
 export function porLinha(face: FaceDaGrade): Posicao[][] {
   const linhas: Posicao[][] = Array.from({ length: face.linhas }, () => [])
   for (const posicao of face.posicoes) {

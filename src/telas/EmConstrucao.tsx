@@ -1,16 +1,6 @@
 import { CabecalhoDaTela, Etiqueta, Linha, Paragrafo, Pilha, Secao, Texto } from '@/componentes'
 
-/**
- * Placeholder de tela.
- *
- * A casca existe e a rota funciona; o conteúdo de cada tela é um card próprio
- * no backlog do Trello. Isto deixa o requisito à vista de quem for pegar o
- * card, em vez de deixar a rota vazia.
- *
- * ⚠️ **É a única tela que mostra ID de requisito**, e é de propósito: ela
- * existe para ser lida por quem vai implementar, não pelo técnico de luvas. A
- * tela que a substituir não herda as etiquetas.
- */
+/** Placeholder de tela */
 export function EmConstrucao({
   titulo,
   ator,

@@ -3,14 +3,8 @@ import type { ReactNode } from 'react'
 import { COR, COR_DE_RETORNO } from '@/app/tokens'
 
 /**
- * Contagem sobreposta a outro elemento — alertas abertos no item de menu,
- * solicitações aguardando análise.
- *
- * `limite` corta em "99+" por padrão: número de quatro dígitos em cima de um
- * ícone não é legível e não muda a decisão de ninguém.
- *
- * ⚠️ **Zero não vira selo.** Um "0" pendurado no menu chama atenção para a
- * ausência de trabalho, que é o contrário do que um selo serve.
+ * contagem sobreposta a outro elemento - alertas abertos no item de menu,
+ * solicitações aguardando análise
  */
 export function Selo({
   quantidade,

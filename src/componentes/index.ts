@@ -1,24 +1,6 @@
-/**
- * Biblioteca de componentes do Nidus.
- *
- * Um import por tela:
- *
- * ```tsx
- * import { CabecalhoDaTela, Pilha, Secao, Tabela } from '@/componentes'
- * ```
- *
- * O que entra aqui: componente usado por **mais de uma tela**, ou que carrega
- * uma decisão que não pode variar de tela para tela — formato de data
- * (`RNF-04`), codificação de estado (`RNF-10`), alvo de toque (`RNF-03`),
- * conversão de `Dayjs` para `DataISO`.
- *
- * O que **não** entra: componente de uma tela só. Esse mora ao lado da tela,
- * como `CardDaPosicao` mora em `telas/estantes/`.
- *
- * Ver `README.md` nesta pasta.
- */
+// Biblioteca de componentes do Nidus
 
-/* -- Elementos de base, sobre o Ant Design -------------------------------- */
+/** -- Elementos de base, sobre o Ant Design -------------------------------- */
 export { Abas } from './Abas'
 export type { Aba } from './Abas'
 export { Aviso } from './Aviso'
@@ -51,7 +33,7 @@ export { Texto } from './Texto'
 export type { TomDeTexto } from './Texto'
 export { Titulo } from './Titulo'
 
-/* -- Fundação do design system ------------------------------------------- */
+/** -- Fundação do design system ------------------------------------------- */
 export { Botao } from './Botao'
 export type { VarianteDeBotao } from './Botao'
 export { Cartao } from './Cartao'
@@ -64,7 +46,7 @@ export { RotuloDeSecao } from './RotuloDeSecao'
 export { SecaoInvertida } from './SecaoInvertida'
 export { TextoGradiente } from './TextoGradiente'
 
-/* -- Casca e estrutura de tela ------------------------------------------- */
+/** -- Casca e estrutura de tela ------------------------------------------- */
 export { BarraDeFiltros } from './BarraDeFiltros'
 export { BotaoDeConfirmacao } from './BotaoDeConfirmacao'
 export { CabecalhoDaTela } from './CabecalhoDaTela'
@@ -80,7 +62,7 @@ export { Secao } from './Secao'
 export { Tabela } from './Tabela'
 export { Vazio } from './Vazio'
 
-/* -- Campos de formulário ------------------------------------------------ */
+/** -- Campos de formulário ------------------------------------------------ */
 export { CampoDeData } from './CampoDeData'
 export { CampoDePeriodo } from './CampoDePeriodo'
 export type { Periodo } from './CampoDePeriodo'
@@ -105,7 +87,7 @@ export { SeletorDeLinhagem } from './SeletorDeLinhagem'
 export { SeletorDeParGenetico } from './SeletorDeParGenetico'
 export { SeletorDeSala } from './SeletorDeSala'
 
-/* -- Exibição de domínio ------------------------------------------------- */
+/** -- Exibição de domínio ------------------------------------------------- */
 export { Data } from './Data'
 export { DataPrevistaOuReal } from './DataPrevistaOuReal'
 export { Endereco } from './Endereco'
@@ -118,25 +100,17 @@ export { TagDeEspecie } from './TagDeEspecie'
 export { TagDeFinalidade } from './TagDeFinalidade'
 export { TagDePerfil } from './TagDePerfil'
 
-/* -- Quadro de comprometimento ------------------------------------------- */
+/** -- Quadro de comprometimento ------------------------------------------- */
 export { BotaoDeMoverEstado } from './BotaoDeMoverEstado'
 export { CardDaCaixa } from './CardDaCaixa'
 export { ColunaDoQuadro } from './ColunaDoQuadro'
 export { DialogoDeExcecao } from './DialogoDeExcecao'
 
-/* -- Ficha da posição - abre da grade e do quadro, RF-CIC-02 -------------- */
+/** -- Ficha da posição - abre da grade e do quadro, RF-CIC-02 -------------- */
 export { FichaDaCaixa } from './FichaDaCaixa'
 export { useAbrirFicha } from '@/dominio/useFicha'
 
-/*
- * Reexportados de onde já moravam.
- *
- * `Legenda` e as marcas ficam em `@/dominio` porque o `contrato-api.md` §1.1
- * aponta para lá e diz que **os valores daqueles arquivos são o contrato**.
- * Mover quebraria o apontamento; reexportar dá o import único sem mexer na
- * fonte. O mesmo vale para `EstadoDaConsulta` e `Carregando`, que são da
- * casca (`@/layout`) e continuam sendo.
- */
+/** reexportados de onde já moravam */
 export { Carregando } from '@/layout/Carregando'
 export { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 export { Legenda, MarcaEstadoCaixa, MarcaGrauCerteza } from '@/dominio/Legenda'

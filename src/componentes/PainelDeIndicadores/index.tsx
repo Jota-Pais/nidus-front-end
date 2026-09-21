@@ -6,10 +6,10 @@ import './estilos.css'
 export interface Indicador {
   rotulo: string
   valor: number | string
-  /** Explica de onde sai o número. `RNF-01`: quem calcula é o servidor. */
+  /** Explica de onde sai o número. RNF-01: quem calcula é o servidor */
   ajuda?: string
   sufixo?: ReactNode
-  /** Destaque discreto: o número que a tela quer que seja lido primeiro. */
+  /** Destaque discreto: o número que a tela quer que seja lido primeiro */
   emDestaque?: boolean
 }
 
@@ -28,20 +28,8 @@ function Numero({ indicador }: { indicador: Indicador }) {
 }
 
 /**
- * Fila de números de cabeçalho — capacidade/ocupada/livre (`RF-INF-06`),
- * total por coluna do quadro, saldo de cota.
- *
- * `invertido` põe a fila na faixa escura do design system. É o recurso de
- * holofote: usar no número que o técnico olha primeiro ao abrir o sistema — o
- * painel de alertas do dia (`RF-REP-07`) — e em mais nada na mesma tela.
- *
- * O número sai em `JetBrains Mono` com `tabular-nums`: quatro indicadores
- * lado a lado com fonte proporcional não alinham, e a fila fica torta
- * conforme os valores mudam.
- *
- * ⚠️ **Nenhum número daqui é calculado no front** (`RNF-01`). O componente
- * recebe pronto e desenha. Se aparecer uma soma no `valor` de uma chamada, o
- * erro está na chamada, não aqui.
+ * fila de números de cabeçalho - capacidade/ocupada/livre (RF-INF-06), total por coluna do
+ * quadro, saldo de cota
  */
 export function PainelDeIndicadores({
   indicadores,

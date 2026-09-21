@@ -1,43 +1,15 @@
-/**
- * Único ponto de saída HTTP do front.
- *
- * Nenhuma tela chama `fetch` direto. O que este arquivo garante, e que se perde
- * se alguém chamar `fetch` na mão:
- *
- * - **`credentials: 'include'` em toda requisição** (`contrato-api.md` §1.2).
- *   A sessão é cookie `httpOnly`; sem isso o cookie não vai e a API responde
- *   401. Front (Vercel) e API (Render) ficam em domínios diferentes, então não
- *   há como o navegador mandar sozinho.
- * - **Erro sempre na forma do contrato** (§2), traduzido por `@/lib/erros` —
- *   inclusive a regra de não distinguir e-mail de senha no 401.
- * - **Nenhum dado fabricado no cliente** (`RNF-01`): o que volta, volta como a
- *   API mandou.
- */
+// único ponto de saída HTTP do front
 import { config } from '@/app/config'
 import { camposDeErro, mensagemDeErro } from './erros'
 
-/**
- * Erro de qualquer chamada à API.
- *
- * `mensagem` já está pronta para exibir; `codigo` é estável e serve para a tela
- * decidir comportamento — o contrato manda nunca decidir por texto.
- */
+/** Erro de qualquer chamada à API. */
 export class ErroDeApi extends Error {
   readonly status: number
   readonly codigo: string | null
   readonly campos: Record<string, string>
   readonly requisito: string | null
 
-  /**
-   * O objeto `erro` cru da resposta, como veio.
-   *
-   * Alguns erros trazem campo extra que só o domínio sabe ler — o `409
-   * TRANSICAO_CONTRARIA_COMPROMISSO` vem com `compromissosAfetados`
-   * (`contrato-api.md` §8). Esta classe é genérica e não conhece o quadro, e
-   * não deve conhecer: quem interpreta é `@/dominio/quadro`, a partir daqui.
-   *
-   * `unknown` de propósito — quem lê valida a forma antes de usar.
-   */
+  /** O objeto 'erro' cru da resposta, como veio */
   readonly corpoDoErro: unknown
 
   constructor(status: number, corpo: unknown) {
@@ -56,7 +28,7 @@ export class ErroDeApi extends Error {
     this.corpoDoErro = erro
   }
 
-  /** `contrato-api.md` §2.1: 409 é sempre regra de negócio — mostrar e não recarregar. */
+  /** 'contrato-api.md' §2.1: 409 é sempre regra de negócio - mostrar e não recarregar */
   get ehRegraDeNegocio(): boolean {
     return this.status === 409
   }
@@ -67,7 +39,7 @@ export class ErroDeApi extends Error {
   }
 }
 
-/** Falha antes de chegar resposta: API dormindo na Render, sem rede, DNS. */
+/** Falha antes de chegar resposta: API dormindo na Render, sem rede, DNS */
 export class ErroDeRede extends Error {
   constructor(causa: unknown) {
     super(
@@ -99,8 +71,8 @@ async function lerCorpo(resposta: Response): Promise<unknown> {
   try {
     return JSON.parse(texto) as unknown
   } catch {
-    // Gateway devolvendo HTML, proxy fora do ar: o corpo não é do contrato.
-    // `mensagemDeErro` trata isso e cai na mensagem genérica.
+    // gateway devolvendo HTML, proxy fora do ar: o corpo não é do contrato
+    // 'mensagemDeErro' trata isso e cai na mensagem genérica
     return texto
   }
 }

@@ -1,18 +1,7 @@
 import type { ReactNode } from 'react'
 import './estilos.css'
 
-/**
- * Realce de gradiente numa palavra do título.
- *
- * ⚠️ **Uma palavra, nunca a frase.** O design system usa o realce como âncora
- * do olho: se a linha inteira é gradiente, não há âncora nenhuma e o título
- * fica ilegível sobre fundo claro.
- *
- * `sublinhado` troca o gradiente no texto por uma barra de gradiente sob a
- * palavra. Vale quando a linha precisa manter contraste pleno — texto em
- * gradiente perde contraste nas pontas claras, e num título pequeno isso
- * derruba o AA que o `RNF-10` exige.
- */
+/** realce de gradiente numa palavra do título */
 export function TextoGradiente({
   children,
   sublinhado = false,

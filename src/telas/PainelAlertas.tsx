@@ -16,10 +16,10 @@ import type { TipoDeEvento } from '@/dominio/estante'
 import { useAlertas } from '@/dominio/useAlertas'
 
 /**
- * Posição + linhagem: as duas primeiras colunas se repetem nas quatro
- * tabelas. Não é o `Endereco` da grade — este não sabe a face da caixa (o
- * contrato de alertas não traz esse campo, só o que basta pra achar a caixa
- * pelo código e pela estante).
+ * posição + linhagem: as duas primeiras colunas se repetem nas quatro tabelas.
+ * Não é o Endereco da grade - este não sabe a face da caixa (o contrato de
+ * alertas não traz esse campo, só o que basta pra achar a caixa pelo código e
+ * pela estante).
  */
 function colunaDaPosicao<T extends ItemDoAlerta>(): NonNullable<TableProps<T>['columns']>[number] {
   return {
@@ -47,7 +47,7 @@ function colunaDoCasal<T extends ItemDoAlerta>(): NonNullable<TableProps<T>['col
   }
 }
 
-/** As três primeiras tabelas do painel: mesma forma, o `tipo` é fixo por tabela. */
+/** As três primeiras tabelas do painel: mesma forma, o 'tipo' é fixo por tabela. */
 function TabelaComData({ itens, tipo }: { itens: ItemComData[]; tipo: TipoDeEvento }) {
   if (itens.length === 0) {
     return <Vazio descricao="Nada aqui no momento." />
@@ -69,18 +69,7 @@ function TabelaComData({ itens, tipo }: { itens: ItemComData[]; tipo: TipoDeEven
   return <Tabela<ItemComData> rowKey="idCaixa" columns={colunas} dataSource={itens} pagination={false} />
 }
 
-/**
- * `RF-REP-07` — painel do técnico com o que vence hoje e nos próximos dias.
- *
- * Não filtra por espécie: ao contrário do quadro (`RF-CIC-01`), o começo do
- * dia do técnico é uma lista só, não duas — a segregação por espécie faz
- * sentido pra o Kanban da colônia, não pra "o que eu preciso fazer hoje".
- *
- * A previsão vencida sem confirmação (`atrasado: true`) já vem destacada em
- * vermelho dentro de cada tabela (`ProximoEvento`), mas o requisito pede que
- * ela "grite" — por isso também sobe pro aviso no topo, em vez de esperar o
- * técnico rolar até achar a linha vermelha no meio da lista.
- */
+/** RF-REP-07 - painel do técnico com o que vence hoje e nos próximos dias */
 export function PainelAlertas() {
   const alertas = useAlertas()
 

@@ -9,19 +9,7 @@ export interface Aba {
   desabilitada?: boolean
 }
 
-/**
- * Abas.
- *
- * ⚠️ **A aba ativa precisa caber na URL.** A ficha da posição tem ciclos,
- * eventos e dados da caixa; um técnico que quer mostrar o histórico para
- * outro manda o link, e um link que sempre abre na primeira aba obriga a
- * explicar "clica em Eventos". Por isso `chave` e `aoTrocar` são controlados
- * de fora, pela tela, que é quem tem acesso ao roteador.
- *
- * ⚠️ **Não esconda atrás de aba o que decide.** Numa tela de registro, aba é
- * onde a informação vai para morrer: o técnico não sabe que ela existe. Vale
- * para histórico e detalhe, não para campo obrigatório.
- */
+/** Abas */
 export function Abas({
   abas,
   chave,
