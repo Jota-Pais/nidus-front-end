@@ -1,10 +1,4 @@
-/**
- * Queries da infraestrutura física — `contrato-api.md` §4 e §5.
- *
- * As chaves vêm de `@/app/chaves`, não são escritas aqui: invalidar
- * `['grade']` precisa casar por prefixo com a grade de toda estante em cache,
- * e isso só funciona se o nome for um só no projeto inteiro (`RF-CIC-02`).
- */
+// queries da infraestrutura física - 'contrato-api.md' §4 e §5.
 import { useQuery } from '@tanstack/react-query'
 import type { UseQueryResult } from '@tanstack/react-query'
 import { chaves } from '@/app/chaves'

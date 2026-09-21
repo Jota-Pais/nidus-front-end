@@ -1,19 +1,4 @@
-/**
- * Grade de demonstração, para quando a API não está no ar.
- *
- * ⚠️ **Nada disto é dado do cliente.** Serve a dois usos concretos:
- * desenvolver a tela enquanto o back-end não sobe, e ter o que mostrar na aula
- * de UI/UX de 10/09 sem depender de a API estar de pé.
- *
- * Três salvaguardas, para isso nunca ser confundido com dado real:
- *
- * 1. Só é usado quando a chamada falha por **rede** — erro de contrato não
- *    aciona demonstração
- * 2. Nunca em `producao` (ver `GradeEstantes.tsx`)
- * 3. A tela mostra um aviso permanente enquanto estiver nesse modo
- *
- * Sai do repositório quando o back-end entregar `GET /api/estantes/:id/grade`.
- */
+// Grade de demonstração, para quando a API não está no ar
 import type { CaixaNaGrade, Estante, FaceDaGrade, Grade, Posicao } from '@/dominio/estante'
 import { COLUNAS_DO_QUADRO } from '@/dominio/estados'
 import type { EstadoCaixa } from '@/dominio/tipos'
@@ -22,16 +7,8 @@ import { MODELOS_ESTANTE, enderecosDaEstante } from '@/fixtures/estantes'
 import { hoje, somarDias } from '@/lib/data'
 
 /**
- * Sorteio de estado, derivado de `COLUNAS_DO_QUADRO` — nenhuma chave de estado
- * escrita à mão aqui.
- *
- * O card "Legenda e segundo canal visual" tem como critério de pronto que um
- * `grep` por string de estado literal fora de `estados.ts` não ache nada. E
- * derivar não é só disciplina: um estado novo no domínio entra na demonstração
- * sozinho, em vez de ficar faltando sem ninguém notar.
- *
- * A primeira coluna (`em reprodução`) entra com peso 3: na colônia real a
- * maioria das caixas só está criando, sem cria comprometida.
+ * Sorteio de estado, derivado de 'COLUNAS_DO_QUADRO' - nenhuma chave de estado
+ * escrita à mão aqui
  */
 const [PRIMEIRA, ...DEMAIS] = COLUNAS_DO_QUADRO
 const ESTADOS: EstadoCaixa[] = [
@@ -39,10 +16,10 @@ const ESTADOS: EstadoCaixa[] = [
   ...DEMAIS,
 ]
 
-/** `RN-02` — a rotação em anel. Vem do catálogo, não é lista solta. */
+/** RN-02 - a rotação em anel. Vem do catálogo, não é lista solta. */
 const PARES = PARES_GENETICOS_VALIDOS
 
-/** Determinístico: a mesma estante gera sempre a mesma grade, entre recargas. */
+/** Determinístico: a mesma estante gera sempre a mesma grade, entre recargas */
 function pseudoAleatorio(semente: number): number {
   const x = Math.sin(semente) * 10_000
   return x - Math.floor(x)

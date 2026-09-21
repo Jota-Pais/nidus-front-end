@@ -33,9 +33,9 @@ describe('CardDaCaixa — RF-CIC-04, o que precisa estar visível no card', () =
   })
 
   /**
-   * `RN-09` — o pesquisador pede por sexo e o motor atende por sexo. Um
-   * total de "6 animais" faria uma caixa com 2 machos parecer capaz de
-   * atender um pedido de 5 machos.
+   * RN-09 - o pesquisador pede por sexo e o motor atende por sexo. Um total de
+   * "6 animais" faria uma caixa com 2 machos parecer capaz de atender um pedido
+   * de 5 machos
    */
   it('conta por sexo e nunca soma os dois num total', () => {
     render(<CardDaCaixa card={card()} estado="em_reproducao" />)

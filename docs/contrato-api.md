@@ -1,13 +1,13 @@
-# Contrato de API — Nidus
+# Contrato de API - Nidus
 
-**v1.0 · 03/09/2026 · fonte única de verdade da integração**
+v1.0 · 03/09/2026 · fonte única de verdade da integração
 
-Este arquivo é **idêntico** em `nidus-back-end/docs/` e `nidus-front-end/docs/`.
+Este arquivo é idêntico em `nidus-back-end/docs/` e `nidus-front-end/docs/`.
 Os dois repositórios são independentes e não compartilham tipos: este documento
 é o que impede a integração de divergir.
 
-> **Regra de ouro:** ninguém muda rota, campo ou código de erro sem alterar este
-> arquivo **nos dois repositórios** e avisar a equipe. Um lado alterar sozinho é
+> Regra de ouro: ninguém muda rota, campo ou código de erro sem alterar este
+> arquivo nos dois repositórios e avisar a equipe. Um lado alterar sozinho é
 > quebrar o outro sem aviso.
 
 Base: `requisitos-v0.2-spec-cliente-v2.4.md` (o *quê*) e `modelo-de-dados.md`
@@ -19,19 +19,19 @@ Base: `requisitos-v0.2-spec-cliente-v2.4.md` (o *quê*) e `modelo-de-dados.md`
 
 | Item | Regra |
 |---|---|
-| **Caminho base** | `/api` — tudo abaixo dele. O healthcheck é a única exceção: `GET /saude` |
-| **Formato** | JSON em requisição e resposta, sempre. `Content-Type: application/json` |
-| **Nomes de campo** | `camelCase` em português. `idCaixa`, `dtPartoReal`, `nascidoM` |
-| **Data** | `aaaa-mm-dd` (string). Nunca timestamp para data de calendário |
-| **Data e hora** | ISO 8601 em UTC: `2026-09-03T22:41:18.000Z` |
-| **Exibição** | Responsabilidade do front: sempre `dd/mm/aaaa` (`RNF-04`). A API nunca formata |
-| **Identificador** | `int` (o `id int4` do banco). Nunca UUID no MVP |
-| **Ausência** | `null` explícito. Nunca omitir a chave, nunca string vazia |
+| Caminho base | `/api` - tudo abaixo dele. O healthcheck é a única exceção: `GET /saude` |
+| Formato | JSON em requisição e resposta, sempre. `Content-Type: application/json` |
+| Nomes de campo | `camelCase` em português. `idCaixa`, `dtPartoReal`, `nascidoM` |
+| Data | `aaaa-mm-dd` (string). Nunca timestamp para data de calendário |
+| Data e hora | ISO 8601 em UTC: `2026-09-03T22:41:18.000Z` |
+| Exibição | Responsabilidade do front: sempre `dd/mm/aaaa` (`RNF-04`). A API nunca formata |
+| Identificador | `int` (o `id int4` do banco). Nunca UUID no MVP |
+| Ausência | `null` explícito. Nunca omitir a chave, nunca string vazia |
 
 ### 1.1 O `char(1)` do banco nunca cruza a rede
 
 O banco guarda estado em `char(1)` por exigência do `RNF-05` (parametrização sem
-deploy — acrescentar valor a um `ENUM` do PostgreSQL é DDL). **A API traduz.**
+deploy - acrescentar valor a um `ENUM` do PostgreSQL é DDL). A API traduz.
 
 O back-end é dono dessa conversão. O front nunca vê `'R'`, `'P'`, `'C'`.
 
@@ -48,7 +48,7 @@ O back-end é dono dessa conversão. O front nunca vê `'R'`, `'P'`, `'C'`.
 | `caixa.face` | `1` `2` | `frontal` `traseira` |
 
 Os valores da coluna da direita são exatamente os de
-`nidus-front-end/src/dominio/tipos.ts` e `estados.ts`. **São eles o contrato.**
+`nidus-front-end/src/dominio/tipos.ts` e `estados.ts`. São eles o contrato.
 
 ### 1.2 Autenticação
 
@@ -56,16 +56,16 @@ Cookie de sessão `httpOnly`, decidido em 03/09 (ver `decisoes-de-stack.md`).
 
 - Cookie: `nidus_sessao`, `HttpOnly`, `Secure`, `SameSite=None`, `Path=/`
 - `SameSite=None; Secure` é obrigatório porque front (Vercel) e API (Render)
-  ficam em **domínios diferentes**. Sem isso o login funciona em `localhost` e
-  quebra em produção — é o erro clássico deste arranjo
-- O back precisa de CORS com `credentials: true` e **origem explícita**
-  (`CORS_ORIGEM` no `.env`), nunca `*` — o navegador recusa `*` com credenciais
+  ficam em domínios diferentes. Sem isso o login funciona em `localhost` e
+  quebra em produção - é o erro clássico deste arranjo
+- O back precisa de CORS com `credentials: true` e origem explícita
+  (`CORS_ORIGEM` no `.env`), nunca `*` - o navegador recusa `*` com credenciais
 - O front faz toda requisição com `credentials: 'include'`
 - Não existe token no corpo, no header nem no `localStorage`
 
 ### 1.3 Autorização
 
-`RF-ACS-02`: **decidida no servidor, sempre.** O front pode esconder um botão
+`RF-ACS-02`: decidida no servidor, sempre. O front pode esconder um botão
 por conveniência, mas nunca autoriza. Toda rota abaixo traz o perfil exigido.
 
 Filtragem de dados também é do servidor: o pesquisador não recebe dados da
@@ -88,10 +88,10 @@ Toda resposta de erro tem exatamente esta forma:
 }
 ```
 
-- `codigo` — estável, para o front decidir comportamento. Nunca traduzir por texto
-- `mensagem` — em português, já pronta para exibir ao usuário
-- `requisito` — o ID do requisito violado. Opcional, mas preencher sempre que houver
-- `campos` — só em erro de validação ou quando o erro aponta para campo específico
+- `codigo` - estável, para o front decidir comportamento. Nunca traduzir por texto
+- `mensagem` - em português, já pronta para exibir ao usuário
+- `requisito` - o ID do requisito violado. Opcional, mas preencher sempre que houver
+- `campos` - só em erro de validação ou quando o erro aponta para campo específico
 
 ### 2.1 Códigos
 
@@ -101,23 +101,23 @@ Toda resposta de erro tem exatamente esta forma:
 | 401 | `NAO_AUTENTICADO` | Sem cookie válido |
 | 403 | `SEM_PERMISSAO` | Autenticado, perfil não alcança o recurso |
 | 404 | `NAO_ENCONTRADO` | Recurso inexistente ou fora do alcance do perfil |
-| 409 | `PAR_GENETICO_INVALIDO` | `RN-02` — par fora de AB/BC/CD/DE/EA |
-| 409 | `CAIXA_JA_TEM_CASAL_ATIVO` | `RN-03` — máximo um casal ativo por caixa |
-| 409 | `LIMITE_PARTOS_ATINGIDO` | `RN-04` — casal já teve 5 partos confirmados |
-| 409 | `POSICAO_OCUPADA` | `RF-INF-05` — destino já tem caixa ativa |
-| 409 | `DISPONIBILIDADE_EXCEDIDA` | `RN-09` — compromisso passaria do disponível |
-| 409 | `TRANSICAO_CONTRARIA_COMPROMISSO` | `RF-CIC-03` — exige `confirmar: true` |
-| 409 | `PRAZO_INVIAVEL` | `RN-06` — resposta traz `dataMinima` |
+| 409 | `PAR_GENETICO_INVALIDO` | `RN-02` - par fora de AB/BC/CD/DE/EA |
+| 409 | `CAIXA_JA_TEM_CASAL_ATIVO` | `RN-03` - máximo um casal ativo por caixa |
+| 409 | `LIMITE_PARTOS_ATINGIDO` | `RN-04` - casal já teve 5 partos confirmados |
+| 409 | `POSICAO_OCUPADA` | `RF-INF-05` - destino já tem caixa ativa |
+| 409 | `DISPONIBILIDADE_EXCEDIDA` | `RN-09` - compromisso passaria do disponível |
+| 409 | `TRANSICAO_CONTRARIA_COMPROMISSO` | `RF-CIC-03` - exige `confirmar: true` |
+| 409 | `PRAZO_INVIAVEL` | `RN-06` - resposta traz `dataMinima` |
 | 409 | `SEQUENCIA_INVALIDA` | Evento fora de ordem (desmame antes do parto, p. ex.) |
 | 500 | `ERRO_INTERNO` | Falha não prevista. Nunca vaza stack para o cliente |
 
-**409 é sempre regra de negócio.** O front pode tratar todo 409 como "mostrar a
+409 é sempre regra de negócio. O front pode tratar todo 409 como "mostrar a
 `mensagem` ao usuário e não recarregar" sem conhecer cada código.
 
 ### 2.2 Exemplo de `PRAZO_INVIAVEL`
 
-`RF-DEM-02` exige que, quando a data é inviável, o sistema **informe a data mais
-próxima possível** em vez de só recusar:
+`RF-DEM-02` exige que, quando a data é inviável, o sistema informe a data mais
+próxima possível em vez de só recusar:
 
 ```json
 {
@@ -134,45 +134,45 @@ próxima possível** em vez de só recusar:
 
 ## 3. Sessão
 
-### `POST /api/sessao` — login
+### `POST /api/sessao` - login
 Público.
 
 ```json
 { "email": "tecnico@ufsc.br", "senha": "..." }
 ```
 
-**200** + `Set-Cookie: nidus_sessao=...`
+200 + `Set-Cookie: nidus_sessao=...`
 ```json
 {
   "usuario": { "id": 4, "nome": "Ana Souza", "email": "tecnico@ufsc.br", "perfil": "tecnico" }
 }
 ```
-**401** `NAO_AUTENTICADO` — credencial inválida. Mesma mensagem para e-mail
+401 `NAO_AUTENTICADO` - credencial inválida. Mesma mensagem para e-mail
 inexistente e senha errada, sem distinguir os dois.
 
 > No semestre o login é local, com os três perfis. O ID-UFSC depende do
 > SETIC/UFSC e fica como mock (`PEN-09`). O `RF-ACS-01` exige que o acesso
-> administrativo local continue existindo mesmo depois do SSO — não é gambiarra
+> administrativo local continue existindo mesmo depois do SSO - não é gambiarra
 > temporária, é requisito.
 
-### `DELETE /api/sessao` — logout
-Autenticado. **204**, sem corpo, e o cookie é invalidado no servidor.
+### `DELETE /api/sessao` - logout
+Autenticado. 204, sem corpo, e o cookie é invalidado no servidor.
 
-### `GET /api/sessao` — quem sou eu
-Autenticado. **200** com o mesmo objeto `usuario` do login. **401** se não houver
+### `GET /api/sessao` - quem sou eu
+Autenticado. 200 com o mesmo objeto `usuario` do login. 401 se não houver
 sessão. É o que o front chama no boot para decidir se redireciona ao login.
 
 ---
 
 ## 4. Catálogo
 
-### `GET /api/catalogo` — todos os dados de referência
+### `GET /api/catalogo` - todos os dados de referência
 Autenticado, qualquer perfil.
 
 Uma chamada só, no boot. São dados de carga inicial que quase nunca mudam
 (`RNF-05`, Anexo A dos requisitos). O front cacheia com `staleTime` longo.
 
-**200**
+200
 ```json
 {
   "especies": [
@@ -227,19 +227,19 @@ Uma chamada só, no boot. São dados de carga inicial que quase nunca mudam
 }
 ```
 
-> ⚠️ `idadeMaxDias: null` significa "sem teto" — é a faixa `> 90` da tabela do
+>  `idadeMaxDias: null` significa "sem teto" - é a faixa `> 90` da tabela do
 > `RN-07`. O front não pode assumir que sempre há um máximo.
 
 ---
 
 ## 5. Infraestrutura
 
-### `GET /api/estantes` — lista
-Autenticado: **técnico, gestor**. Pesquisador recebe **403**.
+### `GET /api/estantes` - lista
+Autenticado: técnico, gestor. Pesquisador recebe 403.
 
 Query opcional: `sala`, `especie` (`rato` | `camundongo`).
 
-**200**
+200
 ```json
 {
   "estantes": [
@@ -256,18 +256,18 @@ Query opcional: `sala`, `especie` (`rato` | `camundongo`).
 
 `ocupacao` atende o `RF-INF-06` e é `capacidade − COUNT(caixa ativa)`.
 
-### `GET /api/estantes/:id/grade` — a grade das duas faces
-Autenticado: **técnico, gestor**.
+### `GET /api/estantes/:id/grade` - a grade das duas faces
+Autenticado: técnico, gestor.
 
-**Este é o endpoint central do `RF-INF-03`** e o mais importante do MVP para o
+Este é o endpoint central do `RF-INF-03` e o mais importante do MVP para o
 front.
 
-Regra que define o formato: **não existe tabela `slot`** (decisão D-04 do modelo
-de dados). As posições vazias **são geradas pelo back-end** a partir da
+Regra que define o formato: não existe tabela `slot` (decisão D-04 do modelo
+de dados). As posições vazias são geradas pelo back-end a partir da
 topologia da estante e devolvidas com `caixa: null`. O front nunca gera grade;
 ele desenha o que recebe.
 
-**200**
+200
 ```json
 {
   "estante": {
@@ -301,22 +301,22 @@ ele desenha o que recebe.
 }
 ```
 
-- `posicoes` vem **completo**: `linhas × colunas` itens por face, na ordem
+- `posicoes` vem completo: `linhas × colunas` itens por face, na ordem
   linha-major (todas as colunas da linha 1, depois da linha 2…)
 - `codigo` é o endereço como aparece na etiqueta física (`RF-INF-02`)
 - `proximoEvento.tipo`: `parto_previsto` | `desmame_previsto` | `reacasalamento_liberado`
 - `proximoEvento.atrasado: true` quando a data prevista passou sem confirmação.
-  **É o alerta mais importante do `RF-REP-07`** — erosão silenciosa da
+  É o alerta mais importante do `RF-REP-07` - erosão silenciosa da
   confiabilidade dos dados. O front tem que fazer isso gritar
 
-> ⚠️ **Bloqueado por `CONF-07`:** se a letra do `codigo` designa a linha ou a
+>  Bloqueado por `CONF-07`: se a letra do `codigo` designa a linha ou a
 > coluna ainda não está confirmado com o cliente. Enquanto isso, o back gera
-> **letra = coluna, número = linha** (`A1` = coluna A, linha 1), que é o que a
+> letra = coluna, número = linha (`A1` = coluna A, linha 1), que é o que a
 > contagem do quadro de layouts sugere. A troca é uma linha na geração do código;
 > nenhum dos dois lados deve espalhar essa suposição pelo resto do código.
 
-### `POST /api/estantes` — cadastrar
-**Gestor.** `RF-INF-01`: cadastrar modelo novo é operação de admin, **não deploy**.
+### `POST /api/estantes` - cadastrar
+Gestor. `RF-INF-01`: cadastrar modelo novo é operação de admin, não deploy.
 
 ```json
 {
@@ -324,20 +324,20 @@ ele desenha o que recebe.
   "numeroVisivel": "E-07", "faces": 2, "linhas": 5, "colunas": 5
 }
 ```
-**201** com o objeto da lista. `capacidade` é derivada (`faces × linhas × colunas`),
+201 com o objeto da lista. `capacidade` é derivada (`faces × linhas × colunas`),
 nunca enviada pelo cliente.
 
 ---
 
 ## 6. Ficha da posição
 
-### `GET /api/caixas/:id` — ficha completa
-Autenticado: **técnico, gestor**. `RF-INF-04` + `RF-REP-02`.
+### `GET /api/caixas/:id` - ficha completa
+Autenticado: técnico, gestor. `RF-INF-04` + `RF-REP-02`.
 
-Abre do card da grade e do card do quadro — **a mesma ficha, a mesma fonte**
+Abre do card da grade e do card do quadro - a mesma ficha, a mesma fonte
 (`RF-CIC-02`: as duas visões nunca divergem).
 
-**200**
+200
 ```json
 {
   "caixa": {
@@ -375,13 +375,13 @@ Abre do card da grade e do card do quadro — **a mesma ficha, a mesma fonte**
 }
 ```
 
-**Como o front lê `ciclos` (isto é requisito, não estética):**
+Como o front lê `ciclos` (isto é requisito, não estética):
 
-- `RF-REP-02` — **datas previstas têm que ser visualmente distintas das reais.**
+- `RF-REP-02` - datas previstas têm que ser visualmente distintas das reais.
   A diferença entre "vai nascer" e "nasceu" é a informação mais importante da
   tela. O par `dtPartoPrevisto` / `dtPartoReal` existe para isso: `dtPartoReal
   === null` significa que ainda não aconteceu
-- `disponivel` já vem **líquido**, com os compromissos descontados (`RN-09`).
+- `disponivel` já vem líquido, com os compromissos descontados (`RN-09`).
   O front nunca subtrai nada: se subtrair, subtrai errado
 - `grauCerteza` sai do `COALESCE` de três níveis do `RN-08`, calculado no
   servidor. Ver seção 5.1 do `modelo-de-dados.md`
@@ -391,90 +391,90 @@ Abre do card da grade e do card do quadro — **a mesma ficha, a mesma fonte**
 
 ## 7. Reprodução
 
-### `POST /api/casais` — formar casal
-**Técnico, gestor.** `RF-REP-01`.
+### `POST /api/casais` - formar casal
+Técnico, gestor. `RF-REP-01`.
 
 ```json
 { "idCaixa": 812, "idLinhagem": 1, "grupoMacho": "A", "grupoFemea": "B",
   "dtFormacao": "2026-05-02" }
 ```
 
-**201** com o objeto `casal` da ficha, já com o ciclo 1 criado e as datas
-previstas calculadas (`RN-05` — a confirmação dispara a cadeia temporal).
+201 com o objeto `casal` da ficha, já com o ciclo 1 criado e as datas
+previstas calculadas (`RN-05` - a confirmação dispara a cadeia temporal).
 
 Erros:
-- **409** `PAR_GENETICO_INVALIDO` — par fora de AB/BC/CD/DE/EA (`RN-02`)
-- **409** `CAIXA_JA_TEM_CASAL_ATIVO` — `RN-03`
-- **400** `VALIDACAO` — linhagem que não pertence à espécie da caixa
+- 409 `PAR_GENETICO_INVALIDO` - par fora de AB/BC/CD/DE/EA (`RN-02`)
+- 409 `CAIXA_JA_TEM_CASAL_ATIVO` - `RN-03`
+- 400 `VALIDACAO` - linhagem que não pertence à espécie da caixa
 
-### `POST /api/partos/:id/nascimento` — registrar parto
-**Técnico, gestor.** `RF-REP-03`.
+### `POST /api/partos/:id/nascimento` - registrar parto
+Técnico, gestor. `RF-REP-03`.
 
 ```json
 { "dtPartoReal": "2026-05-26", "nascidoM": 5, "nascidoF": 6 }
 ```
 
-**200** com o ciclo atualizado **e os ciclos seguintes recalculados** — confirmar
+200 com o ciclo atualizado e os ciclos seguintes recalculados - confirmar
 um parto real recalcula toda a cadeia à frente (`RN-05`). A oferta passa de
 `projetado` para `previsto`.
 
-- **409** `LIMITE_PARTOS_ATINGIDO` — `RN-04`
-- **409** `SEQUENCIA_INVALIDA` — parto do ciclo *n* antes do ciclo *n−1*
+- 409 `LIMITE_PARTOS_ATINGIDO` - `RN-04`
+- 409 `SEQUENCIA_INVALIDA` - parto do ciclo *n* antes do ciclo *n−1*
 
-### `POST /api/partos/:id/selecao` — eutanásia de seleção
-**Técnico, gestor.** `RF-REP-04`.
+### `POST /api/partos/:id/selecao` - eutanásia de seleção
+Técnico, gestor. `RF-REP-04`.
 
 ```json
 { "dtSelecao": "2026-05-26", "eutanasiadoM": 1, "eutanasiadoF": 2 }
 ```
 
-**200** com o ciclo atualizado e a disponibilidade recalculada.
+200 com o ciclo atualizado e a disponibilidade recalculada.
 
-> **Não impor limite máximo.** O `RF-REP-04` é explícito: quem decide quantos
+> Não impor limite máximo. O `RF-REP-04` é explícito: quem decide quantos
 > permanecem é o técnico, pelo protocolo. A única validação é
 > `eutanasiado ≤ nascido` por sexo. Isso conflita com a constante de 4M/4F
-> (`CONF-03`, `PEN-05`) — a constante é só a **expectativa** de ninhada não
+> (`CONF-03`, `PEN-05`) - a constante é só a expectativa de ninhada não
 > nascida, nunca um teto.
 
-### `POST /api/partos/:id/desmame` — registrar desmame
-**Técnico, gestor.** `RF-REP-05`.
+### `POST /api/partos/:id/desmame` - registrar desmame
+Técnico, gestor. `RF-REP-05`.
 
 ```json
 { "dtDesmameReal": "2026-06-18", "desmamadoM": 4, "desmamadoF": 4,
   "idCaixaRecria": null }
 ```
 
-**200** com o ciclo atualizado. A partir daqui o estoque é `confirmado`.
+200 com o ciclo atualizado. A partir daqui o estoque é `confirmado`.
 
-> `idCaixaRecria` é **anulável de propósito** (decisão D-03, `PEN-02` em aberto):
+> `idCaixaRecria` é anulável de propósito (decisão D-03, `PEN-02` em aberto):
 > nulo = os desmamados seguem na caixa do casal; preenchido = mudaram para caixa
 > própria. Nenhuma das duas respostas do cliente quebra o modelo. Enquanto a
 > pendência não fecha, o front pode não expor o campo.
 
-### `POST /api/casais/:id/encerramento` — encerrar casal
-**Técnico, gestor.** `RF-REP-08`.
+### `POST /api/casais/:id/encerramento` - encerrar casal
+Técnico, gestor. `RF-REP-08`.
 
 ```json
 { "dtEncerramento": "2026-10-01", "motivo": "5º parto concluído" }
 ```
-**200**. `RNF-06`: **nada é apagado.** O casal encerra, não some, e a caixa fica
+200. `RNF-06`: nada é apagado. O casal encerra, não some, e a caixa fica
 livre para novo casal.
 
 ---
 
 ## 8. Alertas do ciclo
 
-### `GET /api/alertas` — o que vence hoje e nos próximos dias
-Autenticado: **técnico, gestor**. `RF-REP-07`.
+### `GET /api/alertas` - o que vence hoje e nos próximos dias
+Autenticado: técnico, gestor. `RF-REP-07`.
 
-Query opcional: `especie` (`rato` | `camundongo` — omitido, traz as duas) e
-`dias` (inteiro, default `7` — a janela de antecedência).
+Query opcional: `especie` (`rato` | `camundongo` - omitido, traz as duas) e
+`dias` (inteiro, default `7` - a janela de antecedência).
 
-Painel do técnico: o que vence hoje e nos próximos `dias`, mais **tudo que já
-venceu sem confirmação**, não importa há quanto tempo — é o alerta mais
+Painel do técnico: o que vence hoje e nos próximos `dias`, mais tudo que já
+venceu sem confirmação, não importa há quanto tempo - é o alerta mais
 importante do `RF-REP-07`, a erosão silenciosa da confiabilidade dos dados.
 
-**200**
+200
 ```json
 {
   "partosPrevistos": [
@@ -505,26 +505,26 @@ importante do `RF-REP-07`, a erosão silenciosa da confiabilidade dos dados.
 - As três primeiras listas vêm ordenadas por `data` crescente;
   `casaisNoUltimoCiclo` não tem data, vem por `codigo`.
 - `atrasado: true` é o mesmo sinal do `proximoEvento` da grade e do quadro
-  (seções 5 e 9) — mesma fonte, calculado uma vez só (`RF-CIC-02`).
+  (seções 5 e 9) - mesma fonte, calculado uma vez só (`RF-CIC-02`).
   `reacasalamentosLiberados` vem sempre com `atrasado: false`: não há o que
   confirmar num reacasalamento liberado, só uma janela que abriu.
-- `casaisNoUltimoCiclo` lista casais **ativos** cujo ciclo corrente é o último
-  permitido (`RN-04`) — para planejar reposição antes do encerramento, não
+- `casaisNoUltimoCiclo` lista casais ativos cujo ciclo corrente é o último
+  permitido (`RN-04`) - para planejar reposição antes do encerramento, não
   depois.
 
 ---
 
 ## 9. Quadro de acompanhamento
 
-### `GET /api/quadro?especie=rato` — as 5 colunas
-**Técnico, gestor.** `especie` é **obrigatório**.
+### `GET /api/quadro?especie=rato` - as 5 colunas
+Técnico, gestor. `especie` é obrigatório.
 
-`RF-CIC-01`: um quadro por espécie, sem mistura, com a **segregação aplicada no
-servidor**. Não é filtro de interface — o front pede uma espécie e recebe só ela.
+`RF-CIC-01`: um quadro por espécie, sem mistura, com a segregação aplicada no
+servidor. Não é filtro de interface - o front pede uma espécie e recebe só ela.
 
 Query opcional: `linhagem`, `sala`, `dtPrevistaDe`, `dtPrevistaAte` (`RF-CIC-05`).
 
-**200**
+200
 ```json
 {
   "especie": "rato",
@@ -547,27 +547,27 @@ Query opcional: `linhagem`, `sala`, `dtPrevistaDe`, `dtPrevistaAte` (`RF-CIC-05`
 }
 ```
 
-As cinco colunas vêm **sempre**, na ordem de `COLUNAS_DO_QUADRO`
-(`front-end/src/dominio/estados.ts`), mesmo vazias — o front não inventa coluna
+As cinco colunas vêm sempre, na ordem de `COLUNAS_DO_QUADRO`
+(`front-end/src/dominio/estados.ts`), mesmo vazias - o front não inventa coluna
 nem reordena.
 
 `cicloAtual` no card atende o `RF-CIC-04`: o ciclo (1º a 5º) muda a leitura de
 risco da oferta e precisa estar visível, com legenda e não só cor.
 
-### `PATCH /api/caixas/:id/estado` — mover entre colunas
-**Técnico, gestor.** `RF-CIC-03`.
+### `PATCH /api/caixas/:id/estado` - mover entre colunas
+Técnico, gestor. `RF-CIC-03`.
 
 ```json
 { "estado": "preparada_para_envio", "justificativa": null, "confirmar": false }
 ```
 
-**Transição é livre, inclusive retrocedendo.** Toda transição registra autor,
+Transição é livre, inclusive retrocedendo. Toda transição registra autor,
 data, origem e destino.
 
-- **200** quando a transição não contraria compromisso
-- **409** `TRANSICAO_CONTRARIA_COMPROMISSO` quando contraria. A resposta descreve
+- 200 quando a transição não contraria compromisso
+- 409 `TRANSICAO_CONTRARIA_COMPROMISSO` quando contraria. A resposta descreve
   o que será quebrado; o front mostra ao usuário e reenvia com `confirmar: true`,
-  e aí a transição é gravada **como exceção**:
+  e aí a transição é gravada como exceção:
 
 ```json
 {
@@ -582,7 +582,7 @@ data, origem e destino.
 }
 ```
 
-> Este 409-com-confirmação é o motivo de o drag-and-drop **não** poder aplicar a
+> Este 409-com-confirmação é o motivo de o drag-and-drop não poder aplicar a
 > transição direto no drop. Para a N2, um botão "mover para" no card entrega o
 > mesmo comportamento com menos risco; o `@dnd-kit` entra depois (ver
 > `decisoes-de-stack.md`).
@@ -592,10 +592,10 @@ data, origem e destino.
 ## 10. Healthcheck
 
 ### `GET /saude`
-Público, **fora de `/api`**. Usado pela Render e pelo front para detectar que a
+Público, fora de `/api`. Usado pela Render e pelo front para detectar que a
 API está acordando.
 
-**200** `{ "status": "ok", "ambiente": "producao", "versao": "0.1.0" }`
+200 `{ "status": "ok", "ambiente": "producao", "versao": "0.1.0" }`
 
 > O free tier da Render dorme após ~15 min de inatividade e leva de 30s a 1min
 > para acordar. O front deve tratar a primeira requisição lenta como normal, com
@@ -605,18 +605,18 @@ API está acordando.
 
 ## 11. O que ainda não está neste contrato
 
-O MVP até a N2 (24/09) é o que está acima. Entra depois, e **só depois de
-acrescentado aqui**:
+O MVP até a N2 (24/09) é o que está acima. Entra depois, e só depois de
+acrescentado aqui:
 
 | Área | Requisitos | Bloqueado por |
 |---|---|---|
 | Projetos de ética e cota | `RF-DEM-06` | `PEN-10` |
 | Solicitação e aprovação | `RF-DEM-01` a `RF-DEM-05` | `PEN-11` |
 | Motor de atendimento | `RF-MOT-01` a `RF-MOT-09` | `CONF-01`, `CONF-06` |
-| Compromissos e alocação | `RF-MOT-08`, `RN-09` | — |
+| Compromissos e alocação | `RF-MOT-08`, `RN-09` | - |
 | Agrupamento e expedição | `RF-EXP-01` a `RF-EXP-05` | `PEN-08` |
 | Insumos | `RF-INS-01` a `RF-INS-04` | `PEN-08` |
-| Indicadores e auditoria | `RF-BI-01` a `RF-BI-05` | — |
+| Indicadores e auditoria | `RF-BI-01` a `RF-BI-05` | - |
 
 ---
 

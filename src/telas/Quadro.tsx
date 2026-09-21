@@ -25,15 +25,7 @@ interface MovimentoPendente {
   destino: EstadoCaixa
 }
 
-/**
- * `RF-CIC-01` a `RF-CIC-04` — o quadro de comprometimento.
- *
- * A tela não decide se uma transição é livre: pede a mudança, e se o servidor
- * devolver `409 TRANSICAO_CONTRARIA_COMPROMISSO` mostra o `DialogoDeExcecao` e
- * só reenvia com `confirmar: true` se o usuário insistir (`RF-CIC-03`). Abrir
- * o card leva à mesma `FichaDaCaixa` que a grade de estantes abre (`RF-CIC-02`
- * — as duas visões nunca divergem, nem na ficha que abrem).
- */
+/** RF-CIC-01 a RF-CIC-04 - o quadro de comprometimento */
 export function Quadro() {
   const [especie, setEspecie] = useState<CodigoEspecie>('rato')
   const quadro = useQuadro(especie)

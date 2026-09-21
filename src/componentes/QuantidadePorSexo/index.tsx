@@ -2,25 +2,15 @@ import type { PorSexo } from '@/dominio/tipos'
 import './estilos.css'
 
 /**
- * Contagem macho/fêmea — a forma em que o contrato conta animal em todo
- * lugar: nascido, eutanasiado, desmamado, disponível, comprometido, pedido.
- *
- * Sai como `4 M · 6 F`, monoespaçado, com o `aria-label` por extenso: "4
- * machos e 6 fêmeas". `M` e `F` soltos num leitor de tela viram letras.
- *
- * ⚠️ **Nunca somar os dois num total.** Uma caixa com 4 machos e 6 fêmeas
- * **não** atende um pedido de 5 machos, e "10 animais" faz parecer que
- * atende. O pesquisador pede por sexo e o motor atende por sexo (`RN-09`).
- *
- * ⚠️ `disponivel` do contrato **já vem líquido**, com os compromissos
- * descontados. O front nunca subtrai: se subtrair, subtrai duas vezes.
+ * Contagem macho/fêmea - a forma em que o contrato conta animal em todo lugar: nascido,
+ * eutanasiado, desmamado, disponível, comprometido, pedido
  */
 export function QuantidadePorSexo({
   valor,
   discreto = false,
 }: {
   valor: PorSexo | null | undefined
-  /** Sem as caixinhas, para dentro de tabela densa. */
+  /** Sem as caixinhas, para dentro de tabela densa */
   discreto?: boolean
 }) {
   if (!valor) return <span className="quantidadePorSexo__vazia">—</span>

@@ -3,10 +3,9 @@ import { estaCompleto, paraPorSexo, total, VAZIO } from './valor'
 
 describe('ValorPorSexo — zero não é vazio', () => {
   /**
-   * A distinção que este teste protege: "nasceram 0 machos" é uma resposta,
-   * "ainda não respondi" não é. Se o campo tratasse `null` como `0`, um
-   * formulário enviado pela metade viraria ninhada zerada no banco — e o
-   * `RNF-06` não deixa apagar.
+   * A distinção que este teste protege: "nasceram 0 machos" é uma resposta, "ainda
+   * não respondi" não é. Se o campo tratasse null como 0, um formulário enviado
+   * pela metade viraria ninhada zerada no banco - e o RNF-06 não deixa apagar
    */
   it('zero é resposta completa; nulo não é', () => {
     expect(estaCompleto({ m: 0, f: 0 })).toBe(true)

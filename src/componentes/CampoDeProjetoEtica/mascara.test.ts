@@ -28,9 +28,8 @@ describe('máscara do projeto de ética — RF-DEM-06', () => {
   })
 
   /**
-   * A máscara é posicional de propósito: o Anexo A deixa em aberto se o
-   * prefixo `23080` é fixo. Ela formata; quem cobra a instituição é a
-   * expressão — e, de verdade, o servidor.
+   * A máscara é posicional de propósito: o Anexo A deixa em aberto se o prefixo 23080 é fixo
+   * Ela formata; quem cobra a instituição é a expressão - e, de verdade, o servidor
    */
   it('formata número de outra instituição sem reclamar, e a expressão é que recusa', () => {
     expect(formatarProjeto('99999001234202611')).toBe('99999.001234/2026-11')

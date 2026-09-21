@@ -6,7 +6,7 @@ import { FORMATO_ARMAZENAMENTO, FORMATO_EXIBICAO } from '@/lib/data'
 
 const { RangePicker } = DatePicker
 
-/** Início e fim, os dois em `aaaa-mm-dd`. Qualquer ponta pode faltar. */
+/** Início e fim, os dois em 'aaaa-mm-dd'. Qualquer ponta pode faltar. */
 export type Periodo = [DataISO | null, DataISO | null]
 
 function paraDayjs(valor: DataISO | null | undefined) {
@@ -15,17 +15,7 @@ function paraDayjs(valor: DataISO | null | undefined) {
   return data.isValid() ? data : null
 }
 
-/**
- * Janela de datas — `RF-CIC-05`, o filtro por "datas previstas dentro de".
- *
- * Mesma razão de existir do `CampoDeData`: o Ant Design fala `Dayjs`, o
- * contrato fala `aaaa-mm-dd` (`dtPrevistaDe` e `dtPrevistaAte` na query do
- * quadro). A conversão acontece uma vez, aqui.
- *
- * As duas pontas podem vir vazias: "de hoje em diante" e "até o fim do mês"
- * são filtros legítimos, e obrigar as duas datas transformaria um filtro
- * simples num formulário.
- */
+/** janela de datas - RF-CIC-05, o filtro por "datas previstas dentro de" */
 export function CampoDePeriodo({
   value,
   onChange,

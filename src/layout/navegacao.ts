@@ -1,13 +1,4 @@
-/**
- * Menu por perfil.
- *
- * ⚠️ Esconder item de menu é **conveniência**, não segurança. O `RF-ACS-02` é
- * explícito: "o cliente pode esconder um botão por conveniência, mas nunca
- * autoriza". Toda rota aqui continua tendo que ser barrada no servidor.
- *
- * A ordem importa: para o técnico, o painel de alertas vem primeiro porque é a
- * tela em que ele começa o dia (`RF-REP-07`).
- */
+// Menu por perfil.
 import type { Perfil } from '@/dominio/tipos'
 
 export interface ItemDeMenu {
@@ -66,12 +57,7 @@ export function menuDoPerfil(perfil: Perfil): ItemDeMenu[] {
   return ITENS_DE_MENU.filter((item) => item.perfis.includes(perfil))
 }
 
-/**
- * Onde cada perfil cai depois do login.
- *
- * O pesquisador **não enxerga a colônia** (`RF-ACS-*`), então cai nas próprias
- * solicitações. O técnico cai nos alertas.
- */
+/** Onde cada perfil cai depois do login */
 export function rotaInicial(perfil: Perfil): string {
   return perfil === 'pesquisador' ? '/solicitacoes' : '/alertas'
 }
