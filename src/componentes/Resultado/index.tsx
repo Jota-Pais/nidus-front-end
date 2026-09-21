@@ -12,18 +12,7 @@ const STATUS_ANT: Record<TipoDeResultado, ResultProps['status']> = {
   sucesso: 'success',
 }
 
-/**
- * Estado de tela inteira.
- *
- * ⚠️ **`semPermissao` não é falha, e é o caso que mais aparece.** O
- * `RF-ACS-02` manda a autorização ser decidida no servidor: o pesquisador que
- * abre um link de estante recebe 403 porque **não enxerga a colônia**, e isso
- * é o sistema funcionando. Tratar como erro faria o usuário abrir chamado
- * para uma tela que está certa.
- *
- * Para erro de uma consulta dentro de uma tela que continua útil, use
- * `MensagemDeErro` — este componente toma a tela toda.
- */
+/** estado de tela inteira */
 export function Resultado({
   tipo,
   titulo,

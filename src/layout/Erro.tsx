@@ -1,7 +1,7 @@
 import { isRouteErrorResponse, useNavigate, useRouteError } from 'react-router-dom'
 import { Botao, Resultado } from '@/componentes'
 
-/** Tratamento de erro padronizado da casca. Uma mensagem, um caminho de volta. */
+/** tratamento de erro padronizado da casca. Uma mensagem, um caminho de volta. */
 export function Erro() {
   const erro = useRouteError()
   const navegar = useNavigate()

@@ -1,17 +1,7 @@
 import type { ReactNode } from 'react'
 import './estilos.css'
 
-/**
- * Ícone dentro de um quadrado de gradiente.
- *
- * O design system é explícito neste ponto: ícone de destaque leva **fundo de
- * gradiente cheio**, não preenchimento translúcido. É o que mantém o acento
- * concentrado e evita a papa de azuis desbotados que aparece quando cada
- * ícone recebe 10% de opacidade.
- *
- * `neutro` é a versão sem acento, para ícone que só acompanha um rótulo — se
- * todo ícone da tela for gradiente, nenhum se destaca.
- */
+/** Ícone dentro de um quadrado de gradiente */
 export function IconeEmCaixa({
   children,
   tamanho = 'md',

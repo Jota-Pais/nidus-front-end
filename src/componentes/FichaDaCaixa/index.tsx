@@ -83,12 +83,8 @@ function SecaoCiclos({ ciclos }: { ciclos: CicloReprodutivo[] }) {
 }
 
 /**
- * `RF-INF-04` + `RF-REP-02` — a ficha da posição, aberta pelo card da grade e
- * pelo card do quadro (`RF-CIC-02`: mesma fonte, nunca diverge).
- *
- * O estado (qual caixa, qual aba) mora na URL, não em `useState` — é o que o
- * comentário de `Abas` já pedia: um técnico manda o link e quem recebe abre
- * exatamente na aba de Eventos, sem precisar explicar onde clicar.
+ * RF-INF-04 + RF-REP-02 - a ficha da posição, aberta pelo card da grade e pelo card do
+ * quadro (RF-CIC-02: mesma fonte, nunca diverge)
  */
 export function FichaDaCaixa() {
   const [params, setParams] = useSearchParams()

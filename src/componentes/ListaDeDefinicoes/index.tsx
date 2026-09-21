@@ -4,21 +4,11 @@ import type { ReactNode } from 'react'
 export interface Definicao {
   rotulo: string
   valor: ReactNode
-  /** Ocupa mais de uma coluna. Para texto longo — motivo, justificativa. */
+  /** ocupa mais de uma coluna. Para texto longo - motivo, justificativa */
   colunas?: number
 }
 
-/**
- * Par rótulo/valor — a espinha da ficha da posição (`RF-INF-04`).
- *
- * Recebe uma lista, não `Descriptions.Item` soltos, porque assim a ficha é um
- * array que se monta com `.filter(Boolean)`: campo que não se aplica àquela
- * caixa some da lista em vez de aparecer como "—" e ocupar espaço numa tela
- * que já é densa.
- *
- * Duas colunas no desktop, uma no celular: com três colunas o valor fica mais
- * estreito que o rótulo e a leitura vira um jogo de encaixe.
- */
+/** par rótulo/valor - a espinha da ficha da posição (RF-INF-04). */
 export function ListaDeDefinicoes({
   itens,
   titulo,

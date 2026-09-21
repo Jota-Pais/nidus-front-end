@@ -1,13 +1,4 @@
-/**
- * Chaves de cache, num lugar só.
- *
- * Os nomes são os do card "Camada de acesso à API" do backlog — o back-end
- * escreveu o contrato contra eles, então não são escolha livre.
- *
- * São planas de propósito: `invalidateQueries({ queryKey: ['grade'] })` casa por
- * prefixo e derruba a grade de **todas** as estantes. É isso que cumpre o
- * `RF-CIC-02` sem a tela precisar saber quais estantes estão em cache.
- */
+// chaves de cache, num lugar só
 import type { QueryClient } from '@tanstack/react-query'
 import type { CodigoEspecie } from '@/dominio/tipos'
 
@@ -21,16 +12,7 @@ export const chaves = {
   alertas: ['alertas'] as const,
 }
 
-/**
- * Invalida tudo que enxerga o estado da colônia.
- *
- * **É o coração do `RF-CIC-02`**: "quadro e grade leem da mesma fonte e nunca
- * divergem". Toda mutação em caixa, casal ou parto passa por aqui — alterar
- * pela ficha tem que aparecer na grade e no quadro sem F5.
- *
- * Chamar isto é mais barato que errar: invalidar demais custa um refetch,
- * invalidar de menos deixa duas telas discordando sobre onde está um animal.
- */
+/** invalida tudo que enxerga o estado da colônia. */
 export function invalidarColonia(cliente: QueryClient, idCaixa?: number): Promise<void> {
   const alvos: readonly unknown[][] = [
     [...chaves.estantes],

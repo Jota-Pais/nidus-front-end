@@ -1,23 +1,10 @@
 import type { CSSProperties, ReactNode } from 'react'
 import './estilos.css'
 
-/**
- * `padrao` é o cartão de todo dia. `elevado` sobe no hover, para cartão
- * clicável. `destacado` recebe a borda de gradiente de 2px — é o "este aqui",
- * e vale um por tela.
- */
+/** 'padrao' é o cartão de todo dia. elevado sobe no hover, para cartão clicável. */
 export type VarianteDeCartao = 'padrao' | 'elevado' | 'destacado'
 
-/**
- * Superfície elevada.
- *
- * Branco puro sobre o off-white morno do fundo: é a diferença de 5% que faz o
- * cartão descolar da página sem precisar de borda pesada.
- *
- * A borda de gradiente do `destacado` é feita com dois elementos — o de fora
- * com 2px de padding e o gradiente, o de dentro branco. É a técnica do design
- * system, e existe porque `border-image` não acompanha `border-radius`.
- */
+/** Superfície elevada */
 export function Cartao({
   children,
   variante = 'padrao',
@@ -27,7 +14,7 @@ export function Cartao({
 }: {
   children: ReactNode
   variante?: VarianteDeCartao
-  /** Passando isto o cartão vira `<button>`: foco, Enter e Espaço de graça. */
+  /** passando isto o cartão vira <button>: foco, Enter e Espaço de graça. */
   aoClicar?: () => void
   className?: string
   estilo?: CSSProperties

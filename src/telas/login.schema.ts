@@ -1,10 +1,4 @@
-/**
- * Forma das credenciais, separada da tela para ser testável.
- *
- * `RNF-07` — coleta mínima de dado pessoal: e-mail institucional e senha, nada
- * além disso. O corpo é exatamente o que o `contrato-api.md` §3 espera em
- * `POST /api/sessao`.
- */
+// forma das credenciais, separada da tela para ser testável
 import { z } from 'zod'
 
 export const credenciais = z.object({
@@ -18,14 +12,7 @@ export const credenciais = z.object({
 
 export type Credenciais = z.infer<typeof credenciais>
 
-/**
- * Liga um campo do schema Zod ao `rules` do Ant Design, sem duplicar a regra.
- *
- * A assinatura é a que o `Form.Item` espera de um validador. Fica declarada
- * aqui em vez de importada do antd porque `Rule` é união e não expõe
- * `validator` diretamente — e assim trocar de biblioteca de formulário não
- * mexe no schema.
- */
+/** liga um campo do schema Zod ao 'rules' do Ant Design, sem duplicar a regra */
 type Validador = (regra: unknown, valor: unknown) => Promise<void>
 
 export function validadorDeCampo(campo: keyof Credenciais): Validador {
