@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ErroDeApi, ErroDeRede, api, montarUrl } from './api'
 
-/** Monta uma resposta como a API devolveria, sem depender de rede. */
+/** monta uma resposta como a API devolveria, sem depender de rede. */
 function resposta(status: number, corpo?: unknown): Response {
   const texto = corpo === undefined ? '' : JSON.stringify(corpo)
   return new Response(texto, { status, headers: { 'Content-Type': 'application/json' } })

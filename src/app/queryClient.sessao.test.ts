@@ -4,10 +4,9 @@ import { chaves } from './chaves'
 import { criarQueryClient } from './queryClient'
 
 /**
- * O tratamento global de 401 é o que manda o usuário ao login de qualquer
- * requisição — inclusive uma que rodou em segundo plano enquanto o técnico
- * estava na sala. Estes testes disparam o `onError` do cache pela consulta de
- * verdade, não pela função interna.
+ * O tratamento global de 401 é o que manda o usuário ao login de qualquer requisição -
+ * inclusive uma que rodou em segundo plano enquanto o técnico estava na sala. Estes testes
+ * disparam o onError do cache pela consulta de verdade, não pela função interna
  */
 async function rodarConsulta(
   cliente: ReturnType<typeof criarQueryClient>,
@@ -68,8 +67,8 @@ describe('tratamento global de 401', () => {
   it('a própria consulta de sessão não entra em laço de invalidação', async () => {
     const cliente = criarQueryClient()
     await rodarConsulta(cliente, chaves.sessao, naoAutenticado())
-    // Não deve ter sido sobrescrita pelo tratamento global: quem responde
-    // null no 401 é a própria useSessao.
+    // não deve ter sido sobrescrita pelo tratamento global: quem responde null no 401
+    // é a própria useSessao.
     expect(cliente.getQueryData(chaves.sessao)).toBeUndefined()
   })
 })

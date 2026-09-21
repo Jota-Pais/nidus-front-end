@@ -4,14 +4,7 @@ import { Aviso, Resultado } from '@/componentes'
 import { ErroDeApi, ErroDeRede } from '@/lib/api'
 import { Carregando } from './Carregando'
 
-/**
- * Quanto tempo esperar antes de avisar que a API pode estar acordando.
- *
- * A API na Render dorme por inatividade e leva de 30s a 1min para responder a
- * primeira requisição. O card "Camada de acesso à API" é explícito: isso tem
- * que mostrar **aviso, não erro** — quem abre o sistema e vê vermelho acha que
- * quebrou e liga para a equipe.
- */
+/** quanto tempo esperar antes de avisar que a API pode estar acordando */
 const MS_ATE_AVISAR = 3_000
 
 function useEsperaLonga(ativo: boolean, ms = MS_ATE_AVISAR): boolean {
@@ -34,14 +27,7 @@ interface Consulta {
   error: unknown
 }
 
-/**
- * Carregamento, demora e erro de uma consulta, tratados no mesmo lugar.
- *
- * Nenhuma tela escreve o seu próprio: as três situações têm resposta certa e
- * ela é a mesma em todas. Em especial o 403 — autenticado, mas o perfil não
- * alcança o recurso (`RF-ACS-02`) — que não é falha do sistema e não deve
- * aparecer como tal.
- */
+/** carregamento, demora e erro de uma consulta, tratados no mesmo lugar. */
 export function EstadoDaConsulta({
   consulta,
   rotulo,

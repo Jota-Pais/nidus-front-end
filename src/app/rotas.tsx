@@ -12,12 +12,7 @@ import { RegistrosTecnico } from '@/telas/RegistrosTecnico'
 import { Solicitacoes } from '@/telas/Solicitacoes'
 import { RaizPorPerfil } from '@/layout/RaizPorPerfil'
 
-/**
- * Rotas da aplicação.
- *
- * O `perfis` de cada rota é **navegação**, não autorização: o `RF-ACS-02` manda
- * a autorização ser decidida no servidor.
- */
+/** Rotas da aplicação */
 export const rotas = createBrowserRouter([
   { path: '/login', element: <Login />, errorElement: <Erro /> },
   {
@@ -39,9 +34,8 @@ export const rotas = createBrowserRouter([
         ),
       },
       {
-        // O card "Layout base" nomeia as duas: a segunda permite mandar link
-        // direto para uma estante, que é como o técnico vai compartilhar
-        // "olha a E-03".
+        // O card "Layout base" nomeia as duas: a segunda permite mandar link direto para
+        // uma estante, que é como o técnico vai compartilhar "olha a E-03"
         path: 'estantes',
         element: (
           <RotaProtegida perfis={['tecnico', 'gestor']}>

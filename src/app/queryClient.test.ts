@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ErroDeApi, ErroDeRede } from '@/lib/api'
 import { criarQueryClient } from './queryClient'
 
-/** Lê a política configurada, em vez de reescrevê-la no teste. */
+/** Lê a política configurada, em vez de reescrevê-la no teste */
 function politicaDeRetentativa() {
   const opcoes = criarQueryClient().getDefaultOptions().queries
   const retry = opcoes?.retry

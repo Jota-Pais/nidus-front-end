@@ -10,19 +10,7 @@ import './appLayout.css'
 
 const { Header, Content, Sider } = Layout
 
-/**
- * Casca da aplicação: cabeçalho, navegação por perfil e área de conteúdo.
- *
- * O cabeçalho é a faixa invertida do design system — azul institucional
- * escuro, a mesma cor da tela de entrada. É a moldura que o usuário tem
- * diante dos olhos o turno inteiro, então carrega a identidade e mais nada:
- * nenhum número, nenhum alerta, nada que mude sozinho e puxe o olho para
- * fora do trabalho.
- *
- * O cabeçalho mostra o nome e o perfil que o servidor devolveu, sem opção de
- * trocar: quem decide o perfil é o servidor (`RF-ACS-02`). Só chega até aqui
- * quem tem sessão real — sem ela, `RotaProtegida` já mandou para o login.
- */
+/** casca da aplicação: cabeçalho, navegação por perfil e área de conteúdo */
 export function AppLayout() {
   const { perfil, usuario, sair, saindo } = usePerfil()
   const navegar = useNavigate()

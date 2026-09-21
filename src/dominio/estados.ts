@@ -1,21 +1,11 @@
-/**
- * Fonte única da codificação visual de estado.
- *
- * `RNF-10`: **nenhuma informação só por cor.** Todo estado carrega segundo
- * canal — `marcador` (forma) e `sigla` (texto) — para leitor de tela,
- * daltonismo e impressão em preto e branco.
- *
- * `RF-INF-03` e `RF-CIC-04` pedem a mesma leitura na grade, no quadro e na
- * ficha. Uma legenda compartilhada pelas três telas, não três legendas
- * diferentes: é o que este arquivo garante.
- */
+// fonte única da codificação visual de estado
 import type { EstadoCaixa, GrauCerteza } from './tipos'
 
 export interface CodificacaoVisual {
   rotulo: string
-  /** Segundo canal 1 — forma. Legível em P&B. */
+  /** segundo canal 1 - forma. Legível em P&B. */
   marcador: string
-  /** Segundo canal 2 — texto curto, para o card e o leitor de tela. */
+  /** Segundo canal 2 - texto curto, para o card e o leitor de tela */
   sigla: string
   descricao: string
 }
@@ -53,7 +43,7 @@ export const ESTADO_CAIXA: Record<EstadoCaixa, CodificacaoVisual> = {
   },
 }
 
-/** Ordem das 5 colunas do quadro (`RF-CIC-01`). */
+/** Ordem das 5 colunas do quadro (RF-CIC-01) */
 export const COLUNAS_DO_QUADRO: EstadoCaixa[] = [
   'em_reproducao',
   'parcialmente_comprometida',
@@ -63,8 +53,8 @@ export const COLUNAS_DO_QUADRO: EstadoCaixa[] = [
 ]
 
 /**
- * `RN-08` — grau de certeza. A ordem aqui é a de consumo do `RF-MOT-04`:
- * confirmado primeiro, projetado por último.
+ * RN-08 - grau de certeza. A ordem aqui é a de consumo do RF-MOT-04: confirmado primeiro,
+ * projetado por último.
  */
 export const GRAU_CERTEZA: Record<GrauCerteza, CodificacaoVisual> = {
   confirmado: {

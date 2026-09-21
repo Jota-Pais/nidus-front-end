@@ -54,30 +54,14 @@ function FaceDaEstante({
   )
 }
 
-/**
- * `RF-INF-03` — visão espacial da ocupação.
- *
- * "Reproduzindo a estante real com as duas faces visíveis ao mesmo tempo.
- * Comunica de relance: vazia, com casal, estágio do ciclo, situação de
- * comprometimento."
- *
- * A grade **não é gerada aqui**. O `contrato-api.md` §5 é explícito: como não
- * existe tabela `slot` (decisão D-04 do modelo de dados), o back-end monta as
- * posições a partir da topologia e devolve as vazias com `caixa: null`. O front
- * desenha o que recebe — `RNF-01`.
- *
- * A legenda fica recolhida: quem usa a tela todo dia aprende os cinco estados
- * na primeira semana, e um bloco fixo de explicação rouba altura da grade,
- * que é o que a tela existe para mostrar. Aberta por um clique, e sem esconder
- * nada que decida — o card já carrega marcador e sigla (`RNF-10`).
- */
+/** RF-INF-03 - visão espacial da ocupação */
 export function GradeEstantes() {
   const estantes = useEstantes()
   const [idSelecionado, setIdSelecionado] = useState<number | null>(null)
   const abrirFicha = useAbrirFicha()
 
-  // Só cai em demonstração por falha de rede, e nunca em produção. Erro de
-  // contrato (401, 403, 500) é erro e aparece como erro.
+  // Só cai em demonstração por falha de rede, e nunca em produção. Erro de contrato (401,
+  // 403, 500) é erro e aparece como erro
   const semApi = estantes.error instanceof ErroDeRede && config.ambiente !== 'producao'
 
   const lista: Estante[] = semApi ? ESTANTES_DEMO : (estantes.data ?? [])

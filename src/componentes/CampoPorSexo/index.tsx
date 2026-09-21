@@ -4,29 +4,7 @@ import { VAZIO } from './valor'
 import type { ValorPorSexo } from './valor'
 import './estilos.css'
 
-/**
- * Par de contagens macho/fêmea.
- *
- * Aparece em **quase todo registro do técnico**: parto (`nascidoM`/`nascidoF`,
- * `RF-REP-03`), eutanásia de seleção (`RF-REP-04`), desmame (`RF-REP-05`) e
- * no pedido da solicitação (`RF-DEM-01`). Contar em dois números separados é
- * do domínio, não da tela: o pesquisador pede por sexo e o motor atende por
- * sexo (`RN-09`).
- *
- * `value`/`onChange` no formato do `Form.Item`, então entra direto no
- * formulário sem adaptador. As funções de valor — `estaCompleto`,
- * `paraPorSexo` — estão em `./valor`.
- *
- * ⚠️ **`maximo` não é teto de protocolo.** O `RF-REP-04` é explícito: quem
- * decide quantos permanecem é o técnico. A única validação legítima é
- * `eutanasiado ≤ nascido`, e é para isso — e só para isso — que `maximo`
- * existe. Passar a constante de 4M/4F aqui seria transformar uma
- * **expectativa** de ninhada não nascida (`CONF-03`, `PEN-05`) em limite, que
- * é exatamente o erro que o requisito manda não cometer.
- *
- * ⚠️ E o teclado abre numérico (`inputMode`): o técnico está de luvas, dentro
- * da sala (`RNF-03`).
- */
+/** Par de contagens macho/fêmea */
 export function CampoPorSexo({
   value,
   onChange,
@@ -36,10 +14,10 @@ export function CampoPorSexo({
 }: {
   value?: ValorPorSexo | null
   onChange?: (valor: ValorPorSexo) => void
-  /** Teto por sexo. Só onde o contrato tem um — `eutanasiado ≤ nascido`. */
+  /** teto por sexo. Só onde o contrato tem um - 'eutanasiado ≤ nascido'. */
   maximo?: PorSexo
   desabilitado?: boolean
-  /** Para o `<label>` do campo apontar para a primeira metade do par. */
+  /** Para o '<label>' do campo apontar para a primeira metade do par. */
   idMachos?: string
 }) {
   const atual = value ?? VAZIO

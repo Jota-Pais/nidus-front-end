@@ -1,18 +1,4 @@
-/**
- * Tema do Ant Design, derivado dos tokens do design system.
- *
- * ⚠️ **Nenhum valor literal aqui.** Tudo vem de `@/app/tokens`, que é o mesmo
- * lugar de onde sai `tokens.css`. Escrever `#003893` neste arquivo cria a
- * terceira cópia do azul institucional, e é a que ninguém lembra de atualizar.
- *
- * Duas coisas que este arquivo carrega e não são preferência de design:
- *
- * - **`RNF-03`** — o registro de parto, seleção e desmame acontece dentro da
- *   sala, com o técnico de luvas e paramentado: tela pequena, alvo de toque
- *   generoso, mínimo de digitação. Daí `ALTURA_DE_CONTROLE`.
- * - **`RNF-10`** — contraste adequado, e nada só por cor. O contraste está na
- *   paleta; o "nada só por cor" está em `@/dominio/estados`.
- */
+// Tema do Ant Design, derivado dos tokens do design system
 import type { ThemeConfig } from 'antd'
 import {
   ALTURA_DE_CONTROLE,
@@ -33,14 +19,7 @@ export const tema: ThemeConfig = {
     colorWarning: COR_DE_RETORNO.aviso,
     colorError: COR_DE_RETORNO.erro,
 
-    /*
-     * ⚠️ Superfície e contorno de cada tom, explícitos.
-     *
-     * Sem isto o Ant Design deriva o fundo do `Alert` a partir da cor do
-     * texto -- e a cor do texto é a variante **escurecida** (o amarelo
-     * institucional a 4.5:1). O resultado é um aviso cor de oliva, que não
-     * lembra nem o amarelo da UFSC nem coisa nenhuma.
-     */
+    /** superfície e contorno de cada tom, explícitos. */
     colorSuccessBg: SUPERFICIE_DE_RETORNO.sucessoFundo,
     colorSuccessBorder: SUPERFICIE_DE_RETORNO.sucessoBorda,
     colorWarningBg: SUPERFICIE_DE_RETORNO.avisoFundo,
@@ -74,7 +53,7 @@ export const tema: ThemeConfig = {
 
     controlHeight: ALTURA_DE_CONTROLE,
 
-    /** Anel de foco no azul institucional — o design system e o `RNF-10` pedem o mesmo. */
+    /** anel de foco no azul institucional - o design system e o RNF-10 pedem o mesmo. */
     controlOutline: `color-mix(in srgb, ${COR.acento} 20%, transparent)`,
     controlOutlineWidth: 3,
 
@@ -92,7 +71,7 @@ export const tema: ThemeConfig = {
     Card: { boxShadowTertiary: SOMBRA.md },
     Layout: { headerBg: COR.invertido, bodyBg: COR.fundo, siderBg: COR.cartao },
     Menu: { itemBorderRadius: RAIO.sm, itemMarginInline: 8 },
-    /** `Calistoga` só em título; o resto da tela é `Inter`. */
+    /** 'Calistoga' só em título; o resto da tela é Inter */
     Typography: { fontWeightStrong: 600 },
     Modal: { borderRadiusLG: RAIO.lg },
     Tag: { borderRadiusSM: RAIO.sm },

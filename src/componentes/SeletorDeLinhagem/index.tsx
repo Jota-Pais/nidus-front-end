@@ -2,18 +2,7 @@ import { Select } from 'antd'
 import type { CodigoEspecie } from '@/dominio/tipos'
 import { useCatalogoComReserva } from '../_catalogo'
 
-/**
- * Linhagem, sempre dentro de uma espécie.
- *
- * ⚠️ **A espécie é obrigatória de propósito.** Wistar é rato, C57BL/6J é
- * camundongo, e o contrato recusa (`400 VALIDACAO`) linhagem que não pertence
- * à espécie da caixa (`POST /api/casais`). Uma lista com as cinco linhagens
- * juntas convidaria ao erro e transformaria uma escolha impossível numa
- * viagem de ida e volta ao servidor.
- *
- * Sem espécie escolhida o campo fica desabilitado e diz o que falta, em vez
- * de abrir uma lista vazia — lista vazia parece defeito.
- */
+/** linhagem, sempre dentro de uma espécie */
 export function SeletorDeLinhagem({
   especie,
   value,
@@ -25,7 +14,7 @@ export function SeletorDeLinhagem({
   value?: string | null
   onChange?: (valor: string | null) => void
   id?: string
-  /** Para filtro de tela, onde "qualquer linhagem" é resposta válida. */
+  /** para filtro de tela, onde "qualquer linhagem" é resposta válida */
   permiteTodas?: boolean
 }) {
   const { catalogo, carregando } = useCatalogoComReserva()

@@ -63,8 +63,8 @@ describe('CardDaPosicao — RNF-10, nada só por cor', () => {
       unmount()
     }
 
-    // Simulando deuteranopia ou impressão em P&B, a combinação marcador+sigla
-    // é o que resta — e ela tem que ser única por estado.
+    // simulando deuteranopia ou impressão em P&B, a combinação
+    // marcador+sigla é o que resta - e ela tem que ser única por estado
     expect(vistos.size).toBe(estados.length)
   })
 

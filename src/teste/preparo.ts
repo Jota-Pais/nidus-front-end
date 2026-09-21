@@ -1,11 +1,4 @@
-/**
- * Preparo do ambiente de teste.
- *
- * `matchMedia` não existe no jsdom e o Ant Design usa em componentes
- * responsivos (`Sider` com `breakpoint`, `Row`/`Col` com `xs`/`md`). Sem este
- * dublê, montar a casca da aplicação num teste quebra antes de chegar na
- * asserção.
- */
+// preparo do ambiente de teste.
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
@@ -23,8 +16,8 @@ if (!window.matchMedia) {
   }))
 }
 
-// O Ant Design v5 avisa sobre isto no console em ambiente de teste; não é
-// problema real e polui a saída.
+// O Ant Design v5 avisa sobre isto no console em ambiente de teste; não é problema real e polui
+// a saída.
 if (!window.getComputedStyle) {
   throw new Error('jsdom sem getComputedStyle: ambiente de teste mal configurado')
 }

@@ -8,19 +8,7 @@ import type { CodificacaoVisual } from './estados'
 import type { EstadoCaixa, GrauCerteza } from './tipos'
 import './legenda.css'
 
-/**
- * `RNF-10` — a legenda compartilhada por grade, quadro e ficha.
- *
- * Uma legenda só, não três. Cada marca leva **marcador** (forma), **sigla**
- * (texto) e superfície (cor), de modo que a informação sobreviva a
- * daltonismo, leitor de tela e impressão em preto e branco.
- *
- * ⚠️ **A cor vem dos tokens, não do Ant Design.** Antes cada marca usava um
- * preset (`blue`, `gold`, `volcano`), que é outra paleta: ao lado do azul e do
- * verde da UFSC, ficava parecendo outro sistema. Agora o estado da caixa usa
- * exatamente a mesma superfície que o card da grade e o do quadro — é o que
- * garante, na folha de estilo, o que o `RF-CIC-02` exige no dado.
- */
+// RNF-10 - a legenda compartilhada por grade, quadro e ficha
 
 function Marca({ visual, tom }: { visual: CodificacaoVisual; tom?: string }) {
   return (
@@ -41,13 +29,7 @@ export function MarcaEstadoCaixa({ estado }: { estado: EstadoCaixa }) {
   return <Marca visual={ESTADO_CAIXA[estado]} tom={estado} />
 }
 
-/**
- * `RN-08` — grau de certeza da oferta.
- *
- * ⚠️ O `projetado` sai em vermelho não por ser um erro, e sim por ser o de
- * maior risco: quantidade e data estimadas, animal que ainda não nasceu. Quem
- * carrega o significado é a sigla e a descrição — a cor é o terceiro canal.
- */
+/** RN-08 - grau de certeza da oferta. */
 export function MarcaGrauCerteza({ grau }: { grau: GrauCerteza }) {
   const tom = grau === 'confirmado' ? 'sucesso' : grau === 'previsto' ? 'atencao' : 'erro'
   return (

@@ -1,19 +1,7 @@
 import { Select } from 'antd'
 import type { Estante } from '@/dominio/estante'
 
-/**
- * Escolha de estante.
- *
- * O rótulo traz **número visível, sala, fabricante, modelo e capacidade** —
- * tudo junto, de propósito. "E-03" sozinho não diz onde a estante fica nem
- * quantas posições tem, e é isso que o técnico precisa saber para decidir se
- * vai até lá. A busca por texto casa com qualquer um desses pedaços.
- *
- * Recebe a lista pronta em vez de consultar: quem já está na tela da grade
- * tem as estantes em mão (`useEstantes`), e um segundo componente
- * consultando por conta significaria dois estados de carregamento
- * discordando na mesma tela.
- */
+/** Escolha de estante. */
 export function SeletorDeEstante({
   estantes,
   value,

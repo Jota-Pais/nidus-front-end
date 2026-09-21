@@ -6,26 +6,9 @@ import { ErroDeApi } from '@/lib/api'
 import { MensagemDeErro } from '../MensagemDeErro'
 
 /**
- * Modal com formulário dentro — o formato de quase todo registro do Nidus:
- * formar casal, parto, seleção, desmame, encerrar casal, cadastrar estante,
- * cadastrar projeto, nova solicitação.
- *
- * Quatro coisas que a tela não precisa mais lembrar de fazer:
- *
- * 1. **`destroyOnHidden`.** Sem isso o modal reabre com o que foi digitado da
- *    vez anterior — registrar o parto da caixa A1 e abrir a A2 já com os
- *    números da A1 preenchidos é como se registra dado errado.
- * 2. **`erro.campos` vai para o campo certo.** O `contrato-api.md` §2 devolve
- *    `{ erro: { campos: { … } } }` e a mensagem no topo não diz *qual* campo
- *    está errado; aqui o erro do servidor marca o campo, como se fosse
- *    validação local.
- * 3. **Enter envia.** É `Form` de verdade com `onFinish`, não `onOk` chamando
- *    função solta: o técnico de luvas digita e aperta Enter.
- * 4. **Botão travado enquanto salva**, com o mesmo texto de sempre.
- *
- * ⚠️ Não valida regra de negócio (`RNF-01`). Validação de formato — campo
- * obrigatório, número não negativo — é do Zod ou das `rules` do campo; o resto
- * é do servidor, e volta pelo caminho do item 2.
+ * Modal com formulário dentro - o formato de quase todo registro do Nidus: formar
+ * casal, parto, seleção, desmame, encerrar casal, cadastrar estante, cadastrar
+ * projeto, nova solicitação.
  */
 export function ModalDeFormulario<V extends object>({
   titulo,
@@ -45,7 +28,7 @@ export function ModalDeFormulario<V extends object>({
   aoFechar: () => void
   aoEnviar: (valores: V) => void
   children: ReactNode
-  /** Só quando a tela precisa ler ou setar campo de fora. Senão, deixe criar. */
+  /** Só quando a tela precisa ler ou setar campo de fora. Senão, deixe criar */
   formulario?: FormInstance<V>
   valoresIniciais?: Partial<V>
   salvando?: boolean
@@ -61,10 +44,10 @@ export function ModalDeFormulario<V extends object>({
     const campos = Object.entries(erro.campos)
     if (campos.length === 0) return
 
-    // O `name` do `setFields` é tipado a partir de `V`, e o nome do campo vem
-    // do servidor — string em tempo de execução, impossível de provar em
-    // tempo de compilação. Campo que o formulário não conhece é ignorado
-    // pelo Ant Design, então o pior caso é o erro só aparecer no topo.
+    // O name do 'setFields' é tipado a partir de V, e o nome do campo vem do
+    // servidor - string em tempo de execução, impossível de provar em tempo de
+    // compilação. Campo que o formulário não conhece é ignorado pelo Ant Design,
+    // então o pior caso é o erro só aparecer no topo
     form.setFields(
       campos.map(([nome, mensagem]) => ({
         name: nome,

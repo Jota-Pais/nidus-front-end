@@ -1,6 +1,4 @@
-/**
- * Alertas do ciclo — `contrato-api.md` §8, `RF-REP-07`.
- */
+// alertas do ciclo - 'contrato-api.md' §8, RF-REP-07
 import { useQuery } from '@tanstack/react-query'
 import type { UseQueryResult } from '@tanstack/react-query'
 import { chaves } from '@/app/chaves'
