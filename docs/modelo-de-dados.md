@@ -72,13 +72,13 @@ Um cadastro merece tabela própria se marcar pelo menos duas destas:
 
 | Candidato | 1 | 2 | 3 | 4 | Decisão |
 |---|:-:|:-:|:-:|:-:|---|
-| `especie` |  |  |  | - | tabela |
-| `linhagem` |  |  |  | - | tabela |
-| `parametro_biologico` |  | - |  |  | tabela (`RN-01`) |
-| `tolerancia_idade` |  | - |  |  | tabela (`RN-07`) |
-| `grupo_genetico_par` | - |  |  | - | tabela (`RN-02`, lista configurável) |
-| `sala` | - | - |  | - | coluna de `estante` |
-| `estante_modelo` |  | - |  | - | coluna de `estante` no MVP |
+| `especie` | X | X | X | - | tabela |
+| `linhagem` | X | X | X | - | tabela |
+| `parametro_biologico` | X | - | X | X | tabela (`RN-01`) |
+| `tolerancia_idade` | X | - | X | X | tabela (`RN-07`) |
+| `grupo_genetico_par` | - | X | X | - | tabela (`RN-02`, lista configurável) |
+| `sala` | - | - | X | - | coluna de `estante` |
+| `estante_modelo` | X | - | X | - | coluna de `estante` no MVP |
 | `slot` | - | - | - | - | coluna de `caixa` |
 | `grupo_genetico` | - | - | - | - | coluna `char(1)` |
 
