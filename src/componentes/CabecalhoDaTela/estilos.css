@@ -16,7 +16,7 @@
 
 /*
  * Escala do design system, encolhida para tela de trabalho: um título de
- * 5rem come metade do tablet da sala, e o `RNF-03` diz que a tela é pequena.
+ * 5rem come metade do tablet da sala, e a tela de trabalho é pequena.
  */
 .cabecalhoDaTela__titulo {
   margin: 0;
