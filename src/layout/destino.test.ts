@@ -39,13 +39,13 @@ describe('destinoAposLogin', () => {
   })
 
   it('sem destino guardado, cai na home do perfil', () => {
-    expect(destinoAposLogin(null, 'tecnico')).toBe('/alertas')
-    expect(destinoAposLogin(undefined, 'pesquisador')).toBe('/solicitacoes')
-    expect(destinoAposLogin({}, 'gestor')).toBe('/alertas')
+    expect(destinoAposLogin(null, 'tecnico')).toBe('/kanban')
+    expect(destinoAposLogin(undefined, 'pesquisador')).toBe('/solicitar')
+    expect(destinoAposLogin({}, 'gestor')).toBe('/kanban')
   })
 
   it('destino externo é descartado em favor da home do perfil', () => {
-    expect(destinoAposLogin({ de: 'https://exemplo.com' }, 'tecnico')).toBe('/alertas')
-    expect(destinoAposLogin({ de: '//exemplo.com' }, 'pesquisador')).toBe('/solicitacoes')
+    expect(destinoAposLogin({ de: 'https://exemplo.com' }, 'tecnico')).toBe('/kanban')
+    expect(destinoAposLogin({ de: '//exemplo.com' }, 'pesquisador')).toBe('/solicitar')
   })
 })
