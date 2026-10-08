@@ -1,18 +1,16 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '@/layout/AppLayout'
 import { Erro } from '@/layout/Erro'
-import { RotaProtegida } from '@/layout/RotaProtegida'
-import { GradeEstantes } from '@/telas/estantes/GradeEstantes'
-import { Infraestrutura } from '@/telas/Infraestrutura'
-import { Login } from '@/telas/Login'
-import { PainelAlertas } from '@/telas/PainelAlertas'
-import { Projetos } from '@/telas/Projetos'
-import { Quadro } from '@/telas/Quadro'
-import { RegistrosTecnico } from '@/telas/RegistrosTecnico'
-import { Solicitacoes } from '@/telas/Solicitacoes'
 import { RaizPorPerfil } from '@/layout/RaizPorPerfil'
+import { RotaProtegida } from '@/layout/RotaProtegida'
+import { BuscaDeAtendimento } from '@/telas/BuscaDeAtendimento'
+import { Estantes } from '@/telas/Estantes'
+import { Kanban } from '@/telas/Kanban'
+import { Login } from '@/telas/Login'
+import { SolicitarAnimais } from '@/telas/SolicitarAnimais'
 
-/** Rotas da aplicação */
+const COLONIA = ['tecnico', 'gestor'] as const
+
 export const rotas = createBrowserRouter([
   { path: '/login', element: <Login />, errorElement: <Erro /> },
   {
@@ -26,61 +24,27 @@ export const rotas = createBrowserRouter([
     children: [
       { index: true, element: <RaizPorPerfil /> },
       {
-        path: 'alertas',
+        path: 'kanban',
         element: (
-          <RotaProtegida perfis={['tecnico', 'gestor']}>
-            <PainelAlertas />
+          <RotaProtegida perfis={[...COLONIA]}>
+            <Kanban />
           </RotaProtegida>
         ),
       },
       {
-        // O card "Layout base" nomeia as duas: a segunda permite mandar link direto para
-        // uma estante, que é como o técnico vai compartilhar "olha a E-03"
         path: 'estantes',
         element: (
-          <RotaProtegida perfis={['tecnico', 'gestor']}>
-            <GradeEstantes />
+          <RotaProtegida perfis={[...COLONIA]}>
+            <Estantes />
           </RotaProtegida>
         ),
       },
+      { path: 'solicitar', element: <SolicitarAnimais /> },
       {
-        path: 'estantes/:id',
+        path: 'busca',
         element: (
-          <RotaProtegida perfis={['tecnico', 'gestor']}>
-            <GradeEstantes />
-          </RotaProtegida>
-        ),
-      },
-      {
-        path: 'quadro',
-        element: (
-          <RotaProtegida perfis={['tecnico', 'gestor']}>
-            <Quadro />
-          </RotaProtegida>
-        ),
-      },
-      {
-        path: 'registros',
-        element: (
-          <RotaProtegida perfis={['tecnico', 'gestor']}>
-            <RegistrosTecnico />
-          </RotaProtegida>
-        ),
-      },
-      { path: 'solicitacoes', element: <Solicitacoes /> },
-      {
-        path: 'infraestrutura',
-        element: (
-          <RotaProtegida perfis={['gestor']}>
-            <Infraestrutura />
-          </RotaProtegida>
-        ),
-      },
-      {
-        path: 'projetos',
-        element: (
-          <RotaProtegida perfis={['gestor']}>
-            <Projetos />
+          <RotaProtegida perfis={[...COLONIA]}>
+            <BuscaDeAtendimento />
           </RotaProtegida>
         ),
       },

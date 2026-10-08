@@ -1,0 +1,130 @@
+/*
+ * Grade de estantes. As duas faces lado a lado, reproduzindo a estante real; numa estante
+ * de 128 posições a grade rola dentro do próprio container, nunca empurra a página. A cor da
+ * caixa é a da coluna dela no kanban (--estado-<coluna>-*)
+ */
+
+.faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.face {
+  flex: 1 1 360px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.face__rolagem {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.face__grade {
+  display: grid;
+  gap: 6px;
+}
+
+.posicao {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2px;
+  min-height: 62px;
+  padding: 4px 5px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+  background: var(--cor-cartao);
+  color: var(--cor-frente);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    box-shadow var(--movimento-rapido) var(--movimento-curva),
+    transform var(--movimento-rapido) var(--movimento-curva);
+}
+
+.posicao:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-md);
+}
+
+.posicao--vazia {
+  justify-content: flex-start;
+  background: var(--cor-fundo);
+  border-style: dashed;
+  color: var(--cor-suave-frente);
+}
+
+.posicao__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.posicao__codigo {
+  font-family: var(--fonte-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.posicao__linhagem {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--cor-suave-frente);
+}
+
+.posicao__casal {
+  font-family: var(--fonte-mono);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.posicao__previsao {
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  color: var(--cor-suave-frente);
+}
+
+.posicao:focus-visible {
+  outline: 2px solid var(--cor-acento);
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+.posicao--livres {
+  background: var(--estado-livres-fundo);
+  border-color: var(--estado-livres-borda);
+}
+
+.posicao--pre_reserva {
+  background: var(--estado-pre_reserva-fundo);
+  border-color: var(--estado-pre_reserva-borda);
+}
+
+.posicao--estoque {
+  background: var(--estado-estoque-fundo);
+  border-color: var(--estado-estoque-borda);
+}
+
+.posicao--reserva {
+  background: var(--estado-reserva-fundo);
+  border-color: var(--estado-reserva-borda);
+}
+
+.posicao--enviado {
+  background: var(--estado-enviado-fundo);
+  border-color: var(--estado-enviado-borda);
+  color: var(--estado-enviado-texto);
+}

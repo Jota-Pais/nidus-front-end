@@ -1,64 +1,221 @@
-// vocabulário do domínio
+// Vocabulário do sistema e formato das respostas da API
 
-/** 'RF-ACS-*' - os três perfis. Autorização é sempre decidida no servidor */
 export type Perfil = 'pesquisador' | 'tecnico' | 'gestor'
 
-export const PERFIS: Record<Perfil, { rotulo: string; descricao: string }> = {
-  pesquisador: {
-    rotulo: 'Pesquisador',
-    descricao: 'Solicita dentro da cota do projeto. Não enxerga a colônia.',
-  },
-  tecnico: {
-    rotulo: 'Técnico',
-    descricao: 'Opera a colônia, registra eventos e analisa solicitações.',
-  },
-  gestor: {
-    rotulo: 'Gestor',
-    descricao: 'Tudo do técnico, mais aprovação, parametrização e auditoria.',
-  },
+export const ROTULO_PERFIL: Record<Perfil, string> = {
+  pesquisador: 'Pesquisador',
+  tecnico: 'Técnico',
+  gestor: 'Gestor',
 }
 
 export type CodigoEspecie = 'rato' | 'camundongo'
 
-/** As duas faces da estante. A face faz parte do endereço, não é sufixo */
-export type Face = 'frontal' | 'traseira'
-
-/** 'RF-CIC-*' - estado de comprometimento da caixa, as 5 colunas do quadro */
-export type EstadoCaixa =
-  | 'em_reproducao'
-  | 'parcialmente_comprometida'
-  | 'totalmente_comprometida'
-  | 'preparada_para_envio'
-  | 'expedida'
-
-/** Finalidade da caixa, do modelo conceitual. 'contrato-api.md' §1.1 */
-export type FinalidadeCaixa = 'reproducao' | 'maternidade' | 'recria' | 'expedicao'
-
-/** RN-08 - grau de certeza da oferta. Define prioridade e risco */
-export type GrauCerteza = 'confirmado' | 'previsto' | 'projetado'
-
-/** grupos genéticos do cruzamento rotacional (RN-02) */
-export type GrupoGenetico = 'A' | 'B' | 'C' | 'D' | 'E'
-
-/** Data em ISO 'aaaa-mm-dd'. Exibição é sempre dd/mm/aaaa - ver 'lib/data.ts'. */
+/** 'aaaa-mm-dd'. Na tela é sempre dd/mm/aaaa (ver 'lib/data.ts') */
 export type DataISO = string
 
-/** endereço físico de uma posição na estante (RF-INF-02). */
-export interface Endereco {
-  idEstante: number
-  face: Face
-  linha: number
-  coluna: number
-  /** Como a etiqueta aparece na estante real. ex: C3 */
-  codigo: string
-}
+/** As 5 colunas do kanban, na ordem da tela */
+export type EstadoCaixa = 'livres' | 'pre_reserva' | 'estoque' | 'reserva' | 'enviado'
 
-/**
- * quantidade por sexo, a forma em que o contrato conta animal em todo lugar: nascido,
- * eutanasiado de seleção, desmamado, disponível, comprometido e pedido da solicitação
- * ('contrato-api.md' §6 e §8)
- */
 export interface PorSexo {
   m: number
   f: number
+}
+
+/** O casal no card do kanban e na célula da grade */
+export interface CasalNoCard {
+  /** dupla de grupos genéticos, macho primeiro. ex: AB */
+  identificacao: string
+  /** 1 a 5 - a cor da bolinha */
+  partoAtual: number
+  partoPrevisto: DataISO | null
+}
+
+// GET /api/quadro?especie=
+export interface CardDoKanban {
+  idCaixa: number
+  /** endereço na estante. ex: F1A */
+  codigo: string
+  numeroVisivel: string
+  sala: string
+  linhagem: string | null
+  casal: CasalNoCard | null
+}
+
+export interface Kanban {
+  especie: CodigoEspecie
+  colunas: { estado: EstadoCaixa; cards: CardDoKanban[] }[]
+}
+
+// GET /api/estantes e GET /api/estantes/:id/grade
+export interface Estante {
+  id: number
+  sala: string
+  fabricante: string
+  modelo: string
+  numeroVisivel: string
+  faces: number
+  linhas: number
+  colunas: number
+  capacidade: number
+}
+
+export interface CaixaNaGrade {
+  id: number
+  estado: EstadoCaixa
+  linhagem: string | null
+  casal: CasalNoCard | null
+}
+
+export interface Posicao {
+  linha: number
+  coluna: number
+  codigo: string
+  /** null = posição vazia */
+  caixa: CaixaNaGrade | null
+}
+
+export type Face = 'frontal' | 'traseira'
+
+export interface Grade {
+  estante: Estante
+  faces: { face: Face; posicoes: Posicao[] }[]
+}
+
+// GET /api/caixas/:id
+export interface Parto {
+  id: number
+  /** 1º a 5º */
+  ordem: number
+  dtAcasalamento: DataISO
+  dtPartoPrevisto: DataISO | null
+  dtPartoReal: DataISO | null
+  nascidoM: number | null
+  nascidoF: number | null
+  dtSelecao: DataISO | null
+  eutanasiadoM: number | null
+  eutanasiadoF: number | null
+  dtDesmamePrevisto: DataISO | null
+  dtDesmameReal: DataISO | null
+  desmamadoM: number | null
+  desmamadoF: number | null
+  disponivel: PorSexo
+  comprometido: PorSexo
+}
+
+export interface Casal {
+  id: number
+  identificacao: string
+  grupoMacho: string
+  grupoFemea: string
+  linhagem: string
+  dtFormacao: DataISO
+  ativo: boolean
+  dtEncerramento: DataISO | null
+  motivoEncerramento: string | null
+}
+
+export interface Ficha {
+  caixa: {
+    id: number
+    endereco: {
+      idEstante: number
+      numeroVisivel: string
+      sala: string
+      face: Face
+      linha: number
+      coluna: number
+      codigo: string
+    }
+    especie: CodigoEspecie
+    linhagem: string | null
+    estado: EstadoCaixa
+  }
+  casal: Casal | null
+  /** do 1º ao último registrado - no máximo 5 */
+  partos: Parto[]
+  eventos: { dataHora: string; tipo: string; descricao: string; autor: string }[]
+}
+
+// GET /api/catalogo
+export interface Catalogo {
+  especies: {
+    id: number
+    codigo: CodigoEspecie
+    nome: string
+    linhagens: { id: number; nome: string; ativa: boolean }[]
+  }[]
+  paresGeneticos: { grupoMacho: string; grupoFemea: string }[]
+}
+
+// GET /api/projetos
+export interface Projeto {
+  id: number
+  /** formato 23080.XXXXXX/AAAA-XX */
+  numero: string
+  titulo: string
+  responsavel: string
+  vigenteAte: DataISO
+  vigente: boolean
+}
+
+export type Cronograma = 'unica' | 'semanal' | 'quinzenal' | 'mensal' | 'avulsas'
+
+export type StatusSolicitacao =
+  | 'rascunho'
+  | 'enviada'
+  | 'em_analise'
+  | 'aprovada'
+  | 'recusada'
+  | 'ajustada'
+  | 'em_atendimento'
+  | 'concluida'
+  | 'cancelada'
+
+// GET /api/solicitacoes
+export interface Solicitacao {
+  id: number
+  projeto: string
+  solicitante: string
+  especie: CodigoEspecie
+  idLinhagem: number
+  linhagem: string
+  machos: number
+  femeas: number
+  /** dias desde o nascimento */
+  idade: number
+  dataEntrega: DataISO
+  cronograma: Cronograma
+  status: StatusSolicitacao
+}
+
+/** de onde vem o animal: já desmamado, já nascido, ou parto ainda previsto */
+export type Origem = 'de_fato' | 'previsao' | 'previsao_parto'
+
+// GET /api/busca
+export interface CaixaCandidata {
+  idCaixa: number
+  idParto: number
+  codigo: string
+  numeroVisivel: string
+  estado: EstadoCaixa
+  linhagem: string
+  casal: string
+  /** 1º a 5º */
+  parto: number
+  origem: Origem
+  nascimento: DataISO
+  idadeNaEntrega: number
+  disponivel: PorSexo
+  /** quanto o motor sugere tirar desta caixa */
+  alocar: PorSexo
+  sugerida: boolean
+}
+
+export interface ResultadoDaBusca {
+  referencia: DataISO
+  faixa: { min: number; max: number }
+  candidatas: CaixaCandidata[]
+  deficit: PorSexo
+  casaisAFormar: number
+  acasalamentoNovo: { dataMinimaDeEntrega: DataISO; viavel: boolean }
 }
