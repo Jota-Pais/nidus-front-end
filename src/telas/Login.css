@@ -55,7 +55,7 @@
 
 /* Abaixo de 900px a coluna da foto sai de lado e empilha embaixo do
    formulário: com uma coluna só ela ia esticar bem mais alto que o
-   formulário, criando um vazio em vez de aproveitar espaço (RNF-03). */
+   formulário, criando um vazio em vez de aproveitar espaço. */
 @media (max-width: 900px) {
   .loginPagina__grade {
     grid-template-columns: 1fr;
