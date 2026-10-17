@@ -1,261 +1,94 @@
 # Nidus - front-end
 
-Interface web do Nidus, sistema de gestão de produção e manutenção de roedores
-do CPMR/UFSC (Centro de Produção e Manutenção de Roedores da Universidade
-Federal de Santa Catarina).
+Interface web do Nidus, o sistema de controle de produção de roedores do CPMR/UFSC
+(Centro de Produção e Manutenção de Roedores da Universidade Federal de Santa
+Catarina).
 
 Projeto Integrador: Sistema Web - SATC, Engenharia de Software, fase 4, 2026.2.
+Repositório irmão: [nidus-back-end](https://github.com/Jota-Pais/nidus-back-end).
 
-## O que tem aqui
+## Escopo
 
-As telas do sistema, e só. Nenhuma regra de negócio roda aqui (RNF-01): cálculo
-de data, viabilidade de prazo, varredura por idade, validação de cruzamento,
-permissão e filtragem são do servidor. O front apresenta e coleta.
+O Nidus é o equivalente, na nossa stack, do sistema que o próprio cliente montou
+(`Malcoringa/Sistema-CPMR-UFSC`, branch `master` - o `main` de lá só tem o
+README). A referência de requisitos é a spec dele, o `instructions.md` v2.7, de
+18/09/2026. Se o sistema do cliente não tem, a gente não faz.
 
-O cliente pode esconder um botão por conveniência, mas nunca autorizar
-(RF-ACS-02).
+| Tela | Quem usa | O que faz |
+|---|---|---|
+| Kanban | Técnico, gestor | Um quadro por espécie, colunas Livres, Pré-reserva, Estoque, Reserva e Enviado. Arrastar o card muda a coluna |
+| Estantes | Técnico, gestor | As estantes de cada sala, faces frontal e traseira lado a lado, cada caixa na cor da coluna do kanban |
+| Ficha da caixa | Técnico, gestor | Abre pelo card ou pela célula. Forma o casal e registra parto, eutanásia de seleção e desmame, do 1º ao 5º parto |
+| Solicitar animais | Todos | O pedido do pesquisador: projeto CEUA, linhagem, quantidades, idade e data de entrega |
+| Busca de atendimento | Técnico, gestor | Quais caixas atendem um pedido e quantos casais novos faltam. Aloca as caixas sugeridas |
+
+Nenhuma regra de negócio roda aqui: datas previstas, busca, permissão e
+cruzamento são do back-end. O front mostra e coleta.
 
 ## Rodar
 
 ```bash
 npm install
-cp .env.example .env
-npm run dev
+cp .env.example .env     # VITE_API_URL aponta para o back-end local
+npm run dev              # http://localhost:5173
 ```
 
 | Comando | O que faz |
 |---|---|
 | `npm run dev` | Servidor de desenvolvimento do Vite |
 | `npm run build` | Type-check e build de produção |
-| `npm run preview` | Serve o build |
 | `npm test` | Vitest |
 | `npm run lint` | ESLint |
-| `npm run format` | Prettier |
 
 ## Stack
 
-A equipe fechou na entrega de infraestrutura, e está registrada em
-`docs/decisoes-de-stack.md`.
+React + TypeScript, Vite, Ant Design, TanStack Query, react-router, Zod e dayjs.
+Testes no Vitest. Deploy na Vercel, a partir do GitHub.
 
-| Camada | Escolha |
-|---|---|
-| UI | React + TypeScript |
-| Componentes | Ant Design |
-| Build e dev server | Vite |
-| Roteamento | react-router |
-| Validação de formulário e de ambiente | Zod |
-| Datas | dayjs (já é a dependência de data do Ant Design) |
-| Testes | Vitest |
-| Deploy | Vercel, a partir do GitHub |
+O visual é o do Nidus: paleta da UFSC, Calistoga nos títulos, Inter no texto e
+JetBrains Mono nos códigos. Cor, raio, sombra e fonte saem de
+`src/app/tokens.ts` (tema do Ant Design) e `src/app/tokens.css` (CSS das telas),
+que o `tokens.test.ts` mantém iguais. A cor de cada coluna do kanban também é
+token (`--estado-livres-fundo` e companhia), e a grade de estantes usa a mesma.
 
-### As decisões que mais aparecem no dia a dia
-
-| Decisão | Escolha |
-|---|---|
-| Autenticação | Cookie de sessão `httpOnly` - toda requisição com `credentials: 'include'` |
-| Estado de servidor | TanStack Query - `invalidateQueries` é o que cumpre o RF-CIC-02 |
-| Drag-and-drop do quadro | `@dnd-kit`, numa segunda passada. Até lá, botão "mover para" no card |
-
-Decisão fechada não se rediscute sem a equipe.
-
-Cuidado com `SameSite=None; Secure`, que não é detalhe: front na Vercel e API na
-Render ficam em domínios diferentes, e sem isso o login funciona em `localhost` e
-quebra em produção. Está em `docs/contrato-api.md` §1.2.
-
-## Documentos compartilhados - `docs/`
-
-`docs/` é byte a byte igual em `nidus-front-end` e `nidus-back-end`. Foi assim
-que a gente resolveu o compartilhamento de tipos: os dois repositórios são
-independentes e cada lado escreve os próprios tipos a partir do mesmo texto.
-
-| Arquivo | O que é |
-|---|---|
-| `contrato-api.md` | Fonte única da integração. Endpoints, formatos, erros, perfil exigido por rota |
-| `decisoes-de-stack.md` | O que está decidido e não se rediscute sem a equipe |
-| `requisitos.md` | Documento de requisitos v0.2, sobre a spec v2.4 do cliente |
-| `modelo-de-dados.md` | Modelo lógico do banco: o MVP em 14 tabelas |
-
-Mudou a API? Muda o arquivo nos dois repos, no mesmo PR ou em PRs irmãos. Um lado
-alterar sozinho é quebrar o outro sem aviso.
-
-Outra coisa pra ter em mente: o `contrato-api.md` §1.1 aponta pra
-`src/dominio/tipos.ts` e `src/dominio/estados.ts` e diz que os valores deles são
-o contrato. O `char(1)` do banco nunca cruza a rede, quem traduz é o back-end.
-Renomear uma chave desses dois arquivos quebra a API.
-
-## Telas
-
-A lista segue `docs/requisitos.md` e o backlog do Trello - cada tela existe como
-card próprio no quadro. Tela que ainda não começou já existe como arquivo em
-`src/telas/`, renderizando o stub `EmConstrucao` com ator, requisitos e o que ela
-vai fazer. O que já ficou pronto quem responde é o Kanban e o histórico de
-commits.
-
-### MVP
-
-| Tela | Ator | Requisitos |
-|---|---|---|
-| Login | todos | RF-ACS-01, RF-ACS-02 |
-| Cadastro de infraestrutura | Gestor | RF-INF-01, RF-INF-02, RNF-05 |
-| Grade de estantes - duas faces lado a lado, um card por caixa | Técnico | RF-INF-03, RF-INF-06 |
-| Ficha da posição - modal, aberta de qualquer card da grade ou do quadro | Técnico | RF-INF-04, RF-REP-02 |
-| Quadro de comprometimento - um por espécie, 5 colunas de estado | Técnico / Gestor | RF-CIC-01 a RF-CIC-05 |
-| Painel de alertas do ciclo | Técnico | RF-REP-07 |
-| Registros do técnico - parto, eutanásia de seleção, desmame, mortalidade | Técnico | RF-REP-03 a RF-REP-06, RNF-03 |
-| Cadastro de projeto de ética e cota | Gestor | RF-DEM-06 |
-| Nova solicitação | Pesquisador | RF-DEM-01, RF-DEM-02 |
-| Acompanhamento de solicitações | Pesquisador | RF-DEM-05 |
-| Motor de atendimento / análise da solicitação | Técnico / Gestor | RF-MOT-05, RF-MOT-06, RF-MOT-09 |
-
-### Fases posteriores
-
-Agrupamento e expedição (RF-EXP-*), insumos (RF-INS-*), indicadores e auditoria
-(RF-BI-*), notificações (RF-DEM-07), contraproposta (RF-DEM-04), quarentena e
-movimentação de caixa.
-
-### Dois requisitos transversais, que não são features
-
-Valem pra grade, quadro e ficha ao mesmo tempo, então ficam numa fonte única em
-`src/dominio/estados.ts` em vez de repetidos por tela:
-
-- RNF-10, nada só por cor. Toda codificação de estado carrega segundo canal
-  (marcador e sigla), por acessibilidade e impressão P&B. Uma legenda
-  compartilhada pelas três telas, não três legendas diferentes.
-- RNF-04, data sem ambiguidade. Exibição sempre em `dd/mm/aaaa`, idade em dias
-  inteiros com regra explícita de arredondamento. Centralizado em
-  `src/lib/data.ts`; nenhuma tela formata data por conta.
+O login é por cookie de sessão `httpOnly`, então toda chamada vai com
+`credentials: 'include'` (ver `src/lib/api.ts`).
 
 ## Estrutura
 
 ```
-docs/         documentos espelhados com o back-end (ver acima)
 src/
-  app/        configuração da aplicação: rotas, tema, tokens, ambiente por Zod
-  componentes/ biblioteca de componentes do projeto - ver o README de lá
-  layout/     casca: navegação por perfil, rota protegida, erro e carregamento
-  auth/       perfil da sessão do usuário
-  dominio/    tipos e legenda de estado (fonte única do RNF-10 e do contrato)
-  lib/        datas e idade (fonte única do RNF-04)
-  fixtures/   dados de carga inicial do Anexo A, pra desenvolver sem API
-  telas/      uma tela por linha da tabela acima
+  app/       rotas, cache do TanStack Query, tokens, tema e ambiente validado por Zod
+  auth/      sessão do usuário
+  componentes/ cabeçalho de tela, seção, botão, etiqueta, aviso e o resto do visual
+  layout/    casca com a barra lateral, menu por perfil, rota protegida, carregamento e erro
+  dominio/   tipos da API, colunas do kanban, cores dos partos e as consultas (useKanban, useFicha...)
+  lib/       chamada à API, mensagens de erro e datas (sempre dd/mm/aaaa)
+  telas/     uma tela por arquivo, com o CSS ao lado
 ```
-
-### Sobre `componentes/`
-
-Tela nova não decide de novo o que já foi decidido: formato de data, marcador de
-estado, altura de controle, conversão de `Dayjs` pra `aaaa-mm-dd`. Um import
-resolve:
-
-```tsx
-import { CabecalhoDaTela, DataPrevistaOuReal, Pilha, Secao } from '@/componentes'
-```
-
-Entra na biblioteca o que serve a mais de uma tela, ou o que carrega decisão que
-não pode variar entre telas. Componente de uma tela só mora ao lado da tela. O
-catálogo completo e as regras estão em `src/componentes/README.md`.
-
-### Design system e tokens
-
-Cor, tipografia, raio, sombra, altura de controle e movimento saem de um lugar
-só: `src/app/tokens.ts` (pro tema do Ant Design) e `src/app/tokens.css` (pro CSS
-dos componentes). Os dois são conferidos por `tokens.test.ts` - mudar um sem o
-outro quebra o teste.
-
-Nenhum componente escreve cor, raio, sombra ou fonte literal. Se o valor não está
-em `tokens.ts`, ele não é do design system.
-
-Duas coisas do design system também são requisito, então não se negociam por
-preferência visual:
-
-| Token | Valor | Requisito |
-|---|---|---|
-| Altura de controle | `48px` | RNF-03 - técnico de luvas, tela pequena |
-| Anel de foco | acento, sempre visível | RNF-10 - operável por teclado |
-
-### Sobre `fixtures/`
-
-São os dados de carga inicial reais do cliente (Anexo A do documento de
-requisitos): espécies, linhagens, os 4 modelos de estante, grupos genéticos e
-pares válidos, máscara do projeto de ética, parâmetros do ciclo biológico e a
-tabela de tolerância. Servem pra desenvolver tela antes da API existir, e pra
-testar que a topologia fecha com a capacidade declarada.
-
-Não é mock de comportamento. O RNF-01 continua valendo e nenhum número exibido ao
-usuário pode ser calculado aqui.
-
-Em particular, `enderecosDaEstante()` gera grade só pra teste e desenvolvimento.
-Em produção quem gera é o back-end: `GET /api/estantes/:id/grade` já devolve as
-posições das duas faces, as vazias com `caixa: null`, porque não existe tabela
-`slot` (decisão D-04). O front desenha o que recebe.
-
-## Requisito em aberto que afeta tela
-
-O que ainda depende de resposta do cliente tem ID CONF- ou PEN- em
-`docs/requisitos.md` e card no Trello. A regra aqui é uma: onde a tela precisa de
-uma resposta que não existe ainda, a escolha entra como parâmetro num lugar só -
-argumento de função ou constante nomeada de um módulo - nunca como número literal
-no meio do componente. É por isso que `idadeEmDias()` recebe a data-base como
-argumento e o eixo da letra da estante mora em `EIXO_DA_LETRA`. Quando o cliente
-responder, muda um lugar.
 
 ## Deploy na Vercel
 
-Projeto a partir do GitHub, framework Vite (detectado sozinho), build
-`npm run build`, saída em `dist/`.
+Framework Vite, build `npm run build`, saída em `dist/`. Push em `main` publica
+sozinho em https://thenidus.vercel.app.
 
 | Variável | Valor em produção |
 |---|---|
-| `VITE_API_URL` | A própria URL de produção do front: `https://thenidus.vercel.app`, sem barra no final - ver "API pelo mesmo domínio" abaixo |
+| `VITE_API_URL` | `https://thenidus.vercel.app`, a própria URL do front, sem barra no final |
 | `VITE_AMBIENTE` | `producao` |
 
-As duas são gravadas no build, então mudar o valor exige um redeploy. Sem
-`VITE_API_URL` a página abre em branco (a validação do ambiente falha antes do
-React montar). Sem `VITE_AMBIENTE=producao` o cabeçalho mostra o rótulo `local` e
-a grade de estantes cai nos dados de demonstração quando a API falha.
+As duas entram no build, então mudar o valor exige redeploy. Não defina
+`NODE_ENV` na Vercel: com `production` ela deixa de instalar `vite` e
+`typescript`, que são devDependencies.
 
-Não defina `NODE_ENV` na Vercel: com `NODE_ENV=production` ela deixa de instalar
-as devDependencies, e `vite` e `typescript` estão lá.
+O `vercel.json` faz duas coisas:
 
-### O `vercel.json`
-
-Faz duas coisas, nesta ordem:
-
-1. API pelo mesmo domínio. `/api/*` e `/saude` são reescritos pra API na Render.
-   A Vercel age como proxy, então o navegador só fala com `*.vercel.app` e o
-   cookie `nidus_sessao` passa a ser de primeira parte. Sem isso o cookie é de
-   terceiro (front em `vercel.app`, API em `onrender.com`) e o Safari, todo
-   iPhone, o Chrome anônimo e o Brave descartam por padrão: o login responde 200
-   e a próxima requisição volta 401, jogando o usuário de volta pra `/login` sem
-   mensagem. Chrome e Firefox em janela normal funcionam nos dois arranjos. O
-   cabeçalho `x-vercel-enable-rewrite-caching: 0` impede a CDN da Vercel de
-   guardar resposta da API, que é sempre por usuário.
-2. Rota do navegador. Tudo o mais vai pra `index.html`. Sem isso, abrir `/quadro`
-   direto ou dar F5 em `/estantes/3` devolve 404 da Vercel, porque quem resolve
-   rota é o `createBrowserRouter`.
-
-A URL da Render está fixa no `vercel.json` (`nidus-cpmr-api`, o `name` do
-`render.yaml` do back), e a Vercel não expande variável de ambiente dentro desse
-arquivo. Como todo `/api/*` passa por esse destino, login com e-mail e senha
-incluído, só publique o front depois que
-`curl https://nidus-cpmr-api.onrender.com/saude` devolver `{"status":"ok",…}` do
-nosso serviço. Se a Render der outro nome ao serviço (nome ocupado ganha sufixo
-aleatório), troque o host nos dois `destination` e faça commit antes de ligar a
-Vercel. O nome `nidus-api` já pertence a outro serviço na Render.
-
-Pra voltar ao arranjo direto (navegador falando com a Render), é só apontar
-`VITE_API_URL` pra URL da Render: o back já responde com `SameSite=None; Secure`
-e CORS com credenciais. Só perde os navegadores que bloqueiam cookie de terceiro.
-
-Depois de publicar, volte na Render e coloque a URL de produção do front em
-`CORS_ORIGEM`. O teste que prova o arranjo: login em produção grava o cookie
-`nidus_sessao` e ele sobrevive a um F5. Vale abrir num iPhone também.
-
-Preview deploy da Vercel tem outra URL e não é suportado: `VITE_API_URL` e
-`CORS_ORIGEM` apontam pra produção.
-
-## Repositório irmão
-
-Back-end: https://github.com/Jota-Pais/nidus-back-end
+1. Reescreve `/api/*` e `/saude` para a API na Render
+   (`nidus-cpmr-api.onrender.com`). O navegador só fala com `*.vercel.app` e o
+   cookie de sessão fica de primeira parte. Sem isso o Safari, o iPhone, o Chrome
+   anônimo e o Brave descartam o cookie e o login volta 401 na requisição
+   seguinte.
+2. Manda o resto para `index.html`, senão F5 em `/estantes` dá 404 da Vercel.
 
 ## Equipe
 

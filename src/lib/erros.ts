@@ -44,11 +44,7 @@ export function camposDeErro(corpo: unknown): Record<string, string> {
   return ehRespostaDeErro(corpo) ? (corpo.erro.campos ?? {}) : {}
 }
 
-/**
- * 'contrato-api.md' §2.1: "409 é sempre regra de negócio. O front pode
- * tratar todo 409 como mostrar a mensagem ao usuário e não recarregar, sem
- * conhecer cada código.".
- */
+/** 409 é sempre regra de negócio: o front mostra a mensagem sem precisar conhecer cada código */
 export function ehRegraDeNegocio(status: number): boolean {
   return status === 409
 }

@@ -38,7 +38,7 @@ describe('montarUrl', () => {
   })
 })
 
-describe('api — contrato-api.md §1.2', () => {
+describe('api — chamada com cookie de sessão', () => {
   it('manda credentials include em toda requisição, senão o cookie de sessão não vai', async () => {
     fingirFetch(resposta(200, { ok: true }))
     await api('/api/sessao')
@@ -65,7 +65,7 @@ describe('api — contrato-api.md §1.2', () => {
   })
 })
 
-describe('api — erros na forma do contrato §2', () => {
+describe('api — erros no envelope da API', () => {
   it('401 vira ErroDeApi com a mensagem única, sem vazar o e-mail', async () => {
     fingirFetch(
       resposta(401, {

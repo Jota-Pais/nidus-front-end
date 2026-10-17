@@ -28,7 +28,7 @@ export class ErroDeApi extends Error {
     this.corpoDoErro = erro
   }
 
-  /** 'contrato-api.md' §2.1: 409 é sempre regra de negócio - mostrar e não recarregar */
+  /** 409 é sempre regra de negócio: mostrar a mensagem e não recarregar */
   get ehRegraDeNegocio(): boolean {
     return this.status === 409
   }

@@ -1,56 +1,17 @@
-// Menu por perfil.
+// Menu por perfil - conveniência de navegação. Quem decide o acesso é o servidor
 import type { Perfil } from '@/dominio/tipos'
 
 export interface ItemDeMenu {
-  chave: string
   rotulo: string
   caminho: string
   perfis: Perfil[]
 }
 
 export const ITENS_DE_MENU: ItemDeMenu[] = [
-  {
-    chave: 'alertas',
-    rotulo: 'Alertas do ciclo',
-    caminho: '/alertas',
-    perfis: ['tecnico', 'gestor'],
-  },
-  {
-    chave: 'estantes',
-    rotulo: 'Grade de estantes',
-    caminho: '/estantes',
-    perfis: ['tecnico', 'gestor'],
-  },
-  {
-    chave: 'quadro',
-    rotulo: 'Quadro de comprometimento',
-    caminho: '/quadro',
-    perfis: ['tecnico', 'gestor'],
-  },
-  {
-    chave: 'registros',
-    rotulo: 'Registros do técnico',
-    caminho: '/registros',
-    perfis: ['tecnico', 'gestor'],
-  },
-  {
-    chave: 'solicitacoes',
-    rotulo: 'Solicitações',
-    caminho: '/solicitacoes',
-    perfis: ['pesquisador', 'tecnico', 'gestor'],
-  },
-  {
-    chave: 'infraestrutura',
-    rotulo: 'Infraestrutura',
-    caminho: '/infraestrutura',
-    perfis: ['gestor'],
-  },
-  {
-    chave: 'projetos',
-    rotulo: 'Projetos e cotas',
-    caminho: '/projetos',
-    perfis: ['gestor'],
-  },
+  { rotulo: 'Kanban', caminho: '/kanban', perfis: ['tecnico', 'gestor'] },
+  { rotulo: 'Estantes', caminho: '/estantes', perfis: ['tecnico', 'gestor'] },
+  { rotulo: 'Solicitar animais', caminho: '/solicitar', perfis: ['pesquisador', 'tecnico', 'gestor'] },
+  { rotulo: 'Busca de atendimento', caminho: '/busca', perfis: ['tecnico', 'gestor'] },
 ]
 
 export function menuDoPerfil(perfil: Perfil): ItemDeMenu[] {
@@ -59,5 +20,5 @@ export function menuDoPerfil(perfil: Perfil): ItemDeMenu[] {
 
 /** Onde cada perfil cai depois do login */
 export function rotaInicial(perfil: Perfil): string {
-  return perfil === 'pesquisador' ? '/solicitacoes' : '/alertas'
+  return perfil === 'pesquisador' ? '/solicitar' : '/kanban'
 }

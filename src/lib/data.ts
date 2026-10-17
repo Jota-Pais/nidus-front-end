@@ -1,59 +1,31 @@
-// fonte única de data e idade no front (RNF-04)
+// Datas na tela: a API manda 'aaaa-mm-dd', a tela mostra dd/mm/aaaa
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import 'dayjs/locale/pt-br'
+import type { DataISO } from '@/dominio/tipos'
 
 dayjs.extend(customParseFormat)
 dayjs.locale('pt-br')
 
-import type { DataISO } from '@/dominio/tipos'
+const FORMATO_DA_API = 'YYYY-MM-DD'
 
-export const FORMATO_EXIBICAO = 'DD/MM/YYYY'
-export const FORMATO_ARMAZENAMENTO = 'YYYY-MM-DD'
-
-/** 'aaaa-mm-dd' dd/mm/aaaa. Data ausente vira travessão, nunca "Invalid Date" */
-export function formatarData(data: DataISO | null | undefined): string {
+function formatar(data: DataISO | null | undefined, formato: string): string {
   if (!data) return '—'
-  const d = dayjs(data, FORMATO_ARMAZENAMENTO, true)
-  return d.isValid() ? d.format(FORMATO_EXIBICAO) : '—'
+  const d = dayjs(data, FORMATO_DA_API, true)
+  return d.isValid() ? d.format(formato) : '—'
 }
 
-/** dd/mm/aaaa 'aaaa-mm-dd'. Entrada inválida devolve null, não lança */
-export function paraArmazenamento(exibicao: string): DataISO | null {
-  const d = dayjs(exibicao, FORMATO_EXIBICAO, true)
-  return d.isValid() ? d.format(FORMATO_ARMAZENAMENTO) : null
+/** 'aaaa-mm-dd' -> dd/mm/aaaa. Data ausente vira travessão, nunca "Invalid Date" */
+export function formatarData(data: DataISO | null | undefined): string {
+  return formatar(data, 'DD/MM/YYYY')
 }
 
-/** Idade em dias inteiros de 'dataBase' até dataAlvo. */
-export function idadeEmDias(dataBase: DataISO, dataAlvo: DataISO): number {
-  const base = dayjs(dataBase, FORMATO_ARMAZENAMENTO, true).startOf('day')
-  const alvo = dayjs(dataAlvo, FORMATO_ARMAZENAMENTO, true).startOf('day')
-  if (!base.isValid() || !alvo.isValid()) {
-    throw new Error(`Data inválida: base="${dataBase}" alvo="${dataAlvo}"`)
-  }
-  return alvo.diff(base, 'day')
+/** 'aaaa-mm-dd' -> dd/mm, o "P:dd/mm" do card */
+export function formatarDataCurta(data: DataISO | null | undefined): string {
+  return formatar(data, 'DD/MM')
 }
 
-/** Soma dias a uma data ISO, devolvendo ISO. Usado só para rótulo, nunca para decidir */
-export function somarDias(data: DataISO, dias: number): DataISO {
-  return dayjs(data, FORMATO_ARMAZENAMENTO, true).add(dias, 'day').format(FORMATO_ARMAZENAMENTO)
-}
-
+/** hoje em 'aaaa-mm-dd', o valor padrão dos campos de data */
 export function hoje(): DataISO {
-  return dayjs().format(FORMATO_ARMAZENAMENTO)
-}
-
-/**
- * RF-REP-02 - "datas previstas visualmente distintas das reais: a diferença
- * entre 'vai nascer' e 'nasceu' é a informação mais importante da tela"
- */
-export type NaturezaData = 'real' | 'previsto'
-
-export function rotularData(
-  real: DataISO | null | undefined,
-  previsto: DataISO | null | undefined,
-): { texto: string; natureza: NaturezaData | null } {
-  if (real) return { texto: formatarData(real), natureza: 'real' }
-  if (previsto) return { texto: formatarData(previsto), natureza: 'previsto' }
-  return { texto: '—', natureza: null }
+  return dayjs().format(FORMATO_DA_API)
 }

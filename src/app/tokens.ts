@@ -116,11 +116,11 @@ export const MOVIMENTO = {
   entrada: '700ms',
 } as const
 
-/** Superfície de cada estado de comprometimento da caixa. */
+/** Superfície de cada coluna do kanban. A grade de estantes pinta a caixa com a mesma */
 export const ESTADO = {
-  em_reproducao: { fundo: '#E9F7EB', borda: '#B6E4BE', texto: '#00600A' },
-  parcialmente_comprometida: { fundo: '#FFF8DB', borda: '#F5E08A', texto: '#6F5B00' },
-  totalmente_comprometida: { fundo: '#FFEEE0', borda: '#F7CBA4', texto: '#8A4300' },
-  preparada_para_envio: { fundo: '#E4EDFA', borda: '#AFC8EC', texto: '#003893' },
-  expedida: { fundo: '#F2F4F7', borda: '#DCE3EC', texto: '#5A6570' },
+  livres: { fundo: '#E9F7EB', borda: '#B6E4BE', texto: '#00600A' },
+  pre_reserva: { fundo: '#FFF8DB', borda: '#F5E08A', texto: '#6F5B00' },
+  estoque: { fundo: '#E4EDFA', borda: '#AFC8EC', texto: '#003893' },
+  reserva: { fundo: '#FFEEE0', borda: '#F7CBA4', texto: '#8A4300' },
+  enviado: { fundo: '#F2F4F7', borda: '#DCE3EC', texto: '#5A6570' },
 } as const

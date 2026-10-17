@@ -32,7 +32,7 @@ export function criarQueryClient(): QueryClient {
         /**
          * erro de contrato não melhora repetindo - 401, 403 e 409 são resposta, não falha. Já
          * erro de rede merece tentativa: a API na Render dorme por inatividade e leva de 30s a
-         * 1min para acordar ('docs/decisoes-de-stack.md' §1.3).
+         * 1min para acordar.
          */
         retry: (tentativas, erro) => (erro instanceof ErroDeApi ? false : tentativas < 2),
         retryDelay: (tentativas) => Math.min(1000 * 2 ** tentativas, 15_000),
@@ -44,8 +44,8 @@ export function criarQueryClient(): QueryClient {
         refetchOnWindowFocus: true,
       },
       mutations: {
-        // repetir uma escrita sem saber se a primeira chegou é como o RN-09 é
-        // violado. Falhou, o usuário decide
+        // repetir uma escrita sem saber se a primeira chegou pode prometer o mesmo animal
+        // duas vezes. Falhou, o usuário decide
         retry: false,
       },
     },

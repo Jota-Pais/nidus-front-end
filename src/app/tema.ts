@@ -53,7 +53,7 @@ export const tema: ThemeConfig = {
 
     controlHeight: ALTURA_DE_CONTROLE,
 
-    /** anel de foco no azul institucional - o design system e o RNF-10 pedem o mesmo. */
+    /** anel de foco no azul institucional, como o design system pede */
     controlOutline: `color-mix(in srgb, ${COR.acento} 20%, transparent)`,
     controlOutlineWidth: 3,
 

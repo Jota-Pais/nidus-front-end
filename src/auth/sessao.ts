@@ -1,4 +1,4 @@
-// sessão do usuário - 'contrato-api.md' §3
+// sessão do usuário: login, logout e quem está logado
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 import { chaves } from '@/app/chaves'
@@ -36,7 +36,7 @@ export function useSessao(): UseQueryResult<Usuario | null> {
   })
 }
 
-/** POST /api/sessao. O perfil vem do servidor - o RF-ACS-02 não admite outra fonte */
+/** POST /api/sessao. O perfil vem do servidor, nunca da tela */
 export function useLogin(): UseMutationResult<Usuario, Error, Credenciais> {
   const cliente = useQueryClient()
 

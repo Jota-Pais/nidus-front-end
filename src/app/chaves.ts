@@ -9,20 +9,20 @@ export const chaves = {
   grade: (idEstante: number) => ['grade', idEstante] as const,
   caixa: (idCaixa: number) => ['caixa', idCaixa] as const,
   quadro: (especie: CodigoEspecie) => ['quadro', especie] as const,
-  alertas: ['alertas'] as const,
+  projetos: ['projetos'] as const,
+  solicitacoes: ['solicitacoes'] as const,
 }
 
-/** invalida tudo que enxerga o estado da colônia. */
+/** Depois de qualquer mudança numa caixa, kanban, grade e ficha recarregam juntos */
 export function invalidarColonia(cliente: QueryClient, idCaixa?: number): Promise<void> {
   const alvos: readonly unknown[][] = [
     [...chaves.estantes],
     ['grade'],
     ['quadro'],
-    [...chaves.alertas],
     ...(idCaixa === undefined ? [] : [[...chaves.caixa(idCaixa)]]),
   ]
 
-  return Promise.all(
-    alvos.map((queryKey) => cliente.invalidateQueries({ queryKey })),
-  ).then(() => undefined)
+  return Promise.all(alvos.map((queryKey) => cliente.invalidateQueries({ queryKey }))).then(
+    () => undefined,
+  )
 }

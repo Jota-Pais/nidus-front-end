@@ -37,7 +37,7 @@ describe('retry das queries', () => {
 })
 
 describe('retry das mutações', () => {
-  it('não repete escrita: repetir sem saber se a primeira chegou viola o RN-09', () => {
+  it('não repete escrita: repetir sem saber se a primeira chegou pode prometer o mesmo animal duas vezes', () => {
     expect(criarQueryClient().getDefaultOptions().mutations?.retry).toBe(false)
   })
 })

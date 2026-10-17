@@ -15,7 +15,7 @@ export const Entrada = Object.assign(
     /**
      * Texto longo - justificativa, motivo de encerramento, observação. autoSize cresce
      * até seis linhas em vez de virar uma janelinha de rolagem: o técnico precisa reler o
-     * que escreveu antes de gravar, e o RNF-06 não deixa apagar depois
+     * que escreveu antes de gravar, e o que foi gravado não se apaga depois
      */
     Area: (props: TextAreaProps) => (
       <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} showCount {...props} />

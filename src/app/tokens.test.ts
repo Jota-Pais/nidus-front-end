@@ -59,7 +59,7 @@ function esperado(): Map<string, string> {
 
   for (const [estado, superficie] of Object.entries(ESTADO)) {
     for (const [parte, valor] of Object.entries(superficie)) {
-      // O nome do estado é a chave do contrato (em_reproducao) e fica como está: virar
+      // O nome do estado é o termo da API (pre_reserva) e fica como está: virar
       // kebab aqui desalinharia da classe CSS do card
       mapa.set(`--estado-${estado}-${parte}`, valor)
     }
@@ -85,7 +85,7 @@ export function contraste(a: string, b: string): number {
   return (claro + 0.05) / (escuro + 0.05)
 }
 
-/** Texto normal em AA. O piso do RNF-10 para tudo que se lê */
+/** Texto normal em AA. O piso para tudo que se lê */
 const AA_TEXTO = 4.5
 /** Elemento gráfico e texto grande. Serve para marca e preenchimento. */
 const AA_GRAFICO = 3
@@ -128,7 +128,7 @@ describe('marca institucional — os hex do manual não podem ser "arredondados"
   })
 })
 
-describe('RNF-10 — contraste, onde a paleta de vinil não serve para tela', () => {
+describe('contraste, onde a paleta de vinil não serve para tela', () => {
   /**
    * O diagnóstico que justifica cada variante escurecida deste arquivo. Se
    * um dia a UFSC publicar outros hex, este teste é o primeiro a avisar que
@@ -199,7 +199,7 @@ describe('RNF-10 — contraste, onde a paleta de vinil não serve para tela', ()
   })
 })
 
-describe('estado da caixa — RF-CIC-01 e RNF-10', () => {
+describe('cor de cada coluna do kanban', () => {
   it('o texto de cada estado passa em AA sobre a própria superfície', () => {
     for (const [estado, superficie] of Object.entries(ESTADO)) {
       expect(
@@ -228,7 +228,7 @@ describe('estado da caixa — RF-CIC-01 e RNF-10', () => {
 
 describe('o design system, onde ele é requisito e não gosto', () => {
   /**
-   * RNF-03 - registro dentro da sala, técnico de luvas. O design system
+   * Registro dentro da sala, técnico de luvas. O design system
    * pede 44px+ de alvo de toque pelo mesmo motivo, vindo de outro lado.
    */
   it('o controle tem alvo de toque de pelo menos 44px', () => {
