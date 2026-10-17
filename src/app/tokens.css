@@ -6,8 +6,6 @@
  *
  * O nome da variável sai do nome da constante em kebab-case:
  * `COR.acentoSecundario` → `--cor-acento-secundario`.
- *
- * As regras de uso da paleta estão em `src/componentes/README.md`.
  */
 
 :root {
