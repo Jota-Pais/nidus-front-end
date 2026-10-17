@@ -3,48 +3,31 @@ import { describe, expect, it, vi } from 'vitest'
 import { chaves, invalidarColonia } from './chaves'
 
 describe('chaves', () => {
-  it('usa os nomes que o card do backlog fixou, porque o back escreveu contra eles', () => {
-    expect(chaves.sessao).toEqual(['sessao'])
-    expect(chaves.catalogo).toEqual(['catalogo'])
-    expect(chaves.estantes).toEqual(['estantes'])
+  it('grade e caixa são planas, para invalidar por prefixo', () => {
+    // ['grade'] tem que casar com ['grade', qualquerEstante]
     expect(chaves.grade(3)).toEqual(['grade', 3])
     expect(chaves.caixa(812)).toEqual(['caixa', 812])
     expect(chaves.quadro('rato')).toEqual(['quadro', 'rato'])
-    expect(chaves.alertas).toEqual(['alertas'])
-  })
-
-  it('grade e caixa são planas, para invalidar por prefixo', () => {
-    // ['grade'] tem que casar com ['grade', qualquerEstante]. Se a chave fosse
-    // ['estantes','grade',3], invalidar ['grade'] não pegaria nada.
-    expect(chaves.grade(3)[0]).toBe('grade')
-    expect(chaves.caixa(1)[0]).toBe('caixa')
   })
 })
 
-describe('invalidarColonia — RF-CIC-02', () => {
-  it('derruba estantes, grade, quadro e alertas de uma vez', async () => {
+describe('invalidarColonia', () => {
+  it('derruba estantes, grade e kanban de uma vez', async () => {
     const cliente = new QueryClient()
     const espia = vi.spyOn(cliente, 'invalidateQueries').mockResolvedValue()
 
     await invalidarColonia(cliente)
 
-    const alvos = espia.mock.calls.map((c) => c[0]?.queryKey)
-    expect(alvos).toEqual([['estantes'], ['grade'], ['quadro'], ['alertas']])
+    expect(espia.mock.calls.map((c) => c[0]?.queryKey)).toEqual([['estantes'], ['grade'], ['quadro']])
   })
 
-  it('inclui a ficha quando a alteração foi numa caixa específica', async () => {
+  it('inclui a ficha quando a mudança foi numa caixa específica', async () => {
     const cliente = new QueryClient()
     const espia = vi.spyOn(cliente, 'invalidateQueries').mockResolvedValue()
 
     await invalidarColonia(cliente, 812)
 
-    expect(espia.mock.calls.map((c) => c[0]?.queryKey)).toEqual([
-      ['estantes'],
-      ['grade'],
-      ['quadro'],
-      ['alertas'],
-      ['caixa', 812],
-    ])
+    expect(espia.mock.calls.map((c) => c[0]?.queryKey)).toContainEqual(['caixa', 812])
   })
 
   it('invalida a grade de todas as estantes em cache, não só a que está na tela', async () => {

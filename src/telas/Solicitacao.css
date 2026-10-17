@@ -1,0 +1,63 @@
+/* Solicitar animais e Busca de atendimento */
+
+.solicitacao__blocos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.solicitacao__bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 16px 0;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+}
+
+.solicitacao__bloco > .texto--rotulo {
+  margin-bottom: 8px;
+}
+
+.solicitacao__bloco > .texto--secundario {
+  margin-bottom: 16px;
+}
+
+.solicitacao__linha {
+  display: flex;
+  gap: 12px;
+}
+
+.solicitacao__linha > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.solicitacao__acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.busca__remessa {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.busca__numero {
+  padding-bottom: 32px;
+  font-family: var(--fonte-mono);
+  font-weight: 600;
+  color: var(--cor-suave-frente);
+}
+
+.busca__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

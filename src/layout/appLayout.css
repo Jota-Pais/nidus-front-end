@@ -65,7 +65,7 @@
 }
 
 /* No tablet o respiro lateral encolhe: 24px de cada lado numa tela de 768
-   come um oitavo da largura útil (RNF-03). */
+   come um oitavo da largura útil. */
 @media (max-width: 768px) {
   .casca__conteudo {
     padding: 16px;

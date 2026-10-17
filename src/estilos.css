@@ -48,9 +48,8 @@ h3.ant-typography {
 }
 
 /*
- * RNF-10 — foco de teclado sempre visível: as telas de registro precisam ser
- * operáveis por teclado. O anel usa o acento, como o design system pede, e
- * tem deslocamento para não colar na borda do controle.
+ * Foco de teclado sempre visível. O anel usa o acento, como o design system
+ * pede, e tem deslocamento para não colar na borda do controle.
  */
 :focus-visible {
   outline: 2px solid var(--cor-acento);
@@ -61,4 +60,31 @@ h3.ant-typography {
 /* Seleção de texto no azul institucional, em vez do azul do sistema. */
 ::selection {
   background: color-mix(in srgb, var(--cor-acento) 16%, transparent);
+}
+
+/* Legenda das cores de parto, a mesma no kanban, na grade e na ficha */
+.legendaDosPartos {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.legendaDosPartos__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--fonte-mono);
+  font-size: 12px;
+  color: var(--cor-suave-frente);
+}
+
+.bolinhaDeParto {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
 }

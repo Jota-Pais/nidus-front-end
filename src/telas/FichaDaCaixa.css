@@ -1,0 +1,141 @@
+/* Ficha da caixa: o modal aberto pelo kanban e pela grade */
+
+.ficha__partos {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.ficha__parto {
+  padding: 4px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-pilula);
+  background: var(--cor-cartao);
+  color: var(--cor-frente);
+  font-family: var(--fonte-mono);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ficha__aba {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ficha__aba h3 {
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+
+.ficha__linha {
+  display: flex;
+  gap: 12px;
+}
+
+.ficha__linha > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.ficha__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ficha__campo .ant-select {
+  width: 100%;
+}
+
+.ficha__valor {
+  padding: 8px 12px;
+  background: var(--cor-suave);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+}
+
+.ficha__valor--destaque {
+  background: var(--superficie-informacao-fundo);
+  border-color: var(--superficie-informacao-borda);
+  font-weight: 600;
+}
+
+.ficha__casal {
+  padding: 10px 12px;
+  background: var(--superficie-informacao-fundo);
+  border-left: 3px solid var(--cor-acento);
+  border-radius: var(--raio-sm);
+}
+
+.ficha__total {
+  padding: 8px 12px;
+  background: var(--superficie-sucesso-fundo);
+  border-left: 3px solid var(--cor-sucesso);
+  border-radius: var(--raio-sm);
+}
+
+.ficha__total strong {
+  color: var(--cor-sucesso);
+}
+
+.ficha__vazio {
+  margin: 0;
+  padding: 16px;
+  text-align: center;
+  color: var(--cor-suave-frente);
+}
+
+/* formulário de registro dentro da ficha: um passo de cada vez, sempre o próximo */
+.ficha__formulario {
+  padding: 12px 12px 0;
+  background: var(--cor-fundo);
+  border: 1px dashed var(--cor-borda);
+  border-radius: var(--raio-md);
+}
+
+.ficha__formulario .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.ficha__formulario > .ant-btn,
+.ficha__botoes {
+  margin-bottom: 12px;
+}
+
+.ficha__botoes {
+  display: flex;
+  gap: 8px;
+}
+
+.ficha__eventos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ficha__evento {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.ficha__eventoData {
+  min-width: 90px;
+  font-family: var(--fonte-mono);
+  font-size: 12px;
+  color: var(--cor-suave-frente);
+}
+
+.ficha__eventoTexto {
+  flex: 1;
+}
+
+.ficha__eventoAutor {
+  font-size: 12px;
+  color: var(--cor-suave-frente);
+}

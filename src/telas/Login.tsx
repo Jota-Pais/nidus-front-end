@@ -28,7 +28,6 @@ import './Login.css'
 
 const { Header, Content } = Layout
 
-/** RF-ACS-01 - autenticação pela identidade institucional. */
 export function Login() {
   const { perfil } = usePerfil()
   const navegar = useNavigate()
@@ -43,7 +42,7 @@ export function Login() {
   function aoEnviar(valores: Credenciais) {
     setErro(null)
     login.mutate(valores, {
-      // O perfil vem do servidor (RF-ACS-02), nunca da tela
+      // O perfil vem do servidor, nunca da tela
       onSuccess: (usuario) => navegar(destino(usuario.perfil), { replace: true }),
       // A mensagem já sai pronta de @/lib/erros: no 401 ela não distingue e-mail
       // inexistente de senha errada
@@ -115,8 +114,8 @@ export function Login() {
               </Secao>
 
               <Aviso tom="informacao" titulo="Login pelo ID-UFSC">
-                O login pelo ID-UFSC depende do SETIC e entra como mock no semestre (`PEN-09`) —
-                por enquanto, entre com e-mail e senha institucionais.
+                O login pelo ID-UFSC depende do SETIC. Por enquanto, entre com e-mail e senha
+                institucionais.
               </Aviso>
 
               <Paragrafo secundario>

@@ -6,8 +6,6 @@
  *
  * O nome da variável sai do nome da constante em kebab-case:
  * `COR.acentoSecundario` → `--cor-acento-secundario`.
- *
- * As regras de uso da paleta estão em `src/componentes/README.md`.
  */
 
 :root {
@@ -85,27 +83,26 @@
   --movimento-normal: 300ms;
   --movimento-entrada: 700ms;
 
-  /* Superfície por estado de comprometimento (RF-CIC-01).
-     A cor nunca é o único canal — ver @/dominio/estados. */
-  --estado-em_reproducao-fundo: #E9F7EB;
-  --estado-em_reproducao-borda: #B6E4BE;
-  --estado-em_reproducao-texto: #00600A;
+  /* Superfície por coluna do kanban. A grade de estantes usa as mesmas. */
+  --estado-livres-fundo: #E9F7EB;
+  --estado-livres-borda: #B6E4BE;
+  --estado-livres-texto: #00600A;
 
-  --estado-parcialmente_comprometida-fundo: #FFF8DB;
-  --estado-parcialmente_comprometida-borda: #F5E08A;
-  --estado-parcialmente_comprometida-texto: #6F5B00;
+  --estado-pre_reserva-fundo: #FFF8DB;
+  --estado-pre_reserva-borda: #F5E08A;
+  --estado-pre_reserva-texto: #6F5B00;
 
-  --estado-totalmente_comprometida-fundo: #FFEEE0;
-  --estado-totalmente_comprometida-borda: #F7CBA4;
-  --estado-totalmente_comprometida-texto: #8A4300;
+  --estado-estoque-fundo: #E4EDFA;
+  --estado-estoque-borda: #AFC8EC;
+  --estado-estoque-texto: #003893;
 
-  --estado-preparada_para_envio-fundo: #E4EDFA;
-  --estado-preparada_para_envio-borda: #AFC8EC;
-  --estado-preparada_para_envio-texto: #003893;
+  --estado-reserva-fundo: #FFEEE0;
+  --estado-reserva-borda: #F7CBA4;
+  --estado-reserva-texto: #8A4300;
 
-  --estado-expedida-fundo: #F2F4F7;
-  --estado-expedida-borda: #DCE3EC;
-  --estado-expedida-texto: #5A6570;
+  --estado-enviado-fundo: #F2F4F7;
+  --estado-enviado-borda: #DCE3EC;
+  --estado-enviado-texto: #5A6570;
 }
 
 /* ------------------------------------------------------------------------ *
