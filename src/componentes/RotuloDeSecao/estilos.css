@@ -16,30 +16,3 @@
   text-transform: uppercase;
   color: var(--cor-acento);
 }
-
-.rotuloDeSecao--aviso {
-  border-color: color-mix(in srgb, var(--cor-aviso) 30%, transparent);
-  background: color-mix(in srgb, var(--cor-aviso) 6%, transparent);
-}
-
-.rotuloDeSecao--aviso .rotuloDeSecao__texto {
-  color: var(--cor-aviso);
-}
-
-.rotuloDeSecao--erro {
-  border-color: color-mix(in srgb, var(--cor-erro) 30%, transparent);
-  background: color-mix(in srgb, var(--cor-erro) 6%, transparent);
-}
-
-.rotuloDeSecao--erro .rotuloDeSecao__texto {
-  color: var(--cor-erro);
-}
-
-.rotuloDeSecao--sucesso {
-  border-color: color-mix(in srgb, var(--cor-sucesso) 30%, transparent);
-  background: color-mix(in srgb, var(--cor-sucesso) 6%, transparent);
-}
-
-.rotuloDeSecao--sucesso .rotuloDeSecao__texto {
-  color: var(--cor-sucesso);
-}

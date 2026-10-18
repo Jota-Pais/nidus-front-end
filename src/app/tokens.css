@@ -106,86 +106,15 @@
 }
 
 /* ------------------------------------------------------------------------ *
- * Efeitos-assinatura
- *
- * O design system chama isto de "textura sobre chapado": minimalismo falha
- * quando fica estéril. Nada aqui é percebido conscientemente — o usuário só
- * sente que a superfície tem alguma coisa.
- * ------------------------------------------------------------------------ */
-
-/**
- * Realce de palavra em título, no gradiente da marca.
- *
- * ⚠️ Uma palavra, nunca a frase — e nunca abaixo do tamanho de título. A
- * ponta verde entrega 4.11:1, que serve para texto grande (3:1) e reprova em
- * corpo de texto.
- */
-.textoGradiente {
-  background: var(--gradiente-marca);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/** Malha de pontos das faixas invertidas. 3% — para sentir, não para ver. */
-.padraoDePontos::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.03;
-  background-image: radial-gradient(circle, #fff 1px, transparent 1px);
-  background-size: 32px 32px;
-}
-
-/** Brilho ambiente no canto da seção, no verde institucional. */
-.brilhoDeAcento::after {
-  content: '';
-  position: absolute;
-  inset-block-start: -20%;
-  inset-inline-end: -10%;
-  width: 420px;
-  height: 420px;
-  pointer-events: none;
-  border-radius: 50%;
-  background: var(--cor-institucional);
-  opacity: 0.1;
-  filter: blur(150px);
-}
-
-/* ------------------------------------------------------------------------ *
  * Movimento
  * ------------------------------------------------------------------------ */
-
-@keyframes nidusPulso {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.3);
-    opacity: 0.7;
-  }
-}
-
-@keyframes nidusEntrarDeBaixo {
-  from {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
 
 /*
  * Movimento reduzido não é preferência estética: é acessibilidade.
  *
  * Animação contínua em tela que fica aberta o turno inteiro é gatilho de
- * enjoo para quem tem sensibilidade vestibular. Aqui tudo para — a entrada
- * vira aparecer, o pulso vira ponto parado.
+ * enjoo para quem tem sensibilidade vestibular. Aqui tudo para — transição
+ * e animação viram aparecer.
  */
 @media (prefers-reduced-motion: reduce) {
   *,

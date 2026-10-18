@@ -4,27 +4,13 @@ import { IconeEmCaixa } from '../IconeEmCaixa'
 import './estilos.css'
 
 /** lista vazia */
-export function Vazio({
-  descricao,
-  filtrado = false,
-  icone,
-  acao,
-}: {
-  descricao: ReactNode
-  /** 'true' quando há filtro aplicado: muda a mensagem e sugere limpar */
-  filtrado?: boolean
-  icone?: ReactNode
-  acao?: ReactNode
-}) {
+export function Vazio({ descricao }: { descricao: ReactNode }) {
   return (
     <div className="vazio">
-      <IconeEmCaixa tamanho="lg" neutro>
-        {icone ?? <InboxOutlined />}
+      <IconeEmCaixa neutro>
+        <InboxOutlined />
       </IconeEmCaixa>
-      <p className="vazio__texto">
-        {filtrado ? 'Nada encontrado com os filtros atuais.' : descricao}
-      </p>
-      {acao}
+      <p className="vazio__texto">{descricao}</p>
     </div>
   )
 }

@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { Cartao } from '../Cartao'
-import type { VarianteDeCartao } from '../Cartao'
 import { RotuloDeSecao } from '../RotuloDeSecao'
 import './estilos.css'
 
@@ -10,21 +9,19 @@ export function Secao({
   rotulo,
   acoes,
   children,
-  variante = 'padrao',
   semPreenchimento = false,
 }: {
   titulo?: ReactNode
   rotulo?: string
   acoes?: ReactNode
   children: ReactNode
-  variante?: VarianteDeCartao
   /** Para conteúdo que desenha o próprio respiro - tabela, grade de estante. */
   semPreenchimento?: boolean
 }) {
   const temCabecalho = titulo !== undefined || rotulo !== undefined || acoes !== undefined
 
   return (
-    <Cartao variante={variante} className={semPreenchimento ? 'secao--rente' : ''}>
+    <Cartao className={semPreenchimento ? 'secao--rente' : ''}>
       {temCabecalho && (
         <header className="secao__cabecalho">
           <div className="secao__identificacao">

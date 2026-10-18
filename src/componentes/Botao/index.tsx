@@ -16,14 +16,11 @@ const TIPO_ANT: Record<VarianteDeBotao, ButtonProps['type']> = {
 /** Botão */
 export function Botao({
   variante = 'secundario',
-  comSeta = false,
   children,
   className,
   ...resto
 }: Omit<ButtonProps, 'type' | 'danger'> & {
   variante?: VarianteDeBotao
-  /** para ação que leva a outro lugar. A seta anda no hover. */
-  comSeta?: boolean
   children?: ReactNode
 }) {
   return (
@@ -34,11 +31,6 @@ export function Botao({
       {...resto}
     >
       {children}
-      {comSeta && (
-        <span className="botao__seta" aria-hidden="true">
-          →
-        </span>
-      )}
     </Button>
   )
 }

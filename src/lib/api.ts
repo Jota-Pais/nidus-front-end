@@ -7,10 +7,6 @@ export class ErroDeApi extends Error {
   readonly status: number
   readonly codigo: string | null
   readonly campos: Record<string, string>
-  readonly requisito: string | null
-
-  /** O objeto 'erro' cru da resposta, como veio */
-  readonly corpoDoErro: unknown
 
   constructor(status: number, corpo: unknown) {
     super(mensagemDeErro(status, corpo))
@@ -20,12 +16,10 @@ export class ErroDeApi extends Error {
 
     const erro =
       typeof corpo === 'object' && corpo !== null && 'erro' in corpo
-        ? (corpo as { erro: { codigo?: string; requisito?: string } }).erro
+        ? (corpo as { erro: { codigo?: string } }).erro
         : null
 
     this.codigo = erro?.codigo ?? null
-    this.requisito = erro?.requisito ?? null
-    this.corpoDoErro = erro
   }
 
   /** 409 é sempre regra de negócio: mostrar a mensagem e não recarregar */
