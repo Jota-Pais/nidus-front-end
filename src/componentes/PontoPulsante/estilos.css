@@ -6,20 +6,3 @@
   border-radius: 50%;
   background: var(--cor-acento);
 }
-
-.pontoPulsante--aviso {
-  background: var(--cor-aviso);
-}
-
-.pontoPulsante--erro {
-  background: var(--cor-erro);
-}
-
-.pontoPulsante--sucesso {
-  background: var(--cor-sucesso);
-}
-
-/* 2s, lento de propósito: rápido demais vira alarme e cansa em turno inteiro. */
-.pontoPulsante--ativo {
-  animation: nidusPulso 2s var(--movimento-curva) infinite;
-}

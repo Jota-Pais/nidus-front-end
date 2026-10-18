@@ -51,6 +51,3 @@ export function Campo({
 }
 
 Formulario.Campo = Campo
-Formulario.Lista = Form.List
-Formulario.usarInstancia = Form.useForm
-Formulario.observar = Form.useWatch

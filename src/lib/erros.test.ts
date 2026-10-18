@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  CREDENCIAL_INVALIDA,
-  camposDeErro,
-  ehRegraDeNegocio,
-  ehRespostaDeErro,
-  mensagemDeErro,
-} from './erros'
+import { CREDENCIAL_INVALIDA, camposDeErro, ehRespostaDeErro, mensagemDeErro } from './erros'
 
 const naoAutenticado = {
   erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'Usuário tecnico@ufsc.br não existe.' },
@@ -78,13 +72,5 @@ describe('camposDeErro — VALIDACAO traz campos', () => {
   it('devolve objeto vazio quando não há campos', () => {
     expect(camposDeErro({ erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'x' } })).toEqual({})
     expect(camposDeErro(undefined)).toEqual({})
-  })
-})
-
-describe('ehRegraDeNegocio', () => {
-  it('409 é sempre regra de negócio', () => {
-    expect(ehRegraDeNegocio(409)).toBe(true)
-    expect(ehRegraDeNegocio(400)).toBe(false)
-    expect(ehRegraDeNegocio(500)).toBe(false)
   })
 })

@@ -11,20 +11,14 @@ export type TomDeEtiqueta = 'neutro' | 'acento' | 'institucional' | 'sucesso' | 
 export function Etiqueta({
   children,
   tom = 'neutro',
-  contorno = false,
   title,
 }: {
   children: ReactNode
   tom?: TomDeEtiqueta
-  /** Só o contorno, sem preenchimento. Para etiqueta que se repete em lista */
-  contorno?: boolean
   title?: string
 }) {
   return (
-    <span
-      className={`etiqueta etiqueta--${tom}${contorno ? ' etiqueta--contorno' : ''}`}
-      {...(title ? { title } : {})}
-    >
+    <span className={`etiqueta etiqueta--${tom}`} {...(title ? { title } : {})}>
       {children}
     </span>
   )

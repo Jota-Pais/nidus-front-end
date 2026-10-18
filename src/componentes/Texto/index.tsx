@@ -1,12 +1,7 @@
 import type { ElementType, ReactNode } from 'react'
 import './estilos.css'
 
-/**
- * 'numero' é o que resolve alinhamento de coluna: monoespaçada com
- * tabular-nums. Todo número que o olho compara - contagem, código de
- * posição, idade - usa este tom
- */
-export type TomDeTexto = 'normal' | 'secundario' | 'forte' | 'numero' | 'rotulo'
+export type TomDeTexto = 'normal' | 'secundario' | 'forte' | 'rotulo'
 
 /** Texto da interface */
 export function Texto({

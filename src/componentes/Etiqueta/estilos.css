@@ -13,11 +13,6 @@
   white-space: nowrap;
 }
 
-.etiqueta--contorno {
-  background: transparent;
-  border-color: var(--cor-borda);
-}
-
 /*
  * Superfície clara e texto escurecido: é o que faz a etiqueta passar em AA.
  * A cor institucional crua ficaria em 3.9:1 com texto branco por cima.

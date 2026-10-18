@@ -43,8 +43,3 @@ export function mensagemDeErro(status: number, corpo: unknown): string {
 export function camposDeErro(corpo: unknown): Record<string, string> {
   return ehRespostaDeErro(corpo) ? (corpo.erro.campos ?? {}) : {}
 }
-
-/** 409 é sempre regra de negócio: o front mostra a mensagem sem precisar conhecer cada código */
-export function ehRegraDeNegocio(status: number): boolean {
-  return status === 409
-}

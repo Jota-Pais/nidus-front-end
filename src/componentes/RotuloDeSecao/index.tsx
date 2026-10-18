@@ -3,18 +3,10 @@ import { PontoPulsante } from '../PontoPulsante'
 import './estilos.css'
 
 /** A pílula que abre cada seção - assinatura do design system */
-export function RotuloDeSecao({
-  children,
-  cor = 'acento',
-  pulsando = false,
-}: {
-  children: ReactNode
-  cor?: 'acento' | 'aviso' | 'erro' | 'sucesso'
-  pulsando?: boolean
-}) {
+export function RotuloDeSecao({ children }: { children: ReactNode }) {
   return (
-    <span className={`rotuloDeSecao rotuloDeSecao--${cor}`}>
-      <PontoPulsante cor={cor} pulsando={pulsando} />
+    <span className="rotuloDeSecao">
+      <PontoPulsante />
       <span className="rotuloDeSecao__texto">{children}</span>
     </span>
   )

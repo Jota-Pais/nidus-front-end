@@ -10,13 +10,6 @@
   font-weight: 600;
 }
 
-/* Tabular: coluna de números precisa alinhar dígito sob dígito. */
-.texto--numero {
-  font-family: var(--fonte-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 0.9em;
-}
-
 /* O rótulo do design system: mono, caixa alta, espaçado. Mesma família do
    RotuloDeSecao, um degrau abaixo em tamanho. */
 .texto--rotulo {

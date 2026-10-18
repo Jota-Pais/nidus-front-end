@@ -54,15 +54,3 @@
   color: var(--cor-frente);
   background: var(--cor-suave);
 }
-
-/* ---- Seta ------------------------------------------------------------- */
-
-.botao__seta {
-  display: inline-block;
-  margin-inline-start: 6px;
-  transition: transform var(--movimento-rapido) var(--movimento-curva);
-}
-
-.botao:hover:not(:disabled) .botao__seta {
-  transform: translateX(4px);
-}

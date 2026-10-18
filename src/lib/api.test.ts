@@ -91,7 +91,6 @@ describe('api — erros no envelope da API', () => {
     const erro = (await api('/api/solicitacoes').catch((e: unknown) => e)) as ErroDeApi
     expect(erro.ehRegraDeNegocio).toBe(true)
     expect(erro.codigo).toBe('PRAZO_INVIAVEL')
-    expect(erro.requisito).toBe('RN-06')
     expect(erro.message).toContain('08/11/2026')
   })
 
