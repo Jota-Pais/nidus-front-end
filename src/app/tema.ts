@@ -66,14 +66,9 @@ export const tema: ThemeConfig = {
     Input: { controlHeight: ALTURA_DE_CONTROLE },
     InputNumber: { controlHeight: ALTURA_DE_CONTROLE },
     Select: { controlHeight: ALTURA_DE_CONTROLE },
-    DatePicker: { controlHeight: ALTURA_DE_CONTROLE },
     Table: { cellPaddingBlock: 14, headerBg: COR.suave, headerColor: COR.suaveFrente },
-    Card: { boxShadowTertiary: SOMBRA.md },
     Layout: { headerBg: COR.invertido, bodyBg: COR.fundo, siderBg: COR.cartao },
     Menu: { itemBorderRadius: RAIO.sm, itemMarginInline: 8 },
-    /** 'Calistoga' só em título; o resto da tela é Inter */
-    Typography: { fontWeightStrong: 600 },
     Modal: { borderRadiusLG: RAIO.lg },
-    Tag: { borderRadiusSM: RAIO.sm },
   },
 }

@@ -29,18 +29,11 @@ body {
 
 /*
  * Título é a voz da personalidade do design system: serifa morna, entrelinha
- * apertada, tracking negativo. Vale para os títulos do Ant Design também, que
- * é o que a aplicação usa.
+ * apertada, tracking negativo.
  */
 h1,
 h2,
-h3,
-.ant-typography h1,
-.ant-typography h2,
-.ant-typography h3,
-h1.ant-typography,
-h2.ant-typography,
-h3.ant-typography {
+h3 {
   font-family: var(--fonte-titulo);
   font-weight: 400;
   letter-spacing: -0.02em;
