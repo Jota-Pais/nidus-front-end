@@ -1,103 +1,85 @@
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
-import { useState } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import {
-  Aviso,
-  Botao,
-  CabecalhoDaTela,
-  Entrada,
-  Etiqueta,
-  Formulario,
-  Linha,
-  Pilha,
-  Texto,
-} from '@/componentes'
-import { config, mostrarRotuloDeAmbiente } from '@/app/config'
+import { Form } from 'antd'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Aviso, Botao, CabecalhoDaTela, Entrada, Formulario } from '@/componentes'
 import { usePerfil } from '@/auth/contexto'
 import { useLogin } from '@/auth/sessao'
 import type { Perfil } from '@/dominio/tipos'
-import '@/layout/appLayout.css'
 import { destinoAposLogin } from '@/layout/destino'
-import { validadorDeCampo } from './login.schema'
+import { TelaDeEntrada } from '@/layout/TelaDeEntrada'
+import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
+import { credenciais, validadorDeCampo } from './login.schema'
 import type { Credenciais } from './login.schema'
-import './Login.css'
 
 export function Login() {
   const { perfil } = usePerfil()
   const navegar = useNavigate()
   const { state } = useLocation()
   const login = useLogin()
-  const [erro, setErro] = useState<string | null>(null)
+  const [form] = Form.useForm<Credenciais>()
+  // Credencial errada não aponta campo: o foco volta para a senha, que é o que se redigita
+  const falha = useFalhaDoFormulario(form, ['senha', 'email'])
 
   const destino = (perfilDoUsuario: Perfil) => destinoAposLogin(state, perfilDoUsuario)
 
   if (perfil) return <Navigate to={destino(perfil)} replace />
 
   function aoEnviar(valores: Credenciais) {
-    setErro(null)
-    login.mutate(valores, {
+    falha.limpar()
+    // O validador do formulário só confere: é o parse que tira o espaço e põe em minúsculas
+    login.mutate(credenciais.parse(valores), {
       // O perfil vem do servidor, nunca da tela
       onSuccess: (usuario) => navegar(destino(usuario.perfil), { replace: true }),
       // A mensagem já sai pronta de @/lib/erros: no 401 ela não distingue e-mail
       // inexistente de senha errada
-      onError: (falha) => setErro(falha.message),
+      onError: falha.mostrar,
     })
   }
 
   return (
-    <main className="loginPagina">
-      <div className="loginPagina__imagem" role="presentation" />
+    <TelaDeEntrada>
+      <CabecalhoDaTela titulo="Bem-vindo!" descricao="Acesse sua conta" />
 
-      <div className="loginPagina__painel">
-        <div className="loginPagina__miolo">
-          <Pilha espaco={24}>
-            {/* A mesma marca da faixa do `AppLayout`: deixa visível que é o
-                mesmo sistema antes de entrar. */}
-            <Linha espaco={12}>
-              <span className="casca__marca" aria-hidden="true" />
-              <span className="loginPagina__nome">Nidus</span>
-              <Texto tom="secundario">CPMR/UFSC</Texto>
-              {mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>}
-            </Linha>
+      {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
 
-            <CabecalhoDaTela titulo="Bem-vindo!" descricao="Acesse sua conta" />
+      <Formulario<Credenciais> form={form} onFinish={aoEnviar} disabled={login.isPending}>
+        <Formulario.Campo
+          name="email"
+          rotulo="E-mail institucional"
+          rules={[{ validator: validadorDeCampo('email') }]}
+        >
+          <Entrada
+            prefix={<UserOutlined aria-hidden="true" />}
+            placeholder="nome@ufsc.br"
+            autoComplete="username"
+            inputMode="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            autoFocus
+          />
+        </Formulario.Campo>
 
-            {erro && <Aviso tom="erro" titulo={erro} />}
+        <Formulario.Campo
+          name="senha"
+          rotulo="Senha"
+          rules={[{ validator: validadorDeCampo('senha') }]}
+        >
+          <Entrada.Senha
+            prefix={<LockOutlined aria-hidden="true" />}
+            placeholder="Senha"
+            autoComplete="current-password"
+          />
+        </Formulario.Campo>
 
-            <Formulario<Credenciais> onFinish={aoEnviar} disabled={login.isPending}>
-              <Formulario.Campo
-                name="email"
-                rotulo="E-mail institucional"
-                rules={[{ validator: validadorDeCampo('email') }]}
-              >
-                <Entrada
-                  prefix={<UserOutlined aria-hidden="true" />}
-                  placeholder="nome@ufsc.br"
-                  autoComplete="username"
-                  inputMode="email"
-                  autoFocus
-                />
-              </Formulario.Campo>
+        <Botao variante="primario" htmlType="submit" block loading={login.isPending}>
+          Entrar
+        </Botao>
+      </Formulario>
 
-              <Formulario.Campo
-                name="senha"
-                rotulo="Senha"
-                rules={[{ validator: validadorDeCampo('senha') }]}
-              >
-                <Entrada.Senha
-                  prefix={<LockOutlined aria-hidden="true" />}
-                  placeholder="Senha"
-                  autoComplete="current-password"
-                />
-              </Formulario.Campo>
-
-              <Botao variante="primario" htmlType="submit" block loading={login.isPending}>
-                Entrar
-              </Botao>
-            </Formulario>
-          </Pilha>
-        </div>
-      </div>
-    </main>
+      {/* Leva o destino junto: quem veio de um link para /busca volta para lá depois */}
+      <Link to="/definir-senha" state={state} className="telaDeEntrada__link">
+        Primeiro acesso ou esqueceu a senha?
+      </Link>
+    </TelaDeEntrada>
   )
 }

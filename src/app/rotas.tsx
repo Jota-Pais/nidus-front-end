@@ -4,6 +4,7 @@ import { Erro } from '@/layout/Erro'
 import { RaizPorPerfil } from '@/layout/RaizPorPerfil'
 import { RotaProtegida } from '@/layout/RotaProtegida'
 import { BuscaDeAtendimento } from '@/telas/BuscaDeAtendimento'
+import { DefinirSenha } from '@/telas/DefinirSenha'
 import { Estantes } from '@/telas/Estantes'
 import { Kanban } from '@/telas/Kanban'
 import { Login } from '@/telas/Login'
@@ -13,6 +14,7 @@ const COLONIA = ['tecnico', 'gestor'] as const
 
 export const rotas = createBrowserRouter([
   { path: '/login', element: <Login />, errorElement: <Erro /> },
+  { path: '/definir-senha', element: <DefinirSenha />, errorElement: <Erro /> },
   {
     path: '/',
     element: (

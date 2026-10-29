@@ -54,6 +54,10 @@ token (`--estado-livres-fundo` e companhia), e a grade de estantes usa a mesma.
 O login é por cookie de sessão `httpOnly`, então toda chamada vai com
 `credentials: 'include'` (ver `src/lib/api.ts`).
 
+Quem entra pela primeira vez, ou esqueceu a senha, define uma em `/definir-senha`:
+recebe um código no e-mail da UFSC, confirma e escolhe a senha. Conta nova nasce como
+pesquisador. As chamadas estão em `src/auth/acesso.ts`.
+
 ## Estrutura
 
 ```

@@ -1,0 +1,6 @@
+/* O código chega no e-mail e é conferido número a número: vai na fonte mono, a dos
+   códigos do design system, e espaçado */
+.definirSenha__codigo {
+  font-family: var(--fonte-mono);
+  letter-spacing: 0.3em;
+}

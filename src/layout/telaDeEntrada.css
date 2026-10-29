@@ -1,14 +1,14 @@
 /*
- * Composição visual da tela de login.
+ * Casca das telas de quem ainda não entrou: o login e a definição de senha.
  *
- * O login não tem a casca da aplicação (faixa do topo e barra lateral): a
- * página se divide ao meio, com a foto do biotério à esquerda e o formulário
- * à direita, com a marca no alto. A página tem a altura da janela e não
- * rola. O símbolo da marca (`casca__marca`) vem de `@/layout/appLayout.css`,
- * o mesmo do `AppLayout`, sem cópia.
+ * Não tem a casca da aplicação (faixa do topo e barra lateral): a página se
+ * divide ao meio, com a foto do biotério à esquerda e o formulário à direita,
+ * com a marca no alto. A página tem a altura da janela e não rola. O símbolo
+ * da marca (`casca__marca`) vem de `appLayout.css`, o mesmo do `AppLayout`,
+ * sem cópia.
  */
 
-.loginPagina {
+.telaDeEntrada {
   display: grid;
   grid-template-columns: 1fr 1fr;
   /* `dvh` é a altura visível. No celular, `100vh` conta a barra de endereço
@@ -21,24 +21,36 @@
   background: var(--cor-cartao);
 }
 
-.loginPagina__painel {
+.telaDeEntrada__painel {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px 40px;
 }
 
-.loginPagina__miolo {
+.telaDeEntrada__miolo {
   width: 100%;
   max-width: 400px;
 }
 
 /* O mesmo nome da casca (`casca__nome`), escuro: lá ele fica sobre a faixa
    azul, aqui sobre o painel branco. */
-.loginPagina__nome {
+.telaDeEntrada__nome {
   font-family: var(--fonte-titulo);
   font-size: 20px;
   color: var(--cor-frente);
+}
+
+/* Link entre as telas de entrada: "Primeiro acesso", "Voltar para o login" */
+.telaDeEntrada__link {
+  align-self: center;
+  color: var(--cor-acento);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.telaDeEntrada__link:hover {
+  text-decoration: underline;
 }
 
 /*
@@ -48,7 +60,7 @@
  * recortada pelo mesmo contorno recuado da largura da faixa. O que sobra
  * entre os dois recortes é a faixa.
  */
-.loginPagina__imagem {
+.telaDeEntrada__imagem {
   /* Quanto a divisa anda para a esquerda do alto até o pé da página */
   --divisa-inclinacao: 72px;
   --divisa-faixa: 8px;
@@ -58,7 +70,7 @@
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--divisa-inclinacao)) 100%, 0 100%);
 }
 
-.loginPagina__imagem::after {
+.telaDeEntrada__imagem::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -74,15 +86,15 @@
 /* Abaixo de 900px a foto sai: numa coluna só ela empurraria o formulário
    para baixo e a página voltaria a rolar. */
 @media (max-width: 900px) {
-  .loginPagina {
+  .telaDeEntrada {
     grid-template-columns: 1fr;
   }
 
-  .loginPagina__painel {
+  .telaDeEntrada__painel {
     padding: 24px 16px;
   }
 
-  .loginPagina__imagem {
+  .telaDeEntrada__imagem {
     display: none;
   }
 }
