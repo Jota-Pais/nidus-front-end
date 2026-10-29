@@ -48,7 +48,8 @@ Testes no Vitest. Deploy na Vercel, a partir do GitHub.
 O visual é o do Nidus: paleta da UFSC, Calistoga nos títulos, Inter no texto e
 JetBrains Mono nos códigos. Cor, raio, sombra e fonte saem de
 `src/app/tokens.ts` (tema do Ant Design) e `src/app/tokens.css` (CSS das telas).
-Cada um tem só o que o seu lado usa, e o `tokens.test.ts` confere que o valor
+Não são espelho: o CSS tem tokens que o tema não usa, e o `tokens.ts` guarda
+também chaves que só o CSS usa. O `tokens.test.ts` confere que o valor
 presente nos dois é o mesmo. A cor de cada coluna do kanban também é token
 (`--estado-livres-fundo` e companhia), e a grade de estantes usa a mesma.
 

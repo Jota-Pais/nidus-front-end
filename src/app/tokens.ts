@@ -1,6 +1,7 @@
-// tokens do design system, lado TypeScript: o que o tema do Ant Design lê.
+// tokens do design system, lado TypeScript: o que o tema do Ant Design lê, mais
+// algumas chaves que só o CSS usa e que o tokens.test.ts confere com o tokens.css.
 
-/** Marca institucional da UFSC */
+/** Marca institucional da UFSC. Vermelho e amarelo ficam de referência para os tons de retorno */
 const UFSC = {
   /** PANTONE 355 C · RGB 0,146,6 · Verde Bandeira. */
   verde: '#009206',
@@ -49,7 +50,7 @@ export const COR = {
 export const COR_DE_RETORNO = {
   /** Verde Bandeira escurecido. 6.06:1. */
   sucesso: '#00700A',
-  /** amarelo escurecido - como texto. Para preenchimento, use 'UFSC.amarelo' */
+  /** amarelo escurecido - como texto. Para fundo, use 'SUPERFICIE_DE_RETORNO.avisoFundo' */
   aviso: '#6F6300',
   /** Vermelho Tomate escurecido. 5.63:1 */
   erro: '#CC0007',
