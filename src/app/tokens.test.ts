@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
-  ALTURA_DE_CONTROLE,
   COR,
   COR_DE_RETORNO,
   FONTE,
@@ -9,7 +8,6 @@ import {
   RAIO,
   SOMBRA,
   SUPERFICIE_DE_RETORNO,
-  TAMANHO_DE_FONTE,
 } from './tokens'
 
 // O mesmo valor pode morar em dois arquivos - 'tokens.ts' para o Ant Design, 'tokens.css' para o
@@ -48,9 +46,6 @@ function doTypeScript(): Map<string, string> {
   por('raio', RAIO, 'px')
   por('sombra', SOMBRA)
   por('movimento', MOVIMENTO)
-
-  mapa.set('--altura-de-controle', `${ALTURA_DE_CONTROLE}px`)
-  mapa.set('--tamanho-de-fonte', `${TAMANHO_DE_FONTE}px`)
 
   return mapa
 }
