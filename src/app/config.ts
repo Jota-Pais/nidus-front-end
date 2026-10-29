@@ -25,7 +25,7 @@ const esquema = z.object({
   VITE_AMBIENTE: z.enum(['local', 'homologacao', 'producao']).default('local'),
 })
 
-export interface Ambiente {
+interface Ambiente {
   apiUrl: string
   ambiente: 'local' | 'homologacao' | 'producao'
 }

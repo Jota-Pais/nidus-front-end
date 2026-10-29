@@ -3,7 +3,7 @@ import type { AlertProps } from 'antd'
 import type { ReactNode } from 'react'
 
 /** Os quatro tons de retorno, nas cores de apoio da UFSC */
-export type TomDeAviso = 'informacao' | 'sucesso' | 'atencao' | 'erro'
+type TomDeAviso = 'informacao' | 'sucesso' | 'atencao' | 'erro'
 
 const TIPO_ANT: Record<TomDeAviso, AlertProps['type']> = {
   informacao: 'info',

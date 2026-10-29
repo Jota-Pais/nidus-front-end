@@ -10,13 +10,13 @@ export type DataISO = string
 /** As 5 colunas do kanban, na ordem da tela */
 export type EstadoCaixa = 'livres' | 'pre_reserva' | 'estoque' | 'reserva' | 'enviado'
 
-export interface PorSexo {
+interface PorSexo {
   m: number
   f: number
 }
 
 /** O casal no card do kanban e na célula da grade */
-export interface CasalNoCard {
+interface CasalNoCard {
   /** dupla de grupos genéticos, macho primeiro. ex: AB */
   identificacao: string
   /** 1 a 5 - a cor da bolinha */
@@ -53,7 +53,7 @@ export interface Estante {
   capacidade: number
 }
 
-export interface CaixaNaGrade {
+interface CaixaNaGrade {
   id: number
   estado: EstadoCaixa
   linhagem: string | null
