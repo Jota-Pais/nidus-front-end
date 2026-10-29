@@ -1,15 +1,25 @@
 // único ponto de saída HTTP do front
 import { config } from '@/app/config'
-import { mensagemDeErro } from './erros'
+import { camposDeErro, mensagemDeErro } from './erros'
 
 /** Erro de qualquer chamada à API. */
 export class ErroDeApi extends Error {
   readonly status: number
+  readonly codigo: string | null
+  readonly campos: Record<string, string>
 
   constructor(status: number, corpo: unknown) {
     super(mensagemDeErro(status, corpo))
     this.name = 'ErroDeApi'
     this.status = status
+    this.campos = camposDeErro(corpo)
+
+    const erro =
+      typeof corpo === 'object' && corpo !== null && 'erro' in corpo
+        ? (corpo as { erro: { codigo?: string } }).erro
+        : null
+
+    this.codigo = erro?.codigo ?? null
   }
 
   /** 409 é sempre regra de negócio: mostrar a mensagem e não recarregar */

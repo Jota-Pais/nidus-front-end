@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CREDENCIAL_INVALIDA, ehRespostaDeErro, mensagemDeErro } from './erros'
+import { CREDENCIAL_INVALIDA, camposDeErro, ehRespostaDeErro, mensagemDeErro } from './erros'
 
 const naoAutenticado = {
   erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'Usuário tecnico@ufsc.br não existe.' },
@@ -53,5 +53,23 @@ describe('ehRespostaDeErro', () => {
     expect(ehRespostaDeErro({ erro: 'falhou' })).toBe(false)
     expect(ehRespostaDeErro({ erro: { codigo: 'X' } })).toBe(false)
     expect(ehRespostaDeErro({ mensagem: 'x' })).toBe(false)
+  })
+})
+
+describe('camposDeErro — VALIDACAO traz campos', () => {
+  it('devolve os campos para o formulário marcar', () => {
+    const corpo = {
+      erro: {
+        codigo: 'VALIDACAO',
+        mensagem: 'Entrada inválida.',
+        campos: { email: 'Informe o e-mail institucional.' },
+      },
+    }
+    expect(camposDeErro(corpo)).toEqual({ email: 'Informe o e-mail institucional.' })
+  })
+
+  it('devolve objeto vazio quando não há campos', () => {
+    expect(camposDeErro({ erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'x' } })).toEqual({})
+    expect(camposDeErro(undefined)).toEqual({})
   })
 })

@@ -89,7 +89,22 @@ describe('api — erros no envelope da API', () => {
     )
     const erro = (await api('/api/solicitacoes/12/alocacao').catch((e: unknown) => e)) as ErroDeApi
     expect(erro.ehRegraDeNegocio).toBe(true)
+    expect(erro.codigo).toBe('SOLICITACAO_JA_ALOCADA')
     expect(erro.message).toContain('#12')
+  })
+
+  it('400 VALIDACAO carrega os campos para o formulário marcar', async () => {
+    fingirFetch(
+      resposta(400, {
+        erro: {
+          codigo: 'VALIDACAO',
+          mensagem: 'Entrada inválida.',
+          campos: { email: 'Informe o e-mail institucional.' },
+        },
+      }),
+    )
+    const erro = (await api('/api/sessao').catch((e: unknown) => e)) as ErroDeApi
+    expect(erro.campos).toEqual({ email: 'Informe o e-mail institucional.' })
   })
 
   it('não quebra quando o corpo é HTML de gateway em vez do contrato', async () => {
@@ -99,6 +114,7 @@ describe('api — erros no envelope da API', () => {
     )
     const erro = (await api('/api/estantes').catch((e: unknown) => e)) as ErroDeApi
     expect(erro).toBeInstanceOf(ErroDeApi)
+    expect(erro.codigo).toBeNull()
     expect(erro.message).toMatch(/Tente de novo/)
   })
 })

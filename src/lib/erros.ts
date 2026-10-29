@@ -4,6 +4,8 @@ interface ErroApi {
   codigo: string
   /** Já vem em português, pronta para exibir */
   mensagem: string
+  /** Só em erro de validação, ou quando o erro aponta para campo específico. */
+  campos?: Record<string, string>
 }
 
 interface RespostaDeErro {
@@ -33,4 +35,9 @@ export function mensagemDeErro(status: number, corpo: unknown): string {
   if (!ehRespostaDeErro(corpo)) return MENSAGEM_GENERICA
   if (status >= 500) return MENSAGEM_GENERICA
   return corpo.erro.mensagem
+}
+
+/** Erros por campo, para o formulário marcar o campo certo. Vazio quando não houver */
+export function camposDeErro(corpo: unknown): Record<string, string> {
+  return ehRespostaDeErro(corpo) ? (corpo.erro.campos ?? {}) : {}
 }
