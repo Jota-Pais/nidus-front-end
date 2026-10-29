@@ -1,12 +1,12 @@
 // tradução de erro da API para mensagem de tela.
 
-export interface ErroApi {
+interface ErroApi {
   codigo: string
   /** Já vem em português, pronta para exibir */
   mensagem: string
 }
 
-export interface RespostaDeErro {
+interface RespostaDeErro {
   erro: ErroApi
 }
 

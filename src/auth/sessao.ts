@@ -12,7 +12,7 @@ export interface Usuario {
   perfil: Perfil
 }
 
-export interface Credenciais {
+interface Credenciais {
   email: string
   senha: string
 }

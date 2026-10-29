@@ -3,7 +3,7 @@
 // estantes pinta a caixa com a mesma
 import type { EstadoCaixa } from './tipos'
 
-export interface Coluna {
+interface Coluna {
   estado: EstadoCaixa
   rotulo: string
   /** o que o card diz embaixo */

@@ -4,7 +4,7 @@ import { createContext, useContext } from 'react'
 import type { Perfil } from '@/dominio/tipos'
 import type { Usuario } from './sessao'
 
-export interface Sessao {
+interface Sessao {
   /** Perfil corrente. Vem do servidor; null = não logado */
   perfil: Perfil | null
   /** Usuário da sessão real. null = não logado. */

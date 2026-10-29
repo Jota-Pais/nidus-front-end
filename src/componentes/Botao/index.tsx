@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import './estilos.css'
 
 /** As variantes de botão do design system */
-export type VarianteDeBotao = 'primario' | 'secundario' | 'fantasma' | 'perigo'
+type VarianteDeBotao = 'primario' | 'secundario' | 'fantasma' | 'perigo'
 
 const TIPO_ANT: Record<VarianteDeBotao, ButtonProps['type']> = {
   primario: 'primary',

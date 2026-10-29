@@ -3,7 +3,7 @@ import type { ResultProps } from 'antd'
 import type { ReactNode } from 'react'
 
 /** O que a tela inteira virou: sem permissão, não encontrado ou erro. */
-export type TipoDeResultado = 'semPermissao' | 'naoEncontrado' | 'erro'
+type TipoDeResultado = 'semPermissao' | 'naoEncontrado' | 'erro'
 
 const STATUS_ANT: Record<TipoDeResultado, ResultProps['status']> = {
   semPermissao: '403',

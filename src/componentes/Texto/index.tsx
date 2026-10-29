@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import './estilos.css'
 
-export type TomDeTexto = 'normal' | 'secundario' | 'rotulo'
+type TomDeTexto = 'normal' | 'secundario' | 'rotulo'
 
 /** Texto da interface */
 export function Texto({

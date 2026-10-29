@@ -150,7 +150,7 @@ export function useCriarSolicitacao() {
   })
 }
 
-export interface PedidoDeBusca {
+interface PedidoDeBusca {
   especie: CodigoEspecie
   idLinhagem?: number | undefined
   machos: number
