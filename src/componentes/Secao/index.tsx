@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react'
-import { Cartao } from '../Cartao'
 import './estilos.css'
 
-/** bloco de conteúdo da tela: um 'Cartao' com cabeçalho. */
+/** bloco de conteúdo da tela: uma superfície elevada com cabeçalho. */
 export function Secao({
   titulo,
   acoes,
@@ -18,7 +17,7 @@ export function Secao({
   const temCabecalho = titulo !== undefined || acoes !== undefined
 
   return (
-    <Cartao className={semPreenchimento ? 'secao--rente' : ''}>
+    <div className={`secao${semPreenchimento ? ' secao--rente' : ''}`}>
       {temCabecalho && (
         <header className="secao__cabecalho">
           <div className="secao__identificacao">
@@ -28,6 +27,6 @@ export function Secao({
         </header>
       )}
       {children}
-    </Cartao>
+    </div>
   )
 }

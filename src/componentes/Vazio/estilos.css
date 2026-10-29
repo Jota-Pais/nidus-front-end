@@ -8,6 +8,19 @@
   text-align: center;
 }
 
+.vazio__icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  font-size: 26px;
+  border-radius: var(--raio-lg);
+  background: var(--cor-suave);
+  color: var(--cor-suave-frente);
+}
+
 .vazio__texto {
   margin: 0;
   max-width: 44ch;
