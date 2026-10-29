@@ -9,6 +9,16 @@
   line-height: 1;
 }
 
+/* O ponto de acento que abre a pílula */
+.rotuloDeSecao__ponto {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cor-acento);
+}
+
 .rotuloDeSecao__texto {
   font-family: var(--fonte-mono);
   font-size: 12px;

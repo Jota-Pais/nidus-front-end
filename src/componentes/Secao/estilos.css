@@ -1,3 +1,14 @@
+/* Fica antes de .secao--rente, que zera o padding com a mesma
+   especificidade e só vence por vir depois. */
+.secao {
+  width: 100%;
+  padding: 20px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-cartao);
+  box-shadow: var(--sombra-md);
+}
+
 .secao__cabecalho {
   display: flex;
   align-items: flex-start;
