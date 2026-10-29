@@ -21,6 +21,12 @@ describe('credenciais — só e-mail e senha', () => {
     expect(credenciais.parse({ email: '  a@ufsc.br  ', senha: 'x' }).email).toBe('a@ufsc.br')
   })
 
+  it('passa o e-mail para minúsculas, que é como o primeiro acesso grava a conta', () => {
+    expect(credenciais.parse({ email: 'Ana.Souza@UFSC.br', senha: 'x' }).email).toBe(
+      'ana.souza@ufsc.br',
+    )
+  })
+
   it('recusa e-mail vazio, com mensagem que diz o que fazer', () => {
     const r = credenciais.safeParse({ email: '', senha: 'x' })
     expect(r.success).toBe(false)
