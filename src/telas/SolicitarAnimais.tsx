@@ -13,7 +13,6 @@ const ROTULO_CRONOGRAMA: Record<Cronograma, string> = {
   semanal: 'Semanal',
   quinzenal: 'Quinzenal',
   mensal: 'Mensal',
-  avulsas: 'Avulsas',
 }
 
 const STATUS: Record<StatusSolicitacao, { rotulo: string; tom: TomDeEtiqueta }> = {
