@@ -1,11 +1,9 @@
 // Datas na tela: a API manda 'aaaa-mm-dd', a tela mostra dd/mm/aaaa
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
-import 'dayjs/locale/pt-br'
 import type { DataISO } from '@/dominio/tipos'
 
 dayjs.extend(customParseFormat)
-dayjs.locale('pt-br')
 
 const FORMATO_DA_API = 'YYYY-MM-DD'
 
