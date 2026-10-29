@@ -1,19 +1,15 @@
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
-import { Layout } from 'antd'
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
   Aviso,
   Botao,
   CabecalhoDaTela,
-  Cartao,
   Entrada,
   Etiqueta,
   Formulario,
   Linha,
-  Paragrafo,
   Pilha,
-  Secao,
   Texto,
 } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
@@ -25,8 +21,6 @@ import { destinoAposLogin } from '@/layout/destino'
 import { validadorDeCampo } from './login.schema'
 import type { Credenciais } from './login.schema'
 import './Login.css'
-
-const { Header, Content } = Layout
 
 export function Login() {
   const { perfil } = usePerfil()
@@ -51,93 +45,59 @@ export function Login() {
   }
 
   return (
-    <Layout className="casca">
-      {/* Idêntico ao cabeçalho do `AppLayout`: mesma marca, mesma faixa —
-          é o que deixa visível que é o mesmo sistema antes de entrar. */}
-      <Header className="casca__topo">
-        <Linha espaco={12}>
-          <span className="casca__marca" aria-hidden="true" />
-          <span className="casca__nome">Nidus</span>
-          <Texto tom="secundario" className="casca__instituicao">
-            CPMR/UFSC
-          </Texto>
-          {mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>}
-        </Linha>
-      </Header>
-
-      <Content className="casca__conteudo loginPagina__conteudo">
+    <main className="loginPagina">
+      <div className="loginPagina__painel">
         <div className="loginPagina__miolo">
-          <CabecalhoDaTela
-            rotulo="Acesso"
-            titulo="Entrar no sistema"
-            descricao="Use sua identidade institucional para controlar matrizes, linhagens e alocação de roedores."
-          />
+          <Pilha espaco={24}>
+            {/* A mesma marca da faixa do `AppLayout`: deixa visível que é o
+                mesmo sistema antes de entrar. */}
+            <Linha espaco={12}>
+              <span className="casca__marca" aria-hidden="true" />
+              <span className="loginPagina__nome">Nidus</span>
+              <Texto tom="secundario">CPMR/UFSC</Texto>
+              {mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>}
+            </Linha>
 
-          <div className="loginPagina__grade">
-            <Pilha espaco={20}>
-              <Secao titulo="Acesso ao sistema">
-                <Pilha espaco={16}>
-                  {erro && <Aviso tom="erro" titulo={erro} />}
+            <CabecalhoDaTela titulo="Entrar no sistema" />
 
-                  <Formulario<Credenciais> onFinish={aoEnviar} disabled={login.isPending}>
-                    <Formulario.Campo
-                      name="email"
-                      rotulo="E-mail institucional"
-                      rules={[{ validator: validadorDeCampo('email') }]}
-                    >
-                      <Entrada
-                        prefix={<UserOutlined aria-hidden="true" />}
-                        placeholder="nome@ufsc.br"
-                        autoComplete="username"
-                        inputMode="email"
-                        autoFocus
-                      />
-                    </Formulario.Campo>
+            {erro && <Aviso tom="erro" titulo={erro} />}
 
-                    <Formulario.Campo
-                      name="senha"
-                      rotulo="Senha"
-                      rules={[{ validator: validadorDeCampo('senha') }]}
-                    >
-                      <Entrada.Senha
-                        prefix={<LockOutlined aria-hidden="true" />}
-                        placeholder="Senha"
-                        autoComplete="current-password"
-                      />
-                    </Formulario.Campo>
+            <Formulario<Credenciais> onFinish={aoEnviar} disabled={login.isPending}>
+              <Formulario.Campo
+                name="email"
+                rotulo="E-mail institucional"
+                rules={[{ validator: validadorDeCampo('email') }]}
+              >
+                <Entrada
+                  prefix={<UserOutlined aria-hidden="true" />}
+                  placeholder="nome@ufsc.br"
+                  autoComplete="username"
+                  inputMode="email"
+                  autoFocus
+                />
+              </Formulario.Campo>
 
-                    <Botao variante="primario" htmlType="submit" block loading={login.isPending}>
-                      Entrar
-                    </Botao>
-                  </Formulario>
-                </Pilha>
-              </Secao>
+              <Formulario.Campo
+                name="senha"
+                rotulo="Senha"
+                rules={[{ validator: validadorDeCampo('senha') }]}
+              >
+                <Entrada.Senha
+                  prefix={<LockOutlined aria-hidden="true" />}
+                  placeholder="Senha"
+                  autoComplete="current-password"
+                />
+              </Formulario.Campo>
 
-              <Aviso tom="informacao" titulo="Login pelo ID-UFSC">
-                O login pelo ID-UFSC depende do SETIC. Por enquanto, entre com e-mail e senha
-                institucionais.
-              </Aviso>
-
-              <Paragrafo secundario>
-                Plataforma restrita para controle de matrizes, linhagens e alocação de roedores.
-                Para dúvidas operacionais ou cadastro de pesquisadores, entre em contato com a
-                administração do CPMR / UFSC.
-              </Paragrafo>
-            </Pilha>
-
-            <Cartao className="loginPagina__cartaoImagem">
-              <div className="loginPagina__imagem" role="presentation" />
-              <div className="loginPagina__imagemLegenda">
-                <Texto tom="forte">Biotério Central UFSC</Texto>
-                <Paragrafo secundario>
-                  Unidade dedicada à criação, controle e suporte na manutenção de roedores para
-                  atividades de pesquisa e ensino da universidade.
-                </Paragrafo>
-              </div>
-            </Cartao>
-          </div>
+              <Botao variante="primario" htmlType="submit" block loading={login.isPending}>
+                Entrar
+              </Botao>
+            </Formulario>
+          </Pilha>
         </div>
-      </Content>
-    </Layout>
+      </div>
+
+      <div className="loginPagina__imagem" role="presentation" />
+    </main>
   )
 }

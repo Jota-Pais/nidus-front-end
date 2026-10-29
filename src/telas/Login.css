@@ -1,72 +1,64 @@
 /*
  * Composição visual da tela de login.
  *
- * O cabeçalho (`casca__topo`) e o preenchimento do conteúdo (`casca__conteudo`)
- * vêm de `@/layout/appLayout.css` — são os mesmos do `AppLayout`, sem cópia.
- * Aqui fica só o que é específico do login: o miolo mais largo que o de uma
- * tela comum (não tem `Sider` disputando espaço), a grade de duas colunas e
- * o cartão da foto do biotério esticado para acompanhar a altura do
- * formulário — em vez de uma faixa fina de imagem sobrando espaço em branco.
+ * O login não tem a casca da aplicação (faixa do topo e barra lateral): o
+ * formulário fica num painel à esquerda, com a marca no alto, e a foto do
+ * biotério ocupa o resto da largura. A página tem a altura da janela e não
+ * rola. O símbolo da marca (`casca__marca`) vem de `@/layout/appLayout.css`,
+ * o mesmo do `AppLayout`, sem cópia.
  */
 
-.loginPagina__conteudo {
+.loginPagina {
+  display: grid;
+  grid-template-columns: minmax(360px, 520px) 1fr;
+  /* `dvh` é a altura visível. No celular, `100vh` conta a barra de endereço
+     escondida e a página rola alguns pixels; o `vh` fica para navegador sem
+     `dvh`. */
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.loginPagina__painel {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 40px;
+  background: var(--cor-cartao);
+  border-inline-end: 1px solid var(--cor-borda);
 }
 
 .loginPagina__miolo {
   width: 100%;
-  max-width: 1180px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  max-width: 400px;
 }
 
-.loginPagina__grade {
-  display: grid;
-  grid-template-columns: minmax(320px, 460px) 1fr;
-  align-items: stretch;
-  gap: 24px;
-}
-
-.loginPagina__cartaoImagem {
-  height: 100%;
-  padding: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+/* O mesmo nome da casca (`casca__nome`), escuro: lá ele fica sobre a faixa
+   azul, aqui sobre o painel branco. */
+.loginPagina__nome {
+  font-family: var(--fonte-titulo);
+  font-size: 20px;
+  color: var(--cor-frente);
 }
 
 .loginPagina__imagem {
-  flex: 1;
-  min-height: 280px;
   background-image: url('/roedores.jpg');
   background-size: cover;
   background-position: center;
 }
 
-.loginPagina__imagemLegenda {
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* Abaixo de 900px a coluna da foto sai de lado e empilha embaixo do
-   formulário: com uma coluna só ela ia esticar bem mais alto que o
-   formulário, criando um vazio em vez de aproveitar espaço. */
+/* Abaixo de 900px a foto sai: numa coluna só ela empurraria o formulário
+   para baixo e a página voltaria a rolar. */
 @media (max-width: 900px) {
-  .loginPagina__grade {
+  .loginPagina {
     grid-template-columns: 1fr;
   }
 
-  .loginPagina__cartaoImagem {
-    height: auto;
+  .loginPagina__painel {
+    padding: 24px 16px;
+    border-inline-end: 0;
   }
 
   .loginPagina__imagem {
-    flex: none;
-    height: 200px;
+    display: none;
   }
 }
