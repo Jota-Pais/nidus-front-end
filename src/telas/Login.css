@@ -2,15 +2,15 @@
  * Composição visual da tela de login.
  *
  * O login não tem a casca da aplicação (faixa do topo e barra lateral): a
- * foto do biotério ocupa a esquerda e o formulário fica num painel à
- * direita, com a marca no alto. A página tem a altura da janela e não
+ * página se divide ao meio, com a foto do biotério à esquerda e o formulário
+ * à direita, com a marca no alto. A página tem a altura da janela e não
  * rola. O símbolo da marca (`casca__marca`) vem de `@/layout/appLayout.css`,
  * o mesmo do `AppLayout`, sem cópia.
  */
 
 .loginPagina {
   display: grid;
-  grid-template-columns: 1fr minmax(360px, 520px);
+  grid-template-columns: 1fr 1fr;
   /* `dvh` é a altura visível. No celular, `100vh` conta a barra de endereço
      escondida e a página rola alguns pixels; o `vh` fica para navegador sem
      `dvh`. */
