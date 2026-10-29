@@ -5,6 +5,7 @@ import {
   COR,
   COR_DE_RETORNO,
   FONTE,
+  MOVIMENTO,
   RAIO,
   SOMBRA,
   SUPERFICIE_DE_RETORNO,
@@ -58,8 +59,8 @@ export const tema: ThemeConfig = {
     controlOutlineWidth: 3,
 
     /** A curva do design system: sai rápido, assenta devagar. */
-    motionEaseInOut: 'cubic-bezier(0.16, 1, 0.3, 1)',
-    motionEaseOut: 'cubic-bezier(0.16, 1, 0.3, 1)',
+    motionEaseInOut: MOVIMENTO.curva,
+    motionEaseOut: MOVIMENTO.curva,
   },
   components: {
     Button: { controlHeight: ALTURA_DE_CONTROLE, fontWeight: 500, primaryShadow: 'none' },

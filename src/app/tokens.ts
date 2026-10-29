@@ -1,7 +1,7 @@
-// tokens do design system - fonte única, lado TypeScript.
+// tokens do design system, lado TypeScript: o que o tema do Ant Design lê.
 
 /** Marca institucional da UFSC */
-export const UFSC = {
+const UFSC = {
   /** PANTONE 355 C · RGB 0,146,6 · Verde Bandeira. */
   verde: '#009206',
   /** PANTONE 2728 C · RGB 0,56,147 · Azul Médio */
@@ -29,8 +29,6 @@ export const COR = {
 
   /** Ação. Botão, link, foco, seleção. */
   acento: UFSC.azul,
-  /** Segundo passo do gradiente do botão. Branco em cima ainda dá 5.80:1. */
-  acentoSecundario: '#0B5FD6',
   acentoFrente: '#FFFFFF',
 
   /** Identidade. PANTONE 355 C, exato - a outra cor principal */
@@ -70,15 +68,6 @@ export const SUPERFICIE_DE_RETORNO = {
   informacaoBorda: '#AFC8EC',
 } as const
 
-/** Os dois gradientes e a razão de serem dois */
-export const GRADIENTE = {
-  marca: `linear-gradient(135deg, ${UFSC.verde}, ${UFSC.azul})`,
-  /** A assinatura de cima para baixo, para faixa em pé: a divisa da tela de login */
-  marcaVertical: `linear-gradient(to bottom, ${UFSC.verde}, ${UFSC.azul})`,
-  acento: `linear-gradient(135deg, ${COR.acento}, ${COR.acentoSecundario})`,
-  acentoHorizontal: `linear-gradient(to right, ${COR.acento}, ${COR.acentoSecundario})`,
-} as const
-
 /** Tipografia de dois tempos */
 export const FONTE = {
   titulo: '"Calistoga", Georgia, "Times New Roman", serif',
@@ -99,8 +88,6 @@ export const SOMBRA = {
   sm: '0 1px 3px rgba(0, 0, 0, 0.06)',
   md: '0 4px 6px rgba(0, 0, 0, 0.07)',
   lg: '0 10px 15px rgba(0, 0, 0, 0.08)',
-  xl: '0 20px 25px rgba(0, 0, 0, 0.1)',
-  acento: '0 4px 14px rgba(0, 56, 147, 0.25)',
   acentoForte: '0 8px 24px rgba(0, 56, 147, 0.35)',
 } as const
 
@@ -115,14 +102,4 @@ export const MOVIMENTO = {
   curva: 'cubic-bezier(0.16, 1, 0.3, 1)',
   rapido: '200ms',
   normal: '300ms',
-  entrada: '700ms',
-} as const
-
-/** Superfície de cada coluna do kanban. A grade de estantes pinta a caixa com a mesma */
-export const ESTADO = {
-  livres: { fundo: '#E9F7EB', borda: '#B6E4BE', texto: '#00600A' },
-  pre_reserva: { fundo: '#FFF8DB', borda: '#F5E08A', texto: '#6F5B00' },
-  estoque: { fundo: '#E4EDFA', borda: '#AFC8EC', texto: '#003893' },
-  reserva: { fundo: '#FFEEE0', borda: '#F7CBA4', texto: '#8A4300' },
-  enviado: { fundo: '#F2F4F7', borda: '#DCE3EC', texto: '#5A6570' },
 } as const

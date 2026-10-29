@@ -1,30 +1,18 @@
 /*
  * Tokens do design system — lado CSS.
  *
- * Espelho de `tokens.ts`. Os dois são conferidos por `tokens.test.ts`: mudar
- * um sem o outro quebra o teste, de propósito.
- *
- * O nome da variável sai do nome da constante em kebab-case:
- * `COR.acentoSecundario` → `--cor-acento-secundario`.
+ * O que também está em `tokens.ts` (o lado do Ant Design) tem de ter o mesmo
+ * valor nos dois, e `tokens.test.ts` confere. O nome da variável sai do nome
+ * da constante em kebab-case: `COR.suaveFrente` → `--cor-suave-frente`.
  */
 
 :root {
-  /* Marca institucional da UFSC — hex exato do manual.
-     Vinil adesivo: usar em preenchimento e marca, não em texto pequeno. */
-  --ufsc-verde: #009206;
-  --ufsc-azul: #003893;
-  --ufsc-vermelho: #FF0009;
-  --ufsc-amarelo: #FEE300;
-  --ufsc-preto: #000000;
-
   /* Paleta da aplicação */
   --cor-fundo: #FAFAFA;
   --cor-frente: #000000;
-  --cor-invertido: #001B47;
   --cor-suave: #F1F4F8;
   --cor-suave-frente: #5A6570;
   --cor-acento: #003893;
-  --cor-acento-secundario: #0B5FD6;
   --cor-acento-frente: #FFFFFF;
   --cor-institucional: #009206;
   --cor-institucional-texto: #00700A;
@@ -35,7 +23,6 @@
   --cor-sucesso: #00700A;
   --cor-aviso: #6F6300;
   --cor-erro: #CC0007;
-  --cor-informacao: #003893;
 
   /* Superfície de cada tom de retorno. A cor de texto e a de fundo sao
      diferentes de proposito: ver tokens.ts */
@@ -50,9 +37,7 @@
 
   /* Gradientes. `marca` é a assinatura (verde → azul) e não aceita texto
      pequeno em cima; `acento` é o de trabalho, branco legível o percurso todo */
-  --gradiente-marca: linear-gradient(135deg, #009206, #003893);
   --gradiente-marca-vertical: linear-gradient(to bottom, #009206, #003893);
-  --gradiente-acento: linear-gradient(135deg, #003893, #0B5FD6);
   --gradiente-acento-horizontal: linear-gradient(to right, #003893, #0B5FD6);
 
   /* Tipografia */
@@ -70,19 +55,12 @@
   --sombra-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   --sombra-md: 0 4px 6px rgba(0, 0, 0, 0.07);
   --sombra-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
-  --sombra-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
-  --sombra-acento: 0 4px 14px rgba(0, 56, 147, 0.25);
   --sombra-acento-forte: 0 8px 24px rgba(0, 56, 147, 0.35);
-
-  /* Métrica */
-  --altura-de-controle: 48px;
-  --tamanho-de-fonte: 16px;
 
   /* Movimento */
   --movimento-curva: cubic-bezier(0.16, 1, 0.3, 1);
   --movimento-rapido: 200ms;
   --movimento-normal: 300ms;
-  --movimento-entrada: 700ms;
 
   /* Superfície por coluna do kanban. A grade de estantes usa as mesmas. */
   --estado-livres-fundo: #E9F7EB;
