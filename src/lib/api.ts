@@ -1,25 +1,15 @@
 // único ponto de saída HTTP do front
 import { config } from '@/app/config'
-import { camposDeErro, mensagemDeErro } from './erros'
+import { mensagemDeErro } from './erros'
 
 /** Erro de qualquer chamada à API. */
 export class ErroDeApi extends Error {
   readonly status: number
-  readonly codigo: string | null
-  readonly campos: Record<string, string>
 
   constructor(status: number, corpo: unknown) {
     super(mensagemDeErro(status, corpo))
     this.name = 'ErroDeApi'
     this.status = status
-    this.campos = camposDeErro(corpo)
-
-    const erro =
-      typeof corpo === 'object' && corpo !== null && 'erro' in corpo
-        ? (corpo as { erro: { codigo?: string } }).erro
-        : null
-
-    this.codigo = erro?.codigo ?? null
   }
 
   /** 409 é sempre regra de negócio: mostrar a mensagem e não recarregar */
@@ -50,7 +40,6 @@ type Metodo = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 interface Opcoes {
   metodo?: Metodo
   corpo?: unknown
-  sinal?: AbortSignal
 }
 
 /** Monta a URL sem barra dupla nem barra faltando, seja qual for o formato do .env. */
@@ -72,7 +61,7 @@ async function lerCorpo(resposta: Response): Promise<unknown> {
 }
 
 export async function api<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
-  const { metodo = 'GET', corpo, sinal } = opcoes
+  const { metodo = 'GET', corpo } = opcoes
 
   let resposta: Response
   try {
@@ -81,10 +70,8 @@ export async function api<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
       credentials: 'include',
       headers: corpo === undefined ? {} : { 'Content-Type': 'application/json' },
       ...(corpo === undefined ? {} : { body: JSON.stringify(corpo) }),
-      ...(sinal ? { signal: sinal } : {}),
     })
   } catch (causa) {
-    if (causa instanceof DOMException && causa.name === 'AbortError') throw causa
     throw new ErroDeRede(causa)
   }
 

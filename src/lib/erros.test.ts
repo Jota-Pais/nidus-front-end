@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CREDENCIAL_INVALIDA, camposDeErro, ehRespostaDeErro, mensagemDeErro } from './erros'
+import { CREDENCIAL_INVALIDA, ehRespostaDeErro, mensagemDeErro } from './erros'
 
 const naoAutenticado = {
   erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'Usuário tecnico@ufsc.br não existe.' },
@@ -24,9 +24,8 @@ describe('mensagemDeErro — demais status', () => {
   it('repassa a mensagem do servidor em regra de negócio (409)', () => {
     const corpo = {
       erro: {
-        codigo: 'PRAZO_INVIAVEL',
-        mensagem: 'Para 21 dias de idade, a entrega mais próxima é 08/11/2026.',
-        requisito: 'RN-06',
+        codigo: 'SOLICITACAO_JA_ALOCADA',
+        mensagem: 'A solicitação #12 já foi alocada.',
       },
     }
     expect(mensagemDeErro(409, corpo)).toBe(corpo.erro.mensagem)
@@ -54,23 +53,5 @@ describe('ehRespostaDeErro', () => {
     expect(ehRespostaDeErro({ erro: 'falhou' })).toBe(false)
     expect(ehRespostaDeErro({ erro: { codigo: 'X' } })).toBe(false)
     expect(ehRespostaDeErro({ mensagem: 'x' })).toBe(false)
-  })
-})
-
-describe('camposDeErro — VALIDACAO traz campos', () => {
-  it('devolve os campos para o formulário marcar', () => {
-    const corpo = {
-      erro: {
-        codigo: 'VALIDACAO',
-        mensagem: 'Entrada inválida.',
-        campos: { email: 'Informe o e-mail institucional.' },
-      },
-    }
-    expect(camposDeErro(corpo)).toEqual({ email: 'Informe o e-mail institucional.' })
-  })
-
-  it('devolve objeto vazio quando não há campos', () => {
-    expect(camposDeErro({ erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'x' } })).toEqual({})
-    expect(camposDeErro(undefined)).toEqual({})
   })
 })
