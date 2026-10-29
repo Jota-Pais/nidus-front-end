@@ -15,9 +15,9 @@ export function RotaProtegida({
   const { perfil } = usePerfil()
   const { pathname } = useLocation()
 
-  // O card "Layout base" exige: "rota protegida sem sessão redireciona ao login
-  // e volta para o destino depois de entrar". Guardar o caminho aqui é a
-  // primeira metade; a segunda está em Login.tsx.
+  // Rota protegida sem sessão vai para o login e, depois de entrar, volta para
+  // o destino. Guardar o caminho aqui é a primeira metade; a segunda está em
+  // Login.tsx.
   if (!perfil) return <Navigate to="/login" replace state={{ de: pathname }} />
   if (perfis && !perfis.includes(perfil)) return <Navigate to={rotaInicial(perfil)} replace />
 

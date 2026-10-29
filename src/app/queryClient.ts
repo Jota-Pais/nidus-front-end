@@ -3,7 +3,7 @@ import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
 import { ErroDeApi } from '@/lib/api'
 import { chaves } from './chaves'
 
-/** Tratamento global de 401, pedido pelo card "Camada de acesso à API" */
+/** Tratamento global de 401: a sessão vira null e a rota protegida manda para o login */
 function aoFalhar(cliente: QueryClient, erro: unknown, chaveDaConsulta?: readonly unknown[]) {
   if (!(erro instanceof ErroDeApi) || !erro.ehNaoAutenticado) return
 
