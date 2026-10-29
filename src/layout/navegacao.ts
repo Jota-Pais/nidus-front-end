@@ -18,6 +18,11 @@ export function menuDoPerfil(perfil: Perfil): ItemDeMenu[] {
   return ITENS_DE_MENU.filter((item) => item.perfis.includes(perfil))
 }
 
+/** A barra lateral só aparece quando há mais de uma tela para escolher */
+export function mostraBarraLateral(perfil: Perfil): boolean {
+  return menuDoPerfil(perfil).length > 1
+}
+
 /** Onde cada perfil cai depois do login */
 export function rotaInicial(perfil: Perfil): string {
   return perfil === 'pesquisador' ? '/solicitar' : '/kanban'

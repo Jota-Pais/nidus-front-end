@@ -5,7 +5,7 @@ import { Botao, Etiqueta, Linha, Texto } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
 import { usePerfil } from '@/auth/contexto'
 import { ROTULO_PERFIL } from '@/dominio/tipos'
-import { menuDoPerfil } from './navegacao'
+import { menuDoPerfil, mostraBarraLateral } from './navegacao'
 import './appLayout.css'
 
 const { Header, Content, Sider } = Layout
@@ -57,15 +57,23 @@ export function AppLayout() {
       </Header>
 
       <Layout>
-        <Sider width={248} breakpoint="lg" collapsedWidth={0} theme="light" className="casca__lado">
-          <Menu
-            mode="inline"
-            items={itens}
-            {...(selecionado ? { selectedKeys: [selecionado] } : {})}
-            onClick={({ key }) => navegar(key)}
-            className="casca__menu"
-          />
-        </Sider>
+        {mostraBarraLateral(perfil) && (
+          <Sider
+            width={248}
+            breakpoint="lg"
+            collapsedWidth={0}
+            theme="light"
+            className="casca__lado"
+          >
+            <Menu
+              mode="inline"
+              items={itens}
+              {...(selecionado ? { selectedKeys: [selecionado] } : {})}
+              onClick={({ key }) => navegar(key)}
+              className="casca__menu"
+            />
+          </Sider>
+        )}
 
         <Content className="casca__conteudo">
           <Outlet />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { menuDoPerfil, rotaInicial } from './navegacao'
+import { menuDoPerfil, mostraBarraLateral, rotaInicial } from './navegacao'
 
 describe('menu por perfil', () => {
   it('o pesquisador só solicita animais: não vê a colônia nem a busca', () => {
@@ -12,6 +12,17 @@ describe('menu por perfil', () => {
       const caminhos = menuDoPerfil(perfil).map((item) => item.caminho)
       expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/busca'])
     }
+  })
+})
+
+describe('mostraBarraLateral', () => {
+  it('o pesquisador tem uma tela só e fica sem barra lateral', () => {
+    expect(mostraBarraLateral('pesquisador')).toBe(false)
+  })
+
+  it('técnico e gestor navegam entre as telas pela barra lateral', () => {
+    expect(mostraBarraLateral('tecnico')).toBe(true)
+    expect(mostraBarraLateral('gestor')).toBe(true)
   })
 })
 
