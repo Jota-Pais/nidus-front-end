@@ -51,6 +51,7 @@
   /* Gradientes. `marca` é a assinatura (verde → azul) e não aceita texto
      pequeno em cima; `acento` é o de trabalho, branco legível o percurso todo */
   --gradiente-marca: linear-gradient(135deg, #009206, #003893);
+  --gradiente-marca-vertical: linear-gradient(to bottom, #009206, #003893);
   --gradiente-acento: linear-gradient(135deg, #003893, #0B5FD6);
   --gradiente-acento-horizontal: linear-gradient(to right, #003893, #0B5FD6);
 

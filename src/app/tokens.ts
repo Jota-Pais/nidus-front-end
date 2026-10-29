@@ -73,6 +73,8 @@ export const SUPERFICIE_DE_RETORNO = {
 /** Os dois gradientes e a razão de serem dois */
 export const GRADIENTE = {
   marca: `linear-gradient(135deg, ${UFSC.verde}, ${UFSC.azul})`,
+  /** A assinatura de cima para baixo, para faixa em pé: a divisa da tela de login */
+  marcaVertical: `linear-gradient(to bottom, ${UFSC.verde}, ${UFSC.azul})`,
   acento: `linear-gradient(135deg, ${COR.acento}, ${COR.acentoSecundario})`,
   acentoHorizontal: `linear-gradient(to right, ${COR.acento}, ${COR.acentoSecundario})`,
 } as const
