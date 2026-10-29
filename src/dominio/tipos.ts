@@ -30,13 +30,11 @@ export interface CardDoKanban {
   /** endereço na estante. ex: F1A */
   codigo: string
   numeroVisivel: string
-  sala: string
   linhagem: string | null
   casal: CasalNoCard | null
 }
 
 export interface Kanban {
-  especie: CodigoEspecie
   colunas: { estado: EstadoCaixa; cards: CardDoKanban[] }[]
 }
 
@@ -50,7 +48,6 @@ export interface Estante {
   faces: number
   linhas: number
   colunas: number
-  capacidade: number
 }
 
 interface CaixaNaGrade {
@@ -71,7 +68,6 @@ export interface Posicao {
 export type Face = 'frontal' | 'traseira'
 
 export interface Grade {
-  estante: Estante
   faces: { face: Face; posicoes: Posicao[] }[]
 }
 
@@ -105,19 +101,14 @@ export interface Casal {
   dtFormacao: DataISO
   ativo: boolean
   dtEncerramento: DataISO | null
-  motivoEncerramento: string | null
 }
 
 export interface Ficha {
   caixa: {
     id: number
     endereco: {
-      idEstante: number
       numeroVisivel: string
       sala: string
-      face: Face
-      linha: number
-      coluna: number
       codigo: string
     }
     especie: CodigoEspecie
@@ -146,13 +137,10 @@ export interface Projeto {
   id: number
   /** formato 23080.XXXXXX/AAAA-XX */
   numero: string
-  titulo: string
-  responsavel: string
-  vigenteAte: DataISO
   vigente: boolean
 }
 
-export type Cronograma = 'unica' | 'semanal' | 'quinzenal' | 'mensal' | 'avulsas'
+export type Cronograma = 'unica' | 'semanal' | 'quinzenal' | 'mensal'
 
 export type StatusSolicitacao =
   | 'rascunho'
@@ -192,7 +180,6 @@ export interface CaixaCandidata {
   codigo: string
   numeroVisivel: string
   estado: EstadoCaixa
-  linhagem: string
   casal: string
   /** 1º a 5º */
   parto: number
@@ -206,7 +193,6 @@ export interface CaixaCandidata {
 }
 
 export interface ResultadoDaBusca {
-  referencia: DataISO
   faixa: { min: number; max: number }
   candidatas: CaixaCandidata[]
   deficit: PorSexo
