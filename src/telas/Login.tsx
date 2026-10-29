@@ -46,6 +46,8 @@ export function Login() {
 
   return (
     <main className="loginPagina">
+      <div className="loginPagina__imagem" role="presentation" />
+
       <div className="loginPagina__painel">
         <div className="loginPagina__miolo">
           <Pilha espaco={24}>
@@ -96,8 +98,6 @@ export function Login() {
           </Pilha>
         </div>
       </div>
-
-      <div className="loginPagina__imagem" role="presentation" />
     </main>
   )
 }
