@@ -1,16 +1,16 @@
 /*
  * Composição visual da tela de login.
  *
- * O login não tem a casca da aplicação (faixa do topo e barra lateral): o
- * formulário fica num painel à esquerda, com a marca no alto, e a foto do
- * biotério ocupa o resto da largura. A página tem a altura da janela e não
+ * O login não tem a casca da aplicação (faixa do topo e barra lateral): a
+ * foto do biotério ocupa a esquerda e o formulário fica num painel à
+ * direita, com a marca no alto. A página tem a altura da janela e não
  * rola. O símbolo da marca (`casca__marca`) vem de `@/layout/appLayout.css`,
  * o mesmo do `AppLayout`, sem cópia.
  */
 
 .loginPagina {
   display: grid;
-  grid-template-columns: minmax(360px, 520px) 1fr;
+  grid-template-columns: 1fr minmax(360px, 520px);
   /* `dvh` é a altura visível. No celular, `100vh` conta a barra de endereço
      escondida e a página rola alguns pixels; o `vh` fica para navegador sem
      `dvh`. */
@@ -24,7 +24,7 @@
   justify-content: center;
   padding: 40px;
   background: var(--cor-cartao);
-  border-inline-end: 1px solid var(--cor-borda);
+  border-inline-start: 1px solid var(--cor-borda);
 }
 
 .loginPagina__miolo {
@@ -55,7 +55,7 @@
 
   .loginPagina__painel {
     padding: 24px 16px;
-    border-inline-end: 0;
+    border-inline-start: 0;
   }
 
   .loginPagina__imagem {
