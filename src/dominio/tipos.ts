@@ -2,12 +2,6 @@
 
 export type Perfil = 'pesquisador' | 'tecnico' | 'gestor'
 
-export const ROTULO_PERFIL: Record<Perfil, string> = {
-  pesquisador: 'Pesquisador',
-  tecnico: 'Técnico',
-  gestor: 'Gestor',
-}
-
 export type CodigoEspecie = 'rato' | 'camundongo'
 
 /** 'aaaa-mm-dd'. Na tela é sempre dd/mm/aaaa (ver 'lib/data.ts') */
