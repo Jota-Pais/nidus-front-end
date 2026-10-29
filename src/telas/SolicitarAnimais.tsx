@@ -73,11 +73,7 @@ export function SolicitarAnimais() {
 
   return (
     <Pilha>
-      <CabecalhoDaTela
-        rotulo="Demanda"
-        titulo="Solicitar animais"
-        descricao="Preencha o pedido. Depois do envio, a equipe técnica analisa e reserva as caixas."
-      />
+      <CabecalhoDaTela titulo="Solicitar animais" />
 
       <Secao titulo="Nova solicitação">
         <Form
