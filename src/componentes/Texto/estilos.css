@@ -6,10 +6,6 @@
   color: var(--cor-suave-frente);
 }
 
-.texto--forte {
-  font-weight: 600;
-}
-
 /* O rótulo do design system: mono, caixa alta, espaçado. Mesma família do
    RotuloDeSecao, um degrau abaixo em tamanho. */
 .texto--rotulo {

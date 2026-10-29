@@ -11,15 +11,9 @@ export type TomDeEtiqueta = 'neutro' | 'acento' | 'institucional' | 'sucesso' | 
 export function Etiqueta({
   children,
   tom = 'neutro',
-  title,
 }: {
   children: ReactNode
   tom?: TomDeEtiqueta
-  title?: string
 }) {
-  return (
-    <span className={`etiqueta etiqueta--${tom}`} {...(title ? { title } : {})}>
-      {children}
-    </span>
-  )
+  return <span className={`etiqueta etiqueta--${tom}`}>{children}</span>
 }

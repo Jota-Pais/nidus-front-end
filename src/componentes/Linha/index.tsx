@@ -4,13 +4,11 @@ import type { CSSProperties, ReactNode } from 'react'
 export function Linha({
   children,
   espaco = 8,
-  alinhamento = 'center',
   distribuicao,
   estilo,
 }: {
   children: ReactNode
   espaco?: number
-  alinhamento?: CSSProperties['alignItems']
   distribuicao?: CSSProperties['justifyContent']
   estilo?: CSSProperties
 }) {
@@ -20,7 +18,7 @@ export function Linha({
         display: 'flex',
         flexWrap: 'wrap',
         gap: espaco,
-        alignItems: alinhamento,
+        alignItems: 'center',
         ...(distribuicao ? { justifyContent: distribuicao } : {}),
         ...estilo,
       }}

@@ -7,7 +7,7 @@ import { Carregando } from './Carregando'
 /** quanto tempo esperar antes de avisar que a API pode estar acordando */
 const MS_ATE_AVISAR = 3_000
 
-function useEsperaLonga(ativo: boolean, ms = MS_ATE_AVISAR): boolean {
+function useEsperaLonga(ativo: boolean): boolean {
   const [demorou, setDemorou] = useState(false)
 
   useEffect(() => {
@@ -15,9 +15,9 @@ function useEsperaLonga(ativo: boolean, ms = MS_ATE_AVISAR): boolean {
       setDemorou(false)
       return
     }
-    const relogio = window.setTimeout(() => setDemorou(true), ms)
+    const relogio = window.setTimeout(() => setDemorou(true), MS_ATE_AVISAR)
     return () => window.clearTimeout(relogio)
-  }, [ativo, ms])
+  }, [ativo])
 
   return demorou
 }
