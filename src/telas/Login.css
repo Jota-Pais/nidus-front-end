@@ -16,15 +16,16 @@
      `dvh`. */
   min-height: 100vh;
   min-height: 100dvh;
+  /* O corte diagonal da foto deixa ver o fundo da página, que tem de ser o
+     mesmo branco do painel para o recorte emendar nele. */
+  background: var(--cor-cartao);
 }
 
 .loginPagina__painel {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  background: var(--cor-cartao);
-  border-inline-start: 1px solid var(--cor-borda);
+  padding: 24px 40px;
 }
 
 .loginPagina__miolo {
@@ -40,10 +41,34 @@
   color: var(--cor-frente);
 }
 
+/*
+ * A divisa entre a foto e o formulário é um corte diagonal com uma faixa no
+ * gradiente da marca, verde em cima e azul embaixo. O elemento pinta o
+ * gradiente recortado pelo contorno da diagonal; a foto, no `::after`, é
+ * recortada pelo mesmo contorno recuado da largura da faixa. O que sobra
+ * entre os dois recortes é a faixa.
+ */
 .loginPagina__imagem {
-  background-image: url('/roedores.jpg');
-  background-size: cover;
-  background-position: center;
+  /* Quanto a divisa anda para a esquerda do alto até o pé da página */
+  --divisa-inclinacao: 72px;
+  --divisa-faixa: 8px;
+
+  position: relative;
+  background: var(--gradiente-marca-vertical);
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--divisa-inclinacao)) 100%, 0 100%);
+}
+
+.loginPagina__imagem::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/roedores.jpg') center / cover;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--divisa-faixa)) 0,
+    calc(100% - var(--divisa-faixa) - var(--divisa-inclinacao)) 100%,
+    0 100%
+  );
 }
 
 /* Abaixo de 900px a foto sai: numa coluna só ela empurraria o formulário
@@ -55,7 +80,6 @@
 
   .loginPagina__painel {
     padding: 24px 16px;
-    border-inline-start: 0;
   }
 
   .loginPagina__imagem {

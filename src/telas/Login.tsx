@@ -60,7 +60,7 @@ export function Login() {
               {mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>}
             </Linha>
 
-            <CabecalhoDaTela titulo="Entrar no sistema" />
+            <CabecalhoDaTela titulo="Bem-vindo!" descricao="Acesse sua conta" />
 
             {erro && <Aviso tom="erro" titulo={erro} />}
 
