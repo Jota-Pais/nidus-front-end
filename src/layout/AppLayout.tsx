@@ -4,7 +4,6 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Botao, Etiqueta, Linha, Texto } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
 import { usePerfil } from '@/auth/contexto'
-import { ROTULO_PERFIL } from '@/dominio/tipos'
 import { menuDoPerfil, mostraBarraLateral } from './navegacao'
 import './appLayout.css'
 
@@ -40,9 +39,7 @@ export function AppLayout() {
         </Linha>
 
         <Linha espaco={12}>
-          <Texto className="casca__usuario">
-            {usuario.nome} · {ROTULO_PERFIL[usuario.perfil]}
-          </Texto>
+          <Texto className="casca__usuario">{usuario.nome}</Texto>
 
           <Botao
             variante="fantasma"
