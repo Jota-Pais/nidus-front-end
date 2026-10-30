@@ -57,6 +57,10 @@
   --sombra-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
   --sombra-acento-forte: 0 8px 24px rgba(0, 56, 147, 0.35);
 
+  /* Métrica: a altura de campos e botões, a mesma do tema do Ant Design. A solicitação
+     alinha a palavra ao lado do número ("machos") por ela */
+  --altura-de-controle: 48px;
+
   /* Movimento */
   --movimento-curva: cubic-bezier(0.16, 1, 0.3, 1);
   --movimento-rapido: 200ms;
