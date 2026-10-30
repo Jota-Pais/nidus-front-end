@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Etiqueta, Linha, Pilha, Texto } from '@/componentes'
+import { Etiqueta, Linha, Pilha } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
 import './appLayout.css'
 import './telaDeEntrada.css'
@@ -18,7 +18,6 @@ export function TelaDeEntrada({ children }: { children: ReactNode }) {
             <Linha espaco={12}>
               <span className="casca__marca" aria-hidden="true" />
               <span className="telaDeEntrada__nome">Nidus</span>
-              <Texto tom="secundario">CPMR/UFSC</Texto>
               {mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>}
             </Linha>
 
