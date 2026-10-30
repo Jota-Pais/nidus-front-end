@@ -1,8 +1,8 @@
 # Nidus - front-end
 
-Interface web do Nidus, o sistema de controle de produção de roedores do CPMR/UFSC
-(Centro de Produção e Manutenção de Roedores da Universidade Federal de Santa
-Catarina).
+Interface web do Nidus, um sistema de controle de produção de roedores. O cliente do
+projeto é o CPMR/UFSC (Centro de Produção e Manutenção de Roedores da Universidade
+Federal de Santa Catarina).
 
 Projeto Integrador: Sistema Web - SATC, Engenharia de Software, fase 4, 2026.2.
 Repositório irmão: [nidus-back-end](https://github.com/Jota-Pais/nidus-back-end).

@@ -32,9 +32,6 @@ export function AppLayout() {
               Bandeira, o nome em branco sobre o azul institucional. */}
           <span className="casca__marca" aria-hidden="true" />
           <span className="casca__nome">Nidus</span>
-          <Texto tom="secundario" className="casca__instituicao">
-            CPMR/UFSC
-          </Texto>
           {mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>}
         </Linha>
 
