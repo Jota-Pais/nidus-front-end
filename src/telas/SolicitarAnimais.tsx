@@ -1,19 +1,47 @@
-import { App, Form, Input, InputNumber, Select, Table } from 'antd'
+import { App, Form, Input, InputNumber, Segmented, Select, Table } from 'antd'
+import type { TableColumnsType } from 'antd'
 import { usePerfil } from '@/auth/contexto'
-import { Botao, CabecalhoDaTela, Etiqueta, Pilha, Secao, Texto } from '@/componentes'
+import {
+  Aviso,
+  Botao,
+  CabecalhoDaTela,
+  Entrada,
+  Etiqueta,
+  Formulario,
+  Linha,
+  Pilha,
+  Secao,
+  Texto,
+} from '@/componentes'
 import type { TomDeEtiqueta } from '@/componentes'
-import { useCatalogo, useCriarSolicitacao, useProjetos, useSolicitacoes } from '@/dominio/consultas'
-import type { NovaSolicitacao } from '@/dominio/consultas'
-import type { CodigoEspecie, Cronograma, Solicitacao, StatusSolicitacao } from '@/dominio/tipos'
-import { formatarData } from '@/lib/data'
+import { useCatalogo, useCriarSolicitacao, useSolicitacoes } from '@/dominio/consultas'
+import {
+  CRONOGRAMAS_DO_PEDIDO,
+  ROTULO_CRONOGRAMA,
+  descreverAnimais,
+  descreverIdade,
+  totalDeAnimais,
+} from '@/dominio/solicitacao'
+import type { CodigoEspecie, Solicitacao, StatusSolicitacao } from '@/dominio/tipos'
+import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
+import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
+import { formatarData, hoje } from '@/lib/data'
+import { CampoDeIdade } from './CampoDeIdade'
+import {
+  FORMATO_DO_PROTOCOLO,
+  PECA_UM_ANIMAL,
+  mascararProtocolo,
+  montarPedido,
+  temAnimal,
+  validadorDoPedido,
+} from './solicitacao.schema'
+import type { CamposDoPedido } from './solicitacao.schema'
 import './Solicitacao.css'
 
-const ROTULO_CRONOGRAMA: Record<Cronograma, string> = {
-  unica: 'Cota única',
-  semanal: 'Semanal',
-  quinzenal: 'Quinzenal',
-  mensal: 'Mensal',
-}
+const ESPECIES: { value: CodigoEspecie; label: string }[] = [
+  { value: 'rato', label: 'Rato' },
+  { value: 'camundongo', label: 'Camundongo' },
+]
 
 const STATUS: Record<StatusSolicitacao, { rotulo: string; tom: TomDeEtiqueta }> = {
   rascunho: { rotulo: 'Rascunho', tom: 'neutro' },
@@ -27,46 +55,67 @@ const STATUS: Record<StatusSolicitacao, { rotulo: string; tom: TomDeEtiqueta }> 
   cancelada: { rotulo: 'Cancelada', tom: 'neutro' },
 }
 
-interface Campos extends Omit<NovaSolicitacao, 'idLinhagem'> {
-  especie: CodigoEspecie
-  idLinhagem: number
-}
+/** Os números do pedido: sem setas, só inteiros, teclado numérico no celular */
+const NUMERO = {
+  className: 'solicitacao__numero',
+  controls: false,
+  precision: 0,
+  inputMode: 'numeric',
+} as const
+
+/**
+ * O que volta ao começo depois de enviar. Nome e protocolo ficam: o pedido seguinte
+ * costuma ser da mesma pessoa e do mesmo projeto
+ */
+const CAMPOS_DO_PEDIDO: (keyof CamposDoPedido)[] = [
+  'especie',
+  'idLinhagem',
+  'modoIdade',
+  'idadeMin',
+  'idadeMax',
+  'machos',
+  'femeas',
+  'qualquer',
+  'dataEntrega',
+  'cronograma',
+  'observacoes',
+]
+
+/** Onde a API pode apontar erro. O primeiro recebe o foco quando o erro não aponta campo */
+const CAMPOS_COM_ERRO = ['nomePesquisador', 'protocoloCeua', ...CAMPOS_DO_PEDIDO]
 
 /** O pedido do pesquisador: no lugar do Word por e-mail, um formulário que já chega validado */
 export function SolicitarAnimais() {
   const { message } = App.useApp()
-  const { usuario } = usePerfil()
-  const [form] = Form.useForm<Campos>()
-  const projetos = useProjetos()
+  const { usuario, perfil } = usePerfil()
+  const [form] = Form.useForm<CamposDoPedido>()
   const catalogo = useCatalogo()
   const solicitacoes = useSolicitacoes()
   const criar = useCriarSolicitacao()
+  const falha = useFalhaDoFormulario(form, CAMPOS_COM_ERRO)
 
   const especie = Form.useWatch('especie', form)
-  const machos = Form.useWatch('machos', form) ?? 0
-  const femeas = Form.useWatch('femeas', form) ?? 0
+  const total = totalDeAnimais({
+    machos: Form.useWatch('machos', form),
+    femeas: Form.useWatch('femeas', form),
+    qualquer: Form.useWatch('qualquer', form),
+  })
+  // O pesquisador só recebe os pedidos dele: a coluna de quem pediu é da equipe
+  const colunasDaTabela = colunas(perfil !== 'pesquisador')
   const linhagens =
     catalogo.data?.especies
       .find((e) => e.codigo === especie)
       ?.linhagens.filter((l) => l.ativa)
       .map((l) => ({ value: l.id, label: l.nome })) ?? []
 
-  function enviar(campos: Campos) {
-    const pedido: NovaSolicitacao = {
-      idProjeto: campos.idProjeto,
-      idLinhagem: campos.idLinhagem,
-      machos: campos.machos,
-      femeas: campos.femeas,
-      idade: campos.idade,
-      dataEntrega: campos.dataEntrega,
-      cronograma: campos.cronograma,
-    }
-    criar.mutate(pedido, {
+  function enviar(campos: CamposDoPedido) {
+    falha.limpar()
+    criar.mutate(montarPedido(campos), {
       onSuccess: ({ id }) => {
         void message.success(`Solicitação #${id} enviada. A equipe técnica vai analisar.`)
-        form.resetFields()
+        form.resetFields(CAMPOS_DO_PEDIDO)
       },
-      onError: (erro) => void message.error(erro.message),
+      onError: falha.mostrar,
     })
   }
 
@@ -74,118 +123,235 @@ export function SolicitarAnimais() {
     <Pilha>
       <CabecalhoDaTela titulo="Solicitar animais" />
 
-      <Secao titulo="Nova solicitação">
-        <Form
+      <Secao>
+        <Formulario<CamposDoPedido>
           form={form}
-          layout="vertical"
           onFinish={enviar}
-          initialValues={{ especie: 'rato', machos: 0, femeas: 0, idade: 28, cronograma: 'unica' }}
+          disabled={criar.isPending}
+          initialValues={{ especie: 'rato', modoIdade: 'faixa', cronograma: 'unica' }}
         >
-          <div className="solicitacao__blocos">
-            <div className="solicitacao__bloco">
-              <Texto tom="rotulo">Solicitante</Texto>
-              <Form.Item label="Pesquisador">
-                <Input value={usuario?.nome} disabled />
-              </Form.Item>
-              <Form.Item name="idProjeto" label="Projeto CEUA" rules={[{ required: true, message: 'Escolha o projeto' }]}>
-                <Select
-                  loading={projetos.isPending}
-                  placeholder="Selecione o projeto"
-                  notFoundContent="Nenhum projeto CEUA no seu nome"
-                  options={(projetos.data ?? []).map((p) => ({
-                    value: p.id,
-                    label: `${p.numero}${p.vigente ? '' : ' (fora de vigência)'}`,
-                    disabled: !p.vigente,
-                  }))}
-                />
-              </Form.Item>
+          {falha.erro && (
+            <div className="solicitacao__aviso">
+              <Aviso tom="erro" titulo={falha.erro} />
             </div>
+          )}
 
-            <div className="solicitacao__bloco">
-              <Texto tom="rotulo">Animais</Texto>
-              <Form.Item name="especie" label="Espécie">
-                <Select
-                  options={[
-                    { value: 'rato', label: 'Rato' },
-                    { value: 'camundongo', label: 'Camundongo' },
-                  ]}
-                  onChange={() => form.setFieldValue('idLinhagem', undefined)}
-                />
-              </Form.Item>
-              <Form.Item name="idLinhagem" label="Linhagem" rules={[{ required: true, message: 'Escolha a linhagem' }]}>
-                <Select options={linhagens} placeholder="Selecione a linhagem" />
-              </Form.Item>
-              <div className="solicitacao__linha">
-                <Form.Item name="machos" label="Machos">
-                  <InputNumber min={0} style={{ width: '100%' }} />
-                </Form.Item>
-                <Form.Item name="femeas" label="Fêmeas">
-                  <InputNumber min={0} style={{ width: '100%' }} />
-                </Form.Item>
-              </div>
-              <Texto tom="secundario">
-                Total: <strong>{machos + femeas}</strong> animais
-              </Texto>
-            </div>
+          {/* Quem pede: o e-mail é o da conta, mostrado como texto porque não se muda */}
+          <div className="solicitacao__fileira">
+            <Formulario.Campo
+              name="nomePesquisador"
+              rotulo="Pesquisador"
+              {...(usuario ? { ajuda: usuario.email } : {})}
+              rules={[{ validator: validadorDoPedido('nomePesquisador') }]}
+              className="solicitacao__campo--nome"
+            >
+              <Entrada autoComplete="name" />
+            </Formulario.Campo>
 
-            <div className="solicitacao__bloco">
-              <Texto tom="rotulo">Idade e prazo</Texto>
-              <Form.Item
-                name="idade"
-                label="Idade na entrega (dias)"
-                rules={[{ required: true, type: 'number', min: 21, message: 'A idade mínima é 21 dias' }]}
-              >
-                <InputNumber min={21} style={{ width: '100%' }} />
-              </Form.Item>
-              <Form.Item name="dataEntrega" label="Data de entrega" rules={[{ required: true, message: 'Informe a data' }]}>
-                <Input type="date" />
-              </Form.Item>
-              <Form.Item name="cronograma" label="Cronograma">
-                <Select
-                  options={(['unica', 'semanal', 'quinzenal', 'mensal'] as const).map((valor) => ({
-                    value: valor,
-                    label: ROTULO_CRONOGRAMA[valor],
-                  }))}
-                />
-              </Form.Item>
-            </div>
+            <Formulario.Campo
+              name="protocoloCeua"
+              rotulo="Protocolo CEUA"
+              ajuda={FORMATO_DO_PROTOCOLO}
+              normalize={mascararProtocolo}
+              validateTrigger="onBlur"
+              rules={[{ validator: validadorDoPedido('protocoloCeua') }]}
+              className="solicitacao__campo--protocolo"
+            >
+              <Entrada className="solicitacao__protocolo" inputMode="numeric" />
+            </Formulario.Campo>
           </div>
 
+          {/* Que animal */}
+          <div className="solicitacao__fileira">
+            <Formulario.Campo name="especie" rotulo="Espécie">
+              <Segmented<CodigoEspecie>
+                options={ESPECIES}
+                onChange={() => form.setFieldValue('idLinhagem', undefined)}
+              />
+            </Formulario.Campo>
+
+            <Formulario.Campo
+              name="idLinhagem"
+              rotulo="Linhagem"
+              rules={[{ required: true, message: 'Escolha a linhagem' }]}
+              className="solicitacao__campo--linhagem"
+            >
+              <Select options={linhagens} placeholder="Selecione" loading={catalogo.isPending} />
+            </Formulario.Campo>
+
+            <CampoDeIdade />
+          </div>
+
+          {/* Quantos. A regra da soma fica só em "machos", para o erro aparecer uma vez
+              embaixo do grupo, e olha os outros dois pelas dependências */}
+          <Formulario.Campo rotulo="Animais">
+            <Linha espaco={16}>
+              <span className="solicitacao__quantidade">
+                <Form.Item
+                  name="machos"
+                  noStyle
+                  dependencies={['femeas', 'qualquer']}
+                  rules={[
+                    { validator: validadorDoPedido('quantidade') },
+                    ({ getFieldsValue }) => ({
+                      validator: () =>
+                        temAnimal(getFieldsValue(['machos', 'femeas', 'qualquer']))
+                          ? Promise.resolve()
+                          : Promise.reject(new Error(PECA_UM_ANIMAL)),
+                    }),
+                  ]}
+                >
+                  <InputNumber {...NUMERO} aria-label="Machos" />
+                </Form.Item>
+                machos
+              </span>
+
+              <span className="solicitacao__quantidade">
+                <Form.Item
+                  name="femeas"
+                  noStyle
+                  rules={[{ validator: validadorDoPedido('quantidade') }]}
+                >
+                  <InputNumber {...NUMERO} aria-label="Fêmeas" />
+                </Form.Item>
+                fêmeas
+              </span>
+
+              <span className="solicitacao__quantidade">
+                <Form.Item
+                  name="qualquer"
+                  noStyle
+                  rules={[{ validator: validadorDoPedido('quantidade') }]}
+                >
+                  <InputNumber {...NUMERO} aria-label="Qualquer sexo" />
+                </Form.Item>
+                qualquer sexo
+              </span>
+
+              <Texto tom="secundario">
+                = {total} {total === 1 ? 'animal' : 'animais'}
+              </Texto>
+            </Linha>
+          </Formulario.Campo>
+
+          {/* Quando */}
+          <div className="solicitacao__fileira">
+            <Formulario.Campo
+              name="dataEntrega"
+              rotulo="Entrega"
+              rules={[{ validator: validadorDoPedido('dataEntrega') }]}
+              className="solicitacao__campo--data"
+            >
+              <Entrada type="date" min={hoje()} />
+            </Formulario.Campo>
+
+            <Formulario.Campo
+              name="cronograma"
+              rotulo="Cronograma"
+              className="solicitacao__campo--cronograma"
+            >
+              <Select
+                options={CRONOGRAMAS_DO_PEDIDO.map((valor) => ({
+                  value: valor,
+                  label: ROTULO_CRONOGRAMA[valor],
+                }))}
+              />
+            </Formulario.Campo>
+          </div>
+
+          <Formulario.Campo
+            name="observacoes"
+            rotulo="Observações"
+            opcional
+            rules={[{ validator: validadorDoPedido('observacoes') }]}
+          >
+            <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} maxLength={500} />
+          </Formulario.Campo>
+
           <div className="solicitacao__acoes">
-            <Botao variante="fantasma" onClick={() => form.resetFields()}>
-              Limpar
-            </Botao>
-            <Botao variante="primario" htmlType="submit" loading={criar.isPending} disabled={machos + femeas === 0}>
+            <Botao variante="primario" htmlType="submit" loading={criar.isPending}>
               Enviar solicitação
             </Botao>
           </div>
-        </Form>
+        </Formulario>
       </Secao>
 
-      <Secao titulo="Solicitações" semPreenchimento>
-        <Table<Solicitacao>
-          rowKey="id"
-          loading={solicitacoes.isPending}
-          dataSource={solicitacoes.data ?? []}
-          pagination={false}
-          scroll={{ x: true }}
-          locale={{ emptyText: 'Nenhuma solicitação ainda.' }}
-          columns={[
-            { title: '#', dataIndex: 'id', width: 60 },
-            { title: 'Projeto', dataIndex: 'projeto' },
-            { title: 'Solicitante', dataIndex: 'solicitante' },
-            { title: 'Linhagem', render: (_, s) => `${s.linhagem} (${s.especie})` },
-            { title: 'Animais', render: (_, s) => `${s.machos} M · ${s.femeas} F` },
-            { title: 'Idade', render: (_, s) => `${s.idade} dias` },
-            { title: 'Entrega', render: (_, s) => formatarData(s.dataEntrega) },
-            { title: 'Cronograma', render: (_, s) => ROTULO_CRONOGRAMA[s.cronograma] },
-            {
-              title: 'Situação',
-              render: (_, s) => <Etiqueta tom={STATUS[s.status].tom}>{STATUS[s.status].rotulo}</Etiqueta>,
-            },
-          ]}
-        />
-      </Secao>
+      <EstadoDaConsulta consulta={solicitacoes} rotulo="Carregando as solicitações…">
+        <Secao titulo="Solicitações" semPreenchimento>
+          <Table<Solicitacao>
+            className="solicitacao__tabela"
+            rowKey="id"
+            dataSource={solicitacoes.data ?? []}
+            pagination={false}
+            scroll={{ x: larguraMinima(colunasDaTabela) }}
+            locale={{ emptyText: 'Nenhuma solicitação ainda.' }}
+            columns={colunasDaTabela}
+          />
+        </Secao>
+      </EstadoDaConsulta>
     </Pilha>
   )
+}
+
+/**
+ * As colunas de valor curto têm largura fixa, do tamanho do maior valor que cabe nelas. As
+ * observações, que são texto livre, ficam com o espaço que sobra e terminam em reticências
+ */
+const OBSERVACOES_NO_MINIMO = 200
+
+function colunas(comPesquisador: boolean): TableColumnsType<Solicitacao> {
+  return [
+    { title: '#', dataIndex: 'id', width: 56 },
+    {
+      title: 'Situação',
+      width: 170,
+      render: (_, s) => <Etiqueta tom={STATUS[s.status].tom}>{STATUS[s.status].rotulo}</Etiqueta>,
+    },
+    ...(comPesquisador
+      ? [
+          {
+            title: 'Pesquisador',
+            width: 220,
+            render: (_: unknown, s: Solicitacao) => (
+              <div className="solicitacao__duasLinhas">
+                <span>{s.pesquisador}</span>
+                <Texto tom="secundario">{s.email}</Texto>
+              </div>
+            ),
+          },
+        ]
+      : []),
+    { title: 'Linhagem', width: 170, render: (_, s) => `${s.linhagem} · ${s.especie}` },
+    { title: 'Animais', width: 230, render: (_, s) => descreverAnimais(s) },
+    { title: 'Idade', width: 130, render: (_, s) => descreverIdade(s) },
+    {
+      // A data e o cronograma juntos: uma coluna a menos, e a tabela cabe sem rolar de lado
+      title: 'Entrega',
+      width: 130,
+      render: (_, s) => (
+        <div className="solicitacao__duasLinhas">
+          <span>{formatarData(s.dataEntrega)}</span>
+          <Texto tom="secundario">{ROTULO_CRONOGRAMA[s.cronograma]}</Texto>
+        </div>
+      ),
+    },
+    {
+      title: 'CEUA',
+      width: 210,
+      render: (_, s) => <span className="solicitacao__protocolo">{s.protocoloCeua}</span>,
+      responsive: ['lg'],
+    },
+    {
+      title: 'Observações',
+      dataIndex: 'observacoes',
+      ellipsis: true,
+      render: (observacoes: string | null) => observacoes ?? '—',
+    },
+  ]
+}
+
+/** Abaixo disso a tabela rola de lado, em vez de espremer as colunas */
+function larguraMinima(lista: TableColumnsType<Solicitacao>): number {
+  const fixas = lista.reduce((soma, c) => soma + (typeof c.width === 'number' ? c.width : 0), 0)
+  return fixas + OBSERVACOES_NO_MINIMO
 }

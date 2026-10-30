@@ -36,7 +36,12 @@ export function Campo({
       label={
         opcional ? (
           <>
-            {rotulo} <span style={{ color: 'var(--cor-suave-frente)' }}>(opcional)</span>
+            {/* O rótulo do antd é flex, e flex descarta o espaço entre os dois: a margem
+                faz o papel dele */}
+            {rotulo}
+            <span style={{ color: 'var(--cor-suave-frente)', marginInlineStart: 4 }}>
+              (opcional)
+            </span>
           </>
         ) : (
           rotulo
