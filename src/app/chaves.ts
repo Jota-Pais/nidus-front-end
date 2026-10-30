@@ -9,7 +9,6 @@ export const chaves = {
   grade: (idEstante: number) => ['grade', idEstante] as const,
   caixa: (idCaixa: number) => ['caixa', idCaixa] as const,
   quadro: (especie: CodigoEspecie) => ['quadro', especie] as const,
-  projetos: ['projetos'] as const,
   solicitacoes: ['solicitacoes'] as const,
 }
 

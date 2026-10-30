@@ -132,14 +132,6 @@ export interface Catalogo {
   paresGeneticos: { grupoMacho: string; grupoFemea: string }[]
 }
 
-// GET /api/projetos
-export interface Projeto {
-  id: number
-  /** formato 23080.XXXXXX/AAAA-XX */
-  numero: string
-  vigente: boolean
-}
-
 export type Cronograma = 'unica' | 'semanal' | 'quinzenal' | 'mensal'
 
 export type StatusSolicitacao =
@@ -156,17 +148,25 @@ export type StatusSolicitacao =
 // GET /api/solicitacoes
 export interface Solicitacao {
   id: number
-  projeto: string
-  solicitante: string
+  /** formato 23080.XXXXXX/AAAA-XX */
+  protocoloCeua: string
+  /** o nome que a pessoa digitou no pedido */
+  pesquisador: string
+  /** o e-mail da conta que fez o pedido */
+  email: string
   especie: CodigoEspecie
   idLinhagem: number
   linhagem: string
   machos: number
   femeas: number
-  /** dias desde o nascimento */
-  idade: number
+  /** animais de qualquer sexo */
+  qualquer: number
+  /** a faixa de idade na entrega, em dias desde o nascimento; iguais quando a idade é exata */
+  idadeMin: number
+  idadeMax: number
   dataEntrega: DataISO
   cronograma: Cronograma
+  observacoes: string | null
   status: StatusSolicitacao
 }
 
@@ -195,7 +195,8 @@ export interface CaixaCandidata {
 export interface ResultadoDaBusca {
   faixa: { min: number; max: number }
   candidatas: CaixaCandidata[]
-  deficit: PorSexo
+  /** o que o plantel não cobre; o "qualquer" sobra quando nem a sobra das caixas o cobre */
+  deficit: PorSexo & { qualquer: number }
   casaisAFormar: number
   acasalamentoNovo: { dataMinimaDeEntrega: DataISO; viavel: boolean }
 }
