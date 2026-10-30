@@ -41,11 +41,30 @@
   width: 72px;
 }
 
-/* "[ 5 ] machos": o número e a palavra que diz o que ele conta */
+/* "[ 5 ] machos": o número e a palavra que diz o que ele conta, que andam juntos. Alinham
+   pelo topo para o erro embaixo de um número não desalinhar o resto da fileira */
 .solicitacao__quantidade {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+}
+
+/* A palavra ao lado do número tem a altura do campo, e fica na linha do texto dele */
+.solicitacao__unidade {
+  line-height: var(--altura-de-controle);
+  white-space: nowrap;
+}
+
+/* Número dentro de um grupo com rótulo próprio: o respiro de baixo já é do grupo */
+.solicitacao__item {
+  margin-bottom: 0;
+}
+
+/* A mensagem de erro fica embaixo do número sem alargá-lo: senão a palavra ao lado ("machos",
+   o "a" da idade) seria empurrada para longe do campo */
+.solicitacao__item .ant-form-item-explain {
+  width: 0;
+  white-space: nowrap;
 }
 
 .solicitacao__aviso {
@@ -59,14 +78,21 @@
   flex-direction: column;
 }
 
-.solicitacao__linha {
+/* Espécie, linhagem e idade da busca. A idade tem a largura do que mostra e, se não couber,
+   desce inteira para a linha de baixo, em vez de se partir */
+.busca__criterios {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  column-gap: 12px;
 }
 
-.solicitacao__linha > * {
-  flex: 1;
+.busca__criterios > * {
+  flex: 1 1 200px;
   min-width: 0;
+}
+
+.busca__criterios > .busca__idade {
+  flex: 0 0 auto;
 }
 
 .solicitacao__acoes {

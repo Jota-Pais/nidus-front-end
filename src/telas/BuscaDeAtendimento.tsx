@@ -5,7 +5,8 @@ import { Aviso, Botao, CabecalhoDaTela, Etiqueta, Pilha, Secao, Texto } from '@/
 import type { TomDeEtiqueta } from '@/componentes'
 import { COLUNA } from '@/dominio/caixa'
 import { buscarAtendimento, useAlocar, useCatalogo, useSolicitacoes } from '@/dominio/consultas'
-import { descreverAnimais, descreverIdade } from '@/dominio/solicitacao'
+import { descreverAnimais, descreverIdade, faixaDeIdade } from '@/dominio/solicitacao'
+import type { CamposDeIdade } from '@/dominio/solicitacao'
 import type {
   CaixaCandidata,
   CodigoEspecie,
@@ -23,20 +24,18 @@ const ORIGEM: Record<Origem, { rotulo: string; tom: TomDeEtiqueta }> = {
   previsao_parto: { rotulo: 'Previsão de parto', tom: 'atencao' },
 }
 
+/** Os números vêm nulos quando o técnico apaga o campo */
 interface Remessa {
-  machos: number
-  femeas: number
-  qualquer: number
+  machos: number | null
+  femeas: number | null
+  qualquer: number | null
   dataEntrega: string
 }
 
-interface Criterios {
+/** A idade vem do CampoDeIdade, o mesmo da solicitação */
+interface Criterios extends CamposDeIdade {
   especie: CodigoEspecie
   idLinhagem?: number
-  /** a idade vem do CampoDeIdade, o mesmo da solicitação */
-  modoIdade: 'faixa' | 'exata'
-  idadeMin: number
-  idadeMax?: number | null
   remessas: Remessa[]
 }
 
@@ -59,27 +58,22 @@ export function BuscaDeAtendimento() {
 
   // cada remessa roda a mesma busca; as caixas sugeridas numa não voltam na seguinte
   const busca = useMutation({
-    mutationFn: async ({
-      especie,
-      idLinhagem,
-      modoIdade,
-      idadeMin,
-      idadeMax,
-      remessas,
-    }: Criterios) => {
+    mutationFn: async (criterios: Criterios) => {
+      const { especie, idLinhagem, remessas } = criterios
       const resultados: Resultado[] = []
       const excluir: number[] = []
-      const idade = {
-        idadeMin,
-        idadeMax: modoIdade === 'exata' ? idadeMin : (idadeMax ?? idadeMin),
-      }
 
       for (const remessa of remessas) {
+        // Campo apagado conta como zero, o mesmo critério do pedido; sem isso iria 'null'
+        // na URL e a API recusaria a busca
         const resultado = await buscarAtendimento({
           especie,
           idLinhagem,
-          ...idade,
-          ...remessa,
+          ...faixaDeIdade(criterios),
+          machos: remessa.machos ?? 0,
+          femeas: remessa.femeas ?? 0,
+          qualquer: remessa.qualquer ?? 0,
+          dataEntrega: remessa.dataEntrega,
           excluir,
         })
         resultados.push({ remessa, busca: resultado })
@@ -192,7 +186,7 @@ export function BuscaDeAtendimento() {
               remessas: [{ machos: 0, femeas: 0, qualquer: 0 }],
             }}
           >
-            <div className="solicitacao__linha">
+            <div className="busca__criterios">
               <Form.Item name="especie" label="Espécie">
                 <Select
                   options={[
@@ -205,7 +199,9 @@ export function BuscaDeAtendimento() {
               <Form.Item name="idLinhagem" label="Linhagem (opcional)">
                 <Select allowClear options={linhagens} placeholder="Qualquer linhagem" />
               </Form.Item>
-              <CampoDeIdade />
+              {/* A busca procura qualquer idade a partir de 1 dia, como a API aceita; o
+                  mínimo de 21 é só do pedido do pesquisador */}
+              <CampoDeIdade className="busca__idade" idadeMinima={1} />
             </div>
 
             <Texto tom="rotulo">Remessas</Texto>

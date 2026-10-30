@@ -30,7 +30,7 @@ import { CampoDeIdade } from './CampoDeIdade'
 import {
   FORMATO_DO_PROTOCOLO,
   PECA_UM_ANIMAL,
-  mascararProtocolo,
+  formatarProtocolo,
   montarPedido,
   temAnimal,
   validadorDoPedido,
@@ -152,12 +152,19 @@ export function SolicitarAnimais() {
               name="protocoloCeua"
               rotulo="Protocolo CEUA"
               ajuda={FORMATO_DO_PROTOCOLO}
-              normalize={mascararProtocolo}
               validateTrigger="onBlur"
               rules={[{ validator: validadorDoPedido('protocoloCeua') }]}
               className="solicitacao__campo--protocolo"
             >
-              <Entrada className="solicitacao__protocolo" inputMode="numeric" />
+              <Entrada
+                className="solicitacao__protocolo"
+                inputMode="numeric"
+                // A pontuação entra ao sair do campo, com o número completo; durante a
+                // digitação o campo não é reescrito, e o cursor fica onde a pessoa pôs
+                onBlur={(evento) =>
+                  form.setFieldValue('protocoloCeua', formatarProtocolo(evento.target.value))
+                }
+              />
             </Formulario.Campo>
           </div>
 
@@ -166,6 +173,7 @@ export function SolicitarAnimais() {
             <Formulario.Campo name="especie" rotulo="Espécie">
               <Segmented<CodigoEspecie>
                 options={ESPECIES}
+                aria-label="Espécie"
                 onChange={() => form.setFieldValue('idLinhagem', undefined)}
               />
             </Formulario.Campo>
@@ -182,14 +190,15 @@ export function SolicitarAnimais() {
             <CampoDeIdade />
           </div>
 
-          {/* Quantos. A regra da soma fica só em "machos", para o erro aparecer uma vez
-              embaixo do grupo, e olha os outros dois pelas dependências */}
+          {/* Quantos. Cada número é um item com nome, para o antd ligar o erro ao campo e o
+              leitor de tela o ler. A regra da soma fica só em "machos", para sair uma vez, e
+              olha os outros dois pelas dependências */}
           <Formulario.Campo rotulo="Animais">
-            <Linha espaco={16}>
+            <Linha espaco={16} estilo={{ alignItems: 'flex-start' }}>
               <span className="solicitacao__quantidade">
                 <Form.Item
                   name="machos"
-                  noStyle
+                  className="solicitacao__item"
                   dependencies={['femeas', 'qualquer']}
                   rules={[
                     { validator: validadorDoPedido('quantidade') },
@@ -203,32 +212,32 @@ export function SolicitarAnimais() {
                 >
                   <InputNumber {...NUMERO} aria-label="Machos" />
                 </Form.Item>
-                machos
+                <span className="solicitacao__unidade">machos</span>
               </span>
 
               <span className="solicitacao__quantidade">
                 <Form.Item
                   name="femeas"
-                  noStyle
+                  className="solicitacao__item"
                   rules={[{ validator: validadorDoPedido('quantidade') }]}
                 >
                   <InputNumber {...NUMERO} aria-label="Fêmeas" />
                 </Form.Item>
-                fêmeas
+                <span className="solicitacao__unidade">fêmeas</span>
               </span>
 
               <span className="solicitacao__quantidade">
                 <Form.Item
                   name="qualquer"
-                  noStyle
+                  className="solicitacao__item"
                   rules={[{ validator: validadorDoPedido('quantidade') }]}
                 >
                   <InputNumber {...NUMERO} aria-label="Qualquer sexo" />
                 </Form.Item>
-                qualquer sexo
+                <span className="solicitacao__unidade">qualquer sexo</span>
               </span>
 
-              <Texto tom="secundario">
+              <Texto tom="secundario" className="solicitacao__unidade">
                 = {total} {total === 1 ? 'animal' : 'animais'}
               </Texto>
             </Linha>
@@ -279,7 +288,6 @@ export function SolicitarAnimais() {
       <EstadoDaConsulta consulta={solicitacoes} rotulo="Carregando as solicitações…">
         <Secao titulo="Solicitações" semPreenchimento>
           <Table<Solicitacao>
-            className="solicitacao__tabela"
             rowKey="id"
             dataSource={solicitacoes.data ?? []}
             pagination={false}
@@ -295,16 +303,19 @@ export function SolicitarAnimais() {
 
 /**
  * As colunas de valor curto têm largura fixa, do tamanho do maior valor que cabe nelas. As
- * observações, que são texto livre, ficam com o espaço que sobra e terminam em reticências
+ * observações, que são texto livre, ficam com o espaço que sobra e terminam em reticências.
+ * A tabela do pesquisador cabe em 1366 px; a da equipe tem a coluna de quem pediu e rola de
+ * lado, com o número e a situação presos à esquerda para a linha não se perder
  */
 const OBSERVACOES_NO_MINIMO = 200
 
 function colunas(comPesquisador: boolean): TableColumnsType<Solicitacao> {
   return [
-    { title: '#', dataIndex: 'id', width: 56 },
+    { title: '#', dataIndex: 'id', width: 56, fixed: 'left' },
     {
       title: 'Situação',
       width: 170,
+      fixed: 'left',
       render: (_, s) => <Etiqueta tom={STATUS[s.status].tom}>{STATUS[s.status].rotulo}</Etiqueta>,
     },
     ...(comPesquisador
@@ -321,11 +332,20 @@ function colunas(comPesquisador: boolean): TableColumnsType<Solicitacao> {
           },
         ]
       : []),
-    { title: 'Linhagem', width: 170, render: (_, s) => `${s.linhagem} · ${s.especie}` },
-    { title: 'Animais', width: 230, render: (_, s) => descreverAnimais(s) },
+    {
+      title: 'Linhagem',
+      width: 140,
+      render: (_, s) => (
+        <div className="solicitacao__duasLinhas">
+          <span>{s.linhagem}</span>
+          <Texto tom="secundario">{s.especie}</Texto>
+        </div>
+      ),
+    },
+    { title: 'Animais', width: 200, render: (_, s) => descreverAnimais(s) },
     { title: 'Idade', width: 130, render: (_, s) => descreverIdade(s) },
     {
-      // A data e o cronograma juntos: uma coluna a menos, e a tabela cabe sem rolar de lado
+      // A data e o cronograma juntos: uma coluna a menos
       title: 'Entrega',
       width: 130,
       render: (_, s) => (
@@ -337,9 +357,9 @@ function colunas(comPesquisador: boolean): TableColumnsType<Solicitacao> {
     },
     {
       title: 'CEUA',
-      width: 210,
+      // os 20 caracteres do protocolo em mono, sem quebrar no hífen
+      width: 230,
       render: (_, s) => <span className="solicitacao__protocolo">{s.protocoloCeua}</span>,
-      responsive: ['lg'],
     },
     {
       title: 'Observações',
