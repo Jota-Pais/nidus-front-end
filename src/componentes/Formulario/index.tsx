@@ -10,9 +10,16 @@ export function Formulario<V extends object>({
   // children é declarado como ReactNode, e não como o children do
   // 'FormProps'. O 'Form' do Ant Design aceita função como filho, mas a
   // assinatura dele intersecta isso com PropsWithChildren e, sob
-  // exactOptionalPropertyTypes, as duas formas não se encontram
+  // exactOptionalPropertyTypes, as duas formas não se encontram.
+  // No envio com erro, o foco vai para o primeiro campo errado: sem isso ele fica no botão,
+  // e quem usa leitor de tela não ouve o que falta
   return (
-    <Form layout="vertical" requiredMark={false} scrollToFirstError {...(props as FormProps)}>
+    <Form
+      layout="vertical"
+      requiredMark={false}
+      scrollToFirstError={{ focus: true }}
+      {...(props as FormProps)}
+    >
       {children}
     </Form>
   )

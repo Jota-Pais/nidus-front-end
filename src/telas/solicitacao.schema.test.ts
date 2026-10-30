@@ -1,36 +1,45 @@
 import { describe, expect, it } from 'vitest'
 import { hoje } from '@/lib/data'
-import { mascararProtocolo, montarPedido, solicitacao, temAnimal } from './solicitacao.schema'
+import {
+  conferirIdadeMaxima,
+  formatarProtocolo,
+  montarPedido,
+  solicitacao,
+  temAnimal,
+  validadorDeIdade,
+} from './solicitacao.schema'
 import type { CamposDoPedido } from './solicitacao.schema'
 
 const { protocoloCeua, quantidade, idade, dataEntrega, nomePesquisador } = solicitacao.shape
 
-describe('mascararProtocolo', () => {
-  it('põe a pontuação enquanto se digita', () => {
-    expect(mascararProtocolo('23080012345202611')).toBe('23080.012345/2026-11')
+describe('formatarProtocolo', () => {
+  it('põe a pontuação nos 17 dígitos digitados de uma vez', () => {
+    expect(formatarProtocolo('23080012345202611')).toBe('23080.012345/2026-11')
   })
 
   it('aceita colar com a pontuação, ou com outra qualquer', () => {
-    expect(mascararProtocolo('23080.012345/2026-11')).toBe('23080.012345/2026-11')
-    expect(mascararProtocolo('23080 012345 2026 11')).toBe('23080.012345/2026-11')
+    expect(formatarProtocolo('23080.012345/2026-11')).toBe('23080.012345/2026-11')
+    expect(formatarProtocolo(' 23080 012345 2026 11 ')).toBe('23080.012345/2026-11')
   })
 
-  it('só põe o separador quando chega o dígito seguinte, para o Backspace não travar', () => {
-    expect(mascararProtocolo('23080')).toBe('23080')
-    expect(mascararProtocolo('230800')).toBe('23080.0')
-    // Backspace logo depois do ponto: some o ponto, e não o número antes dele
-    expect(mascararProtocolo('23080.')).toBe('23080')
-  })
-
-  it('para no tamanho do protocolo', () => {
-    expect(mascararProtocolo('230800123452026119999')).toBe('23080.012345/2026-11')
+  it('com dígito faltando ou sobrando devolve como veio, e não corta nada calado', () => {
+    expect(formatarProtocolo('2308001234520261')).toBe('2308001234520261')
+    expect(formatarProtocolo('230800123452026119')).toBe('230800123452026119')
   })
 })
 
 describe('regras dos campos', () => {
-  it('o protocolo precisa estar completo', () => {
+  it('o protocolo vale com ou sem a pontuação, mas precisa estar completo', () => {
     expect(protocoloCeua.safeParse('23080.012345/2026-11').success).toBe(true)
+    expect(protocoloCeua.safeParse('23080012345202611').success).toBe(true)
     expect(protocoloCeua.safeParse('23080.012345/2026').success).toBe(false)
+    expect(protocoloCeua.safeParse('230800123452026119').success).toBe(false)
+  })
+
+  it('protocolo em branco pede o protocolo, e não que se confira o número', () => {
+    const r = protocoloCeua.safeParse('')
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error.issues[0]?.message).toBe('Informe o protocolo')
   })
 
   it('quantidade em branco vale zero, e negativa não passa', () => {
@@ -55,6 +64,37 @@ describe('regras dos campos', () => {
 
   it('o nome é obrigatório', () => {
     expect(nomePesquisador.safeParse('   ').success).toBe(false)
+  })
+})
+
+describe('conferirIdadeMaxima', () => {
+  it('com as duas idades em branco, não repete o aviso que já está no mínimo', () => {
+    expect(conferirIdadeMaxima(null, null)).toBeNull()
+  })
+
+  it('com o mínimo preenchido, pede o máximo', () => {
+    expect(conferirIdadeMaxima(20, null)).toBe('Informe até que idade')
+  })
+
+  it('recusa o máximo menor que o mínimo e acima do teto', () => {
+    expect(conferirIdadeMaxima(40, 20)).toBe('Menor que a idade inicial')
+    expect(conferirIdadeMaxima(21, 301)).toBe('Máximo de 300 dias')
+  })
+
+  it('aceita a faixa certa', () => {
+    expect(conferirIdadeMaxima(21, 40)).toBeNull()
+  })
+
+  it('segue o mínimo de quem usa o campo: a busca do técnico aceita menos de 21 dias', () => {
+    expect(conferirIdadeMaxima(5, 10)).toBe('Mínimo de 21 dias')
+    expect(conferirIdadeMaxima(5, 10, 1)).toBeNull()
+  })
+})
+
+describe('validadorDeIdade', () => {
+  it('no pedido, o mínimo é 21; na busca, o que ela passar', async () => {
+    await expect(validadorDeIdade()(null, 10)).rejects.toThrow('Mínimo de 21 dias')
+    await expect(validadorDeIdade(1)(null, 10)).resolves.toBeUndefined()
   })
 })
 
@@ -102,6 +142,12 @@ describe('montarPedido', () => {
   it('na idade exata, o máximo é o próprio mínimo, mesmo que sobre um valor da faixa', () => {
     const pedido = montarPedido({ ...campos, modoIdade: 'exata', idadeMin: 28, idadeMax: 40 })
     expect([pedido.idadeMin, pedido.idadeMax]).toEqual([28, 28])
+  })
+
+  it('manda o protocolo com a pontuação, mesmo digitado sem ela', () => {
+    expect(montarPedido({ ...campos, protocoloCeua: '23080012345202611' }).protocoloCeua).toBe(
+      '23080.012345/2026-11',
+    )
   })
 
   it('observação em branco não vai no corpo', () => {

@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { descreverAnimais, descreverIdade, totalDeAnimais } from './solicitacao'
+import { descreverAnimais, descreverIdade, faixaDeIdade, totalDeAnimais } from './solicitacao'
+
+describe('faixaDeIdade', () => {
+  it('na faixa, vai o que foi digitado', () => {
+    expect(faixaDeIdade({ modoIdade: 'faixa', idadeMin: 20, idadeMax: 40 })).toEqual({
+      idadeMin: 20,
+      idadeMax: 40,
+    })
+  })
+
+  it('na exata, o máximo é o mínimo, mesmo que tenha sobrado um valor da faixa', () => {
+    expect(faixaDeIdade({ modoIdade: 'exata', idadeMin: 28, idadeMax: 40 })).toEqual({
+      idadeMin: 28,
+      idadeMax: 28,
+    })
+  })
+})
 
 describe('descreverAnimais', () => {
   it('mostra só as partes que existem', () => {

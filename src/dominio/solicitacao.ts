@@ -39,6 +39,21 @@ export function descreverAnimais({ machos, femeas, qualquer }: Quantidades): str
   return partes.length > 0 ? partes.join(' · ') : '—'
 }
 
+/** Faixa ("de 20 a 40 dias") ou idade exata: a escolha do pedido e da busca */
+export type ModoDeIdade = 'faixa' | 'exata'
+
+/** O que o campo de idade guarda. O máximo vem nulo quando está em branco ou escondido */
+export interface CamposDeIdade {
+  modoIdade: ModoDeIdade
+  idadeMin: number
+  idadeMax?: number | null | undefined
+}
+
+/** A faixa que vai para a API. Na exata, o máximo é o próprio mínimo, sobre o que tiver ficado */
+export function faixaDeIdade({ modoIdade, idadeMin, idadeMax }: CamposDeIdade) {
+  return { idadeMin, idadeMax: modoIdade === 'exata' ? idadeMin : (idadeMax ?? idadeMin) }
+}
+
 /** "20 a 40 dias", ou "28 dias" quando a idade é exata */
 export function descreverIdade({ idadeMin, idadeMax }: { idadeMin: number; idadeMax: number }) {
   return idadeMin === idadeMax ? `${idadeMin} dias` : `${idadeMin} a ${idadeMax} dias`
