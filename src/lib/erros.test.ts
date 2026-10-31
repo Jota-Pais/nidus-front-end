@@ -1,13 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { CREDENCIAL_INVALIDA, camposDeErro, ehRespostaDeErro, mensagemDeErro } from './erros'
+import {
+  CREDENCIAL_INVALIDA,
+  SESSAO_EXPIRADA,
+  camposDeErro,
+  ehRespostaDeErro,
+  mensagemDeErro,
+} from './erros'
 
 const naoAutenticado = {
   erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'Usuário tecnico@ufsc.br não existe.' },
 }
 
-describe('mensagemDeErro — 401 não distingue e-mail de senha', () => {
+describe('mensagemDeErro — 401 fora do login é sessão expirada', () => {
   it('usa a mensagem única mesmo que o servidor mande uma específica', () => {
-    expect(mensagemDeErro(401, naoAutenticado)).toBe(CREDENCIAL_INVALIDA)
+    expect(mensagemDeErro(401, naoAutenticado)).toBe(SESSAO_EXPIRADA)
+  })
+
+  it('não fala em e-mail ou senha errados', () => {
+    expect(mensagemDeErro(401, naoAutenticado)).not.toBe(CREDENCIAL_INVALIDA)
   })
 
   it('não vaza o e-mail que o servidor devolveu', () => {
@@ -15,8 +25,8 @@ describe('mensagemDeErro — 401 não distingue e-mail de senha', () => {
   })
 
   it('vale também quando o corpo vem vazio ou fora da forma', () => {
-    expect(mensagemDeErro(401, null)).toBe(CREDENCIAL_INVALIDA)
-    expect(mensagemDeErro(401, '<html>gateway</html>')).toBe(CREDENCIAL_INVALIDA)
+    expect(mensagemDeErro(401, null)).toBe(SESSAO_EXPIRADA)
+    expect(mensagemDeErro(401, '<html>gateway</html>')).toBe(SESSAO_EXPIRADA)
   })
 })
 

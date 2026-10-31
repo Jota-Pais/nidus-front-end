@@ -30,7 +30,7 @@ export function Login() {
     login.mutate(credenciais.parse(valores), {
       // O perfil vem do servidor, nunca da tela
       onSuccess: (usuario) => navegar(destino(usuario.perfil), { replace: true }),
-      // A mensagem já sai pronta de @/lib/erros: no 401 ela não distingue e-mail
+      // A mensagem já sai pronta de useLogin: no 401 ela não distingue e-mail
       // inexistente de senha errada
       onError: falha.mostrar,
     })

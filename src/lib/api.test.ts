@@ -66,7 +66,7 @@ describe('api — chamada com cookie de sessão', () => {
 })
 
 describe('api — erros no envelope da API', () => {
-  it('401 vira ErroDeApi com a mensagem única, sem vazar o e-mail', async () => {
+  it('401 vira ErroDeApi de sessão expirada, sem vazar o e-mail', async () => {
     fingirFetch(
       resposta(401, {
         erro: { codigo: 'NAO_AUTENTICADO', mensagem: 'Usuário ana@ufsc.br não existe.' },

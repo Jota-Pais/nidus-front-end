@@ -20,6 +20,7 @@ export function useKanban(especie: CodigoEspecie) {
   return useQuery({
     queryKey: chaves.quadro(especie),
     queryFn: () => api<Kanban>(`/api/quadro?especie=${especie}`),
+    refetchInterval: 30_000,
   })
 }
 
@@ -49,6 +50,7 @@ export function useGrade(idEstante: number) {
   return useQuery({
     queryKey: chaves.grade(idEstante),
     queryFn: () => api<Grade>(`/api/estantes/${idEstante}/grade`),
+    refetchInterval: 30_000,
   })
 }
 
