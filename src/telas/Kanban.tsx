@@ -2,7 +2,7 @@ import { Segmented } from 'antd'
 import { useState } from 'react'
 import type { DragEvent } from 'react'
 import { CabecalhoDaTela, Etiqueta, Linha, Pilha, Secao } from '@/componentes'
-import { COLUNA, COLUNAS, corDoParto, mostraPrevisao } from '@/dominio/caixa'
+import { COLUNA, COLUNAS, corDoParto, MAX_PARTOS_POR_CASAL, mostraPrevisao } from '@/dominio/caixa'
 import { useKanban } from '@/dominio/consultas'
 import type { CardDoKanban, CodigoEspecie, EstadoCaixa } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
@@ -121,11 +121,10 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
         <span className="kanban__codigo">{card.codigo}</span>
         <span className="kanban__estante">{card.numeroVisivel}</span>
         {casal && (
-          <span
-            className="bolinhaDeParto kanban__parto"
-            style={{ backgroundColor: corDoParto(casal.partoAtual) }}
-            title={`Parto atual: ${casal.partoAtual}º`}
-          />
+          <span className="parto kanban__parto" title={`Parto atual: ${casal.partoAtual}º`}>
+            <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(casal.partoAtual) }} />
+            {casal.partoAtual}º
+          </span>
         )}
       </div>
 
@@ -142,6 +141,9 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
 
       <div className="kanban__status">
         {casal || estado !== 'livres' ? COLUNA[estado].legenda : 'Sem casal ativo'}
+        {casal && casal.partoAtual >= MAX_PARTOS_POR_CASAL && (
+          <span className="kanban__ultimoParto"> · Último parto</span>
+        )}
       </div>
     </div>
   )

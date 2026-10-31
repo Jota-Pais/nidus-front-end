@@ -13,29 +13,27 @@ export function useMudarDeColuna() {
   const mover = useMoverCaixa()
 
   return function mudar(idCaixa: number, estado: EstadoCaixa, aoTerminar: () => void = () => {}) {
-    const enviar = (confirmar: boolean) =>
-      mover.mutate(
-        { idCaixa, estado, confirmar },
-        {
-          onSuccess: aoTerminar,
-          onError: (erro) => {
-            if (erro instanceof ErroDeApi && erro.ehRegraDeNegocio && !confirmar) {
-              modal.confirm({
-                title: 'Esta caixa tem animais comprometidos',
-                content: erro.message,
-                okText: 'Mover mesmo assim',
-                cancelText: 'Cancelar',
-                onOk: () => enviar(true),
-                onCancel: aoTerminar,
-              })
-              return
-            }
-            aoTerminar()
-            void message.error(erro.message)
-          },
-        },
-      )
+    const enviar = async (confirmar: boolean) => {
+      try {
+        await mover.mutateAsync({ idCaixa, estado, confirmar })
+        aoTerminar()
+      } catch (erro) {
+        if (erro instanceof ErroDeApi && erro.ehRegraDeNegocio && !confirmar) {
+          modal.confirm({
+            title: 'Esta caixa tem animais comprometidos',
+            content: erro.message,
+            okText: 'Mover mesmo assim',
+            cancelText: 'Cancelar',
+            onOk: () => enviar(true),
+            onCancel: aoTerminar,
+          })
+          return
+        }
+        aoTerminar()
+        void message.error((erro as Error).message)
+      }
+    }
 
-    enviar(false)
+    void enviar(false)
   }
 }

@@ -1,20 +1,37 @@
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '@/layout/AppLayout'
+import { Carregando } from '@/layout/Carregando'
 import { Erro } from '@/layout/Erro'
 import { RaizPorPerfil } from '@/layout/RaizPorPerfil'
 import { RotaProtegida } from '@/layout/RotaProtegida'
-import { BuscaDeAtendimento } from '@/telas/BuscaDeAtendimento'
-import { DefinirSenha } from '@/telas/DefinirSenha'
-import { Estantes } from '@/telas/Estantes'
-import { Kanban } from '@/telas/Kanban'
 import { Login } from '@/telas/Login'
-import { SolicitarAnimais } from '@/telas/SolicitarAnimais'
+
+const BuscaDeAtendimento = lazy(() =>
+  import('@/telas/BuscaDeAtendimento').then((m) => ({ default: m.BuscaDeAtendimento })),
+)
+const DefinirSenha = lazy(() =>
+  import('@/telas/DefinirSenha').then((m) => ({ default: m.DefinirSenha })),
+)
+const Estantes = lazy(() => import('@/telas/Estantes').then((m) => ({ default: m.Estantes })))
+const Kanban = lazy(() => import('@/telas/Kanban').then((m) => ({ default: m.Kanban })))
+const SolicitarAnimais = lazy(() =>
+  import('@/telas/SolicitarAnimais').then((m) => ({ default: m.SolicitarAnimais })),
+)
 
 const COLONIA = ['tecnico', 'gestor'] as const
 
 export const rotas = createBrowserRouter([
   { path: '/login', element: <Login />, errorElement: <Erro /> },
-  { path: '/definir-senha', element: <DefinirSenha />, errorElement: <Erro /> },
+  {
+    path: '/definir-senha',
+    element: (
+      <Suspense fallback={<Carregando />}>
+        <DefinirSenha />
+      </Suspense>
+    ),
+    errorElement: <Erro />,
+  },
   {
     path: '/',
     element: (

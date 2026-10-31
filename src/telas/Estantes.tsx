@@ -173,11 +173,10 @@ function Celula({
       <span className="posicao__topo">
         <span className="posicao__codigo">{posicao.codigo}</span>
         {caixa.casal && (
-          <span
-            className="bolinhaDeParto"
-            style={{ backgroundColor: corDoParto(caixa.casal.partoAtual) }}
-            title={`Parto atual: ${caixa.casal.partoAtual}º`}
-          />
+          <span className="parto" title={`Parto atual: ${caixa.casal.partoAtual}º`}>
+            <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(caixa.casal.partoAtual) }} />
+            {caixa.casal.partoAtual}º
+          </span>
         )}
       </span>
       {caixa.linhagem && <span className="posicao__linhagem">{caixa.linhagem}</span>}
