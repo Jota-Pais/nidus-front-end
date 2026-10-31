@@ -26,12 +26,15 @@ export function ehRespostaDeErro(corpo: unknown): corpo is RespostaDeErro {
 
 const MENSAGEM_GENERICA = 'Não foi possível concluir. Tente de novo em alguns instantes.'
 
-/** Credencial inválida tem mensagem única, por segurança */
+/** Credencial inválida tem mensagem única, por segurança. Quem usa é o login (useLogin) */
 export const CREDENCIAL_INVALIDA = 'E-mail ou senha incorretos.'
+
+/** 401 fora do login: a sessão acabou no meio do uso */
+export const SESSAO_EXPIRADA = 'Sua sessão expirou. Entre de novo.'
 
 /** mensagem a exibir para o usuário, dado o status HTTP e o corpo da resposta. */
 export function mensagemDeErro(status: number, corpo: unknown): string {
-  if (status === 401) return CREDENCIAL_INVALIDA
+  if (status === 401) return SESSAO_EXPIRADA
   if (!ehRespostaDeErro(corpo)) return MENSAGEM_GENERICA
   if (status >= 500) return MENSAGEM_GENERICA
   return corpo.erro.mensagem

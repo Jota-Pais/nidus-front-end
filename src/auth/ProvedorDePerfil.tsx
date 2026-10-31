@@ -1,7 +1,7 @@
 // perfil do usuário na sessão
 import { useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
-import { Carregando } from '@/layout/Carregando'
+import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { PerfilContext } from './contexto'
 import { useLogout, useSessao } from './sessao'
 
@@ -22,8 +22,17 @@ export function ProvedorDePerfil({ children }: { children: ReactNode }) {
   )
 
   // sem isto a aplicação pisca o login antes de a sessão chegar, e quem já estava logado é
-  // jogado para fora por meio segundo a cada F5
-  if (sessao.isLoading) return <Carregando rotulo="Verificando a sessão…" />
-
-  return <PerfilContext.Provider value={valor}>{children}</PerfilContext.Provider>
+  // jogado para fora por meio segundo a cada F5. Falha sem nenhuma sessão lida mostra o erro
+  // em vez de cair no login; com sessão já lida, uma recarga que falha não derruba ninguém
+  return (
+    <EstadoDaConsulta
+      consulta={{
+        isPending: sessao.isPending,
+        error: sessao.data === undefined ? sessao.error : null,
+      }}
+      rotulo="Verificando a sessão…"
+    >
+      <PerfilContext.Provider value={valor}>{children}</PerfilContext.Provider>
+    </EstadoDaConsulta>
+  )
 }

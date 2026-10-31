@@ -4,6 +4,7 @@ import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 import { chaves } from '@/app/chaves'
 import type { Perfil } from '@/dominio/tipos'
 import { ErroDeApi, api } from '@/lib/api'
+import { CREDENCIAL_INVALIDA } from '@/lib/erros'
 
 export interface Usuario {
   id: number
@@ -30,24 +31,41 @@ export function useSessao(): UseQueryResult<Usuario | null> {
         throw erro
       }
     },
-    // O boot não pode ficar preso esperando retentativa: sem sessão, para o login imediatamente
-    retry: false,
+    retry: repetirSessao,
     staleTime: 5 * 60_000,
   })
 }
 
-/** POST /api/sessao. O perfil vem do servidor, nunca da tela */
+/**
+ * Sem sessão o 401 já voltou null e vai para o login na hora. Só repete falha de verdade
+ * (502/503 da Render acordando, sem rede), que não pode virar logout. Seis tentativas com o
+ * intervalo do queryClient dão uns 45s, o tempo de a API acordar
+ */
+export function repetirSessao(tentativas: number, erro: Error): boolean {
+  const ehResposta = erro instanceof ErroDeApi && erro.status < 500
+  return !ehResposta && tentativas < 6
+}
+
+/** POST /api/sessao. Só aqui 401 é credencial errada; no resto do sistema é sessão expirada */
+export async function entrar(credenciais: Credenciais): Promise<Usuario> {
+  try {
+    const { usuario } = await api<{ usuario: Usuario }>('/api/sessao', {
+      metodo: 'POST',
+      corpo: credenciais,
+    })
+    return usuario
+  } catch (erro) {
+    if (erro instanceof ErroDeApi && erro.ehNaoAutenticado) throw new Error(CREDENCIAL_INVALIDA)
+    throw erro
+  }
+}
+
+/** O perfil vem do servidor, nunca da tela */
 export function useLogin(): UseMutationResult<Usuario, Error, Credenciais> {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: async (credenciais: Credenciais) => {
-      const { usuario } = await api<{ usuario: Usuario }>('/api/sessao', {
-        metodo: 'POST',
-        corpo: credenciais,
-      })
-      return usuario
-    },
+    mutationFn: entrar,
     onSuccess: (usuario) => {
       cliente.setQueryData(chaves.sessao, usuario)
     },
