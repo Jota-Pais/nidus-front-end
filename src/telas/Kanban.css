@@ -162,6 +162,10 @@
   color: var(--texto);
 }
 
+.kanban__ultimoParto {
+  color: var(--cor-aviso);
+}
+
 /* cor por coluna */
 .kanban__coluna--livres { --faixa: var(--estado-livres-borda); }
 .kanban__coluna--pre_reserva { --faixa: var(--estado-pre_reserva-borda); }

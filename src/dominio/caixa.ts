@@ -26,6 +26,8 @@ export const COLUNA = Object.fromEntries(COLUNAS.map((coluna) => [coluna.estado,
 /** Do 1º ao 5º parto: a bolinha do card e da grade é o parto atual do casal */
 export const CORES_PARTO = ['#EC4899', '#FACC15', '#22D3EE', '#A3E635', '#6366F1']
 
+export const MAX_PARTOS_POR_CASAL = 5
+
 export function corDoParto(parto: number): string {
   return CORES_PARTO[Math.min(Math.max(parto, 1), CORES_PARTO.length) - 1] ?? '#EC4899'
 }

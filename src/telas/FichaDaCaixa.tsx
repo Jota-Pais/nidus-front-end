@@ -2,7 +2,7 @@ import { App, Form, Input, InputNumber, Modal, Select, Tabs } from 'antd'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Botao, Etiqueta, Linha, Texto } from '@/componentes'
-import { COLUNAS, CORES_PARTO, corDoParto } from '@/dominio/caixa'
+import { COLUNAS, CORES_PARTO, corDoParto, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
 import { useCatalogo, useFicha, useFormarCasal, useRegistrarNaFicha } from '@/dominio/consultas'
 import type { CasalNovo } from '@/dominio/consultas'
 import type { CodigoEspecie, Ficha, Parto } from '@/dominio/tipos'
@@ -196,10 +196,13 @@ function AbaReproducao({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
       {casal && (
         <>
           <div className="ficha__casal">
-            <strong>{casal.identificacao}</strong> — {confirmados}/5 partos | Acasalamento:{' '}
-            {formatarData(casal.dtFormacao)}
+            <strong>{casal.identificacao}</strong> — {confirmados}/{MAX_PARTOS_POR_CASAL} partos |
+            Acasalamento: {formatarData(casal.dtFormacao)}
             {!casal.ativo && ` | Encerrado em ${formatarData(casal.dtEncerramento)}`}
           </div>
+          {casal.ativo && confirmados >= MAX_PARTOS_POR_CASAL - 1 && (
+            <Etiqueta tom="atencao">Último parto: o casal encerra sozinho no {MAX_PARTOS_POR_CASAL}º</Etiqueta>
+          )}
           <LadoALado>
             <Campo rotulo="Macho (A-E)">{casal.grupoMacho}</Campo>
             <Campo rotulo="Fêmea (A-E)">{casal.grupoFemea}</Campo>

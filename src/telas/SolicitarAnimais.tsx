@@ -116,10 +116,10 @@ export function SolicitarAnimais() {
                 <Select options={linhagens} placeholder="Selecione a linhagem" />
               </Form.Item>
               <div className="solicitacao__linha">
-                <Form.Item name="machos" label="Machos">
+                <Form.Item name="machos" label="Machos" rules={[{ required: true, message: 'Informe a quantidade' }]}>
                   <InputNumber min={0} style={{ width: '100%' }} />
                 </Form.Item>
-                <Form.Item name="femeas" label="Fêmeas">
+                <Form.Item name="femeas" label="Fêmeas" rules={[{ required: true, message: 'Informe a quantidade' }]}>
                   <InputNumber min={0} style={{ width: '100%' }} />
                 </Form.Item>
               </div>

@@ -1,9 +1,11 @@
 import { LogoutOutlined } from '@ant-design/icons'
 import { Layout, Menu } from 'antd'
+import { Suspense } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Botao, Etiqueta, Linha, Texto } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
 import { usePerfil } from '@/auth/contexto'
+import { Carregando } from './Carregando'
 import { menuDoPerfil, mostraBarraLateral } from './navegacao'
 import './appLayout.css'
 
@@ -70,7 +72,9 @@ export function AppLayout() {
         )}
 
         <Content className="casca__conteudo">
-          <Outlet />
+          <Suspense fallback={<Carregando />}>
+            <Outlet />
+          </Suspense>
         </Content>
       </Layout>
     </Layout>

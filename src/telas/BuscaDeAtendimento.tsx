@@ -170,10 +170,10 @@ export function BuscaDeAtendimento() {
                   {campos.map((campo, indice) => (
                     <div key={campo.key} className="busca__remessa">
                       <span className="busca__numero">#{indice + 1}</span>
-                      <Form.Item name={[campo.name, 'machos']} label="Machos">
+                      <Form.Item name={[campo.name, 'machos']} label="Machos" rules={[{ required: true, message: 'Informe a quantidade' }]}>
                         <InputNumber min={0} />
                       </Form.Item>
-                      <Form.Item name={[campo.name, 'femeas']} label="Fêmeas">
+                      <Form.Item name={[campo.name, 'femeas']} label="Fêmeas" rules={[{ required: true, message: 'Informe a quantidade' }]}>
                         <InputNumber min={0} />
                       </Form.Item>
                       <Form.Item
