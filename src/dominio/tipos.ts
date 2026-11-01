@@ -22,6 +22,7 @@ interface CasalNoCard {
   /** 1 a 5 - a cor da bolinha */
   partoAtual: number
   partoPrevisto: DataISO | null
+  encerrado: boolean
 }
 
 // GET /api/quadro?especie=

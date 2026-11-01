@@ -5,7 +5,7 @@ import type { TomDeEtiqueta } from '@/componentes'
 import { useCatalogo, useCriarSolicitacao, useProjetos, useSolicitacoes } from '@/dominio/consultas'
 import type { NovaSolicitacao } from '@/dominio/consultas'
 import type { CodigoEspecie, Cronograma, Solicitacao, StatusSolicitacao } from '@/dominio/tipos'
-import { formatarData } from '@/lib/data'
+import { formatarData, hoje } from '@/lib/data'
 import './Solicitacao.css'
 
 const ROTULO_CRONOGRAMA: Record<Cronograma, string> = {
@@ -137,8 +137,20 @@ export function SolicitarAnimais() {
               >
                 <InputNumber min={21} style={{ width: '100%' }} />
               </Form.Item>
-              <Form.Item name="dataEntrega" label="Data de entrega" rules={[{ required: true, message: 'Informe a data' }]}>
-                <Input type="date" />
+              <Form.Item
+                name="dataEntrega"
+                label="Data de entrega"
+                rules={[
+                  { required: true, message: 'Informe a data' },
+                  {
+                    validator: (_, valor?: string) =>
+                      !valor || valor >= hoje()
+                        ? Promise.resolve()
+                        : Promise.reject(new Error('A data de entrega não pode ser no passado')),
+                  },
+                ]}
+              >
+                <Input type="date" min={hoje()} />
               </Form.Item>
               <Form.Item name="cronograma" label="Cronograma">
                 <Select
