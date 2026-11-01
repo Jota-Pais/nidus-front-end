@@ -19,5 +19,7 @@ export default defineConfig({
   },
   test: {
     env: { VITE_API_URL: 'http://localhost:3333' },
+    environment: 'jsdom',
+    setupFiles: ['src/testes/preparar.ts'],
   },
 })

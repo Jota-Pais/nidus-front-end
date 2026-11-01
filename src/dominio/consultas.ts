@@ -11,9 +11,14 @@ import type {
   Ficha,
   Grade,
   Kanban,
+  Estoque,
+  Perfil,
   Projeto,
+  RegistroDoHistorico,
   ResultadoDaBusca,
+  SituacaoDoProjeto,
   Solicitacao,
+  Usuario,
 } from './tipos'
 
 export function useKanban(especie: CodigoEspecie) {
@@ -35,6 +40,27 @@ export function useMoverCaixa() {
         corpo: { estado: dados.estado, confirmar: dados.confirmar },
       }),
     // devolver a promessa faz o 'onSuccess' de quem chamou esperar o kanban recarregado
+    onSuccess: (_resposta, { idCaixa }) => invalidarColonia(cliente, idCaixa),
+  })
+}
+
+export interface PosicaoNova {
+  idCaixa: number
+  idEstante: number
+  face: 'frontal' | 'traseira'
+  linha: number
+  coluna: number
+}
+
+export function useMudarDePosicao() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idCaixa, ...posicao }: PosicaoNova) =>
+      api<{ idCaixa: number; idEstante: number; codigo: string }>(`/api/caixas/${idCaixa}/posicao`, {
+        metodo: 'PATCH',
+        corpo: posicao,
+      }),
     onSuccess: (_resposta, { idCaixa }) => invalidarColonia(cliente, idCaixa),
   })
 }
@@ -132,6 +158,26 @@ export function useSolicitacoes() {
   })
 }
 
+export function useRegistrarEntrega() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idSolicitacao, dtEntrega }: { idSolicitacao: number; dtEntrega: string }) =>
+      api(`/api/solicitacoes/${idSolicitacao}/entrega`, { metodo: 'POST', corpo: { dtEntrega } }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
+  })
+}
+
+export function useRecusarSolicitacao() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idSolicitacao, motivo }: { idSolicitacao: number; motivo: string }) =>
+      api(`/api/solicitacoes/${idSolicitacao}/recusa`, { metodo: 'POST', corpo: { motivo } }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
+  })
+}
+
 export interface NovaSolicitacao {
   idProjeto: number
   idLinhagem: number
@@ -202,5 +248,119 @@ export function useCatalogo() {
     queryKey: chaves.catalogo,
     queryFn: () => api<Catalogo>('/api/catalogo'),
     staleTime: 60 * 60_000,
+  })
+}
+
+export type EventoCorrigivel = 'nascimento' | 'selecao' | 'desmame'
+
+/** A correção de um evento já registrado do parto: sempre com motivo, e pode voltar um alerta */
+export function useCorrigirEvento(idCaixa: number) {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      idParto,
+      evento,
+      corpo,
+    }: {
+      idParto: number
+      evento: EventoCorrigivel
+      corpo: Record<string, unknown>
+    }) =>
+      api<{ alerta: string | null }>(`/api/partos/${idParto}/${evento}`, {
+        metodo: 'PATCH',
+        corpo,
+      }),
+    onSuccess: () => invalidarColonia(cliente, idCaixa),
+  })
+}
+
+export function useEstoque(especie: CodigoEspecie | undefined) {
+  return useQuery({
+    queryKey: chaves.estoque(especie ?? 'rato'),
+    queryFn: () => api<Estoque>(`/api/estoque?especie=${especie}`),
+    enabled: especie !== undefined,
+  })
+}
+
+export function useHistorico() {
+  return useQuery({
+    queryKey: chaves.historico,
+    queryFn: async () =>
+      (await api<{ historico: RegistroDoHistorico[] }>('/api/historico?limite=300')).historico,
+  })
+}
+
+export function useUsuarios() {
+  return useQuery({
+    queryKey: chaves.usuarios,
+    queryFn: async () => (await api<{ usuarios: Usuario[] }>('/api/usuarios')).usuarios,
+  })
+}
+
+export interface ContaNova {
+  nome: string
+  email: string
+  perfil: Perfil
+  senha: string
+}
+
+export function useSalvarUsuario() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (
+      pedido:
+        | { tipo: 'criar'; conta: ContaNova }
+        | { tipo: 'alterar'; id: number; dados: { nome?: string; perfil?: Perfil; ativo?: boolean } }
+        | { tipo: 'senha'; id: number; senha: string },
+    ) => {
+      if (pedido.tipo === 'criar') return api('/api/usuarios', { metodo: 'POST', corpo: pedido.conta })
+      if (pedido.tipo === 'alterar')
+        return api(`/api/usuarios/${pedido.id}`, { metodo: 'PATCH', corpo: pedido.dados })
+      return api(`/api/usuarios/${pedido.id}/senha`, { metodo: 'POST', corpo: { senha: pedido.senha } })
+    },
+    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.usuarios }),
+  })
+}
+
+export interface DadosDoProjeto {
+  numero: string
+  titulo: string
+  idUsuarioResponsavel: number
+  dtVigenciaInicio: string
+  dtVigenciaFim: string
+  cotaAutorizada: number
+  situacao: SituacaoDoProjeto
+}
+
+export function useSalvarProjeto() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, dados }: { id: number | null; dados: DadosDoProjeto }) =>
+      id === null
+        ? api('/api/projetos', { metodo: 'POST', corpo: dados })
+        : api(`/api/projetos/${id}`, { metodo: 'PUT', corpo: dados }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.projetos }),
+  })
+}
+
+export function useSalvarLinhagem() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (
+      pedido:
+        | { tipo: 'criar'; idEspecie: number; nome: string }
+        | { tipo: 'alterar'; id: number; dados: { nome?: string; ativa?: boolean } },
+    ) =>
+      pedido.tipo === 'criar'
+        ? api('/api/catalogo/linhagens', {
+            metodo: 'POST',
+            corpo: { idEspecie: pedido.idEspecie, nome: pedido.nome },
+          })
+        : api(`/api/catalogo/linhagens/${pedido.id}`, { metodo: 'PATCH', corpo: pedido.dados }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.catalogo }),
   })
 }

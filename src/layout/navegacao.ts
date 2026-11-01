@@ -12,6 +12,10 @@ const ITENS_DE_MENU: ItemDeMenu[] = [
   { rotulo: 'Estantes', caminho: '/estantes', perfis: ['tecnico', 'gestor'] },
   { rotulo: 'Solicitar animais', caminho: '/solicitar', perfis: ['pesquisador', 'tecnico', 'gestor'] },
   { rotulo: 'Busca de atendimento', caminho: '/busca', perfis: ['tecnico', 'gestor'] },
+  { rotulo: 'Estoque', caminho: '/estoque', perfis: ['tecnico', 'gestor'] },
+  { rotulo: 'Cadastros', caminho: '/cadastros', perfis: ['gestor'] },
+  { rotulo: 'Usuários', caminho: '/usuarios', perfis: ['gestor'] },
+  { rotulo: 'Histórico', caminho: '/historico', perfis: ['gestor'] },
 ]
 
 export function menuDoPerfil(perfil: Perfil): ItemDeMenu[] {

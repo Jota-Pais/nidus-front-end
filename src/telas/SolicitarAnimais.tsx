@@ -1,8 +1,17 @@
-import { App, Form, Input, InputNumber, Select, Table } from 'antd'
+import { App, Form, Input, InputNumber, Modal, Select, Table } from 'antd'
+import { useState } from 'react'
 import { usePerfil } from '@/auth/contexto'
 import { Botao, CabecalhoDaTela, Etiqueta, Pilha, Secao, Texto } from '@/componentes'
 import type { TomDeEtiqueta } from '@/componentes'
-import { useCatalogo, useCriarSolicitacao, useProjetos, useSolicitacoes } from '@/dominio/consultas'
+import {
+  useCatalogo,
+  useCriarSolicitacao,
+  useEstoque,
+  useProjetos,
+  useRecusarSolicitacao,
+  useRegistrarEntrega,
+  useSolicitacoes,
+} from '@/dominio/consultas'
 import type { NovaSolicitacao } from '@/dominio/consultas'
 import type { CodigoEspecie, Cronograma, Solicitacao, StatusSolicitacao } from '@/dominio/tipos'
 import { formatarData, hoje } from '@/lib/data'
@@ -35,8 +44,10 @@ interface Campos extends Omit<NovaSolicitacao, 'idLinhagem'> {
 /** O pedido do pesquisador: no lugar do Word por e-mail, um formulário que já chega validado */
 export function SolicitarAnimais() {
   const { message } = App.useApp()
-  const { usuario } = usePerfil()
+  const { usuario, perfil } = usePerfil()
   const [form] = Form.useForm<Campos>()
+  const [entregando, setEntregando] = useState<Solicitacao | null>(null)
+  const [recusando, setRecusando] = useState<Solicitacao | null>(null)
   const projetos = useProjetos()
   const catalogo = useCatalogo()
   const solicitacoes = useSolicitacoes()
@@ -45,6 +56,9 @@ export function SolicitarAnimais() {
   const especie = Form.useWatch('especie', form)
   const machos = Form.useWatch('machos', form) ?? 0
   const femeas = Form.useWatch('femeas', form) ?? 0
+  const idLinhagem = Form.useWatch('idLinhagem', form)
+  const estoque = useEstoque(especie)
+  const daLinhagem = estoque.data?.linhagens.find((l) => l.idLinhagem === idLinhagem)
   const linhagens =
     catalogo.data?.especies
       .find((e) => e.codigo === especie)
@@ -126,6 +140,13 @@ export function SolicitarAnimais() {
               <Texto tom="secundario">
                 Total: <strong>{machos + femeas}</strong> animais
               </Texto>
+              {daLinhagem && (
+                <Texto tom="secundario">
+                  {machos > daLinhagem.total.m || femeas > daLinhagem.total.f
+                    ? `Atenção: hoje a colônia tem ${daLinhagem.total.m} M · ${daLinhagem.total.f} F livres de ${daLinhagem.linhagem}, contando partos previstos. O pedido pode precisar de casais novos.`
+                    : `Viável: a colônia tem ${daLinhagem.total.m} M · ${daLinhagem.total.f} F livres de ${daLinhagem.linhagem}, contando partos previstos.`}
+                </Texto>
+              )}
             </div>
 
             <div className="solicitacao__bloco">
@@ -193,11 +214,129 @@ export function SolicitarAnimais() {
             { title: 'Cronograma', render: (_, s) => ROTULO_CRONOGRAMA[s.cronograma] },
             {
               title: 'Situação',
-              render: (_, s) => <Etiqueta tom={STATUS[s.status].tom}>{STATUS[s.status].rotulo}</Etiqueta>,
+              render: (_, s) => (
+                <span title={s.motivoRecusa ?? undefined}>
+                  <Etiqueta tom={STATUS[s.status].tom}>{STATUS[s.status].rotulo}</Etiqueta>
+                  {s.motivoRecusa && <Texto tom="secundario"> {s.motivoRecusa}</Texto>}
+                </span>
+              ),
             },
+            ...(perfil === 'pesquisador'
+              ? []
+              : [
+                  {
+                    title: '',
+                    render: (_: unknown, s: Solicitacao) =>
+                      s.status === 'aprovada' ? (
+                        <Botao variante="fantasma" onClick={() => setEntregando(s)}>
+                          Registrar entrega
+                        </Botao>
+                      ) : s.status === 'enviada' ? (
+                        <Botao variante="fantasma" onClick={() => setRecusando(s)}>
+                          Recusar
+                        </Botao>
+                      ) : null,
+                  },
+                ]),
           ]}
         />
       </Secao>
+      {entregando && <RegistrarEntrega solicitacao={entregando} aoFechar={() => setEntregando(null)} />}
+      {recusando && <RecusarSolicitacao solicitacao={recusando} aoFechar={() => setRecusando(null)} />}
     </Pilha>
+  )
+}
+
+function RegistrarEntrega({ solicitacao, aoFechar }: { solicitacao: Solicitacao; aoFechar: () => void }) {
+  const { message } = App.useApp()
+  const registrar = useRegistrarEntrega()
+  const [form] = Form.useForm<{ dtEntrega: string }>()
+
+  function salvar({ dtEntrega }: { dtEntrega: string }) {
+    registrar.mutate(
+      { idSolicitacao: solicitacao.id, dtEntrega },
+      {
+        onSuccess: () => {
+          void message.success(`Entrega da solicitação #${solicitacao.id} registrada.`)
+          aoFechar()
+        },
+        onError: (erro) => void message.error(erro.message),
+      },
+    )
+  }
+
+  return (
+    <Modal
+      open
+      title={`Registrar entrega · #${solicitacao.id}`}
+      okText="Registrar entrega"
+      cancelText="Cancelar"
+      onOk={() => form.submit()}
+      onCancel={aoFechar}
+      confirmLoading={registrar.isPending}
+    >
+      <Texto>
+        {solicitacao.machos} M · {solicitacao.femeas} F de {solicitacao.linhagem} para o projeto {solicitacao.projeto}.
+      </Texto>
+      <Form form={form} layout="vertical" onFinish={salvar} initialValues={{ dtEntrega: hoje() }}>
+        <Form.Item
+          name="dtEntrega"
+          label="Data da entrega"
+          rules={[
+            { required: true, message: 'Informe a data' },
+            {
+              validator: (_, valor?: string) =>
+                !valor || valor <= hoje()
+                  ? Promise.resolve()
+                  : Promise.reject(new Error('A entrega não pode ser no futuro')),
+            },
+          ]}
+        >
+          <Input type="date" max={hoje()} />
+        </Form.Item>
+      </Form>
+    </Modal>
+  )
+}
+
+function RecusarSolicitacao({ solicitacao, aoFechar }: { solicitacao: Solicitacao; aoFechar: () => void }) {
+  const { message } = App.useApp()
+  const recusar = useRecusarSolicitacao()
+  const [form] = Form.useForm<{ motivo: string }>()
+
+  function salvar({ motivo }: { motivo: string }) {
+    recusar.mutate(
+      { idSolicitacao: solicitacao.id, motivo },
+      {
+        onSuccess: () => {
+          void message.success(`Solicitação #${solicitacao.id} recusada.`)
+          aoFechar()
+        },
+        onError: (erro) => void message.error(erro.message),
+      },
+    )
+  }
+
+  return (
+    <Modal
+      open
+      title={`Recusar solicitação · #${solicitacao.id}`}
+      okText="Recusar"
+      okButtonProps={{ danger: true }}
+      cancelText="Cancelar"
+      onOk={() => form.submit()}
+      onCancel={aoFechar}
+      confirmLoading={recusar.isPending}
+    >
+      <Texto>
+        {solicitacao.machos} M · {solicitacao.femeas} F de {solicitacao.linhagem}, pedido por {solicitacao.solicitante}.
+        O motivo aparece para quem pediu.
+      </Texto>
+      <Form form={form} layout="vertical" onFinish={salvar}>
+        <Form.Item name="motivo" label="Motivo" rules={[{ required: true, whitespace: true, message: 'Diga o motivo' }]}>
+          <Input.TextArea rows={3} maxLength={200} showCount />
+        </Form.Item>
+      </Form>
+    </Modal>
   )
 }

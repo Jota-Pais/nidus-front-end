@@ -7,11 +7,23 @@ describe('menu por perfil', () => {
     expect(caminhos).toEqual(['/solicitar'])
   })
 
-  it('técnico e gestor veem as quatro telas do sistema do cliente', () => {
-    for (const perfil of ['tecnico', 'gestor'] as const) {
-      const caminhos = menuDoPerfil(perfil).map((item) => item.caminho)
-      expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/busca'])
-    }
+  it('o técnico vê as telas da colônia e o estoque', () => {
+    const caminhos = menuDoPerfil('tecnico').map((item) => item.caminho)
+    expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/busca', '/estoque'])
+  })
+
+  it('só o gestor vê cadastros, usuários e histórico', () => {
+    const caminhos = menuDoPerfil('gestor').map((item) => item.caminho)
+    expect(caminhos).toEqual([
+      '/kanban',
+      '/estantes',
+      '/solicitar',
+      '/busca',
+      '/estoque',
+      '/cadastros',
+      '/usuarios',
+      '/historico',
+    ])
   })
 })
 
