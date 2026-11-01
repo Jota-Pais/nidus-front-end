@@ -133,12 +133,21 @@ export interface Catalogo {
   paresGeneticos: { grupoMacho: string; grupoFemea: string }[]
 }
 
+export type SituacaoDoProjeto = 'vigente' | 'vencido' | 'suspenso'
+
 // GET /api/projetos
 export interface Projeto {
   id: number
   /** formato 23080.XXXXXX/AAAA-XX */
   numero: string
   vigente: boolean
+  titulo: string
+  idUsuarioResponsavel: number
+  responsavel: string
+  dtVigenciaInicio: DataISO
+  dtVigenciaFim: DataISO
+  cotaAutorizada: number
+  situacao: SituacaoDoProjeto
 }
 
 export type Cronograma = 'unica' | 'semanal' | 'quinzenal' | 'mensal'
@@ -169,6 +178,7 @@ export interface Solicitacao {
   dataEntrega: DataISO
   cronograma: Cronograma
   status: StatusSolicitacao
+  motivoRecusa: string | null
 }
 
 /** de onde vem o animal: já desmamado, já nascido, ou parto ainda previsto */
@@ -199,4 +209,42 @@ export interface ResultadoDaBusca {
   deficit: PorSexo
   casaisAFormar: number
   acasalamentoNovo: { dataMinimaDeEntrega: DataISO; viavel: boolean }
+}
+
+// GET /api/estoque?especie=
+export interface EstoqueDaLinhagem {
+  idLinhagem: number
+  linhagem: string
+  confirmado: PorSexo
+  previsto: PorSexo
+  projetado: PorSexo
+  total: PorSexo
+  proximoParto: DataISO | null
+}
+
+export interface Estoque {
+  especie: CodigoEspecie
+  linhagens: EstoqueDaLinhagem[]
+}
+
+// GET /api/usuarios
+export interface Usuario {
+  id: number
+  nome: string
+  email: string
+  perfil: Perfil
+  ativo: boolean
+  temSenha: boolean
+}
+
+// GET /api/historico
+export interface RegistroDoHistorico {
+  id: number
+  dataHora: string
+  usuario: string
+  entidade: string
+  idEntidade: number
+  acao: string
+  descricao: string
+  dados: unknown
 }

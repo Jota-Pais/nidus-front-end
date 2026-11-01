@@ -3,8 +3,17 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Botao, Etiqueta, Linha, Texto } from '@/componentes'
 import { COLUNAS, CORES_PARTO, corDoParto, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
-import { useCatalogo, useFicha, useFormarCasal, useRegistrarNaFicha } from '@/dominio/consultas'
-import type { CasalNovo } from '@/dominio/consultas'
+import {
+  useCatalogo,
+  useCorrigirEvento,
+  useEstantes,
+  useFicha,
+  useFormarCasal,
+  useGrade,
+  useMudarDePosicao,
+  useRegistrarNaFicha,
+} from '@/dominio/consultas'
+import type { CasalNovo, EventoCorrigivel } from '@/dominio/consultas'
 import type { CodigoEspecie, Ficha, Parto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { formatarData, hoje } from '@/lib/data'
@@ -187,6 +196,7 @@ function AbaReproducao({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           }}
         />
       </div>
+      <MoverDePosicao idCaixa={caixa.id} />
       <LadoALado>
         <Campo rotulo="Espécie">{ROTULO_ESPECIE[caixa.especie]}</Campo>
         <Campo rotulo="Linhagem">{caixa.linhagem ?? '—'}</Campo>
@@ -231,6 +241,119 @@ function AbaReproducao({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
         {parto ? formatarData(parto.dtDesmamePrevisto) : '+22 dias após o parto'}
       </Campo>
     </div>
+  )
+}
+
+function MoverDePosicao({ idCaixa }: { idCaixa: number }) {
+  const { message } = App.useApp()
+  const estantes = useEstantes()
+  const mover = useMudarDePosicao()
+  const [aberto, setAberto] = useState(false)
+  const [idEstante, setIdEstante] = useState<number | null>(null)
+  const [posicao, setPosicao] = useState<string | null>(null)
+
+  if (!aberto) {
+    return (
+      <div>
+        <Botao onClick={() => setAberto(true)}>Mover de posição</Botao>
+      </div>
+    )
+  }
+
+  function fechar() {
+    setAberto(false)
+    setIdEstante(null)
+    setPosicao(null)
+  }
+
+  function salvar() {
+    if (idEstante === null || posicao === null) return
+    const [face, linha, coluna] = posicao.split(':')
+
+    mover.mutate(
+      {
+        idCaixa,
+        idEstante,
+        face: face === 'traseira' ? 'traseira' : 'frontal',
+        linha: Number(linha),
+        coluna: Number(coluna),
+      },
+      {
+        onSuccess: ({ codigo }) => {
+          void message.success(`Caixa movida para ${codigo}.`)
+          fechar()
+        },
+        onError: (erro) => void message.error(erro.message),
+      },
+    )
+  }
+
+  return (
+    <div className="ficha__formulario">
+      <LadoALado>
+        <div className="ficha__campo">
+          <Texto tom="rotulo">Estante</Texto>
+          <Select
+            value={idEstante}
+            loading={estantes.isPending}
+            placeholder="Selecione a estante"
+            options={(estantes.data ?? []).map((estante) => ({
+              value: estante.id,
+              label: `${estante.sala} · ${estante.numeroVisivel}`,
+            }))}
+            onChange={(id) => {
+              setIdEstante(id)
+              setPosicao(null)
+            }}
+          />
+        </div>
+        <div className="ficha__campo">
+          <Texto tom="rotulo">Posição livre</Texto>
+          {idEstante === null ? (
+            <Select disabled placeholder="Escolha a estante" />
+          ) : (
+            <PosicoesLivres idEstante={idEstante} valor={posicao} aoEscolher={setPosicao} />
+          )}
+        </div>
+      </LadoALado>
+      <div className="ficha__botoes">
+        <Botao variante="primario" onClick={salvar} loading={mover.isPending} disabled={posicao === null}>
+          Mover
+        </Botao>
+        <Botao variante="fantasma" onClick={fechar}>
+          Cancelar
+        </Botao>
+      </div>
+    </div>
+  )
+}
+
+function PosicoesLivres({
+  idEstante,
+  valor,
+  aoEscolher,
+}: {
+  idEstante: number
+  valor: string | null
+  aoEscolher: (posicao: string) => void
+}) {
+  const grade = useGrade(idEstante)
+  const livres = (grade.data?.faces ?? []).flatMap((face) =>
+    face.posicoes
+      .filter((posicao) => posicao.caixa === null)
+      .map((posicao) => ({ value: `${face.face}:${posicao.linha}:${posicao.coluna}`, label: posicao.codigo })),
+  )
+
+  return (
+    <Select
+      value={valor}
+      loading={grade.isPending}
+      placeholder={grade.isPending || livres.length > 0 ? 'Selecione a posição' : 'Estante cheia'}
+      disabled={!grade.isPending && livres.length === 0}
+      showSearch
+      options={livres}
+      onChange={aoEscolher}
+    />
   )
 }
 
@@ -422,6 +545,83 @@ function RegistrarEvento({
   )
 }
 
+function CorrigirEvento({
+  idCaixa,
+  idParto,
+  evento,
+  campos,
+  atual,
+}: {
+  idCaixa: number
+  idParto: number
+  evento: EventoCorrigivel
+  campos: CampoDoEvento[]
+  atual: Record<string, unknown>
+}) {
+  const { message, modal } = App.useApp()
+  const corrigir = useCorrigirEvento(idCaixa)
+  const [aberto, setAberto] = useState(false)
+
+  if (!aberto) {
+    return (
+      <div>
+        <Botao variante="fantasma" onClick={() => setAberto(true)}>
+          Corrigir
+        </Botao>
+      </div>
+    )
+  }
+
+  return (
+    <Form
+      layout="vertical"
+      initialValues={atual}
+      className="ficha__formulario"
+      onFinish={(corpo: Record<string, unknown>) =>
+        corrigir.mutate(
+          { idParto, evento, corpo },
+          {
+            onSuccess: ({ alerta }) => {
+              void message.success('Correção registrada.')
+              if (alerta) modal.warning({ title: 'Confira os compromissos', content: alerta })
+              setAberto(false)
+            },
+            onError: (erro) => void message.error(erro.message),
+          },
+        )
+      }
+    >
+      <LadoALado>
+        {campos.map((campo) => (
+          <Form.Item
+            key={campo.nome}
+            name={campo.nome}
+            label={campo.rotulo}
+            rules={[{ required: true, message: 'Obrigatório' }]}
+          >
+            {campo.tipo === 'data' ? <Input type="date" /> : <InputNumber min={0} style={{ width: '100%' }} />}
+          </Form.Item>
+        ))}
+      </LadoALado>
+      <Form.Item
+        name="motivo"
+        label="Motivo da correção"
+        rules={[{ required: true, whitespace: true, message: 'Diga o motivo' }]}
+      >
+        <Input placeholder="ex: contagem digitada errada" maxLength={200} />
+      </Form.Item>
+      <div className="ficha__botoes">
+        <Botao variante="primario" htmlType="submit" loading={corrigir.isPending}>
+          Salvar correção
+        </Botao>
+        <Botao variante="fantasma" onClick={() => setAberto(false)}>
+          Cancelar
+        </Botao>
+      </div>
+    </Form>
+  )
+}
+
 function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
   const parto = partoDaOrdem(ficha, ordem)
 
@@ -454,6 +654,17 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           <Total>
             Total nascidos: <strong>{nascidos}</strong>
           </Total>
+          <CorrigirEvento
+            idCaixa={idCaixa}
+            idParto={parto.id}
+            evento="nascimento"
+            campos={[
+              { nome: 'dtPartoReal', rotulo: 'Data do parto real', tipo: 'data' },
+              { nome: 'nascidoM', rotulo: 'Machos nascidos', tipo: 'numero' },
+              { nome: 'nascidoF', rotulo: 'Fêmeas nascidas', tipo: 'numero' },
+            ]}
+            atual={{ dtPartoReal: parto.dtPartoReal, nascidoM: parto.nascidoM, nascidoF: parto.nascidoF }}
+          />
         </>
       ) : ficha.casal?.ativo ? (
         <RegistrarEvento
@@ -481,6 +692,17 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           <Total>
             Resultantes: <strong>{restantesM + restantesF}</strong>
           </Total>
+          <CorrigirEvento
+            idCaixa={idCaixa}
+            idParto={parto.id}
+            evento="selecao"
+            campos={[
+              { nome: 'dtSelecao', rotulo: 'Data', tipo: 'data' },
+              { nome: 'eutanasiadoM', rotulo: 'Machos', tipo: 'numero' },
+              { nome: 'eutanasiadoF', rotulo: 'Fêmeas', tipo: 'numero' },
+            ]}
+            atual={{ dtSelecao: parto.dtSelecao, eutanasiadoM: parto.eutanasiadoM, eutanasiadoF: parto.eutanasiadoF }}
+          />
         </>
       ) : nasceu ? (
         <RegistrarEvento
@@ -510,6 +732,17 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           <Total>
             Desmame total: <strong>{desmamados}</strong> animais
           </Total>
+          <CorrigirEvento
+            idCaixa={idCaixa}
+            idParto={parto.id}
+            evento="desmame"
+            campos={[
+              { nome: 'dtDesmameReal', rotulo: 'Data do desmame', tipo: 'data' },
+              { nome: 'desmamadoM', rotulo: 'Machos desmamados', tipo: 'numero' },
+              { nome: 'desmamadoF', rotulo: 'Fêmeas desmamadas', tipo: 'numero' },
+            ]}
+            atual={{ dtDesmameReal: parto.dtDesmameReal, desmamadoM: parto.desmamadoM, desmamadoF: parto.desmamadoF }}
+          />
         </>
       ) : nasceu ? (
         <RegistrarEvento

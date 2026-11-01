@@ -10,14 +10,18 @@ import { Login } from '@/telas/Login'
 const BuscaDeAtendimento = lazy(() =>
   import('@/telas/BuscaDeAtendimento').then((m) => ({ default: m.BuscaDeAtendimento })),
 )
+const Cadastros = lazy(() => import('@/telas/Cadastros').then((m) => ({ default: m.Cadastros })))
 const DefinirSenha = lazy(() =>
   import('@/telas/DefinirSenha').then((m) => ({ default: m.DefinirSenha })),
 )
 const Estantes = lazy(() => import('@/telas/Estantes').then((m) => ({ default: m.Estantes })))
+const Estoque = lazy(() => import('@/telas/Estoque').then((m) => ({ default: m.Estoque })))
+const Historico = lazy(() => import('@/telas/Historico').then((m) => ({ default: m.Historico })))
 const Kanban = lazy(() => import('@/telas/Kanban').then((m) => ({ default: m.Kanban })))
 const SolicitarAnimais = lazy(() =>
   import('@/telas/SolicitarAnimais').then((m) => ({ default: m.SolicitarAnimais })),
 )
+const Usuarios = lazy(() => import('@/telas/Usuarios').then((m) => ({ default: m.Usuarios })))
 
 const COLONIA = ['tecnico', 'gestor'] as const
 
@@ -64,6 +68,38 @@ export const rotas = createBrowserRouter([
         element: (
           <RotaProtegida perfis={[...COLONIA]}>
             <BuscaDeAtendimento />
+          </RotaProtegida>
+        ),
+      },
+      {
+        path: 'estoque',
+        element: (
+          <RotaProtegida perfis={[...COLONIA]}>
+            <Estoque />
+          </RotaProtegida>
+        ),
+      },
+      {
+        path: 'historico',
+        element: (
+          <RotaProtegida perfis={['gestor']}>
+            <Historico />
+          </RotaProtegida>
+        ),
+      },
+      {
+        path: 'cadastros',
+        element: (
+          <RotaProtegida perfis={['gestor']}>
+            <Cadastros />
+          </RotaProtegida>
+        ),
+      },
+      {
+        path: 'usuarios',
+        element: (
+          <RotaProtegida perfis={['gestor']}>
+            <Usuarios />
           </RotaProtegida>
         ),
       },
