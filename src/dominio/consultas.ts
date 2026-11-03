@@ -143,6 +143,7 @@ export function useRegistrarNaFicha(idCaixa: number) {
   })
 }
 
+/** Só o gestor lista, nos Cadastros: quem pede digita o protocolo e não vê o dos outros */
 export function useProjetos() {
   return useQuery({
     queryKey: chaves.projetos,
@@ -154,7 +155,8 @@ export function useProjetos() {
 export function useSolicitacoes() {
   return useQuery({
     queryKey: chaves.solicitacoes,
-    queryFn: async () => (await api<{ solicitacoes: Solicitacao[] }>('/api/solicitacoes')).solicitacoes,
+    queryFn: async () =>
+      (await api<{ solicitacoes: Solicitacao[] }>('/api/solicitacoes')).solicitacoes,
   })
 }
 
@@ -178,14 +180,21 @@ export function useRecusarSolicitacao() {
   })
 }
 
+/** O corpo do POST /api/solicitacoes. O e-mail não vai: o back pega o da sessão */
 export interface NovaSolicitacao {
-  idProjeto: number
+  nomePesquisador: string
+  /** digitado pela pessoa; o back procura o projeto por ele */
+  protocoloCeua: string
   idLinhagem: number
   machos: number
   femeas: number
-  idade: number
+  qualquer: number
+  /** idade exata é idadeMin = idadeMax */
+  idadeMin: number
+  idadeMax: number
   dataEntrega: string
   cronograma: Cronograma
+  observacoes?: string
 }
 
 export function useCriarSolicitacao() {
@@ -203,7 +212,9 @@ interface PedidoDeBusca {
   idLinhagem?: number | undefined
   machos: number
   femeas: number
-  idade: number
+  qualquer: number
+  idadeMin: number
+  idadeMax: number
   dataEntrega: string
   /** caixas já sugeridas nas remessas anteriores */
   excluir: number[]
@@ -214,7 +225,9 @@ export function buscarAtendimento(pedido: PedidoDeBusca): Promise<ResultadoDaBus
     especie: pedido.especie,
     machos: String(pedido.machos),
     femeas: String(pedido.femeas),
-    idade: String(pedido.idade),
+    qualquer: String(pedido.qualquer),
+    idadeMin: String(pedido.idadeMin),
+    idadeMax: String(pedido.idadeMax),
     dataEntrega: pedido.dataEntrega,
     excluir: pedido.excluir.join(','),
   })

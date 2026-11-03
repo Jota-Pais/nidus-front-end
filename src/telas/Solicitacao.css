@@ -1,37 +1,98 @@
 /* Solicitar animais e Busca de atendimento */
 
-.solicitacao__blocos {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
-}
-
-.solicitacao__bloco {
+/*
+ * O pedido é um cartão só, em fileiras que se leem como frase: quem pede, que animal,
+ * quantos, quando e observações. Em tela estreita cada campo desce inteiro para a linha
+ * de baixo, e o formulário vira uma coluna.
+ */
+.solicitacao__fileira {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px 16px 0;
-  background: var(--cor-fundo);
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio-md);
+  flex-wrap: wrap;
+  column-gap: 24px;
 }
 
-.solicitacao__bloco > .texto--rotulo {
-  margin-bottom: 8px;
+/* A largura de cada campo segue o tamanho do que se digita nele */
+.solicitacao__campo--nome {
+  flex: 1 1 260px;
+  max-width: 420px;
 }
 
-.solicitacao__bloco > .texto--secundario {
+.solicitacao__campo--protocolo {
+  flex: 0 1 260px;
+}
+
+.solicitacao__campo--linhagem {
+  flex: 1 1 200px;
+  max-width: 320px;
+}
+
+.solicitacao__campo--data,
+.solicitacao__campo--cronograma {
+  flex: 0 1 200px;
+}
+
+/* Protocolo é código, e código vai em mono, como o endereço da caixa */
+.solicitacao__protocolo {
+  font-family: var(--fonte-mono);
+}
+
+/* Quatro dígitos cabem, e a fileira da idade (Faixa|Exata, de, a) cabe inteira no celular */
+.solicitacao__numero {
+  width: 72px;
+}
+
+/* "[ 5 ] machos": o número e a palavra que diz o que ele conta, que andam juntos. Alinham
+   pelo topo para o erro embaixo de um número não desalinhar o resto da fileira */
+.solicitacao__quantidade {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* A palavra ao lado do número tem a altura do campo, e fica na linha do texto dele */
+.solicitacao__unidade {
+  line-height: var(--altura-de-controle);
+  white-space: nowrap;
+}
+
+/* Número dentro de um grupo com rótulo próprio: o respiro de baixo já é do grupo */
+.solicitacao__item {
+  margin-bottom: 0;
+}
+
+/* A mensagem de erro fica embaixo do número sem alargá-lo: senão a palavra ao lado ("machos",
+   o "a" da idade) seria empurrada para longe do campo */
+.solicitacao__item .ant-form-item-explain {
+  width: 0;
+  white-space: nowrap;
+}
+
+.solicitacao__aviso {
   margin-bottom: 16px;
 }
 
-.solicitacao__linha {
+/* Célula com o dado em cima e o complemento embaixo: quem pediu e o e-mail, a data e o
+   cronograma */
+.solicitacao__duasLinhas {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
 }
 
-.solicitacao__linha > * {
-  flex: 1;
+/* Espécie, linhagem e idade da busca. A idade tem a largura do que mostra e, se não couber,
+   desce inteira para a linha de baixo, em vez de se partir */
+.busca__criterios {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+}
+
+.busca__criterios > * {
+  flex: 1 1 200px;
   min-width: 0;
+}
+
+.busca__criterios > .busca__idade {
+  flex: 0 0 auto;
 }
 
 .solicitacao__acoes {
