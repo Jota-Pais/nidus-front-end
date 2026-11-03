@@ -5,8 +5,17 @@ import { Aviso, Botao, CabecalhoDaTela, Etiqueta, Pilha, Secao, Texto } from '@/
 import type { TomDeEtiqueta } from '@/componentes'
 import { COLUNA } from '@/dominio/caixa'
 import { buscarAtendimento, useAlocar, useCatalogo, useSolicitacoes } from '@/dominio/consultas'
-import type { CaixaCandidata, CodigoEspecie, Origem, ResultadoDaBusca, Solicitacao } from '@/dominio/tipos'
+import { descreverAnimais, descreverIdade, faixaDeIdade } from '@/dominio/solicitacao'
+import type { CamposDeIdade } from '@/dominio/solicitacao'
+import type {
+  CaixaCandidata,
+  CodigoEspecie,
+  Origem,
+  ResultadoDaBusca,
+  Solicitacao,
+} from '@/dominio/tipos'
 import { formatarData } from '@/lib/data'
+import { CampoDeIdade } from './CampoDeIdade'
 import './Solicitacao.css'
 
 const ORIGEM: Record<Origem, { rotulo: string; tom: TomDeEtiqueta }> = {
@@ -15,16 +24,18 @@ const ORIGEM: Record<Origem, { rotulo: string; tom: TomDeEtiqueta }> = {
   previsao_parto: { rotulo: 'Previsão de parto', tom: 'atencao' },
 }
 
+/** Os números vêm nulos quando o técnico apaga o campo */
 interface Remessa {
-  machos: number
-  femeas: number
+  machos: number | null
+  femeas: number | null
+  qualquer: number | null
   dataEntrega: string
 }
 
-interface Criterios {
+/** A idade vem do CampoDeIdade, o mesmo da solicitação */
+interface Criterios extends CamposDeIdade {
   especie: CodigoEspecie
   idLinhagem?: number
-  idade: number
   remessas: Remessa[]
 }
 
@@ -47,12 +58,24 @@ export function BuscaDeAtendimento() {
 
   // cada remessa roda a mesma busca; as caixas sugeridas numa não voltam na seguinte
   const busca = useMutation({
-    mutationFn: async ({ especie, idLinhagem, idade, remessas }: Criterios) => {
+    mutationFn: async (criterios: Criterios) => {
+      const { especie, idLinhagem, remessas } = criterios
       const resultados: Resultado[] = []
       const excluir: number[] = []
 
       for (const remessa of remessas) {
-        const resultado = await buscarAtendimento({ especie, idLinhagem, idade, ...remessa, excluir })
+        // Campo apagado conta como zero, o mesmo critério do pedido; sem isso iria 'null'
+        // na URL e a API recusaria a busca
+        const resultado = await buscarAtendimento({
+          especie,
+          idLinhagem,
+          ...faixaDeIdade(criterios),
+          machos: remessa.machos ?? 0,
+          femeas: remessa.femeas ?? 0,
+          qualquer: remessa.qualquer ?? 0,
+          dataEntrega: remessa.dataEntrega,
+          excluir,
+        })
         resultados.push({ remessa, busca: resultado })
         excluir.push(...resultado.candidatas.filter((c) => c.sugerida).map((c) => c.idCaixa))
       }
@@ -80,8 +103,17 @@ export function BuscaDeAtendimento() {
     const criterios: Criterios = {
       especie: solicitacao.especie,
       idLinhagem: solicitacao.idLinhagem,
-      idade: solicitacao.idade,
-      remessas: [{ machos: solicitacao.machos, femeas: solicitacao.femeas, dataEntrega: solicitacao.dataEntrega }],
+      modoIdade: solicitacao.idadeMin === solicitacao.idadeMax ? 'exata' : 'faixa',
+      idadeMin: solicitacao.idadeMin,
+      idadeMax: solicitacao.idadeMax,
+      remessas: [
+        {
+          machos: solicitacao.machos,
+          femeas: solicitacao.femeas,
+          qualquer: solicitacao.qualquer,
+          dataEntrega: solicitacao.dataEntrega,
+        },
+      ],
     }
     form.setFieldsValue(criterios)
     busca.mutate(criterios)
@@ -126,13 +158,17 @@ export function BuscaDeAtendimento() {
             <Select
               allowClear
               style={{ width: '100%', marginTop: 6 }}
-              placeholder={pendentes.length === 0 ? 'Nenhuma solicitação aguardando análise' : 'Selecione uma solicitação'}
+              placeholder={
+                pendentes.length === 0
+                  ? 'Nenhuma solicitação aguardando análise'
+                  : 'Selecione uma solicitação'
+              }
               loading={solicitacoes.isPending}
               value={escolhida?.id}
               onChange={escolher}
               options={pendentes.map((s) => ({
                 value: s.id,
-                label: `#${s.id} — ${s.linhagem} ${s.machos}M/${s.femeas}F, ${s.idade} dias, entrega ${formatarData(s.dataEntrega)} (${s.solicitante})`,
+                label: `#${s.id} — ${s.linhagem} ${descreverAnimais(s)}, ${descreverIdade(s)}, entrega ${formatarData(s.dataEntrega)} (${s.pesquisador})`,
               }))}
             />
           </div>
@@ -143,9 +179,14 @@ export function BuscaDeAtendimento() {
             form={form}
             layout="vertical"
             onFinish={(criterios) => busca.mutate(criterios)}
-            initialValues={{ especie: 'rato', idade: 28, remessas: [{ machos: 0, femeas: 0 }] }}
+            initialValues={{
+              especie: 'rato',
+              modoIdade: 'exata',
+              idadeMin: 28,
+              remessas: [{ machos: 0, femeas: 0, qualquer: 0 }],
+            }}
           >
-            <div className="solicitacao__linha">
+            <div className="busca__criterios">
               <Form.Item name="especie" label="Espécie">
                 <Select
                   options={[
@@ -158,9 +199,9 @@ export function BuscaDeAtendimento() {
               <Form.Item name="idLinhagem" label="Linhagem (opcional)">
                 <Select allowClear options={linhagens} placeholder="Qualquer linhagem" />
               </Form.Item>
-              <Form.Item name="idade" label="Idade na entrega (dias)" rules={[{ required: true, message: 'Informe a idade' }]}>
-                <InputNumber min={1} style={{ width: '100%' }} />
-              </Form.Item>
+              {/* A busca procura qualquer idade a partir de 1 dia, como a API aceita; o
+                  mínimo de 21 é só do pedido do pesquisador */}
+              <CampoDeIdade className="busca__idade" idadeMinima={1} />
             </div>
 
             <Texto tom="rotulo">Remessas</Texto>
@@ -170,10 +211,13 @@ export function BuscaDeAtendimento() {
                   {campos.map((campo, indice) => (
                     <div key={campo.key} className="busca__remessa">
                       <span className="busca__numero">#{indice + 1}</span>
-                      <Form.Item name={[campo.name, 'machos']} label="Machos" rules={[{ required: true, message: 'Informe a quantidade' }]}>
+                      <Form.Item name={[campo.name, 'machos']} label="Machos">
                         <InputNumber min={0} />
                       </Form.Item>
-                      <Form.Item name={[campo.name, 'femeas']} label="Fêmeas" rules={[{ required: true, message: 'Informe a quantidade' }]}>
+                      <Form.Item name={[campo.name, 'femeas']} label="Fêmeas">
+                        <InputNumber min={0} />
+                      </Form.Item>
+                      <Form.Item name={[campo.name, 'qualquer']} label="Qualquer sexo">
                         <InputNumber min={0} />
                       </Form.Item>
                       <Form.Item
@@ -184,14 +228,20 @@ export function BuscaDeAtendimento() {
                         <Input type="date" />
                       </Form.Item>
                       {campos.length > 1 && (
-                        <Botao variante="fantasma" onClick={() => remove(campo.name)} style={{ marginBottom: 24 }}>
+                        <Botao
+                          variante="fantasma"
+                          onClick={() => remove(campo.name)}
+                          style={{ marginBottom: 24 }}
+                        >
                           Remover
                         </Botao>
                       )}
                     </div>
                   ))}
                   <div className="busca__acoes">
-                    <Botao onClick={() => add({ machos: 0, femeas: 0 })}>Mais uma remessa</Botao>
+                    <Botao onClick={() => add({ machos: 0, femeas: 0, qualquer: 0 })}>
+                      Mais uma remessa
+                    </Botao>
                     <Botao variante="primario" htmlType="submit" loading={busca.isPending}>
                       Buscar caixas
                     </Botao>
@@ -214,7 +264,8 @@ export function BuscaDeAtendimento() {
           titulo={`Remessa #${indice + 1} · ${formatarData(remessa.dataEntrega)}`}
           acoes={
             <Etiqueta>
-              {remessa.machos} M · {remessa.femeas} F · idade aceita {resultado.faixa.min} a {resultado.faixa.max} dias
+              {descreverAnimais(remessa)} · idade aceita {resultado.faixa.min} a{' '}
+              {resultado.faixa.max} dias
             </Etiqueta>
           }
         >
@@ -234,15 +285,23 @@ export function BuscaDeAtendimento() {
                 },
                 {
                   title: 'Origem',
-                  render: (_, c) => <Etiqueta tom={ORIGEM[c.origem].tom}>{ORIGEM[c.origem].rotulo}</Etiqueta>,
+                  render: (_, c) => (
+                    <Etiqueta tom={ORIGEM[c.origem].tom}>{ORIGEM[c.origem].rotulo}</Etiqueta>
+                  ),
                 },
                 { title: 'Caixa', render: (_, c) => `${c.numeroVisivel} · ${c.codigo}` },
                 { title: 'Casal', render: (_, c) => `${c.casal} · ${c.parto}º parto` },
                 { title: 'Kanban', render: (_, c) => COLUNA[c.estado].rotulo },
                 { title: 'Nascimento', render: (_, c) => formatarData(c.nascimento) },
                 { title: 'Idade na entrega', render: (_, c) => `${c.idadeNaEntrega} dias` },
-                { title: 'Disponível', render: (_, c) => `${c.disponivel.m} M · ${c.disponivel.f} F` },
-                { title: 'Alocar', render: (_, c) => (c.sugerida ? `${c.alocar.m} M · ${c.alocar.f} F` : '—') },
+                {
+                  title: 'Disponível',
+                  render: (_, c) => `${c.disponivel.m} M · ${c.disponivel.f} F`,
+                },
+                {
+                  title: 'Alocar',
+                  render: (_, c) => (c.sugerida ? `${c.alocar.m} M · ${c.alocar.f} F` : '—'),
+                },
               ]}
             />
 
@@ -268,13 +327,16 @@ export function BuscaDeAtendimento() {
 function Resumo({ resultado }: { resultado: ResultadoDaBusca }) {
   const { deficit, casaisAFormar, acasalamentoNovo } = resultado
 
-  if (deficit.m + deficit.f === 0) {
+  const falta = { machos: deficit.m, femeas: deficit.f, qualquer: deficit.qualquer }
+
+  if (deficit.m + deficit.f + deficit.qualquer === 0) {
     return <Aviso tom="sucesso" titulo="O plantel cobre esta remessa." />
   }
 
   return (
-    <Aviso tom="atencao" titulo={`Faltam ${deficit.m} machos e ${deficit.f} fêmeas no plantel.`}>
-      Última alternativa: formar {casaisAFormar} {casaisAFormar === 1 ? 'casal novo' : 'casais novos'}
+    <Aviso tom="atencao" titulo={`Faltam ${descreverAnimais(falta)} no plantel.`}>
+      Última alternativa: formar {casaisAFormar}{' '}
+      {casaisAFormar === 1 ? 'casal novo' : 'casais novos'}
       {acasalamentoNovo.viavel
         ? ', e a entrega cabe nesta data.'
         : `, mas não dá para esta data: com acasalamento novo, a entrega passa a ser possível a partir de ${formatarData(acasalamentoNovo.dataMinimaDeEntrega)}.`}

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
+  ALTURA_DE_CONTROLE,
   COR,
   COR_DE_RETORNO,
   FONTE,
@@ -46,6 +47,7 @@ function doTypeScript(): Map<string, string> {
   por('raio', RAIO, 'px')
   por('sombra', SOMBRA)
   por('movimento', MOVIMENTO)
+  mapa.set('--altura-de-controle', `${ALTURA_DE_CONTROLE}px`)
 
   return mapa
 }

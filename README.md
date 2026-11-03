@@ -19,7 +19,7 @@ README). A referência de requisitos é a spec dele, o `instructions.md` v2.7, d
 | Kanban | Técnico, gestor | Um quadro por espécie, colunas Livres, Pré-reserva, Estoque, Reserva e Enviado. Arrastar o card muda a coluna |
 | Estantes | Técnico, gestor | As estantes de cada sala, faces frontal e traseira lado a lado, cada caixa na cor da coluna do kanban |
 | Ficha da caixa | Técnico, gestor | Abre pelo card ou pela célula. Forma o casal e registra parto, eutanásia de seleção e desmame, do 1º ao 5º parto |
-| Solicitar animais | Todos | O pedido do pesquisador: projeto CEUA, linhagem, quantidades, idade e data de entrega |
+| Solicitar animais | Todos | O pedido do pesquisador: nome, protocolo CEUA, linhagem, machos, fêmeas ou qualquer sexo, faixa de idade, data de entrega, cronograma e observações |
 | Busca de atendimento | Técnico, gestor | Quais caixas atendem um pedido e quantos casais novos faltam. Aloca as caixas sugeridas |
 
 Nenhuma regra de negócio roda aqui: datas previstas, busca, permissão e

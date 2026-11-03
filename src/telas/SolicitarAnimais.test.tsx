@@ -10,23 +10,26 @@ const solicitacao = (
   motivoRecusa: string | null = null,
 ): Solicitacao => ({
   id,
-  projeto: '23080.000001/2026-01',
-  solicitante: 'Ana',
+  protocoloCeua: '23080.000001/2026-01',
+  pesquisador: 'Ana',
+  email: 'ana@ufsc.br',
   especie: 'rato',
   idLinhagem: 1,
   linhagem: 'Wistar',
   machos: 2,
   femeas: 2,
-  idade: 28,
+  qualquer: 0,
+  idadeMin: 28,
+  idadeMax: 28,
   dataEntrega: '2026-12-01',
   cronograma: 'unica',
+  observacoes: null,
   status,
   motivoRecusa,
 })
 
 vi.mock('@/dominio/consultas', () => ({
   useCatalogo: () => consulta({ especies: [], paresGeneticos: [] }),
-  useProjetos: () => consulta([]),
   useEstoque: () => consulta(undefined),
   useSolicitacoes: () =>
     consulta([
