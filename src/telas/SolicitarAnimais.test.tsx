@@ -42,7 +42,8 @@ vi.mock('@/dominio/consultas', () => ({
   useRegistrarEntrega: mutacao,
 }))
 
-describe('lista de solicitações', () => {
+// A tela inteira do antd no jsdom leva de 4 a 9 s para montar: os 5 s padrão falham à toa
+describe('lista de solicitações', { timeout: 20_000 }, () => {
   it('o técnico recusa a enviada e registra a entrega da alocada', () => {
     renderizar(<SolicitarAnimais />, 'tecnico')
 
