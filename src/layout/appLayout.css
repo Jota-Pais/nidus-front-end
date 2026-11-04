@@ -48,11 +48,6 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Configurações fica colada na marca, separada dela por um respiro */
-.casca__config {
-  margin-inline-start: 12px;
-}
-
 .casca__seta {
   font-size: 10px;
 }
@@ -90,9 +85,5 @@
   .casca__seta,
   .casca__topo:has(.casca__config) .casca__usuario {
     display: none;
-  }
-
-  .casca__config {
-    margin-inline-start: 4px;
   }
 }

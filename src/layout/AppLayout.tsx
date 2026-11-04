@@ -41,7 +41,9 @@ export function AppLayout() {
           <span className="casca__marca" aria-hidden="true" />
           <span className="casca__nome">Nidus</span>
           {mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>}
+        </Linha>
 
+        <Linha espaco={12}>
           {configuracoes.length > 0 && (
             <Dropdown
               trigger={['click']}
@@ -63,9 +65,7 @@ export function AppLayout() {
               </Botao>
             </Dropdown>
           )}
-        </Linha>
 
-        <Linha espaco={12}>
           <Texto className="casca__usuario">{usuario.nome}</Texto>
 
           <Botao
