@@ -36,13 +36,25 @@
   color: rgba(255, 255, 255, 0.85);
 }
 
-.casca__sair.botao--fantasma:not(:disabled) {
+.casca__sair.botao--fantasma:not(:disabled),
+.casca__config.botao--fantasma:not(:disabled) {
   color: rgba(255, 255, 255, 0.85);
 }
 
-.casca__sair.botao--fantasma:not(:disabled):hover {
+.casca__sair.botao--fantasma:not(:disabled):hover,
+.casca__config.botao--fantasma:not(:disabled):hover,
+.casca__config--ativa.botao--fantasma:not(:disabled) {
   color: #fff;
   background: rgba(255, 255, 255, 0.1);
+}
+
+/* Configurações fica colada na marca, separada dela por um respiro */
+.casca__config {
+  margin-inline-start: 12px;
+}
+
+.casca__seta {
+  font-size: 10px;
 }
 
 .casca__lado {
@@ -68,5 +80,19 @@
 
   .casca__topo {
     padding-inline: 12px;
+  }
+}
+
+/* No celular o cabeçalho não cabe com o rótulo: fica só a engrenagem. E o nome
+   de quem entrou sai para ela caber; o Sair fica */
+@media (max-width: 576px) {
+  .casca__configTexto,
+  .casca__seta,
+  .casca__topo:has(.casca__config) .casca__usuario {
+    display: none;
+  }
+
+  .casca__config {
+    margin-inline-start: 4px;
   }
 }

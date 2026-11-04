@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { menuDoPerfil, mostraBarraLateral, rotaInicial } from './navegacao'
+import { configuracoesDoPerfil, menuDoPerfil, mostraBarraLateral, rotaInicial } from './navegacao'
 
 describe('menu por perfil', () => {
   it('o pesquisador só solicita animais: não vê a colônia nem a busca', () => {
@@ -12,7 +12,7 @@ describe('menu por perfil', () => {
     expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/busca', '/estoque'])
   })
 
-  it('só o gestor vê cadastros, usuários e histórico', () => {
+  it('só o gestor vê cadastros e histórico', () => {
     const caminhos = menuDoPerfil('gestor').map((item) => item.caminho)
     expect(caminhos).toEqual([
       '/kanban',
@@ -21,9 +21,16 @@ describe('menu por perfil', () => {
       '/busca',
       '/estoque',
       '/cadastros',
-      '/usuarios',
       '/historico',
     ])
+  })
+})
+
+describe('configurações', () => {
+  it('usuários fica em Configurações, só para o gestor', () => {
+    expect(configuracoesDoPerfil('gestor').map((item) => item.caminho)).toEqual(['/usuarios'])
+    expect(configuracoesDoPerfil('tecnico')).toEqual([])
+    expect(configuracoesDoPerfil('pesquisador')).toEqual([])
   })
 })
 
