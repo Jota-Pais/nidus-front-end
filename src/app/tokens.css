@@ -58,14 +58,13 @@
   --superficie-informacao-fundo: var(--cor-acao-fundo);
   --superficie-informacao-borda: var(--cor-acao-borda);
 
-  /* Gradientes. `marca` é a assinatura (verde → azul) e não aceita texto
-     pequeno em cima; `acao` é o do botão primário, branco legível o percurso todo */
+  /* Gradientes. `marca` é a assinatura (verde → azul), na faixa da divisa do
+     login, e não aceita texto pequeno em cima */
   --gradiente-marca-vertical: linear-gradient(
     to bottom,
     var(--cor-institucional),
     var(--cor-marca)
   );
-  --gradiente-acao-horizontal: linear-gradient(to right, var(--cor-acao), #0B5FD6);
   /* O do emblema da logo. Do azul ao verde da marca, mas o azul segura até um terço e
      o meio passa por um petróleo claro: a mistura direta dos dois daria um verde turvo */
   --gradiente-emblema: linear-gradient(
@@ -93,7 +92,6 @@
   --sombra-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   --sombra-md: 0 4px 6px rgba(0, 0, 0, 0.07);
   --sombra-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
-  --sombra-acao-forte: 0 8px 24px rgba(0, 56, 147, 0.35);
 
   /* Métrica: a altura de campos e botões, a mesma do tema do Ant Design. A solicitação
      alinha a palavra ao lado do número ("machos") por ela */
