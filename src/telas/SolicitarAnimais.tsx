@@ -27,6 +27,7 @@ import {
   ROTULO_CRONOGRAMA,
   descreverAnimais,
   descreverIdade,
+  porDataDeEntrega,
   totalDeAnimais,
 } from '@/dominio/solicitacao'
 import type { CodigoEspecie, Solicitacao, StatusSolicitacao } from '@/dominio/tipos'
@@ -136,8 +137,8 @@ export function SolicitarAnimais() {
   function enviar(campos: CamposDoPedido) {
     falha.limpar()
     criar.mutate(montarPedido(campos), {
-      onSuccess: ({ id }) => {
-        void message.success(`Solicitação #${id} enviada. A equipe técnica vai analisar.`)
+      onSuccess: () => {
+        void message.success('Solicitação enviada. A equipe técnica vai analisar.')
         form.resetFields(CAMPOS_DO_PEDIDO)
       },
       onError: falha.mostrar,
@@ -319,10 +320,14 @@ export function SolicitarAnimais() {
       )}
 
       <EstadoDaConsulta consulta={solicitacoes} rotulo="Carregando as solicitações…">
-        <Secao titulo="Solicitações" semPreenchimento>
+        <Secao titulo={pesquisador ? 'Minhas solicitações' : 'Solicitações'} semPreenchimento>
           <Table<Solicitacao>
             rowKey="id"
-            dataSource={solicitacoes.data ?? []}
+            dataSource={
+              pesquisador
+                ? porDataDeEntrega(solicitacoes.data ?? [])
+                : (solicitacoes.data ?? [])
+            }
             pagination={false}
             scroll={{ x: larguraMinima(colunasDaTabela) }}
             locale={{ emptyText: 'Nenhuma solicitação ainda.' }}
@@ -340,7 +345,9 @@ export function SolicitarAnimais() {
  * As colunas de valor curto têm largura fixa, do tamanho do maior valor que cabe nelas. As
  * observações, que são texto livre, ficam com o espaço que sobra e terminam em reticências.
  * A tabela do pesquisador cabe em 1366 px; a da equipe tem a coluna de quem pediu e rola de
- * lado, com o número e a situação presos à esquerda para a linha não se perder
+ * lado, com o número e a situação presos à esquerda para a linha não se perder. O número
+ * do pedido é da equipe, que o usa para se referir a ele: quem pede reconhece o pedido pelo
+ * que pediu e pela data
  */
 const OBSERVACOES_NO_MINIMO = 200
 
@@ -351,7 +358,7 @@ interface AcoesDaEquipe {
 
 function colunas(equipe: AcoesDaEquipe | undefined): TableColumnsType<Solicitacao> {
   return [
-    { title: '#', dataIndex: 'id', width: 56, fixed: 'left' },
+    ...(equipe ? [{ title: '#', dataIndex: 'id', width: 56, fixed: 'left' as const }] : []),
     {
       title: 'Situação',
       width: 170,

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { descreverAnimais, descreverIdade, faixaDeIdade, totalDeAnimais } from './solicitacao'
+import {
+  descreverAnimais,
+  descreverIdade,
+  faixaDeIdade,
+  porDataDeEntrega,
+  totalDeAnimais,
+} from './solicitacao'
 
 describe('faixaDeIdade', () => {
   it('na faixa, vai o que foi digitado', () => {
@@ -49,5 +55,28 @@ describe('descreverIdade', () => {
 
   it('idade exata é um número só', () => {
     expect(descreverIdade({ idadeMin: 28, idadeMax: 28 })).toBe('28 dias')
+  })
+})
+
+describe('porDataDeEntrega', () => {
+  it('a entrega mais cedo vem primeiro e, no mesmo dia, o pedido mais antigo', () => {
+    const pedidos = [
+      { id: 3, dataEntrega: '2026-12-10' },
+      { id: 1, dataEntrega: '2027-01-05' },
+      { id: 4, dataEntrega: '2026-11-20' },
+      { id: 2, dataEntrega: '2026-12-10' },
+    ]
+
+    expect(porDataDeEntrega(pedidos).map((p) => p.id)).toEqual([4, 2, 3, 1])
+  })
+
+  it('não mexe na lista que recebeu', () => {
+    const pedidos = [
+      { id: 1, dataEntrega: '2027-01-05' },
+      { id: 2, dataEntrega: '2026-11-20' },
+    ]
+
+    porDataDeEntrega(pedidos)
+    expect(pedidos.map((p) => p.id)).toEqual([1, 2])
   })
 })

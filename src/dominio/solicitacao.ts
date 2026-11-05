@@ -58,3 +58,14 @@ export function faixaDeIdade({ modoIdade, idadeMin, idadeMax }: CamposDeIdade) {
 export function descreverIdade({ idadeMin, idadeMax }: { idadeMin: number; idadeMax: number }) {
   return idadeMin === idadeMax ? `${idadeMin} dias` : `${idadeMin} a ${idadeMax} dias`
 }
+
+/**
+ * Os pedidos de quem pede, pela data de entrega, da mais cedo para a mais tarde. No mesmo dia,
+ * o pedido feito antes vem primeiro. Devolve uma cópia: a lista do cache não é mexida
+ */
+export function porDataDeEntrega<T extends { id: number; dataEntrega: string }>(
+  pedidos: readonly T[],
+): T[] {
+  // A data vem como AAAA-MM-DD, então a ordem do texto é a ordem do calendário
+  return [...pedidos].sort((a, b) => a.dataEntrega.localeCompare(b.dataEntrega) || a.id - b.id)
+}
