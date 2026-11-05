@@ -1,6 +1,6 @@
 // tokens do design system, lado TypeScript: o que o tema do Ant Design lê, mais
 // algumas chaves que só o CSS usa e que o tokens.test.ts confere com o tokens.css.
-import { frenteLegivel, HOVER, misturar, PRESSIONADO, TOM, transparente } from './cor'
+import { frenteLegivel, HOVER, misturar, PRESSIONADO, TOM } from './cor'
 
 /** Marca institucional da UFSC. Vermelho e amarelo ficam de referência para os tons de retorno */
 const UFSC = {
@@ -158,8 +158,6 @@ export const SOMBRA = {
   sm: '0 1px 3px rgba(0, 0, 0, 0.06)',
   md: '0 4px 6px rgba(0, 0, 0, 0.07)',
   lg: '0 10px 15px rgba(0, 0, 0, 0.08)',
-  /** O brilho do botão primário com o mouse em cima, na cor de ação */
-  acaoForte: `0 8px 24px ${transparente(ACAO, 0.35)}`,
 } as const
 
 /** Altura de controle: 48px */

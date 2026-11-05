@@ -32,11 +32,6 @@ export function misturar(cima: string, baixo: string, peso: number): string {
   return `#${canais(cima).map(canal).join('')}`.toUpperCase()
 }
 
-/** A cor com transparência, no formato que sombra e `rgba` esperam */
-export function transparente(cor: string, alfa: number): string {
-  return `rgba(${canais(cor).join(', ')}, ${alfa})`
-}
-
 /** Luminância relativa da WCAG 2 */
 function luminancia(cor: string): number {
   const [r, g, b] = canais(cor).map((v) => {

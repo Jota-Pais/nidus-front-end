@@ -8,7 +8,7 @@
   transition:
     transform var(--movimento-rapido) var(--movimento-curva),
     box-shadow var(--movimento-rapido) var(--movimento-curva),
-    filter var(--movimento-rapido) var(--movimento-curva);
+    background-color var(--movimento-rapido) var(--movimento-curva);
 }
 
 .botao:hover:not(:disabled) {
@@ -21,19 +21,17 @@
   transition-duration: 80ms;
 }
 
-/* ---- Primário: o gradiente-assinatura ---------------------------------- */
+/* ---- Primário: a cor de ação chapada ----------------------------------- */
 
-.botao--primario:not(:disabled),
-.botao--primario:not(:disabled):hover {
-  background: var(--gradiente-acao-horizontal);
-  border-color: transparent;
-  color: var(--cor-acao-frente);
+/* O fundo em repouso, com o mouse em cima e no clique vem do Ant Design, que
+   recebe a família da ação no tema (`colorPrimary`, `colorPrimaryHover`,
+   `colorPrimaryActive`). Aqui fica só a sombra. */
+.botao--primario:not(:disabled) {
   box-shadow: var(--sombra-sm);
 }
 
 .botao--primario:not(:disabled):hover {
-  box-shadow: var(--sombra-acao-forte);
-  filter: brightness(1.08);
+  box-shadow: var(--sombra-md);
 }
 
 /* ---- Secundário: contorno que ganha a cor de ação no hover ------------- */
