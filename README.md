@@ -45,7 +45,7 @@ npm run dev              # http://localhost:5173
 React + TypeScript, Vite, Ant Design, TanStack Query, react-router, Zod e dayjs.
 Testes no Vitest. Deploy na Vercel, a partir do GitHub.
 
-O visual é o do Nidus: paleta da UFSC, Calistoga nos títulos, Inter no texto e
+O visual é o do Nidus: paleta da UFSC, Plus Jakarta Sans nos títulos, Inter no texto e
 JetBrains Mono nos códigos. Cor, raio, sombra e fonte saem de
 `src/app/tokens.ts` (tema do Ant Design) e `src/app/tokens.css` (CSS das telas).
 Não são espelho: o CSS tem tokens que o tema não usa, e o `tokens.ts` guarda

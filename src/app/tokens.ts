@@ -140,7 +140,7 @@ export const COR_DO_PARTO = (['#EC4899', '#FACC15', '#22D3EE', '#A3E635', '#6366
 
 /** Tipografia de dois tempos */
 export const FONTE = {
-  titulo: '"Calistoga", Georgia, "Times New Roman", serif',
+  titulo: '"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif',
   interface: '"Inter", system-ui, -apple-system, "Segoe UI", sans-serif',
   mono: '"JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace',
 } as const

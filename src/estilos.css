@@ -28,14 +28,14 @@ body {
 }
 
 /*
- * Título é a voz da personalidade do design system: serifa morna, entrelinha
- * apertada, tracking negativo.
+ * Título é a segunda voz do design system: sem serifa geométrica em negrito,
+ * entrelinha apertada, tracking negativo.
  */
 h1,
 h2,
 h3 {
   font-family: var(--fonte-titulo);
-  font-weight: 400;
+  font-weight: var(--peso-titulo);
   letter-spacing: -0.02em;
   line-height: 1.15;
 }
