@@ -20,6 +20,7 @@
 
 .logo__nome {
   font-family: var(--fonte-titulo);
+  font-weight: var(--peso-titulo);
   line-height: 1;
 }
 

@@ -77,8 +77,10 @@
     #009206 100%
   );
 
-  /* Tipografia */
-  --fonte-titulo: "Calistoga", Georgia, "Times New Roman", serif;
+  /* Tipografia. O peso anda junto com a família do título: a Plus Jakarta Sans só
+     ganha corpo de título em negrito, e a página carrega só esse peso */
+  --fonte-titulo: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --peso-titulo: 700;
   --fonte-interface: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --fonte-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 

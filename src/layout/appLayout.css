@@ -29,6 +29,7 @@
 
 .casca__nome {
   font-family: var(--fonte-titulo);
+  font-weight: var(--peso-titulo);
   font-size: 20px;
   color: var(--cor-marca-frente);
 }
