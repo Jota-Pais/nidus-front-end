@@ -18,7 +18,7 @@ function regraDeIdade(minima: number) {
   return z
     .number({ error: 'Informe a idade' })
     .int('Use dias inteiros')
-    .min(minima, `Mínimo de ${minima} dias`)
+    .min(minima, `Mínimo de ${minima} ${minima === 1 ? 'dia' : 'dias'}`)
     .max(IDADE.maxima, `Máximo de ${IDADE.maxima} dias`)
 }
 

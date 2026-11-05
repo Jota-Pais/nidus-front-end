@@ -57,7 +57,10 @@ const STATUS: Record<StatusSolicitacao, { rotulo: string; tom: TomDeEtiqueta }> 
   cancelada: { rotulo: 'Cancelada', tom: 'neutro' },
 }
 
-/** Os números do pedido: sem setas, só inteiros, teclado numérico no celular */
+/**
+ * Os números do pedido: sem setas, só inteiros, teclado numérico no celular. O que o número
+ * conta ("machos") vai dentro do campo, no suffix
+ */
 const NUMERO = {
   className: 'solicitacao__numero',
   controls: false,
@@ -114,6 +117,13 @@ export function SolicitarAnimais() {
     (machos > daLinhagem.total.m ||
       femeas > daLinhagem.total.f ||
       total > daLinhagem.total.m + daLinhagem.total.f)
+  // O que a colônia tem da linhagem, embaixo dos números, como ajuda do campo
+  const avisoDoEstoque =
+    daLinhagem && total > 0
+      ? passaDoEstoque
+        ? `Atenção: hoje a colônia tem ${daLinhagem.total.m} M · ${daLinhagem.total.f} F livres de ${daLinhagem.linhagem}, contando partos previstos. O pedido pode precisar de casais novos.`
+        : `Viável: a colônia tem ${daLinhagem.total.m} M · ${daLinhagem.total.f} F livres de ${daLinhagem.linhagem}, contando partos previstos.`
+      : undefined
   // O pesquisador só recebe os pedidos dele: a coluna de quem pediu e as ações são da equipe
   const colunasDaTabela = colunas(
     pesquisador ? undefined : { aoEntregar: setEntregando, aoRecusar: setRecusando },
@@ -158,145 +168,145 @@ export function SolicitarAnimais() {
               </div>
             )}
 
-            {/* Quem pede: o e-mail é o da conta, mostrado como texto porque não se muda */}
-            <div className="solicitacao__fileira">
-              <Formulario.Campo
-                name="nomePesquisador"
-                rotulo="Nome"
-                {...(usuario ? { ajuda: usuario.email } : {})}
-                rules={[{ validator: validadorDoPedido('nomePesquisador') }]}
-                className="solicitacao__campo--nome"
-              >
-                <Entrada autoComplete="name" />
-              </Formulario.Campo>
-
-              <CampoDoProtocolo
-                name="protocoloCeua"
-                rotulo="Protocolo CEUA"
-                className="solicitacao__campo--protocolo"
-              />
-            </div>
-
-            {/* Que animal */}
-            <div className="solicitacao__fileira">
-              <Formulario.Campo name="especie" rotulo="Espécie">
-                <Segmented<CodigoEspecie>
-                  options={ESPECIES}
-                  aria-label="Espécie"
-                  onChange={() => form.setFieldValue('idLinhagem', undefined)}
-                />
-              </Formulario.Campo>
-
-              <Formulario.Campo
-                name="idLinhagem"
-                rotulo="Linhagem"
-                rules={[{ required: true, message: 'Escolha a linhagem' }]}
-                className="solicitacao__campo--linhagem"
-              >
-                <Select options={linhagens} placeholder="Selecione" loading={catalogo.isPending} />
-              </Formulario.Campo>
-
-              <CampoDeIdade />
-            </div>
-
-            {/* Quantos. Cada número é um item com nome, para o antd ligar o erro ao campo e o
-                leitor de tela o ler. A regra da soma fica só em "machos", para sair uma vez, e
-                olha os outros dois pelas dependências */}
-            <Formulario.Campo rotulo="Animais">
-              <Linha espaco={16} estilo={{ alignItems: 'flex-start' }}>
-                <span className="solicitacao__quantidade">
-                  <Form.Item
-                    name="machos"
-                    className="solicitacao__item"
-                    dependencies={['femeas', 'qualquer']}
-                    rules={[
-                      { validator: validadorDoPedido('quantidade') },
-                      ({ getFieldsValue }) => ({
-                        validator: () =>
-                          temAnimal(getFieldsValue(['machos', 'femeas', 'qualquer']))
-                            ? Promise.resolve()
-                            : Promise.reject(new Error(PECA_UM_ANIMAL)),
-                      }),
-                    ]}
+            {/* Duas colunas, lidas na ordem do código: à esquerda quem pede, que animal e quantos;
+                à direita quando, as observações e o envio. Sem largura para as duas, a da direita
+                desce inteira para baixo da outra */}
+            <div className="solicitacao__colunas">
+              <div className="solicitacao__coluna solicitacao__coluna--pedido">
+                {/* Quem pede: o e-mail é o da conta, mostrado como texto porque não se muda */}
+                <div className="solicitacao__fileira">
+                  <Formulario.Campo
+                    name="nomePesquisador"
+                    rotulo="Nome"
+                    {...(usuario ? { ajuda: usuario.email } : {})}
+                    rules={[{ validator: validadorDoPedido('nomePesquisador') }]}
+                    className="solicitacao__campo--nome"
                   >
-                    <InputNumber {...NUMERO} aria-label="Machos" />
-                  </Form.Item>
-                  <span className="solicitacao__unidade">machos</span>
-                </span>
+                    <Entrada autoComplete="name" />
+                  </Formulario.Campo>
 
-                <span className="solicitacao__quantidade">
-                  <Form.Item
-                    name="femeas"
-                    className="solicitacao__item"
-                    rules={[{ validator: validadorDoPedido('quantidade') }]}
+                  <CampoDoProtocolo
+                    name="protocoloCeua"
+                    rotulo="Protocolo CEUA"
+                    className="solicitacao__campo--protocolo"
+                  />
+                </div>
+
+                {/* Que animal */}
+                <div className="solicitacao__fileira">
+                  <Formulario.Campo name="especie" rotulo="Espécie">
+                    <Segmented<CodigoEspecie>
+                      options={ESPECIES}
+                      aria-label="Espécie"
+                      onChange={() => form.setFieldValue('idLinhagem', undefined)}
+                    />
+                  </Formulario.Campo>
+
+                  <Formulario.Campo
+                    name="idLinhagem"
+                    rotulo="Linhagem"
+                    rules={[{ required: true, message: 'Escolha a linhagem' }]}
+                    className="solicitacao__campo--linhagem"
                   >
-                    <InputNumber {...NUMERO} aria-label="Fêmeas" />
-                  </Form.Item>
-                  <span className="solicitacao__unidade">fêmeas</span>
-                </span>
+                    <Select
+                      options={linhagens}
+                      placeholder="Selecione"
+                      loading={catalogo.isPending}
+                    />
+                  </Formulario.Campo>
 
-                <span className="solicitacao__quantidade">
-                  <Form.Item
-                    name="qualquer"
-                    className="solicitacao__item"
-                    rules={[{ validator: validadorDoPedido('quantidade') }]}
+                  <CampoDeIdade />
+                </div>
+
+                {/* Quantos. Cada número é um item com nome, para o antd ligar o erro ao campo e o
+                    leitor de tela o ler. A regra da soma fica só em "machos", para sair uma vez, e
+                    olha os outros dois pelas dependências */}
+                <Formulario.Campo
+                  rotulo="Animais"
+                  {...(avisoDoEstoque ? { ajuda: avisoDoEstoque } : {})}
+                >
+                  <Linha espaco={12} estilo={{ alignItems: 'flex-start' }}>
+                    <Form.Item
+                      name="machos"
+                      className="solicitacao__item solicitacao__item--animais"
+                      dependencies={['femeas', 'qualquer']}
+                      rules={[
+                        { validator: validadorDoPedido('quantidade') },
+                        ({ getFieldsValue }) => ({
+                          validator: () =>
+                            temAnimal(getFieldsValue(['machos', 'femeas', 'qualquer']))
+                              ? Promise.resolve()
+                              : Promise.reject(new Error(PECA_UM_ANIMAL)),
+                        }),
+                      ]}
+                    >
+                      <InputNumber {...NUMERO} suffix="machos" aria-label="Machos" />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="femeas"
+                      className="solicitacao__item solicitacao__item--animais"
+                      rules={[{ validator: validadorDoPedido('quantidade') }]}
+                    >
+                      <InputNumber {...NUMERO} suffix="fêmeas" aria-label="Fêmeas" />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="qualquer"
+                      className="solicitacao__item solicitacao__item--qualquer"
+                      rules={[{ validator: validadorDoPedido('quantidade') }]}
+                    >
+                      <InputNumber {...NUMERO} suffix="qualquer sexo" aria-label="Qualquer sexo" />
+                    </Form.Item>
+
+                    <Texto tom="secundario" className="solicitacao__unidade">
+                      = {total} {total === 1 ? 'animal' : 'animais'}
+                    </Texto>
+                  </Linha>
+                </Formulario.Campo>
+              </div>
+
+              <div className="solicitacao__coluna">
+                {/* Quando */}
+                <div className="solicitacao__fileira">
+                  <Formulario.Campo
+                    name="dataEntrega"
+                    rotulo="Entrega"
+                    rules={[{ validator: validadorDoPedido('dataEntrega') }]}
+                    className="solicitacao__campo--quando"
                   >
-                    <InputNumber {...NUMERO} aria-label="Qualquer sexo" />
-                  </Form.Item>
-                  <span className="solicitacao__unidade">qualquer sexo</span>
-                </span>
+                    <Entrada type="date" min={hoje()} />
+                  </Formulario.Campo>
 
-                <Texto tom="secundario" className="solicitacao__unidade">
-                  = {total} {total === 1 ? 'animal' : 'animais'}
-                </Texto>
-              </Linha>
-              {daLinhagem && total > 0 && (
-                <Texto tom="secundario">
-                  {passaDoEstoque
-                    ? `Atenção: hoje a colônia tem ${daLinhagem.total.m} M · ${daLinhagem.total.f} F livres de ${daLinhagem.linhagem}, contando partos previstos. O pedido pode precisar de casais novos.`
-                    : `Viável: a colônia tem ${daLinhagem.total.m} M · ${daLinhagem.total.f} F livres de ${daLinhagem.linhagem}, contando partos previstos.`}
-                </Texto>
-              )}
-            </Formulario.Campo>
+                  <Formulario.Campo
+                    name="cronograma"
+                    rotulo="Cronograma"
+                    className="solicitacao__campo--quando"
+                  >
+                    <Select
+                      options={CRONOGRAMAS_DO_PEDIDO.map((valor) => ({
+                        value: valor,
+                        label: ROTULO_CRONOGRAMA[valor],
+                      }))}
+                    />
+                  </Formulario.Campo>
+                </div>
 
-            {/* Quando */}
-            <div className="solicitacao__fileira">
-              <Formulario.Campo
-                name="dataEntrega"
-                rotulo="Entrega"
-                rules={[{ validator: validadorDoPedido('dataEntrega') }]}
-                className="solicitacao__campo--data"
-              >
-                <Entrada type="date" min={hoje()} />
-              </Formulario.Campo>
+                <Formulario.Campo
+                  name="observacoes"
+                  rotulo="Observações"
+                  opcional
+                  rules={[{ validator: validadorDoPedido('observacoes') }]}
+                >
+                  <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} maxLength={500} />
+                </Formulario.Campo>
 
-              <Formulario.Campo
-                name="cronograma"
-                rotulo="Cronograma"
-                className="solicitacao__campo--cronograma"
-              >
-                <Select
-                  options={CRONOGRAMAS_DO_PEDIDO.map((valor) => ({
-                    value: valor,
-                    label: ROTULO_CRONOGRAMA[valor],
-                  }))}
-                />
-              </Formulario.Campo>
-            </div>
-
-            <Formulario.Campo
-              name="observacoes"
-              rotulo="Observações"
-              opcional
-              rules={[{ validator: validadorDoPedido('observacoes') }]}
-            >
-              <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} maxLength={500} />
-            </Formulario.Campo>
-
-            <div className="solicitacao__acoes">
-              <Botao variante="primario" htmlType="submit" loading={criar.isPending}>
-                Enviar solicitação
-              </Botao>
+                <div className="solicitacao__acoes">
+                  <Botao variante="primario" htmlType="submit" loading={criar.isPending}>
+                    Enviar solicitação
+                  </Botao>
+                </div>
+              </div>
             </div>
           </Formulario>
         </Secao>

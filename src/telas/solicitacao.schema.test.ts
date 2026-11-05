@@ -66,6 +66,10 @@ describe('validadorDeIdade', () => {
     await expect(validadorDeIdade()(null, 10)).rejects.toThrow('Mínimo de 21 dias')
     await expect(validadorDeIdade(1)(null, 10)).resolves.toBeUndefined()
   })
+
+  it('com o mínimo de 1, a mensagem fala em dia, no singular', async () => {
+    await expect(validadorDeIdade(1)(null, 0)).rejects.toThrow(/^Mínimo de 1 dia$/)
+  })
 })
 
 describe('temAnimal', () => {

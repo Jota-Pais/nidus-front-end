@@ -1,20 +1,46 @@
 /* Solicitar animais e Busca de atendimento */
 
 /*
- * O pedido é um cartão só, em fileiras que se leem como frase: quem pede, que animal,
- * quantos, quando e observações. Em tela estreita cada campo desce inteiro para a linha
- * de baixo, e o formulário vira uma coluna.
+ * O pedido é um cartão só, em duas colunas: à esquerda quem pede, que animal e quantos; à
+ * direita quando, as observações e o envio. Cada coluna começa na largura da sua fileira
+ * mais longa e as duas dividem a sobra; sem largura para as duas lado a lado, a da direita
+ * desce inteira, e o formulário vira uma coluna na mesma ordem de leitura.
  */
+.solicitacao__colunas {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 32px;
+}
+
+.solicitacao__coluna {
+  display: flex;
+  flex: 2 1 400px;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Espécie, linhagem e idade na mesma fileira */
+.solicitacao__coluna--pedido {
+  flex: 3 1 760px;
+}
+
+/* O envio fica no pé da coluna, na altura do fim do pedido */
+.solicitacao__coluna > .solicitacao__acoes {
+  margin-top: auto;
+}
+
+/* Dentro da coluna, fileiras que se leem como frase. Em tela estreita cada campo desce
+   inteiro para a linha de baixo */
 .solicitacao__fileira {
   display: flex;
   flex-wrap: wrap;
   column-gap: 24px;
 }
 
-/* A largura de cada campo segue o tamanho do que se digita nele */
+/* O que tem formato fixo fica com a largura do que se digita nele; nome, linhagem e as
+   escolhas da entrega ocupam o resto da fileira, para não sobrar vão do lado */
 .solicitacao__campo--nome {
   flex: 1 1 260px;
-  max-width: 420px;
 }
 
 .solicitacao__campo--protocolo {
@@ -22,13 +48,11 @@
 }
 
 .solicitacao__campo--linhagem {
-  flex: 1 1 200px;
-  max-width: 320px;
+  flex: 1 1 160px;
 }
 
-.solicitacao__campo--data,
-.solicitacao__campo--cronograma {
-  flex: 0 1 200px;
+.solicitacao__campo--quando {
+  flex: 1 1 180px;
 }
 
 /* Protocolo é código, e código vai em mono, como o endereço da caixa */
@@ -36,34 +60,44 @@
   font-family: var(--fonte-mono);
 }
 
-/* Quatro dígitos cabem, e a fileira da idade (Faixa|Exata, de, a) cabe inteira no celular */
+/* Os números levam dentro o que contam ("machos", "dias"), e ocupam o item inteiro */
 .solicitacao__numero {
-  width: 72px;
+  width: 100%;
 }
 
-/* "[ 5 ] machos": o número e a palavra que diz o que ele conta, que andam juntos. Alinham
-   pelo topo para o erro embaixo de um número não desalinhar o resto da fileira */
-.solicitacao__quantidade {
+/* Número dentro de um grupo com rótulo próprio: o respiro de baixo já é do grupo. A largura
+   é a do item, e não a do conteúdo: a mensagem de erro quebra embaixo do seu número, sem
+   alargá-lo e sem invadir o vizinho */
+.solicitacao__item {
+  margin-bottom: 0;
+}
+
+/* Três dígitos e "dias"; a fileira da idade (Faixa|Exata, mínimo a máximo) cabe no celular */
+.solicitacao__item--dias {
+  width: 104px;
+}
+
+/* Quatro dígitos e o que contam: "machos" e "fêmeas", e o "qualquer sexo", mais longo */
+.solicitacao__item--animais {
+  width: 120px;
+}
+
+.solicitacao__item--qualquer {
+  width: 168px;
+}
+
+/* "[20 dias] a [40 dias]": os dois limites e o "a" entre eles andam juntos. Alinham pelo
+   topo para o erro embaixo de um número não desalinhar o outro */
+.solicitacao__numeros {
   display: inline-flex;
   align-items: flex-start;
   gap: 8px;
 }
 
-/* A palavra ao lado do número tem a altura do campo, e fica na linha do texto dele */
+/* O texto solto entre os números ("a", "= 5 animais") tem a altura do campo, e fica na linha
+   do texto dele */
 .solicitacao__unidade {
   line-height: var(--altura-de-controle);
-  white-space: nowrap;
-}
-
-/* Número dentro de um grupo com rótulo próprio: o respiro de baixo já é do grupo */
-.solicitacao__item {
-  margin-bottom: 0;
-}
-
-/* A mensagem de erro fica embaixo do número sem alargá-lo: senão a palavra ao lado ("machos",
-   o "a" da idade) seria empurrada para longe do campo */
-.solicitacao__item .ant-form-item-explain {
-  width: 0;
   white-space: nowrap;
 }
 
@@ -79,7 +113,8 @@
 }
 
 /* Espécie, linhagem e idade da busca. A idade tem a largura do que mostra e, se não couber,
-   desce inteira para a linha de baixo, em vez de se partir */
+   desce inteira para a linha de baixo, em vez de se partir; só no celular, onde nem sozinha
+   ela cabe, encolhe e põe os números embaixo de Faixa|Exata */
 .busca__criterios {
   display: flex;
   flex-wrap: wrap;
@@ -92,7 +127,7 @@
 }
 
 .busca__criterios > .busca__idade {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
 }
 
 .solicitacao__acoes {
