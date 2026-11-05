@@ -35,14 +35,8 @@ import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { formatarData, hoje } from '@/lib/data'
 import { CampoDeIdade } from './CampoDeIdade'
-import {
-  FORMATO_DO_PROTOCOLO,
-  PECA_UM_ANIMAL,
-  formatarProtocolo,
-  montarPedido,
-  temAnimal,
-  validadorDoPedido,
-} from './solicitacao.schema'
+import { CampoDoProtocolo } from './CampoDoProtocolo'
+import { PECA_UM_ANIMAL, montarPedido, temAnimal, validadorDoPedido } from './solicitacao.schema'
 import type { CamposDoPedido } from './solicitacao.schema'
 import './Solicitacao.css'
 
@@ -166,24 +160,11 @@ export function SolicitarAnimais() {
               <Entrada autoComplete="name" />
             </Formulario.Campo>
 
-            <Formulario.Campo
+            <CampoDoProtocolo
               name="protocoloCeua"
               rotulo="Protocolo CEUA"
-              ajuda={FORMATO_DO_PROTOCOLO}
-              validateTrigger="onBlur"
-              rules={[{ validator: validadorDoPedido('protocoloCeua') }]}
               className="solicitacao__campo--protocolo"
-            >
-              <Entrada
-                className="solicitacao__protocolo"
-                inputMode="numeric"
-                // A pontuação entra ao sair do campo, com o número completo; durante a
-                // digitação o campo não é reescrito, e o cursor fica onde a pessoa pôs
-                onBlur={(evento) =>
-                  form.setFieldValue('protocoloCeua', formatarProtocolo(evento.target.value))
-                }
-              />
-            </Formulario.Campo>
+            />
           </div>
 
           {/* Que animal */}

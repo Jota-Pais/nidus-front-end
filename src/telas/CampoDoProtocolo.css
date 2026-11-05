@@ -1,0 +1,11 @@
+/* O número do projeto CEUA é código, e código vai em mono, como o endereço da caixa */
+.campoDoProtocolo__entrada {
+  font-family: var(--fonte-mono);
+}
+
+/* O formato na ajuda tem a letra do campo, para se comparar com o que foi digitado, e não se
+   parte no hífen: se a coluna for estreita, desce inteiro para a linha de baixo */
+.campoDoProtocolo__formato {
+  font-family: var(--fonte-mono);
+  white-space: nowrap;
+}

@@ -1,31 +1,17 @@
 // regras dos campos do pedido de animais, separadas da tela para serem testáveis
 import { z } from 'zod'
 import type { NovaSolicitacao } from '@/dominio/consultas'
+import { formatarProtocolo } from '@/dominio/protocolo'
 import type { CodigoEspecie, Cronograma } from '@/dominio/tipos'
 import { faixaDeIdade, totalDeAnimais } from '@/dominio/solicitacao'
 import type { CamposDeIdade } from '@/dominio/solicitacao'
 import { hoje } from '@/lib/data'
 import { validadorDoZod } from '@/lib/validacao'
 
-/** O número de processo da UFSC, como a pessoa vê no parecer da CEUA */
-export const FORMATO_DO_PROTOCOLO = '23080.XXXXXX/AAAA-XX'
-
 /** Os limites do banco: idade de 21 a 300 dias (o teto do formulário do cliente) */
 export const IDADE = { minima: 21, maxima: 300 }
 
 const MAXIMO_DE_ANIMAIS = 9999
-
-/**
- * Põe a pontuação no protocolo completo: os 17 dígitos, digitados ou colados com ou sem ponto,
- * barra e hífen. Com outra quantidade de dígitos o texto volta como veio e não passa na regra.
- * Não roda enquanto se digita, porque reescrever o campo a cada tecla joga o cursor para o fim
- */
-export function formatarProtocolo(valor: string): string {
-  const digitos = valor.replace(/\D/g, '')
-  if (digitos.length !== 17) return valor.trim()
-
-  return `${digitos.slice(0, 5)}.${digitos.slice(5, 11)}/${digitos.slice(11, 15)}-${digitos.slice(15)}`
-}
 
 /** A idade em dias. O pedido começa em 21 (o desmame); a busca do técnico aceita menos */
 function regraDeIdade(minima: number) {
@@ -49,14 +35,6 @@ export const solicitacao = z.object({
     .trim()
     .min(1, 'Informe o seu nome')
     .max(120, 'O nome passa de 120 caracteres'),
-  // O formato fica escrito embaixo do campo, então o erro não o repete
-  protocoloCeua: z.preprocess(
-    (valor) => (typeof valor === 'string' ? formatarProtocolo(valor) : valor),
-    z
-      .string()
-      .min(1, 'Informe o protocolo')
-      .regex(/^23080\.\d{6}\/\d{4}-\d{2}$/, 'Confira o número do protocolo'),
-  ),
   // Campo vazio vale zero: quem quer só "qualquer sexo" deixa machos e fêmeas em branco
   quantidade: z.preprocess(
     (valor) => (valor === '' || valor === null || valor === undefined ? 0 : valor),
