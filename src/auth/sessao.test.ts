@@ -5,6 +5,7 @@ import { entrar, repetirSessao } from './sessao'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 function fingirResposta(status: number, corpo: unknown) {
@@ -23,6 +24,12 @@ describe('repetirSessao — falha da API não vira logout', () => {
 
   it('desiste depois de seis tentativas', () => {
     expect(repetirSessao(6, new ErroDeRede(new TypeError('Failed to fetch')))).toBe(false)
+  })
+
+  it('sem internet no aparelho não espera a API acordar: mostra o erro na hora', () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+
+    expect(repetirSessao(0, new ErroDeRede(new TypeError('Failed to fetch')))).toBe(false)
   })
 
   it('não repete resposta da API: 403 e 409 não melhoram tentando de novo', () => {

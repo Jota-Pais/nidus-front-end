@@ -42,6 +42,7 @@ export function useSessao(): UseQueryResult<Usuario | null> {
  * intervalo do queryClient dão uns 45s, o tempo de a API acordar
  */
 export function repetirSessao(tentativas: number, erro: Error): boolean {
+  if (!navigator.onLine) return false
   const ehResposta = erro instanceof ErroDeApi && erro.status < 500
   return !ehResposta && tentativas < 6
 }
