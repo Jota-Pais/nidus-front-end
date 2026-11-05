@@ -48,7 +48,7 @@ const STATUS: Record<StatusSolicitacao, { rotulo: string; tom: TomDeEtiqueta }> 
   rascunho: { rotulo: 'Rascunho', tom: 'neutro' },
   enviada: { rotulo: 'Aguardando análise', tom: 'informacao' },
   em_analise: { rotulo: 'Em análise', tom: 'informacao' },
-  aprovada: { rotulo: 'Caixas alocadas', tom: 'sucesso' },
+  aprovada: { rotulo: 'Aprovada', tom: 'sucesso' },
   recusada: { rotulo: 'Recusada', tom: 'erro' },
   ajustada: { rotulo: 'Ajustada', tom: 'atencao' },
   em_atendimento: { rotulo: 'Em atendimento', tom: 'institucional' },
@@ -359,7 +359,7 @@ function colunas(equipe: AcoesDaEquipe | undefined): TableColumnsType<Solicitaca
       render: (_, s) => (
         <div className="solicitacao__duasLinhas" title={s.motivoRecusa ?? undefined}>
           <Etiqueta tom={STATUS[s.status].tom}>{STATUS[s.status].rotulo}</Etiqueta>
-          {s.motivoRecusa && <Texto tom="secundario">{s.motivoRecusa}</Texto>}
+          {s.motivoRecusa && <Texto tom="secundario">Motivo: {s.motivoRecusa}</Texto>}
         </div>
       ),
     },
