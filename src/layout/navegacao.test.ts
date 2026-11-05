@@ -26,6 +26,16 @@ describe('menu por perfil', () => {
   })
 })
 
+describe('solicitações', () => {
+  it('só o pesquisador pede animais: técnico e gestor veem a lista de solicitações', () => {
+    const rotulo = (perfil: 'pesquisador' | 'tecnico' | 'gestor') =>
+      menuDoPerfil(perfil).find((item) => item.caminho === '/solicitar')?.rotulo
+    expect(rotulo('pesquisador')).toBe('Solicitar animais')
+    expect(rotulo('tecnico')).toBe('Solicitações')
+    expect(rotulo('gestor')).toBe('Solicitações')
+  })
+})
+
 describe('configurações', () => {
   it('usuários fica em Configurações, só para o gestor', () => {
     expect(configuracoesDoPerfil('gestor').map((item) => item.caminho)).toEqual(['/usuarios'])
