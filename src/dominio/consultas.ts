@@ -1,5 +1,5 @@
 // Tudo o que as telas leem e gravam na API
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { chaves, invalidarColonia } from '@/app/chaves'
 import { api } from '@/lib/api'
 import type {
@@ -296,11 +296,26 @@ export function useEstoque(especie: CodigoEspecie | undefined) {
   })
 }
 
-export function useHistorico() {
+export interface FiltroDoHistorico {
+  entidade: string | null
+  idEntidade: number | null
+  busca: string
+}
+
+export function caminhoDoHistorico(filtro: FiltroDoHistorico): string {
+  const parametros = new URLSearchParams({ limite: '300' })
+  if (filtro.entidade !== null) parametros.set('entidade', filtro.entidade)
+  if (filtro.idEntidade !== null) parametros.set('idEntidade', String(filtro.idEntidade))
+  if (filtro.busca.trim() !== '') parametros.set('busca', filtro.busca.trim())
+  return `/api/historico?${parametros}`
+}
+
+export function useHistorico(filtro: FiltroDoHistorico) {
   return useQuery({
-    queryKey: chaves.historico,
+    queryKey: [...chaves.historico, filtro],
     queryFn: async () =>
-      (await api<{ historico: RegistroDoHistorico[] }>('/api/historico?limite=300')).historico,
+      (await api<{ historico: RegistroDoHistorico[] }>(caminhoDoHistorico(filtro))).historico,
+    placeholderData: keepPreviousData,
   })
 }
 

@@ -1,4 +1,4 @@
-import { Input, Select, Table } from 'antd'
+import { Input, InputNumber, Select, Table } from 'antd'
 import { useState } from 'react'
 import { CabecalhoDaTela, Linha, Pilha, Secao } from '@/componentes'
 import { useHistorico } from '@/dominio/consultas'
@@ -24,25 +24,17 @@ function dataEHora(iso: string): string {
 
 /** Quem fez cada operação, quando e o que mudou. Só leitura: nada aqui se apaga */
 export function Historico() {
-  const historico = useHistorico()
   const [entidade, setEntidade] = useState<string | null>(null)
+  const [idEntidade, setIdEntidade] = useState<number | null>(null)
   const [busca, setBusca] = useState('')
-
-  const termo = busca.trim().toLowerCase()
-  const linhas = (historico.data ?? []).filter(
-    (registro) =>
-      (entidade === null || registro.entidade === entidade) &&
-      (termo === '' ||
-        registro.descricao.toLowerCase().includes(termo) ||
-        registro.usuario.toLowerCase().includes(termo)),
-  )
+  const historico = useHistorico({ entidade, idEntidade, busca })
 
   return (
     <Pilha>
       <CabecalhoDaTela
         rotulo="Gestão"
         titulo="Histórico"
-        descricao="As últimas 300 alterações do sistema: quem fez, quando e o quê."
+        descricao="Quem fez cada alteração, quando e o quê. Mostra as 300 mais recentes do filtro escolhido."
       />
 
       <Secao
@@ -57,11 +49,19 @@ export function Historico() {
               value={entidade}
               onChange={(valor) => setEntidade(valor ?? null)}
             />
+            <InputNumber<number>
+              min={1}
+              precision={0}
+              placeholder="Nº"
+              style={{ width: 90 }}
+              value={idEntidade}
+              onChange={(valor) => setIdEntidade(valor ?? null)}
+            />
             <Input.Search
               allowClear
               placeholder="Buscar por pessoa ou texto"
               style={{ width: 260 }}
-              onChange={(evento) => setBusca(evento.target.value)}
+              onSearch={(valor) => setBusca(valor)}
             />
           </Linha>
         }
@@ -69,7 +69,7 @@ export function Historico() {
         <EstadoDaConsulta consulta={historico} rotulo="Carregando o histórico…">
           <Table<RegistroDoHistorico>
             rowKey="id"
-            dataSource={linhas}
+            dataSource={historico.data ?? []}
             pagination={{ pageSize: 50, showSizeChanger: false }}
             scroll={{ x: true }}
             locale={{ emptyText: 'Nenhuma alteração registrada.' }}
