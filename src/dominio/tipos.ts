@@ -138,7 +138,7 @@ export type SituacaoDoProjeto = 'vigente' | 'vencido' | 'suspenso'
 // GET /api/projetos
 export interface Projeto {
   id: number
-  /** formato 23080.XXXXXX/AAAA-XX */
+  /** o processo 23080.XXXXXX/AAAA-XX ou os 10 dígitos do Sistema CEUA (@/dominio/protocolo) */
   numero: string
   vigente: boolean
   titulo: string
@@ -166,7 +166,7 @@ export type StatusSolicitacao =
 // GET /api/solicitacoes
 export interface Solicitacao {
   id: number
-  /** formato 23080.XXXXXX/AAAA-XX */
+  /** o processo 23080.XXXXXX/AAAA-XX ou os 10 dígitos do Sistema CEUA (@/dominio/protocolo) */
   protocoloCeua: string
   /** o nome que a pessoa digitou no pedido */
   pesquisador: string

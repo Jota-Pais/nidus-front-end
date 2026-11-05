@@ -10,7 +10,7 @@ const solicitacao = (
   motivoRecusa: string | null = null,
 ): Solicitacao => ({
   id,
-  protocoloCeua: '23080.000001/2026-01',
+  protocoloCeua: '23080.000001/2026-54',
   pesquisador: 'Ana',
   email: 'ana@ufsc.br',
   especie: 'rato',

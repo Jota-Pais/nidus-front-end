@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { hoje } from '@/lib/data'
 import {
   conferirIdadeMaxima,
-  formatarProtocolo,
   montarPedido,
   solicitacao,
   temAnimal,
@@ -10,38 +9,9 @@ import {
 } from './solicitacao.schema'
 import type { CamposDoPedido } from './solicitacao.schema'
 
-const { protocoloCeua, quantidade, idade, dataEntrega, nomePesquisador } = solicitacao.shape
-
-describe('formatarProtocolo', () => {
-  it('põe a pontuação nos 17 dígitos digitados de uma vez', () => {
-    expect(formatarProtocolo('23080012345202611')).toBe('23080.012345/2026-11')
-  })
-
-  it('aceita colar com a pontuação, ou com outra qualquer', () => {
-    expect(formatarProtocolo('23080.012345/2026-11')).toBe('23080.012345/2026-11')
-    expect(formatarProtocolo(' 23080 012345 2026 11 ')).toBe('23080.012345/2026-11')
-  })
-
-  it('com dígito faltando ou sobrando devolve como veio, e não corta nada calado', () => {
-    expect(formatarProtocolo('2308001234520261')).toBe('2308001234520261')
-    expect(formatarProtocolo('230800123452026119')).toBe('230800123452026119')
-  })
-})
+const { quantidade, idade, dataEntrega, nomePesquisador } = solicitacao.shape
 
 describe('regras dos campos', () => {
-  it('o protocolo vale com ou sem a pontuação, mas precisa estar completo', () => {
-    expect(protocoloCeua.safeParse('23080.012345/2026-11').success).toBe(true)
-    expect(protocoloCeua.safeParse('23080012345202611').success).toBe(true)
-    expect(protocoloCeua.safeParse('23080.012345/2026').success).toBe(false)
-    expect(protocoloCeua.safeParse('230800123452026119').success).toBe(false)
-  })
-
-  it('protocolo em branco pede o protocolo, e não que se confira o número', () => {
-    const r = protocoloCeua.safeParse('')
-    expect(r.success).toBe(false)
-    if (!r.success) expect(r.error.issues[0]?.message).toBe('Informe o protocolo')
-  })
-
   it('quantidade em branco vale zero, e negativa não passa', () => {
     expect(quantidade.parse('')).toBe(0)
     expect(quantidade.parse(null)).toBe(0)
@@ -109,7 +79,7 @@ describe('temAnimal', () => {
 describe('montarPedido', () => {
   const campos: CamposDoPedido = {
     nomePesquisador: '  Ana Souza ',
-    protocoloCeua: '23080.012345/2026-11',
+    protocoloCeua: '23080.012345/2026-14',
     especie: 'rato',
     idLinhagem: 3,
     modoIdade: 'faixa',
@@ -126,7 +96,7 @@ describe('montarPedido', () => {
   it('monta o corpo do POST, com campo em branco valendo zero', () => {
     expect(montarPedido(campos)).toEqual({
       nomePesquisador: 'Ana Souza',
-      protocoloCeua: '23080.012345/2026-11',
+      protocoloCeua: '23080.012345/2026-14',
       idLinhagem: 3,
       machos: 5,
       femeas: 0,
@@ -144,9 +114,12 @@ describe('montarPedido', () => {
     expect([pedido.idadeMin, pedido.idadeMax]).toEqual([28, 28])
   })
 
-  it('manda o protocolo com a pontuação, mesmo digitado sem ela', () => {
-    expect(montarPedido({ ...campos, protocoloCeua: '23080012345202611' }).protocoloCeua).toBe(
-      '23080.012345/2026-11',
+  it('manda o protocolo na forma da API, mesmo enviado com o Enter antes de sair do campo', () => {
+    expect(montarPedido({ ...campos, protocoloCeua: '23080012345202614' }).protocoloCeua).toBe(
+      '23080.012345/2026-14',
+    )
+    expect(montarPedido({ ...campos, protocoloCeua: '23080.50920' }).protocoloCeua).toBe(
+      '2308050920',
     )
   })
 
