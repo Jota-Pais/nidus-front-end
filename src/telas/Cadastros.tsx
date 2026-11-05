@@ -9,9 +9,11 @@ import {
   useUsuarios,
 } from '@/dominio/consultas'
 import type { DadosDoProjeto } from '@/dominio/consultas'
+import { formatarProtocolo } from '@/dominio/protocolo'
 import type { Catalogo, Projeto, SituacaoDoProjeto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { formatarData } from '@/lib/data'
+import { CampoDoProtocolo } from './CampoDoProtocolo'
 
 const SITUACOES: { value: SituacaoDoProjeto; label: string }[] = [
   { value: 'vigente', label: 'Vigente' },
@@ -113,7 +115,10 @@ function FormularioDoProjeto({
     .filter((u) => u.ativo)
     .map((u) => ({ value: u.id, label: `${u.nome} (${u.email})` }))
 
-  function enviar(dados: DadosDoProjeto) {
+  function enviar(campos: DadosDoProjeto) {
+    // Na forma da API mesmo quando o Enter envia antes de o campo do número perder o foco
+    const dados = { ...campos, numero: formatarProtocolo(campos.numero) }
+
     salvar.mutate(
       { id: projeto?.id ?? null, dados },
       {
@@ -155,13 +160,7 @@ function FormularioDoProjeto({
             : { situacao: 'vigente', cotaAutorizada: 0 }
         }
       >
-        <Form.Item
-          name="numero"
-          label="Número"
-          rules={[{ required: true, whitespace: true, message: 'Informe o número' }]}
-        >
-          <Input placeholder="23080.XXXXXX/AAAA-XX" maxLength={30} />
-        </Form.Item>
+        <CampoDoProtocolo name="numero" rotulo="Número" />
         <Form.Item
           name="titulo"
           label="Título"
