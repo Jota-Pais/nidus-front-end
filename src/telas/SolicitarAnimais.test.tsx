@@ -74,7 +74,15 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
   it('quem pediu vê o motivo da recusa', () => {
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
-    expect(screen.getByText(/Sem Wistar ate dezembro/)).toBeTruthy()
+    expect(screen.getByText(/Motivo: Sem Wistar ate dezembro/)).toBeTruthy()
+    expect(screen.getByText('Recusada')).toBeTruthy()
+  })
+
+  it('a alocada aparece como Aprovada, e não como linguagem da equipe', () => {
+    renderizar(<SolicitarAnimais />, 'pesquisador')
+
+    expect(screen.getByText('Aprovada')).toBeTruthy()
+    expect(screen.queryByText('Caixas alocadas')).toBeNull()
   })
 })
 
