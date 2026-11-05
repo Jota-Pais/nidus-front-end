@@ -2,7 +2,8 @@ import { App, Form, Input, InputNumber, Modal, Select, Tabs } from 'antd'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Botao, Etiqueta, Linha, Texto } from '@/componentes'
-import { COLUNAS, CORES_PARTO, corDoParto, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
+import { COR_DO_PARTO } from '@/app/tokens'
+import { COLUNAS, corDoParto, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
 import {
   useCatalogo,
   useCorrigirEvento,
@@ -65,7 +66,13 @@ export function FichaDaCaixa({
       footer={null}
       width={760}
       destroyOnHidden
-      styles={{ header: { background: `${corDoParto(partoAtivo)}33`, margin: '-20px -24px 0', padding: '16px 24px' } }}
+      styles={{
+        header: {
+          background: corDoParto(partoAtivo).fundo,
+          margin: '-20px -24px 0',
+          padding: '16px 24px',
+        },
+      }}
       title={
         <Linha espaco={10}>
           <span>Ficha · {endereco?.codigo ?? 'caixa'}</span>
@@ -99,7 +106,7 @@ export function FichaDaCaixa({
             <>
               <div className="ficha__partos">
                 <Texto tom="rotulo">Parto</Texto>
-                {CORES_PARTO.map((cor, indice) => {
+                {COR_DO_PARTO.map(({ cor, frente }, indice) => {
                   const ordem = indice + 1
                   const ativo = ordem === partoAtivo
                   return (
@@ -109,7 +116,7 @@ export function FichaDaCaixa({
                       className="ficha__parto"
                       style={
                         ativo
-                          ? { backgroundColor: cor, borderColor: cor, color: '#fff' }
+                          ? { backgroundColor: cor, borderColor: cor, color: frente }
                           : { borderLeftColor: cor, borderLeftWidth: 4 }
                       }
                       onClick={() => setEscolhido(ordem)}
@@ -226,7 +233,7 @@ function AbaReproducao({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
       )}
 
       <h3>
-        Datas previstas — <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(ordem) }} />{' '}
+        Datas previstas — <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(ordem).cor }} />{' '}
         {ordem}º parto
       </h3>
       <LadoALado>

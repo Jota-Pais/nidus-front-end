@@ -25,22 +25,22 @@
 
 .botao--primario:not(:disabled),
 .botao--primario:not(:disabled):hover {
-  background: var(--gradiente-acento-horizontal);
+  background: var(--gradiente-acao-horizontal);
   border-color: transparent;
-  color: var(--cor-acento-frente);
+  color: var(--cor-acao-frente);
   box-shadow: var(--sombra-sm);
 }
 
 .botao--primario:not(:disabled):hover {
-  box-shadow: var(--sombra-acento-forte);
+  box-shadow: var(--sombra-acao-forte);
   filter: brightness(1.08);
 }
 
-/* ---- Secundário: contorno que ganha acento no hover -------------------- */
+/* ---- Secundário: contorno que ganha a cor de ação no hover ------------- */
 
 .botao--secundario:not(:disabled):hover {
-  border-color: color-mix(in srgb, var(--cor-acento) 30%, transparent);
-  color: var(--cor-acento);
+  border-color: var(--cor-acao-borda);
+  color: var(--cor-acao);
   box-shadow: var(--sombra-md);
 }
 

@@ -122,7 +122,10 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
         <span className="kanban__estante">{card.numeroVisivel}</span>
         {casal && (
           <span className="parto kanban__parto" title={`Parto atual: ${casal.partoAtual}º`}>
-            <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(casal.partoAtual) }} />
+            <span
+              className="bolinhaDeParto"
+              style={{ backgroundColor: corDoParto(casal.partoAtual).cor }}
+            />
             {casal.partoAtual}º
           </span>
         )}

@@ -1,8 +1,9 @@
 /*
  * Casca da aplicação.
  *
- * O cabeçalho é a faixa invertida do design system, na mesma cor da tela de
- * entrada: quem entra não sente que mudou de sistema depois do login.
+ * O cabeçalho é a superfície da marca, a mesma da metade azul da tela de
+ * entrada: quem entra não sente que mudou de sistema depois do login. A cor
+ * vem do tema do Ant Design (`Layout.headerBg`), que lê o mesmo token.
  */
 
 .casca {
@@ -29,23 +30,23 @@
 .casca__nome {
   font-family: var(--fonte-titulo);
   font-size: 20px;
-  color: #fff;
+  color: var(--cor-marca-frente);
 }
 
 .casca__usuario {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--cor-marca-frente-suave);
 }
 
 .casca__sair.botao--fantasma:not(:disabled),
 .casca__config.botao--fantasma:not(:disabled) {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--cor-marca-frente-suave);
 }
 
 .casca__sair.botao--fantasma:not(:disabled):hover,
 .casca__config.botao--fantasma:not(:disabled):hover,
 .casca__config--ativa.botao--fantasma:not(:disabled) {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--cor-marca-frente);
+  background: var(--cor-marca-hover);
 }
 
 .casca__seta {

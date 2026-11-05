@@ -34,7 +34,7 @@
 /* Link entre as telas de entrada: "Primeiro acesso", "Voltar para o login" */
 .telaDeEntrada__link {
   align-self: center;
-  color: var(--cor-acento);
+  color: var(--cor-acao);
   font-weight: 500;
   text-decoration: none;
 }
@@ -66,7 +66,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--cor-acento);
+  background: var(--cor-marca);
   clip-path: polygon(
     0 0,
     calc(100% - var(--divisa-faixa)) 0,
@@ -93,7 +93,7 @@
   margin: 0;
   font-size: min(2vw, 24px);
   line-height: 1.4;
-  color: color-mix(in srgb, var(--cor-acento-frente) 85%, transparent);
+  color: var(--cor-marca-frente-suave);
 }
 
 /* A logo no alto do formulário só aparece quando a metade azul sai */

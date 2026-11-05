@@ -17,22 +17,22 @@
  * Superfície clara e texto escurecido: é o que faz a etiqueta passar em AA.
  * A cor institucional crua ficaria em 3.9:1 com texto branco por cima.
  */
-.etiqueta--acento {
-  background: color-mix(in srgb, var(--cor-acento) 10%, transparent);
-  border-color: color-mix(in srgb, var(--cor-acento) 30%, transparent);
-  color: var(--cor-acento);
+.etiqueta--informacao {
+  background: var(--superficie-informacao-fundo);
+  border-color: var(--superficie-informacao-borda);
+  color: var(--cor-informacao);
 }
 
 .etiqueta--institucional {
-  background: color-mix(in srgb, var(--cor-institucional) 12%, transparent);
-  border-color: color-mix(in srgb, var(--cor-institucional) 35%, transparent);
+  background: var(--cor-institucional-fundo);
+  border-color: var(--cor-institucional-borda);
   color: var(--cor-institucional-texto);
 }
 
 /*
- * Estes três usam superfície explícita, e não color-mix sobre a cor do texto:
- * a cor do texto é a variante escurecida, e 12% de um amarelo escurecido dá
- * bege, não amarelo. Ver SUPERFICIE_DE_RETORNO em @/app/tokens.
+ * Estes três usam superfície escolhida à mão, e não o tom claro da cor do
+ * texto: a cor do texto é a variante escurecida, e 10% de um amarelo
+ * escurecido dá bege, não amarelo. Ver SUPERFICIE_DE_RETORNO em @/app/tokens.
  */
 .etiqueta--sucesso {
   background: var(--superficie-sucesso-fundo);
