@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Solicitacao } from '@/dominio/tipos'
 import { consulta, mutacao, renderizar } from '@/testes/renderizar'
@@ -75,5 +75,25 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
     expect(screen.getByText(/Sem Wistar ate dezembro/)).toBeTruthy()
+  })
+})
+
+describe('quem pede', { timeout: 20_000 }, () => {
+  it('o nome já vem com o da conta, e a pessoa pode trocar', () => {
+    renderizar(<SolicitarAnimais />, 'pesquisador', ' Beatriz Lima ')
+    const nome = screen.getByLabelText<HTMLInputElement>('Nome')
+
+    expect(nome.value).toBe('Beatriz Lima')
+    // O e-mail é o da conta, embaixo do nome, e não se muda
+    expect(screen.getByText('teste@ufsc.br')).toBeTruthy()
+
+    fireEvent.change(nome, { target: { value: 'Beatriz Lima Souza' } })
+    expect(nome.value).toBe('Beatriz Lima Souza')
+  })
+
+  it('conta sem nome deixa o campo em branco, para a pessoa escrever', () => {
+    renderizar(<SolicitarAnimais />, 'pesquisador', '   ')
+
+    expect(screen.getByLabelText<HTMLInputElement>('Nome').value).toBe('')
   })
 })

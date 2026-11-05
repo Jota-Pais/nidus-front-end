@@ -91,6 +91,9 @@ export function SolicitarAnimais() {
   const { message } = App.useApp()
   const { usuario, perfil } = usePerfil()
   const pesquisador = perfil === 'pesquisador'
+  // O nome do pedido começa com o da conta, e a pessoa pode trocar. Vai no initialValues, que
+  // só vale na montagem: a tela só monta com a sessão lida (ProvedorDePerfil)
+  const nomeDaConta = usuario?.nome.trim()
   const [form] = Form.useForm<CamposDoPedido>()
   const catalogo = useCatalogo()
   const solicitacoes = useSolicitacoes()
@@ -142,7 +145,12 @@ export function SolicitarAnimais() {
             form={form}
             onFinish={enviar}
             disabled={criar.isPending}
-            initialValues={{ especie: 'rato', modoIdade: 'faixa', cronograma: 'unica' }}
+            initialValues={{
+              especie: 'rato',
+              modoIdade: 'faixa',
+              cronograma: 'unica',
+              ...(nomeDaConta ? { nomePesquisador: nomeDaConta } : {}),
+            }}
           >
             {falha.erro && (
               <div className="solicitacao__aviso">
@@ -154,7 +162,7 @@ export function SolicitarAnimais() {
             <div className="solicitacao__fileira">
               <Formulario.Campo
                 name="nomePesquisador"
-                rotulo="Pesquisador"
+                rotulo="Nome"
                 {...(usuario ? { ajuda: usuario.email } : {})}
                 rules={[{ validator: validadorDoPedido('nomePesquisador') }]}
                 className="solicitacao__campo--nome"
