@@ -145,7 +145,7 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
       <div className="kanban__status">
         {casal || estado !== 'livres' ? COLUNA[estado].legenda : 'Sem casal ativo'}
         {casal && (casal.partoAtual >= MAX_PARTOS_POR_CASAL || casal.encerrado) && (
-          <span className="kanban__ultimoParto">{casal.partoAtual >= MAX_PARTOS_POR_CASAL ? ' · Último parto' : ' · Casal encerrado'}</span>
+          <span className="kanban__ultimoParto">{casal.encerrado ? ' · Casal encerrado' : ' · Último parto'}</span>
         )}
       </div>
     </div>
