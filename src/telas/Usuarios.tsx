@@ -20,7 +20,7 @@ const SENHA = [
 
 /** As contas do sistema: o gestor cria, troca o perfil, desativa e redefine a senha */
 export function Usuarios() {
-  const { message } = App.useApp()
+  const { message, modal } = App.useApp()
   const { usuario: eu } = usePerfil()
   const usuarios = useUsuarios()
   const salvar = useSalvarUsuario()
@@ -35,6 +35,21 @@ export function Usuarios() {
         onError: (erro) => void message.error(erro.message),
       },
     )
+  }
+
+  function confirmar(
+    conta: Usuario,
+    dados: { perfil?: Perfil; ativo?: boolean },
+    titulo: string,
+    aviso: string,
+  ) {
+    void modal.confirm({
+      title: titulo,
+      content: `As sessões abertas de ${conta.nome} serão encerradas, e a pessoa precisará entrar de novo.`,
+      okText: 'Confirmar',
+      cancelText: 'Cancelar',
+      onOk: () => alterar(conta, dados, aviso),
+    })
   }
 
   return (
@@ -70,7 +85,12 @@ export function Usuarios() {
                     disabled={conta.id === eu?.id}
                     style={{ width: 150 }}
                     onChange={(perfil) =>
-                      alterar(conta, { perfil }, `Perfil de ${conta.nome} alterado.`)
+                      confirmar(
+                        conta,
+                        { perfil },
+                        `Mudar o perfil de ${conta.nome}?`,
+                        `Perfil de ${conta.nome} alterado.`,
+                      )
                     }
                   />
                 ),
@@ -83,11 +103,14 @@ export function Usuarios() {
                     checked={conta.ativo}
                     disabled={conta.id === eu?.id}
                     onChange={(ativo) =>
-                      alterar(
-                        conta,
-                        { ativo },
-                        `${conta.nome} ${ativo ? 'reativada' : 'desativada'}.`,
-                      )
+                      ativo
+                        ? alterar(conta, { ativo }, `${conta.nome} reativada.`)
+                        : confirmar(
+                            conta,
+                            { ativo },
+                            `Desativar a conta de ${conta.nome}?`,
+                            `${conta.nome} desativada.`,
+                          )
                     }
                   />
                 ),
