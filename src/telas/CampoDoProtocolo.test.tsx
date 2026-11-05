@@ -57,10 +57,10 @@ describe('campo do protocolo', { timeout: 20_000 }, () => {
     expect(await screen.findByText('Dígito verificador errado: confira o número')).toBeTruthy()
   })
 
-  it('a ajuda mostra os dois formatos', () => {
-    montar()
+  it('não tem ajuda embaixo: o formato só aparece na mensagem de quem erra', () => {
+    const campo = montar()
 
-    expect(screen.getByText('23080.XXXXXX/AAAA-XX')).toBeTruthy()
-    expect(screen.getByText(/Sistema CEUA \(10 dígitos\)/)).toBeTruthy()
+    expect(campo.closest('.ant-form-item')?.querySelector('.ant-form-item-extra')).toBeNull()
+    expect(screen.queryByText(/XXXXXX/)).toBeNull()
   })
 })

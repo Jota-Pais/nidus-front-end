@@ -8,19 +8,11 @@ import './CampoDoProtocolo.css'
 
 const conferir = validadorDoZod(protocoloCeua)
 
-/** Os dois formatos que a CEUA da UFSC usa, um em cada linha */
-const AJUDA = (
-  <>
-    Processo <span className="campoDoProtocolo__formato">23080.XXXXXX/AAAA-XX</span>
-    <br />
-    ou nº do Sistema CEUA (10&nbsp;dígitos)
-  </>
-)
-
 /**
  * O número do projeto CEUA: o protocolo no pedido de animais e o número no cadastro do projeto,
  * com a mesma regra nos dois, para o gestor não cadastrar um número que o pesquisador não
- * consegue digitar. Confere ao sair do campo, que é quando o número fica na forma da API
+ * consegue digitar. Confere ao sair do campo, que é quando o número fica na forma da API.
+ * Não tem ajuda embaixo: o rótulo diz o que é, e quem explica o formato é a mensagem de erro
  */
 export function CampoDoProtocolo({
   name,
@@ -35,7 +27,6 @@ export function CampoDoProtocolo({
     <Formulario.Campo
       name={name}
       rotulo={rotulo}
-      ajuda={AJUDA}
       // Só a marca de obrigatório, no formulário que a mostra: quem recusa o vazio é a regra
       required
       validateTrigger="onBlur"
