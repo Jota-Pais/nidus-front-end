@@ -51,6 +51,19 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     expect(screen.getAllByRole('button', { name: 'Registrar entrega' })).toHaveLength(1)
   })
 
+  it('o técnico e o gestor não veem o formulário de pedido', () => {
+    renderizar(<SolicitarAnimais />, 'gestor')
+
+    expect(screen.queryByRole('button', { name: 'Enviar solicitação' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Solicitações', level: 1 })).toBeTruthy()
+  })
+
+  it('o pesquisador vê o formulário de pedido', () => {
+    renderizar(<SolicitarAnimais />, 'pesquisador')
+
+    expect(screen.getByRole('button', { name: 'Enviar solicitação' })).toBeTruthy()
+  })
+
   it('o pesquisador não decide nem registra entrega', () => {
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
