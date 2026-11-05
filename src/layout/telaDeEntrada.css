@@ -2,10 +2,8 @@
  * Casca das telas de quem ainda não entrou: o login e a definição de senha.
  *
  * Não tem a casca da aplicação (faixa do topo e barra lateral): a página se
- * divide ao meio, com a foto do biotério à esquerda e o formulário à direita,
- * com a marca no alto. A página tem a altura da janela e não rola. O símbolo
- * da marca (`casca__marca`) vem de `appLayout.css`, o mesmo do `AppLayout`,
- * sem cópia.
+ * divide ao meio, com a logo e o que o sistema faz no azul, à esquerda, e o
+ * formulário à direita. A página tem a altura da janela e não rola.
  */
 
 .telaDeEntrada {
@@ -16,7 +14,7 @@
      `dvh`. */
   min-height: 100vh;
   min-height: 100dvh;
-  /* O corte diagonal da foto deixa ver o fundo da página, que tem de ser o
+  /* O corte diagonal do azul deixa ver o fundo da página, que tem de ser o
      mesmo branco do painel para o recorte emendar nele. */
   background: var(--cor-cartao);
 }
@@ -33,14 +31,6 @@
   max-width: 400px;
 }
 
-/* O mesmo nome da casca (`casca__nome`), escuro: lá ele fica sobre a faixa
-   azul, aqui sobre o painel branco. */
-.telaDeEntrada__nome {
-  font-family: var(--fonte-titulo);
-  font-size: 20px;
-  color: var(--cor-frente);
-}
-
 /* Link entre as telas de entrada: "Primeiro acesso", "Voltar para o login" */
 .telaDeEntrada__link {
   align-self: center;
@@ -54,27 +44,29 @@
 }
 
 /*
- * A divisa entre a foto e o formulário é um corte diagonal com uma faixa no
+ * A divisa entre o azul e o formulário é um corte diagonal com uma faixa no
  * gradiente da marca, verde em cima e azul embaixo. O elemento pinta o
- * gradiente recortado pelo contorno da diagonal; a foto, no `::after`, é
- * recortada pelo mesmo contorno recuado da largura da faixa. O que sobra
+ * gradiente recortado pelo contorno da diagonal; o azul, no `::before`, é
+ * recortado pelo mesmo contorno recuado da largura da faixa. O que sobra
  * entre os dois recortes é a faixa.
  */
-.telaDeEntrada__imagem {
+.telaDeEntrada__apresentacao {
   /* Quanto a divisa anda para a esquerda do alto até o pé da página */
   --divisa-inclinacao: 72px;
   --divisa-faixa: 8px;
 
   position: relative;
+  display: flex;
+  align-items: center;
   background: var(--gradiente-marca-vertical);
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--divisa-inclinacao)) 100%, 0 100%);
 }
 
-.telaDeEntrada__imagem::after {
+.telaDeEntrada__apresentacao::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/roedores.jpg') center / cover;
+  background: var(--cor-acento);
   clip-path: polygon(
     0 0,
     calc(100% - var(--divisa-faixa)) 0,
@@ -83,8 +75,34 @@
   );
 }
 
-/* Abaixo de 900px a foto sai: numa coluna só ela empurraria o formulário
-   para baixo e a página voltaria a rolar. */
+/* O `font-size` daqui é a altura do nome na logo, e cresce com a janela: 54px
+   em 900px, onde a metade azul aparece, até 80px a partir de uns 1330px. À
+   direita, a inclinação da divisa mais um respiro, para o texto não encostar
+   na faixa. */
+.telaDeEntrada__identidade {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 40px calc(var(--divisa-inclinacao) + 32px) 40px min(6vw, 96px);
+  font-size: min(6vw, 80px);
+}
+
+.telaDeEntrada__frase {
+  margin: 0;
+  font-size: min(2vw, 24px);
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--cor-acento-frente) 85%, transparent);
+}
+
+/* A logo no alto do formulário só aparece quando a metade azul sai */
+.telaDeEntrada__marca {
+  display: none;
+}
+
+/* Abaixo de 900px a metade azul sai: numa coluna só ela empurraria o
+   formulário para baixo e a página voltaria a rolar. */
 @media (max-width: 900px) {
   .telaDeEntrada {
     grid-template-columns: 1fr;
@@ -94,7 +112,15 @@
     padding: 24px 16px;
   }
 
-  .telaDeEntrada__imagem {
+  .telaDeEntrada__apresentacao {
     display: none;
+  }
+
+  .telaDeEntrada__marca {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 26px;
   }
 }

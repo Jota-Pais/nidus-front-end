@@ -1,25 +1,33 @@
 import type { ReactNode } from 'react'
-import { Etiqueta, Linha, Pilha } from '@/componentes'
+import { Etiqueta, Logo, Pilha } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
-import './appLayout.css'
 import './telaDeEntrada.css'
 
-/** Casca das telas de quem ainda não entrou: a foto à esquerda e o painel com a marca à direita */
+/**
+ * Casca das telas de quem ainda não entrou: a logo e o que o sistema faz na metade azul, à
+ * esquerda, e o formulário à direita. No celular a metade azul sai e a logo vai para o alto
+ * do formulário; as duas logos ficam no HTML e o CSS mostra uma de cada vez
+ */
 export function TelaDeEntrada({ children }: { children: ReactNode }) {
+  const ambiente = mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>
+
   return (
     <main className="telaDeEntrada">
-      <div className="telaDeEntrada__imagem" role="presentation" />
+      <div className="telaDeEntrada__apresentacao">
+        <div className="telaDeEntrada__identidade">
+          <Logo sobre="azul" />
+          <p className="telaDeEntrada__frase">Controle de produção de roedores</p>
+          {ambiente}
+        </div>
+      </div>
 
       <div className="telaDeEntrada__painel">
         <div className="telaDeEntrada__miolo">
           <Pilha espaco={24}>
-            {/* A mesma marca da faixa do `AppLayout`: deixa visível que é o
-                mesmo sistema antes de entrar. */}
-            <Linha espaco={12}>
-              <span className="casca__marca" aria-hidden="true" />
-              <span className="telaDeEntrada__nome">Nidus</span>
-              {mostrarRotuloDeAmbiente && <Etiqueta tom="atencao">{config.ambiente}</Etiqueta>}
-            </Linha>
+            <div className="telaDeEntrada__marca">
+              <Logo />
+              {ambiente}
+            </div>
 
             {children}
           </Pilha>

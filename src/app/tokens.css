@@ -39,6 +39,17 @@
      pequeno em cima; `acento` é o de trabalho, branco legível o percurso todo */
   --gradiente-marca-vertical: linear-gradient(to bottom, #009206, #003893);
   --gradiente-acento-horizontal: linear-gradient(to right, #003893, #0B5FD6);
+  /* O do emblema da logo. Do azul ao verde da marca, mas o azul segura até um terço e
+     o meio passa por um petróleo claro: a mistura direta dos dois daria um verde turvo */
+  --gradiente-emblema: linear-gradient(
+    96deg,
+    #003893 0%,
+    #01409A 33%,
+    #08658E 53%,
+    #0F886A 73%,
+    #0B9140 88%,
+    #009206 100%
+  );
 
   /* Tipografia */
   --fonte-titulo: "Calistoga", Georgia, "Times New Roman", serif;

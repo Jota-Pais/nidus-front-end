@@ -1,0 +1,37 @@
+/*
+ * A logo em medidas de `em`: quem usa define o `font-size`, que é a altura do nome,
+ * e o emblema e o espaço entre os dois acompanham.
+ */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.26em;
+}
+
+/* O círculo é o fundo do próprio SVG; o desenho dentro dele é só o rato, em branco */
+.logo__emblema {
+  flex: none;
+  width: 1.26em;
+  height: 1.26em;
+  border-radius: 50%;
+  background: var(--gradiente-emblema);
+  fill: #fff;
+}
+
+.logo__nome {
+  font-family: var(--fonte-titulo);
+  line-height: 1;
+}
+
+.logo--sobreClaro .logo__nome {
+  color: var(--cor-acento);
+}
+
+.logo--sobreAzul .logo__nome {
+  color: var(--cor-acento-frente);
+}
+
+/* O aro separa o lado azul do degradê do fundo azul */
+.logo--sobreAzul .logo__emblema {
+  box-shadow: 0 0 0 0.04em var(--cor-acento-frente);
+}
