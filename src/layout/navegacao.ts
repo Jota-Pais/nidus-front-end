@@ -18,7 +18,7 @@ const ITENS_DE_MENU: ItemDeMenu[] = [
   { rotulo: 'Histórico', caminho: '/historico', perfis: ['gestor'] },
 ]
 
-/** O que fica em Configurações, no cabeçalho, fora do menu do dia a dia */
+/** O que fica em Configurações, no menu da conta do cabeçalho, fora do menu do dia a dia */
 const ITENS_DE_CONFIGURACAO: ItemDeMenu[] = [
   { rotulo: 'Usuários', caminho: '/usuarios', perfis: ['gestor'] },
 ]
@@ -27,7 +27,7 @@ export function menuDoPerfil(perfil: Perfil): ItemDeMenu[] {
   return ITENS_DE_MENU.filter((item) => item.perfis.includes(perfil))
 }
 
-/** Vazio para quem não tem nada a configurar: aí o cabeçalho nem mostra a aba */
+/** Vazio para quem não tem nada a configurar: aí o menu da conta fica só com o Sair */
 export function configuracoesDoPerfil(perfil: Perfil): ItemDeMenu[] {
   return ITENS_DE_CONFIGURACAO.filter((item) => item.perfis.includes(perfil))
 }
