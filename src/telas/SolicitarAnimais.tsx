@@ -9,7 +9,6 @@ import {
   Entrada,
   Etiqueta,
   Formulario,
-  Linha,
   Pilha,
   Secao,
   Texto,
@@ -59,7 +58,7 @@ const STATUS: Record<StatusSolicitacao, { rotulo: string; tom: TomDeEtiqueta }> 
 
 /**
  * Os números do pedido: sem setas, só inteiros, teclado numérico no celular. O que o número
- * conta ("machos") vai dentro do campo, no suffix
+ * conta vai no rótulo do campo, em cima, e não dentro da caixa
  */
 const NUMERO = {
   className: 'solicitacao__numero',
@@ -117,7 +116,7 @@ export function SolicitarAnimais() {
     (machos > daLinhagem.total.m ||
       femeas > daLinhagem.total.f ||
       total > daLinhagem.total.m + daLinhagem.total.f)
-  // O que a colônia tem da linhagem, embaixo dos números, como ajuda do campo
+  // O que a colônia tem da linhagem, embaixo dos números
   const avisoDoEstoque =
     daLinhagem && total > 0
       ? passaDoEstoque
@@ -218,52 +217,59 @@ export function SolicitarAnimais() {
                   <CampoDeIdade />
                 </div>
 
-                {/* Quantos. Cada número é um item com nome, para o antd ligar o erro ao campo e o
-                    leitor de tela o ler. A regra da soma fica só em "machos", para sair uma vez, e
-                    olha os outros dois pelas dependências */}
-                <Formulario.Campo
-                  rotulo="Animais"
-                  {...(avisoDoEstoque ? { ajuda: avisoDoEstoque } : {})}
-                >
-                  <Linha espaco={12} estilo={{ alignItems: 'flex-start' }}>
-                    <Form.Item
-                      name="machos"
-                      className="solicitacao__item solicitacao__item--animais"
-                      dependencies={['femeas', 'qualquer']}
-                      rules={[
-                        { validator: validadorDoPedido('quantidade') },
-                        ({ getFieldsValue }) => ({
-                          validator: () =>
-                            temAnimal(getFieldsValue(['machos', 'femeas', 'qualquer']))
-                              ? Promise.resolve()
-                              : Promise.reject(new Error(PECA_UM_ANIMAL)),
-                        }),
-                      ]}
-                    >
-                      <InputNumber {...NUMERO} suffix="machos" aria-label="Machos" />
-                    </Form.Item>
+                {/* Quantos. Cada número é um campo com rótulo em cima, para o antd ligar o erro ao
+                    campo e o leitor de tela o ler. A regra da soma fica só em "Machos", para sair
+                    uma vez, e olha os outros dois pelas dependências */}
+                <div className="solicitacao__fileira solicitacao__fileira--animais">
+                  <Formulario.Campo
+                    name="machos"
+                    rotulo="Machos"
+                    className="solicitacao__campo--numero"
+                    dependencies={['femeas', 'qualquer']}
+                    rules={[
+                      { validator: validadorDoPedido('quantidade') },
+                      ({ getFieldsValue }) => ({
+                        validator: () =>
+                          temAnimal(getFieldsValue(['machos', 'femeas', 'qualquer']))
+                            ? Promise.resolve()
+                            : Promise.reject(new Error(PECA_UM_ANIMAL)),
+                      }),
+                    ]}
+                  >
+                    <InputNumber {...NUMERO} />
+                  </Formulario.Campo>
 
-                    <Form.Item
-                      name="femeas"
-                      className="solicitacao__item solicitacao__item--animais"
-                      rules={[{ validator: validadorDoPedido('quantidade') }]}
-                    >
-                      <InputNumber {...NUMERO} suffix="fêmeas" aria-label="Fêmeas" />
-                    </Form.Item>
+                  <Formulario.Campo
+                    name="femeas"
+                    rotulo="Fêmeas"
+                    className="solicitacao__campo--numero"
+                    rules={[{ validator: validadorDoPedido('quantidade') }]}
+                  >
+                    <InputNumber {...NUMERO} />
+                  </Formulario.Campo>
 
-                    <Form.Item
-                      name="qualquer"
-                      className="solicitacao__item solicitacao__item--qualquer"
-                      rules={[{ validator: validadorDoPedido('quantidade') }]}
-                    >
-                      <InputNumber {...NUMERO} suffix="qualquer sexo" aria-label="Qualquer sexo" />
-                    </Form.Item>
+                  <Formulario.Campo
+                    name="qualquer"
+                    rotulo="Qualquer sexo"
+                    className="solicitacao__campo--numero"
+                    rules={[{ validator: validadorDoPedido('quantidade') }]}
+                  >
+                    <InputNumber {...NUMERO} />
+                  </Formulario.Campo>
 
+                  {/* O rótulo vazio dá ao total a altura de um rótulo, e ele fica na linha das caixas */}
+                  <Formulario.Campo rotulo={<span aria-hidden>&nbsp;</span>}>
                     <Texto tom="secundario" className="solicitacao__unidade">
                       = {total} {total === 1 ? 'animal' : 'animais'}
                     </Texto>
-                  </Linha>
-                </Formulario.Campo>
+                  </Formulario.Campo>
+                </div>
+
+                {avisoDoEstoque && (
+                  <Texto tom="secundario" className="solicitacao__estoque">
+                    {avisoDoEstoque}
+                  </Texto>
+                )}
               </div>
 
               <div className="solicitacao__coluna">

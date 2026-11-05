@@ -1,5 +1,5 @@
 import { Form, InputNumber, Segmented } from 'antd'
-import { Formulario, Linha, Texto } from '@/componentes'
+import { Formulario } from '@/componentes'
 import type { ModoDeIdade } from '@/dominio/solicitacao'
 import { IDADE, conferirIdadeMaxima, validadorDeIdade } from './solicitacao.schema'
 import './Solicitacao.css'
@@ -9,13 +9,12 @@ const MODOS: { value: ModoDeIdade; label: string }[] = [
   { value: 'exata', label: 'Exata' },
 ]
 
-/** Dias inteiros, digitados: sem setas, com a unidade dentro do campo e teclado numérico */
+/** Dias inteiros, digitados: sem setas e com teclado numérico. A unidade vai no rótulo */
 const DIAS = {
   className: 'solicitacao__numero',
   controls: false,
   precision: 0,
   inputMode: 'numeric',
-  suffix: 'dias',
 } as const
 
 /**
@@ -24,11 +23,11 @@ const DIAS = {
  * some, e faixaDeIdade usa o mínimo como máximo.
  *
  * Os dias se digitam: o laboratório pede o dia exato, que um Slider de 21 a 300 não acerta,
- * menos ainda no celular. Cada número é um item com nome, e não um noStyle: é assim que o
- * antd liga a mensagem de erro ao campo (aria-describedby e aria-invalid), e o leitor de tela
- * a lê. Por isso a unidade vai no suffix do InputNumber, e não num Space.Compact, que pede o
- * número noStyle. Cada item tem a largura do seu número, e a mensagem quebra embaixo dele,
- * sem invadir o vizinho
+ * menos ainda no celular. Cada número é um campo com nome e rótulo em cima, e não um noStyle:
+ * é assim que o antd liga a mensagem de erro ao campo (aria-describedby e aria-invalid), e o
+ * leitor de tela a lê. A unidade vai no rótulo ("Idade mínima (dias)"), nunca dentro da caixa.
+ * Cada campo tem a largura do seu número, e a mensagem quebra embaixo dele, sem invadir o
+ * vizinho
  */
 export function CampoDeIdade({
   className,
@@ -42,53 +41,38 @@ export function CampoDeIdade({
   const exata = Form.useWatch('modoIdade', form) === 'exata'
 
   return (
-    <Formulario.Campo rotulo="Idade" {...(className ? { className } : {})}>
-      <Linha espaco={8} estilo={{ alignItems: 'flex-start' }}>
-        <Form.Item name="modoIdade" noStyle>
-          <Segmented<ModoDeIdade> options={MODOS} aria-label="Idade em faixa ou exata" />
-        </Form.Item>
+    <div className={['solicitacao__idade', className].filter(Boolean).join(' ')}>
+      <Formulario.Campo rotulo="Idade" name="modoIdade">
+        <Segmented<ModoDeIdade> options={MODOS} aria-label="Idade em faixa ou exata" />
+      </Formulario.Campo>
 
-        {/* "[20 dias] a [40 dias]" anda junto: se a linha quebrar, desce a faixa inteira */}
-        <span className="solicitacao__numeros">
-          <Form.Item
-            name="idadeMin"
-            className="solicitacao__item solicitacao__item--dias"
-            rules={[{ validator: validadorDeIdade(idadeMinima) }]}
-          >
-            <InputNumber
-              {...DIAS}
-              aria-label={exata ? 'Idade, em dias' : 'Idade mínima, em dias'}
-            />
-          </Form.Item>
+      <Formulario.Campo
+        name="idadeMin"
+        rotulo={exata ? 'Idade (dias)' : 'Idade mínima (dias)'}
+        className="solicitacao__campo--dias"
+        rules={[{ validator: validadorDeIdade(idadeMinima) }]}
+      >
+        <InputNumber {...DIAS} />
+      </Formulario.Campo>
 
-          {!exata && (
-            <>
-              <Texto tom="secundario" className="solicitacao__unidade">
-                a
-              </Texto>
-              <Form.Item
-                name="idadeMax"
-                className="solicitacao__item solicitacao__item--dias"
-                dependencies={['idadeMin']}
-                rules={[
-                  ({ getFieldValue }) => ({
-                    validator: (_, valor: number | null | undefined) => {
-                      const erro = conferirIdadeMaxima(
-                        getFieldValue('idadeMin'),
-                        valor,
-                        idadeMinima,
-                      )
-                      return erro ? Promise.reject(new Error(erro)) : Promise.resolve()
-                    },
-                  }),
-                ]}
-              >
-                <InputNumber {...DIAS} aria-label="Idade máxima, em dias" />
-              </Form.Item>
-            </>
-          )}
-        </span>
-      </Linha>
-    </Formulario.Campo>
+      {!exata && (
+        <Formulario.Campo
+          name="idadeMax"
+          rotulo="Idade máxima (dias)"
+          className="solicitacao__campo--dias"
+          dependencies={['idadeMin']}
+          rules={[
+            ({ getFieldValue }) => ({
+              validator: (_, valor: number | null | undefined) => {
+                const erro = conferirIdadeMaxima(getFieldValue('idadeMin'), valor, idadeMinima)
+                return erro ? Promise.reject(new Error(erro)) : Promise.resolve()
+              },
+            }),
+          ]}
+        >
+          <InputNumber {...DIAS} />
+        </Formulario.Campo>
+      )}
+    </div>
   )
 }

@@ -60,45 +60,52 @@
   font-family: var(--fonte-mono);
 }
 
-/* Os números levam dentro o que contam ("machos", "dias"), e ocupam o item inteiro */
+/* O número ocupa o campo inteiro; o que ele conta vai no rótulo, em cima */
 .solicitacao__numero {
   width: 100%;
 }
 
-/* Número dentro de um grupo com rótulo próprio: o respiro de baixo já é do grupo. A largura
-   é a do item, e não a do conteúdo: a mensagem de erro quebra embaixo do seu número, sem
-   alargá-lo e sem invadir o vizinho */
-.solicitacao__item {
-  margin-bottom: 0;
+/* Os campos de número têm a largura do que se digita: quatro dígitos para os animais, e o
+   rótulo "Idade mínima (dias)" inteiro para a idade. A mensagem de erro quebra embaixo do
+   seu campo, sem alargá-lo e sem invadir o vizinho */
+.solicitacao__campo--numero {
+  flex: 0 0 140px;
 }
 
-/* Três dígitos e "dias"; a fileira da idade (Faixa|Exata, mínimo a máximo) cabe no celular */
-.solicitacao__item--dias {
-  width: 104px;
+.solicitacao__campo--dias {
+  flex: 0 0 164px;
 }
 
-/* Quatro dígitos e o que contam: "machos" e "fêmeas", e o "qualquer sexo", mais longo */
-.solicitacao__item--animais {
-  width: 120px;
+/* O rótulo de um número cabe numa linha só, para as caixas da fileira ficarem na mesma altura */
+.solicitacao__campo--numero label,
+.solicitacao__campo--dias label {
+  white-space: nowrap;
 }
 
-.solicitacao__item--qualquer {
-  width: 168px;
+/* Animais: três números e o total na linha das caixas. Sem largura, o que sobra desce */
+.solicitacao__fileira--animais {
+  column-gap: 12px;
 }
 
-/* "[20 dias] a [40 dias]": os dois limites e o "a" entre eles andam juntos. Alinham pelo
-   topo para o erro embaixo de um número não desalinhar o outro */
-.solicitacao__numeros {
-  display: inline-flex;
-  align-items: flex-start;
-  gap: 8px;
+/* Idade: a escolha Faixa|Exata e os números na mesma linha; se não couber, o número desce
+   inteiro. As larguras são dos campos */
+.solicitacao__idade {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
 }
 
-/* O texto solto entre os números ("a", "= 5 animais") tem a altura do campo, e fica na linha
-   do texto dele */
+/* O texto solto ao lado dos números ("= 5 animais") tem a altura da caixa, e fica na linha
+   do texto dela */
 .solicitacao__unidade {
   line-height: var(--altura-de-controle);
   white-space: nowrap;
+}
+
+/* O aviso de estoque fica embaixo da fileira, com o respiro do campo */
+.solicitacao__estoque {
+  display: block;
+  margin-bottom: 24px;
 }
 
 .solicitacao__aviso {
@@ -113,8 +120,7 @@
 }
 
 /* Espécie, linhagem e idade da busca. A idade tem a largura do que mostra e, se não couber,
-   desce inteira para a linha de baixo, em vez de se partir; só no celular, onde nem sozinha
-   ela cabe, encolhe e põe os números embaixo de Faixa|Exata */
+   desce inteira para a linha de baixo, em vez de se partir */
 .busca__criterios {
   display: flex;
   flex-wrap: wrap;
