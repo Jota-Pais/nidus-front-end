@@ -49,6 +49,8 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
 
     expect(screen.getAllByRole('button', { name: 'Recusar' })).toHaveLength(1)
     expect(screen.getAllByRole('button', { name: 'Registrar entrega' })).toHaveLength(1)
+    // a equipe se refere ao pedido pelo número
+    expect(screen.getAllByRole('columnheader', { name: '#' }).length).toBeGreaterThan(0)
   })
 
   it('o técnico e o gestor não veem o formulário de pedido', () => {
@@ -64,9 +66,11 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     expect(screen.getByRole('button', { name: 'Enviar solicitação' })).toBeTruthy()
   })
 
-  it('o pesquisador não decide nem registra entrega', () => {
+  it('o pesquisador vê só as dele, sem o número do pedido, e não decide nem registra entrega', () => {
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
+    expect(screen.getByRole('heading', { name: 'Minhas solicitações' })).toBeTruthy()
+    expect(screen.queryByRole('columnheader', { name: '#' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Recusar' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Registrar entrega' })).toBeNull()
   })
