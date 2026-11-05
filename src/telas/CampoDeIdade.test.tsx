@@ -31,11 +31,11 @@ const ESPERA = { timeout: 5_000 }
 describe('CampoDeIdade', { timeout: 20_000 }, () => {
   it('cada número tem a sua mensagem, ligada a ele pelo aria-describedby', async () => {
     renderizar(<Pedido />)
-    digitar('Idade mínima, em dias', '10')
+    digitar('Idade mínima (dias)', '10')
     fireEvent.click(screen.getByRole('button', { name: 'Enviar' }))
 
-    const minimo = screen.getByLabelText('Idade mínima, em dias')
-    const maximo = screen.getByLabelText('Idade máxima, em dias')
+    const minimo = screen.getByLabelText('Idade mínima (dias)')
+    const maximo = screen.getByLabelText('Idade máxima (dias)')
     await waitFor(() => expect(descricao(minimo)).toBe('Mínimo de 21 dias'), ESPERA)
     expect(descricao(maximo)).toBe('Informe até que idade')
     expect(minimo.getAttribute('aria-invalid')).toBe('true')
@@ -44,21 +44,21 @@ describe('CampoDeIdade', { timeout: 20_000 }, () => {
 
   it('o máximo menor que o mínimo marca só o máximo', async () => {
     renderizar(<Pedido />)
-    digitar('Idade mínima, em dias', '40')
-    digitar('Idade máxima, em dias', '25')
+    digitar('Idade mínima (dias)', '40')
+    digitar('Idade máxima (dias)', '25')
     fireEvent.click(screen.getByRole('button', { name: 'Enviar' }))
 
-    const maximo = screen.getByLabelText('Idade máxima, em dias')
+    const maximo = screen.getByLabelText('Idade máxima (dias)')
     await waitFor(() => expect(descricao(maximo)).toBe('Menor que a idade inicial'), ESPERA)
     expect(maximo.getAttribute('aria-invalid')).toBe('true')
-    expect(screen.getByLabelText('Idade mínima, em dias').getAttribute('aria-invalid')).toBeNull()
+    expect(screen.getByLabelText('Idade mínima (dias)').getAttribute('aria-invalid')).toBeNull()
   })
 
   it('na idade exata o segundo número some', async () => {
     renderizar(<Pedido />)
     fireEvent.click(screen.getByText('Exata'))
 
-    await waitFor(() => expect(screen.queryByLabelText('Idade máxima, em dias')).toBeNull(), ESPERA)
-    expect(screen.getByLabelText('Idade, em dias')).toBeTruthy()
+    await waitFor(() => expect(screen.queryByLabelText('Idade máxima (dias)')).toBeNull(), ESPERA)
+    expect(screen.getByLabelText('Idade (dias)')).toBeTruthy()
   })
 })
