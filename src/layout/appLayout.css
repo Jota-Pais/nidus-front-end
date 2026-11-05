@@ -34,23 +34,36 @@
   color: var(--cor-marca-frente);
 }
 
-.casca__usuario {
+/* O menu da conta: no cabeçalho fica só o nome de quem entrou e a seta.
+   Configurações e Sair estão dentro do menu. O botão pode encolher abaixo do
+   tamanho do nome, para o nome ceder espaço no celular. */
+.casca__conta {
+  min-width: 0;
+}
+
+.casca__conta.botao--fantasma:not(:disabled) {
   color: var(--cor-marca-frente-suave);
 }
 
-.casca__sair.botao--fantasma:not(:disabled),
-.casca__config.botao--fantasma:not(:disabled) {
-  color: var(--cor-marca-frente-suave);
-}
-
-.casca__sair.botao--fantasma:not(:disabled):hover,
-.casca__config.botao--fantasma:not(:disabled):hover,
-.casca__config--ativa.botao--fantasma:not(:disabled) {
+/* Aberto, o botão fica com a cara do hover enquanto o menu está na tela. */
+.casca__conta.botao--fantasma:not(:disabled):hover,
+.casca__conta.botao--fantasma:not(:disabled)[aria-expanded='true'] {
   color: var(--cor-marca-frente);
   background: var(--cor-marca-hover);
 }
 
+/* Nome comprido não empurra nem quebra o cabeçalho: corta com reticências. No
+   computador para em 240px; no celular, onde acabar o espaço depois da marca. */
+.casca__usuario {
+  min-width: 0;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .casca__seta {
+  flex: none;
   font-size: 10px;
 }
 
@@ -77,15 +90,5 @@
 
   .casca__topo {
     padding-inline: 12px;
-  }
-}
-
-/* No celular o cabeçalho não cabe com o rótulo: fica só a engrenagem. E o nome
-   de quem entrou sai para ela caber; o Sair fica */
-@media (max-width: 576px) {
-  .casca__configTexto,
-  .casca__seta,
-  .casca__topo:has(.casca__config) .casca__usuario {
-    display: none;
   }
 }
