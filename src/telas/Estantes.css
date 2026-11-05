@@ -98,7 +98,7 @@
 }
 
 .posicao:focus-visible {
-  outline: 2px solid var(--cor-acento);
+  outline: 2px solid var(--cor-acao);
   outline-offset: 1px;
   z-index: 1;
 }

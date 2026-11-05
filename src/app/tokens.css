@@ -4,6 +4,9 @@
  * O que também está em `tokens.ts` (o lado do Ant Design) tem de ter o mesmo
  * valor nos dois, e `tokens.test.ts` confere. O nome da variável sai do nome
  * da constante em kebab-case: `COR.suaveFrente` → `--cor-suave-frente`.
+ *
+ * Cor só se escreve aqui. Componente e tela usam a variável, e o
+ * `tokens.test.ts` acusa cor literal em qualquer outro arquivo.
  */
 
 :root {
@@ -12,33 +15,57 @@
   --cor-frente: #000000;
   --cor-suave: #F1F4F8;
   --cor-suave-frente: #5A6570;
-  --cor-acento: #003893;
-  --cor-acento-frente: #FFFFFF;
-  --cor-institucional: #009206;
-  --cor-institucional-texto: #00700A;
   --cor-borda: #DCE3EC;
   --cor-cartao: #FFFFFF;
+
+  /* Ação: botão, link, foco, item ativo. Os estados e os tons claros saem dela
+     pela regra de `cor.ts`: 8% e 12% da cor do texto ao passar o mouse e ao
+     clicar; 10%, 16% e 30% dela sobre o cartão nos tons claros */
+  --cor-acao: #003893;
+  --cor-acao-frente: #FFFFFF;
+  --cor-acao-hover: color-mix(in srgb, var(--cor-acao-frente) 8%, var(--cor-acao));
+  --cor-acao-pressionada: color-mix(in srgb, var(--cor-acao-frente) 12%, var(--cor-acao));
+  --cor-acao-fundo: color-mix(in srgb, var(--cor-acao) 10%, var(--cor-cartao));
+  --cor-acao-fundo-hover: color-mix(in srgb, var(--cor-acao) 16%, var(--cor-cartao));
+  --cor-acao-borda: color-mix(in srgb, var(--cor-acao) 30%, var(--cor-cartao));
+
+  /* Marca: a metade azul do login e o cabeçalho. A própria cor de ação */
+  --cor-marca: var(--cor-acao);
+  --cor-marca-frente: #FFFFFF;
+  --cor-marca-frente-suave: color-mix(in srgb, var(--cor-marca-frente) 85%, var(--cor-marca));
+  --cor-marca-hover: color-mix(in srgb, var(--cor-marca-frente) 8%, var(--cor-marca));
+
+  /* Identidade: o verde da UFSC, com os tons claros pela mesma regra */
+  --cor-institucional: #009206;
+  --cor-institucional-texto: #00700A;
+  --cor-institucional-fundo: color-mix(in srgb, var(--cor-institucional) 10%, var(--cor-cartao));
+  --cor-institucional-borda: color-mix(in srgb, var(--cor-institucional) 30%, var(--cor-cartao));
 
   /* Retorno ao usuário — as três de apoio, escurecidas até passarem em AA */
   --cor-sucesso: #00700A;
   --cor-aviso: #6F6300;
   --cor-erro: #CC0007;
+  --cor-informacao: var(--cor-acao);
 
   /* Superfície de cada tom de retorno. A cor de texto e a de fundo sao
-     diferentes de proposito: ver tokens.ts */
+     diferentes de proposito: ver tokens.ts. Informação é a ação */
   --superficie-sucesso-fundo: #E9F7EB;
   --superficie-sucesso-borda: #B6E4BE;
   --superficie-aviso-fundo: #FFF8DB;
   --superficie-aviso-borda: #F5E08A;
   --superficie-erro-fundo: #FDEBEC;
   --superficie-erro-borda: #F5B5B8;
-  --superficie-informacao-fundo: #E4EDFA;
-  --superficie-informacao-borda: #AFC8EC;
+  --superficie-informacao-fundo: var(--cor-acao-fundo);
+  --superficie-informacao-borda: var(--cor-acao-borda);
 
   /* Gradientes. `marca` é a assinatura (verde → azul) e não aceita texto
-     pequeno em cima; `acento` é o de trabalho, branco legível o percurso todo */
-  --gradiente-marca-vertical: linear-gradient(to bottom, #009206, #003893);
-  --gradiente-acento-horizontal: linear-gradient(to right, #003893, #0B5FD6);
+     pequeno em cima; `acao` é o do botão primário, branco legível o percurso todo */
+  --gradiente-marca-vertical: linear-gradient(
+    to bottom,
+    var(--cor-institucional),
+    var(--cor-marca)
+  );
+  --gradiente-acao-horizontal: linear-gradient(to right, var(--cor-acao), #0B5FD6);
   /* O do emblema da logo. Do azul ao verde da marca, mas o azul segura até um terço e
      o meio passa por um petróleo claro: a mistura direta dos dois daria um verde turvo */
   --gradiente-emblema: linear-gradient(
@@ -66,7 +93,7 @@
   --sombra-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   --sombra-md: 0 4px 6px rgba(0, 0, 0, 0.07);
   --sombra-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
-  --sombra-acento-forte: 0 8px 24px rgba(0, 56, 147, 0.35);
+  --sombra-acao-forte: 0 8px 24px rgba(0, 56, 147, 0.35);
 
   /* Métrica: a altura de campos e botões, a mesma do tema do Ant Design. A solicitação
      alinha a palavra ao lado do número ("machos") por ela */
@@ -77,26 +104,27 @@
   --movimento-rapido: 200ms;
   --movimento-normal: 300ms;
 
-  /* Superfície por coluna do kanban. A grade de estantes usa as mesmas. */
-  --estado-livres-fundo: #E9F7EB;
-  --estado-livres-borda: #B6E4BE;
-  --estado-livres-texto: #00600A;
+  /* Superfície por coluna do kanban. A grade de estantes usa as mesmas. Só a
+     Reserva tem cor própria; as outras repetem um tom que já diz a mesma coisa */
+  --estado-livres-fundo: var(--superficie-sucesso-fundo);
+  --estado-livres-borda: var(--superficie-sucesso-borda);
+  --estado-livres-texto: var(--cor-sucesso);
 
-  --estado-pre_reserva-fundo: #FFF8DB;
-  --estado-pre_reserva-borda: #F5E08A;
-  --estado-pre_reserva-texto: #6F5B00;
+  --estado-pre_reserva-fundo: var(--superficie-aviso-fundo);
+  --estado-pre_reserva-borda: var(--superficie-aviso-borda);
+  --estado-pre_reserva-texto: var(--cor-aviso);
 
-  --estado-estoque-fundo: #E4EDFA;
-  --estado-estoque-borda: #AFC8EC;
-  --estado-estoque-texto: #003893;
+  --estado-estoque-fundo: var(--cor-acao-fundo);
+  --estado-estoque-borda: var(--cor-acao-borda);
+  --estado-estoque-texto: var(--cor-acao);
 
   --estado-reserva-fundo: #FFEEE0;
   --estado-reserva-borda: #F7CBA4;
   --estado-reserva-texto: #8A4300;
 
-  --estado-enviado-fundo: #F2F4F7;
-  --estado-enviado-borda: #DCE3EC;
-  --estado-enviado-texto: #5A6570;
+  --estado-enviado-fundo: var(--cor-suave);
+  --estado-enviado-borda: var(--cor-borda);
+  --estado-enviado-texto: var(--cor-suave-frente);
 }
 
 /* ------------------------------------------------------------------------ *

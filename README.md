@@ -53,6 +53,15 @@ também chaves que só o CSS usa. O `tokens.test.ts` confere que o valor
 presente nos dois é o mesmo. A cor de cada coluna do kanban também é token
 (`--estado-livres-fundo` e companhia), e a grade de estantes usa a mesma.
 
+A paleta tem uma cor de ação, o azul da UFSC: botão, link, foco, item ativo.
+Os estados dela (passar o mouse, clicar) e os tons claros (fundo e contorno de
+etiqueta, rótulo, menu ativo e aviso de informação) não são escolhidos à mão.
+Saem da cor pela regra de `src/app/cor.ts`, que o `tokens.css` escreve com
+`color-mix`, e o tema do Ant Design recebe a família inteira. Trocar a cor de
+ação é mudar uma linha em cada arquivo de tokens. Cor literal só existe nesses
+arquivos: o `tokens.test.ts` falha se aparecer em componente ou tela, e também
+confere o contraste de cada texto sobre o fundo em que aparece.
+
 O login é por cookie de sessão `httpOnly`, então toda chamada vai com
 `credentials: 'include'` (ver `src/lib/api.ts`).
 

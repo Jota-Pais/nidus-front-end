@@ -67,7 +67,7 @@
 .ficha__casal {
   padding: 10px 12px;
   background: var(--superficie-informacao-fundo);
-  border-left: 3px solid var(--cor-acento);
+  border-left: 3px solid var(--cor-informacao);
   border-radius: var(--raio-sm);
 }
 

@@ -5,7 +5,8 @@ import './estilos.css'
  * Os tons da paleta institucional. 'neutro' é o padrão - etiqueta colorida
  * demais deixa de marcar coisa nenhuma
  */
-export type TomDeEtiqueta = 'neutro' | 'acento' | 'institucional' | 'sucesso' | 'atencao' | 'erro'
+export type TomDeEtiqueta =
+  'neutro' | 'informacao' | 'institucional' | 'sucesso' | 'atencao' | 'erro'
 
 /** etiqueta. */
 export function Etiqueta({

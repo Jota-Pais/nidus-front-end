@@ -41,18 +41,18 @@ h3 {
 }
 
 /*
- * Foco de teclado sempre visível. O anel usa o acento, como o design system
+ * Foco de teclado sempre visível. O anel usa a cor de ação, como o design system
  * pede, e tem deslocamento para não colar na borda do controle.
  */
 :focus-visible {
-  outline: 2px solid var(--cor-acento);
+  outline: 2px solid var(--cor-acao);
   outline-offset: 2px;
   border-radius: var(--raio-sm);
 }
 
-/* Seleção de texto no azul institucional, em vez do azul do sistema. */
+/* Seleção de texto num tom da cor de ação, em vez do azul do sistema. */
 ::selection {
-  background: color-mix(in srgb, var(--cor-acento) 16%, transparent);
+  background: var(--cor-acao-fundo-hover);
 }
 
 /* Legenda das cores de parto, a mesma no kanban, na grade e na ficha */
@@ -78,8 +78,8 @@ h3 {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--cor-cartao);
+  box-shadow: 0 0 0 1px var(--cor-borda);
 }
 
 .parto {

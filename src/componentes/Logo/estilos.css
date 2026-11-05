@@ -15,7 +15,7 @@
   height: 1.26em;
   border-radius: 50%;
   background: var(--gradiente-emblema);
-  fill: #fff;
+  fill: var(--cor-marca-frente);
 }
 
 .logo__nome {
@@ -24,14 +24,14 @@
 }
 
 .logo--sobreClaro .logo__nome {
-  color: var(--cor-acento);
+  color: var(--cor-marca);
 }
 
 .logo--sobreAzul .logo__nome {
-  color: var(--cor-acento-frente);
+  color: var(--cor-marca-frente);
 }
 
 /* O aro separa o lado azul do degradê do fundo azul */
 .logo--sobreAzul .logo__emblema {
-  box-shadow: 0 0 0 0.04em var(--cor-acento-frente);
+  box-shadow: 0 0 0 0.04em var(--cor-marca-frente);
 }

@@ -53,8 +53,8 @@ const ESPECIES: { value: CodigoEspecie; label: string }[] = [
 
 const STATUS: Record<StatusSolicitacao, { rotulo: string; tom: TomDeEtiqueta }> = {
   rascunho: { rotulo: 'Rascunho', tom: 'neutro' },
-  enviada: { rotulo: 'Aguardando análise', tom: 'acento' },
-  em_analise: { rotulo: 'Em análise', tom: 'acento' },
+  enviada: { rotulo: 'Aguardando análise', tom: 'informacao' },
+  em_analise: { rotulo: 'Em análise', tom: 'informacao' },
   aprovada: { rotulo: 'Caixas alocadas', tom: 'sucesso' },
   recusada: { rotulo: 'Recusada', tom: 'erro' },
   ajustada: { rotulo: 'Ajustada', tom: 'atencao' },
