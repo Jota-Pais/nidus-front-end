@@ -144,9 +144,13 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
 
       {casal && casal.ninhadas.length > 0 && (
         <ul className="kanban__ninhadas" aria-label="Animais na caixa">
-          {casal.ninhadas.map((ninhada) => (
-            <li key={ninhada.parto}>
-              <span>{ninhada.parto}º</span>
+          {casal.ninhadas.map((ninhada, indice) => (
+            // o mesmo parto pode vir de dois casais: a ninhada de um casal de antes leva o nome dele
+            <li key={`${indice}-${ninhada.casal}-${ninhada.parto}`}>
+              <span>
+                {ninhada.casal !== casal.identificacao && `${ninhada.casal} `}
+                {ninhada.parto}º
+              </span>
               <span>
                 {ninhada.m} M · {ninhada.f} F
               </span>

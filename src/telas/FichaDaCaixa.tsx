@@ -15,7 +15,7 @@ import {
   useRegistrarNaFicha,
 } from '@/dominio/consultas'
 import type { CasalNovo, EventoCorrigivel } from '@/dominio/consultas'
-import type { CodigoEspecie, Ficha, Parto } from '@/dominio/tipos'
+import type { Casal, CodigoEspecie, Ficha, Parto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { motivoDaFalha, useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { descreverDias, formatarData, hoje, idadeEmDias } from '@/lib/data'
@@ -48,9 +48,13 @@ export function FichaDaCaixa({
   const [idCriado, setIdCriado] = useState<number | null>(null)
   const id = idCaixa ?? idCriado
   const ficha = useFicha(id)
-  const [escolhido, setEscolhido] = useState<number | null>(null)
+  const [escolhido, setEscolhido] = useState<Escolha | null>(null)
 
-  const partoAtivo = escolhido ?? partoEmAndamento(ficha.data?.partos ?? [])
+  const escolha = escolhido ?? escolhaInicial(ficha.data)
+  const partoAtivo = escolha.ordem
+  // parto de um casal de antes: a ninhada e a reserva são as dele, e o resto da ficha é da caixa
+  const anterior = ficha.data?.anteriores.find((a) => a.casal.id === escolha.idCasal)
+  const vista = ficha.data && anterior ? { ...ficha.data, casal: anterior.casal, partos: anterior.partos } : ficha.data
   const endereco = ficha.data?.caixa.endereco ?? posicaoVazia
 
   function fechar() {
@@ -102,36 +106,55 @@ export function FichaDaCaixa({
         </div>
       ) : (
         <EstadoDaConsulta consulta={ficha}>
-          {ficha.data && (
+          {ficha.data && vista && (
             <>
               <div className="ficha__partos">
                 <Texto tom="rotulo">Parto</Texto>
-                {COR_DO_PARTO.map(({ cor, frente }, indice) => {
-                  const ordem = indice + 1
-                  const ativo = ordem === partoAtivo
-                  return (
-                    <button
-                      key={cor}
-                      type="button"
-                      className="ficha__parto"
-                      style={
-                        ativo
-                          ? { backgroundColor: cor, borderColor: cor, color: frente }
-                          : { borderLeftColor: cor, borderLeftWidth: 4 }
-                      }
-                      onClick={() => setEscolhido(ordem)}
-                    >
-                      {ordem}º
-                    </button>
-                  )
-                })}
+                {COR_DO_PARTO.map(({ cor }, indice) => (
+                  <BotaoDoParto
+                    key={cor}
+                    ordem={indice + 1}
+                    ativo={escolha.idCasal === null && indice + 1 === partoAtivo}
+                    aoEscolher={() => setEscolhido({ idCasal: null, ordem: indice + 1 })}
+                  />
+                ))}
               </div>
+              {/* as ninhadas que um casal encerrado deixou na caixa continuam nela */}
+              {ficha.data.anteriores.map(({ casal, partos }) => (
+                <div key={casal.id} className="ficha__partos">
+                  <Texto tom="rotulo">Ninhadas do casal {casal.identificacao} (encerrado)</Texto>
+                  {partos.map((parto) => (
+                    <BotaoDoParto
+                      key={parto.id}
+                      ordem={parto.ordem}
+                      ativo={escolha.idCasal === casal.id && parto.ordem === partoAtivo}
+                      aoEscolher={() => setEscolhido({ idCasal: casal.id, ordem: parto.ordem })}
+                    />
+                  ))}
+                </div>
+              ))}
 
               <Tabs
                 items={[
-                  { key: 'reproducao', label: 'Reprodução', children: <AbaReproducao ficha={ficha.data} ordem={partoAtivo} /> },
-                  { key: 'ninhada', label: 'Ninhada', children: <AbaNinhada ficha={ficha.data} ordem={partoAtivo} /> },
-                  { key: 'agrupamento', label: 'Agrupamento', children: <AbaAgrupamento ficha={ficha.data} ordem={partoAtivo} /> },
+                  {
+                    key: 'reproducao',
+                    label: 'Reprodução',
+                    children: (
+                      <AbaReproducao
+                        ficha={ficha.data}
+                        ordem={partoAtivo}
+                        parto={partoDaOrdem(vista, partoAtivo)}
+                        casalDeAntes={anterior?.casal ?? null}
+                      />
+                    ),
+                  },
+                  {
+                    key: 'ninhada',
+                    label: 'Ninhada',
+                    // remonta a cada parto escolhido: o formulário aberto é do parto que estava na tela
+                    children: <AbaNinhada key={`${escolha.idCasal ?? 'atual'}-${partoAtivo}`} ficha={vista} ordem={partoAtivo} />,
+                  },
+                  { key: 'agrupamento', label: 'Agrupamento', children: <AbaAgrupamento ficha={vista} ordem={partoAtivo} /> },
                   { key: 'eventos', label: 'Eventos', children: <AbaEventos ficha={ficha.data} /> },
                 ]}
               />
@@ -161,15 +184,46 @@ function Total({ children }: { children: ReactNode }) {
   return <div className="ficha__total">{children}</div>
 }
 
+/** O parto escolhido no seletor: do casal da caixa (idCasal null) ou de um casal de antes */
+interface Escolha {
+  idCasal: number | null
+  ordem: number
+}
+
+/** O parto que já nasceu e ainda não desmamou: é nele que o técnico registra seleção e desmame */
+function emAndamento(partos: Parto[]): Parto | undefined {
+  return [...partos].reverse().find((parto) => parto.dtPartoReal !== null && parto.dtDesmameReal === null)
+}
+
 /**
- * Onde o seletor abre: no parto que já nasceu e ainda não desmamou (é nele que o técnico
- * registra seleção e desmame), senão no mais recente
+ * Onde o seletor abre: no parto em andamento do casal da caixa, senão no de um casal de antes
+ * que deixou ninhada nela, senão no parto mais recente
  */
-function partoEmAndamento(partos: Parto[]): number {
-  const pendente = [...partos]
-    .reverse()
-    .find((parto) => parto.dtPartoReal !== null && parto.dtDesmameReal === null)
-  return pendente?.ordem ?? partos.at(-1)?.ordem ?? 1
+function escolhaInicial(ficha: Ficha | undefined): Escolha {
+  const doCasal = emAndamento(ficha?.partos ?? [])
+  if (doCasal) return { idCasal: null, ordem: doCasal.ordem }
+
+  for (const { casal, partos } of ficha?.anteriores ?? []) {
+    const deAntes = emAndamento(partos)
+    if (deAntes) return { idCasal: casal.id, ordem: deAntes.ordem }
+  }
+
+  return { idCasal: null, ordem: ficha?.partos.at(-1)?.ordem ?? 1 }
+}
+
+function BotaoDoParto({ ordem, ativo, aoEscolher }: { ordem: number; ativo: boolean; aoEscolher: () => void }) {
+  const { cor, frente } = corDoParto(ordem)
+
+  return (
+    <button
+      type="button"
+      className="ficha__parto"
+      style={ativo ? { backgroundColor: cor, borderColor: cor, color: frente } : { borderLeftColor: cor, borderLeftWidth: 4 }}
+      onClick={aoEscolher}
+    >
+      {ordem}º
+    </button>
+  )
 }
 
 function partoDaOrdem(ficha: Ficha, ordem: number): Parto | undefined {
@@ -181,9 +235,19 @@ function aguardando(ordem: number): string {
   return ordem === 1 ? 'Informe o acasalamento' : 'Parto real anterior + 6 dias'
 }
 
-function AbaReproducao({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
+function AbaReproducao({
+  ficha,
+  ordem,
+  parto,
+  casalDeAntes,
+}: {
+  ficha: Ficha
+  ordem: number
+  parto: Parto | undefined
+  /** o parto escolhido é de um casal que veio antes do da caixa */
+  casalDeAntes: Casal | null
+}) {
   const { caixa, casal } = ficha
-  const parto = partoDaOrdem(ficha, ordem)
   const confirmados = ficha.partos.filter((p) => p.dtPartoReal !== null).length
 
   return (
@@ -219,7 +283,7 @@ function AbaReproducao({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
 
       <h3>
         Datas previstas — <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(ordem).cor }} />{' '}
-        {ordem}º parto
+        {ordem}º parto{casalDeAntes && ` do casal ${casalDeAntes.identificacao}`}
       </h3>
       <LadoALado>
         <Campo rotulo="Acasalamento" destaque={!!parto}>

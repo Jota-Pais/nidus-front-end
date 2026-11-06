@@ -23,8 +23,8 @@ const quadro: Quadro = {
           partoPrevisto: '2026-11-20',
           encerrado: false,
           ninhadas: [
-            { parto: 1, m: 1, f: 0, idadeDias: 10 },
-            { parto: 2, m: 2, f: 0, idadeDias: 0 },
+            { casal: 'AB', parto: 1, m: 1, f: 0, idadeDias: 10 },
+            { casal: 'AB', parto: 2, m: 2, f: 0, idadeDias: 0 },
           ],
         }),
         card(2, {
@@ -48,6 +48,14 @@ const quadro: Quadro = {
           partoPrevisto: null,
           encerrado: false,
           ninhadas: [],
+        }),
+        // casal novo numa caixa onde o casal encerrado deixou a ninhada do 5º parto
+        card(6, {
+          identificacao: 'EA',
+          partoAtual: 1,
+          partoPrevisto: '2026-11-30',
+          encerrado: false,
+          ninhadas: [{ casal: 'DE', parto: 5, m: 3, f: 4, idadeDias: 10 }],
         }),
       ],
     },
@@ -81,6 +89,13 @@ describe('card do kanban', () => {
     const [ninhadas] = screen.getAllByRole('list', { name: 'Animais na caixa' })
     expect(ninhadas?.textContent).toContain('1 M · 0 F10 dias')
     expect(ninhadas?.textContent).toContain('2 M · 0 F0 dias')
+  })
+
+  it('casal novo não esconde a ninhada que o casal encerrado deixou na caixa', () => {
+    renderizar(<Kanban />)
+
+    const listas = screen.getAllByRole('list', { name: 'Animais na caixa' })
+    expect(listas.at(-1)?.textContent).toContain('DE 5º3 M · 4 F10 dias')
   })
 
   it('caixa livre sem casal diz que não tem casal ativo', () => {
