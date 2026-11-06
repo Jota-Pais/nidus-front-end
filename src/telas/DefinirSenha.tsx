@@ -1,7 +1,7 @@
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
 import { App, Form } from 'antd'
 import { useState } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Aviso, Botao, CabecalhoDaTela, Entrada, Formulario, Linha } from '@/componentes'
 import { useDefinirSenha, usePedirCodigo, useVerificarCodigo } from '@/auth/acesso'
 import { usePerfil } from '@/auth/contexto'
@@ -14,11 +14,23 @@ import { ErroDeApi } from '@/lib/api'
 import { TAMANHO_MINIMO_DA_SENHA, acesso, validadorDeAcesso } from './acesso.schema'
 import './DefinirSenha.css'
 
-/** Em que etapa a pessoa está. Cada etapa carrega o que a anterior confirmou */
+/**
+ * Em que etapa a pessoa está. Cada etapa carrega o que a anterior confirmou. A validade só se
+ * sabe quando o código foi pedido nesta tela: quem chega com o código na mão não tem
+ */
 type Etapa =
   | { qual: 'email'; email?: string }
-  | { qual: 'codigo'; email: string; validadeEmMinutos: number; aviso?: string }
-  | { qual: 'senha'; email: string; validadeEmMinutos: number; codigo: string; novo: boolean }
+  | { qual: 'codigo'; email: string; validadeEmMinutos?: number; aviso?: string }
+  | { qual: 'senha'; email: string; codigo: string; novo: boolean }
+
+/**
+ * O link do e-mail do código traz o endereço (?email=): quem chega por ele já tem o código e vai
+ * direto digitar. Sem isso, pediria outro código, que anula o primeiro e manda mais um e-mail
+ */
+function etapaInicial(emailDoLink: string | null): Etapa {
+  const email = acesso.shape.email.safeParse(emailDoLink ?? '')
+  return email.success ? { qual: 'codigo', email: email.data } : { qual: 'email' }
+}
 
 /**
  * Primeiro acesso e senha esquecida. O código que chega no e-mail prova que a
@@ -29,7 +41,8 @@ export function DefinirSenha() {
   const navegar = useNavigate()
   // O destino que o login recebeu da rota protegida, para quem veio de um link
   const { state } = useLocation()
-  const [etapa, setEtapa] = useState<Etapa>({ qual: 'email' })
+  const [busca] = useSearchParams()
+  const [etapa, setEtapa] = useState<Etapa>(() => etapaInicial(busca.get('email')))
 
   const destino = (perfilDoUsuario: Perfil) => destinoAposLogin(state, perfilDoUsuario)
 
@@ -43,22 +56,19 @@ export function DefinirSenha() {
           aoEnviar={(email, validadeEmMinutos) =>
             setEtapa({ qual: 'codigo', email, validadeEmMinutos })
           }
+          aoJaTerCodigo={(email) => setEtapa({ qual: 'codigo', email })}
         />
       )}
 
       {etapa.qual === 'codigo' && (
         <EtapaDoCodigo
           email={etapa.email}
-          validadeEmMinutos={etapa.validadeEmMinutos}
+          {...(etapa.validadeEmMinutos === undefined
+            ? {}
+            : { validadeEmMinutos: etapa.validadeEmMinutos })}
           {...(etapa.aviso === undefined ? {} : { aviso: etapa.aviso })}
           aoConferir={(codigo, novo) =>
-            setEtapa({
-              qual: 'senha',
-              email: etapa.email,
-              validadeEmMinutos: etapa.validadeEmMinutos,
-              codigo,
-              novo,
-            })
+            setEtapa({ qual: 'senha', email: etapa.email, codigo, novo })
           }
           // Quem troca quase sempre quer corrigir um erro de digitação: o e-mail volta junto
           aoTrocarEmail={() => setEtapa({ qual: 'email', email: etapa.email })}
@@ -72,14 +82,7 @@ export function DefinirSenha() {
           novo={etapa.novo}
           // O perfil vem do servidor, nunca da tela
           aoEntrar={(usuario) => navegar(destino(usuario.perfil), { replace: true })}
-          aoVencerCodigo={(aviso) =>
-            setEtapa({
-              qual: 'codigo',
-              email: etapa.email,
-              validadeEmMinutos: etapa.validadeEmMinutos,
-              aviso,
-            })
-          }
+          aoVencerCodigo={(aviso) => setEtapa({ qual: 'codigo', email: etapa.email, aviso })}
         />
       )}
 
@@ -93,9 +96,12 @@ export function DefinirSenha() {
 function EtapaDoEmail({
   emailAnterior,
   aoEnviar,
+  aoJaTerCodigo,
 }: {
   emailAnterior?: string
   aoEnviar: (email: string, validadeEmMinutos: number) => void
+  /** Quem já recebeu o código (a conta criada pelo gestor recebe sozinha) vai digitá-lo */
+  aoJaTerCodigo: (email: string) => void
 }) {
   const [form] = Form.useForm<{ email: string }>()
   const pedir = usePedirCodigo()
@@ -108,6 +114,14 @@ function EtapaDoEmail({
       onSuccess: ({ validadeEmMinutos }) => aoEnviar(email, validadeEmMinutos),
       onError: falha.mostrar,
     })
+  }
+
+  // Sem pedir código novo: ele anularia o que a pessoa já tem
+  function jaTenhoCodigo() {
+    form.validateFields(['email']).then(
+      ({ email }) => aoJaTerCodigo(acesso.shape.email.parse(email)),
+      () => {},
+    )
   }
 
   return (
@@ -145,6 +159,10 @@ function EtapaDoEmail({
           Enviar código
         </Botao>
       </Formulario>
+
+      <Botao variante="fantasma" block onClick={jaTenhoCodigo} disabled={pedir.isPending}>
+        Já tenho um código
+      </Botao>
     </>
   )
 }
@@ -157,7 +175,8 @@ function EtapaDoCodigo({
   aoTrocarEmail,
 }: {
   email: string
-  validadeEmMinutos: number
+  /** Só quando o código acabou de ser pedido nesta tela */
+  validadeEmMinutos?: number
   /** Por que a pessoa voltou para cá, quando o código venceu na etapa da senha */
   aviso?: string
   aoConferir: (codigo: string, novo: boolean) => void
@@ -197,7 +216,11 @@ function EtapaDoCodigo({
     <>
       <CabecalhoDaTela
         titulo="Confira o seu e-mail"
-        descricao={`Enviamos um código de 6 números para ${email}. Ele vale por ${validadeEmMinutos} minutos.`}
+        descricao={
+          validadeEmMinutos === undefined
+            ? `Digite o código de 6 números que enviamos para ${email}.`
+            : `Enviamos um código de 6 números para ${email}. Ele vale por ${validadeEmMinutos} minutos.`
+        }
       />
 
       {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
