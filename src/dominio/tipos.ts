@@ -99,7 +99,10 @@ export interface Parto {
   desmamadoM: number | null
   desmamadoF: number | null
   disponivel: PorSexo
+  /** reservado para uma solicitação e ainda na caixa */
   comprometido: PorSexo
+  /** já saiu da caixa: a entrega da solicitação foi registrada */
+  entregue: PorSexo
 }
 
 export interface Casal {
