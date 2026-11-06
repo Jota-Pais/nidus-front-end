@@ -23,11 +23,16 @@ interface CasalNoCard {
   partoAtual: number
   partoPrevisto: DataISO | null
   encerrado: boolean
-  /** só as ninhadas que já nasceram: o que existe de cada uma e a idade de hoje */
+  /**
+   * só as ninhadas que já nasceram: o que existe de cada uma e a idade de hoje. Inclui as que um
+   * casal encerrado deixou na caixa
+   */
   ninhadas: NinhadaNoCard[]
 }
 
 export interface NinhadaNoCard {
+  /** o casal que teve a ninhada: o da caixa, ou um que veio antes dele */
+  casal: string
   parto: number
   m: number
   f: number
@@ -131,6 +136,8 @@ export interface Ficha {
   casal: Casal | null
   /** do 1º ao último registrado - no máximo 5 */
   partos: Parto[]
+  /** casais de antes que deixaram ninhada na caixa, com os partos que nasceram */
+  anteriores: { casal: Casal; partos: Parto[] }[]
   eventos: { dataHora: string; tipo: string; descricao: string; autor: string }[]
 }
 

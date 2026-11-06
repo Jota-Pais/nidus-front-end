@@ -47,6 +47,7 @@ const fichaDe = (parcial: Partial<Ficha> = {}): Ficha => ({
   },
   casal: casal(1, 'AB', true),
   partos: [parto()],
+  anteriores: [],
   eventos: [],
   ...parcial,
 })
@@ -120,5 +121,20 @@ describe('formulários da ficha', { timeout: 20_000 }, () => {
 
     expect(await screen.findByText('Este casal ja esta encerrado.', {}, DEMORA)).toBeTruthy()
     expect(screen.queryByText('Confira os campos destacados.')).toBeNull()
+  })
+})
+
+describe('casal novo na caixa', { timeout: 20_000 }, () => {
+  it('a ficha continua mostrando a ninhada do casal encerrado e abre nela, que ainda falta desmamar', async () => {
+    banco.ficha = fichaDe({
+      casal: casal(2, 'CD', true),
+      partos: [parto({ id: 20, dtPartoReal: null, nascidoM: null, nascidoF: null, dtSelecao: null })],
+      anteriores: [{ casal: casal(1, 'AB', false), partos: [parto({ id: 15, ordem: 5 })] }],
+    })
+
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+
+    expect(await screen.findByText('Ninhadas do casal AB (encerrado)')).toBeTruthy()
+    expect(screen.getByText(/5º parto do casal AB/)).toBeTruthy()
   })
 })

@@ -166,9 +166,10 @@
   color: var(--cor-suave-frente);
 }
 
+/* a primeira coluna cabe o parto com o casal de antes: "AB 5º" */
 .kanban__ninhadas li {
   display: grid;
-  grid-template-columns: 2.5em 1fr auto;
+  grid-template-columns: 3em 1fr auto;
   gap: 8px;
 }
 
