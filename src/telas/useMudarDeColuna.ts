@@ -6,6 +6,7 @@ import { ErroDeApi } from '@/lib/api'
 /**
  * Muda a caixa de coluna, pelo kanban (arrastando) ou pela ficha (status). Se a caixa tem
  * animais comprometidos o servidor recusa com 409, e aí só passa se o técnico confirmar.
+ * Movimento fora do fluxo do kanban também volta 409, mas não tem confirmação: só o motivo.
  * 'aoTerminar' roda no fim, deu certo ou não
  */
 export function useMudarDeColuna() {
@@ -18,7 +19,11 @@ export function useMudarDeColuna() {
         await mover.mutateAsync({ idCaixa, estado, confirmar })
         aoTerminar()
       } catch (erro) {
-        if (erro instanceof ErroDeApi && erro.ehRegraDeNegocio && !confirmar) {
+        if (
+          erro instanceof ErroDeApi &&
+          erro.codigo === 'TRANSICAO_CONTRARIA_COMPROMISSO' &&
+          !confirmar
+        ) {
           modal.confirm({
             title: 'Esta caixa tem animais comprometidos',
             content: erro.message,
