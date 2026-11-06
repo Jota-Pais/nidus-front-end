@@ -316,6 +316,7 @@ export function BuscaDeAtendimento() {
                 <div className="solicitacao__acoes">
                   <Botao
                     variante="primario"
+                    className="busca__alocar"
                     loading={alocar.isPending}
                     disabled={!cobreOPedido(resultado)}
                     onClick={() => alocarSugeridas(resultado)}
