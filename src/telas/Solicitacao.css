@@ -107,10 +107,17 @@
 }
 
 /* Célula com o dado em cima e o complemento embaixo: quem pediu e o e-mail, a data e o
-   cronograma */
+   cronograma. Cada linha tem a largura do que mostra: a etiqueta da situação não estica */
 .solicitacao__duasLinhas {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+}
+
+/* A data e o cronograma não se partem, nem no celular */
+.solicitacao__entrega {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* Espécie, linhagem e idade da busca. A idade tem a largura do que mostra e, se não couber,
@@ -183,6 +190,7 @@
 }
 
 .solicitacao__pedido > * {
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
