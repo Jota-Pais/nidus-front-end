@@ -45,12 +45,12 @@ export function Login() {
       <Formulario<Credenciais> form={form} onFinish={aoEnviar} disabled={login.isPending}>
         <Formulario.Campo
           name="email"
-          rotulo="E-mail institucional"
+          rotulo="E-mail"
           rules={[{ validator: validadorDeCampo('email') }]}
         >
           <Entrada
             prefix={<UserOutlined aria-hidden="true" />}
-            placeholder="nome@ufsc.br"
+            placeholder="nome@exemplo.com"
             autoComplete="username"
             inputMode="email"
             autoCapitalize="none"

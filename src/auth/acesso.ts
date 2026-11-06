@@ -1,4 +1,4 @@
-// primeiro acesso e senha esquecida: código no e-mail da UFSC, depois a senha nova
+// primeiro acesso e senha esquecida: código no e-mail, depois a senha nova
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationResult } from '@tanstack/react-query'
 import { chaves } from '@/app/chaves'

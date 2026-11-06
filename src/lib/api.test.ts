@@ -30,11 +30,15 @@ function fingirFetch(devolver: Response | (() => never)) {
 
 describe('montarUrl', () => {
   it('não duplica nem engole a barra, seja qual for o formato do .env', () => {
-    expect(montarUrl('http://localhost:3000', '/api/sessao')).toBe('http://localhost:3000/api/sessao')
+    expect(montarUrl('http://localhost:3000', '/api/sessao')).toBe(
+      'http://localhost:3000/api/sessao',
+    )
     expect(montarUrl('http://localhost:3000/', '/api/sessao')).toBe(
       'http://localhost:3000/api/sessao',
     )
-    expect(montarUrl('http://localhost:3000/', 'api/sessao')).toBe('http://localhost:3000/api/sessao')
+    expect(montarUrl('http://localhost:3000/', 'api/sessao')).toBe(
+      'http://localhost:3000/api/sessao',
+    )
   })
 })
 
@@ -99,12 +103,12 @@ describe('api — erros no envelope da API', () => {
         erro: {
           codigo: 'VALIDACAO',
           mensagem: 'Entrada inválida.',
-          campos: { email: 'Informe o e-mail institucional.' },
+          campos: { email: 'Informe o e-mail.' },
         },
       }),
     )
     const erro = (await api('/api/sessao').catch((e: unknown) => e)) as ErroDeApi
-    expect(erro.campos).toEqual({ email: 'Informe o e-mail institucional.' })
+    expect(erro.campos).toEqual({ email: 'Informe o e-mail.' })
   })
 
   it('não quebra quando o corpo é HTML de gateway em vez do contrato', async () => {

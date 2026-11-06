@@ -2,7 +2,12 @@ import { App, Form, Input, Modal, Select, Switch, Table } from 'antd'
 import { useState } from 'react'
 import { usePerfil } from '@/auth/contexto'
 import { Botao, CabecalhoDaTela, Etiqueta, Pilha, Secao } from '@/componentes'
-import { useSalvarUsuario, useUsuarios } from '@/dominio/consultas'
+import {
+  useCriarConta,
+  useEnviarRedefinicaoDeSenha,
+  useSalvarUsuario,
+  useUsuarios,
+} from '@/dominio/consultas'
 import type { ContaNova } from '@/dominio/consultas'
 import type { Perfil, Usuario } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
@@ -13,19 +18,17 @@ const PERFIS: { value: Perfil; label: string }[] = [
   { value: 'gestor', label: 'Gestor' },
 ]
 
-const SENHA = [
-  { required: true, message: 'Informe a senha' },
-  { min: 8, message: 'A senha precisa de pelo menos 8 caracteres' },
-]
-
-/** As contas do sistema: o gestor cria, troca o perfil, desativa e redefine a senha */
+/**
+ * As contas do sistema: o gestor cria, troca o perfil, desativa e manda à pessoa o código para
+ * ela redefinir a senha. Definir a senha de alguém, ele não pode
+ */
 export function Usuarios() {
   const { message, modal } = App.useApp()
   const { usuario: eu } = usePerfil()
   const usuarios = useUsuarios()
   const salvar = useSalvarUsuario()
+  const redefinir = useEnviarRedefinicaoDeSenha()
   const [criando, setCriando] = useState(false)
-  const [trocandoSenha, setTrocandoSenha] = useState<Usuario | null>(null)
 
   function alterar(conta: Usuario, dados: { perfil?: Perfil; ativo?: boolean }, aviso: string) {
     salvar.mutate(
@@ -49,6 +52,21 @@ export function Usuarios() {
       okText: 'Confirmar',
       cancelText: 'Cancelar',
       onOk: () => alterar(conta, dados, aviso),
+    })
+  }
+
+  function enviarRedefinicao(conta: Usuario) {
+    void modal.confirm({
+      title: `Enviar redefinição de senha para ${conta.nome}?`,
+      content: `A pessoa recebe em ${conta.email} um código para definir a senha. A senha atual continua valendo até lá.`,
+      okText: 'Enviar',
+      cancelText: 'Cancelar',
+      onOk: () =>
+        redefinir.mutateAsync(conta.id).then(
+          () =>
+            void message.success(`Enviamos para ${conta.email} um código para definir a senha.`),
+          (erro: Error) => void message.error(erro.message),
+        ),
     })
   }
 
@@ -127,8 +145,12 @@ export function Usuarios() {
               {
                 title: '',
                 render: (_, conta) => (
-                  <Botao variante="fantasma" onClick={() => setTrocandoSenha(conta)}>
-                    Definir senha
+                  <Botao
+                    variante="fantasma"
+                    disabled={!conta.ativo}
+                    onClick={() => enviarRedefinicao(conta)}
+                  >
+                    Enviar redefinição de senha
                   </Botao>
                 ),
               },
@@ -138,31 +160,27 @@ export function Usuarios() {
       </Secao>
 
       {criando && <NovaConta aoFechar={() => setCriando(false)} />}
-      {trocandoSenha && (
-        <DefinirSenhaDaConta conta={trocandoSenha} aoFechar={() => setTrocandoSenha(null)} />
-      )}
     </Pilha>
   )
 }
 
 function NovaConta({ aoFechar }: { aoFechar: () => void }) {
   const { message } = App.useApp()
-  const salvar = useSalvarUsuario()
+  const criar = useCriarConta()
   const [form] = Form.useForm<ContaNova>()
 
   function enviar(conta: ContaNova) {
-    salvar.mutate(
-      { tipo: 'criar', conta },
-      {
-        onSuccess: () => {
-          void message.success(
-            `Conta de ${conta.nome} criada. Passe a senha para a pessoa por um canal seguro.`,
-          )
-          aoFechar()
-        },
-        onError: (erro) => void message.error(erro.message),
+    criar.mutate(conta, {
+      onSuccess: ({ codigoEnviado }) => {
+        void message.success(
+          codigoEnviado
+            ? `Conta de ${conta.nome} criada. Enviamos para ${conta.email} um código para definir a senha.`
+            : `Conta de ${conta.nome} criada, mas o código não foi enviado. Use "Enviar redefinição de senha" na lista.`,
+        )
+        aoFechar()
       },
-    )
+      onError: (erro) => void message.error(erro.message),
+    })
   }
 
   return (
@@ -173,7 +191,7 @@ function NovaConta({ aoFechar }: { aoFechar: () => void }) {
       cancelText="Cancelar"
       onOk={() => form.submit()}
       onCancel={aoFechar}
-      confirmLoading={salvar.isPending}
+      confirmLoading={criar.isPending}
     >
       <Form
         form={form}
@@ -197,48 +215,6 @@ function NovaConta({ aoFechar }: { aoFechar: () => void }) {
         </Form.Item>
         <Form.Item name="perfil" label="Perfil" rules={[{ required: true }]}>
           <Select options={PERFIS} />
-        </Form.Item>
-        <Form.Item name="senha" label="Senha inicial" rules={SENHA}>
-          <Input.Password autoComplete="new-password" />
-        </Form.Item>
-      </Form>
-    </Modal>
-  )
-}
-
-function DefinirSenhaDaConta({ conta, aoFechar }: { conta: Usuario; aoFechar: () => void }) {
-  const { message } = App.useApp()
-  const salvar = useSalvarUsuario()
-  const [form] = Form.useForm<{ senha: string }>()
-
-  return (
-    <Modal
-      open
-      title={`Definir senha · ${conta.nome}`}
-      okText="Salvar senha"
-      cancelText="Cancelar"
-      onOk={() => form.submit()}
-      onCancel={aoFechar}
-      confirmLoading={salvar.isPending}
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={({ senha }) =>
-          salvar.mutate(
-            { tipo: 'senha', id: conta.id, senha },
-            {
-              onSuccess: () => {
-                void message.success(`Senha de ${conta.nome} definida.`)
-                aoFechar()
-              },
-              onError: (erro) => void message.error(erro.message),
-            },
-          )
-        }
-      >
-        <Form.Item name="senha" label="Nova senha" rules={SENHA}>
-          <Input.Password autoComplete="new-password" />
         </Form.Item>
       </Form>
     </Modal>

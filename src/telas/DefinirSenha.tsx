@@ -21,7 +21,7 @@ type Etapa =
   | { qual: 'senha'; email: string; validadeEmMinutos: number; codigo: string; novo: boolean }
 
 /**
- * Primeiro acesso e senha esquecida. O código que chega no e-mail da UFSC prova que a
+ * Primeiro acesso e senha esquecida. O código que chega no e-mail prova que a
  * pessoa tem o e-mail; quem é novo informa o nome, e todos saem com senha e sessão aberta
  */
 export function DefinirSenha() {
@@ -114,7 +114,7 @@ function EtapaDoEmail({
     <>
       <CabecalhoDaTela
         titulo="Definir senha"
-        descricao="Vamos enviar um código para o seu e-mail da UFSC."
+        descricao="Vamos enviar um código para o seu e-mail."
       />
 
       {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
@@ -127,12 +127,12 @@ function EtapaDoEmail({
       >
         <Formulario.Campo
           name="email"
-          rotulo="E-mail da UFSC"
+          rotulo="E-mail"
           rules={[{ validator: validadorDeAcesso('email') }]}
         >
           <Entrada
             prefix={<UserOutlined aria-hidden="true" />}
-            placeholder="nome@ufsc.br"
+            placeholder="nome@exemplo.com"
             autoComplete="username"
             inputMode="email"
             autoCapitalize="none"

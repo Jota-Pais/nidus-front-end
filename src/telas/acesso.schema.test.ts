@@ -3,25 +3,20 @@ import { acesso } from './acesso.schema'
 
 const { email, codigo, nome, senha } = acesso.shape
 
-describe('e-mail — só da UFSC', () => {
-  it('aceita o domínio ufsc.br', () => {
+describe('e-mail — de qualquer domínio', () => {
+  it('aceita e-mail da UFSC e de fora dela', () => {
     expect(email.parse('pesquisador@ufsc.br')).toBe('pesquisador@ufsc.br')
+    expect(email.parse('aluno@grad.ufsc.br')).toBe('aluno@grad.ufsc.br')
+    expect(email.parse('pesquisador@gmail.com')).toBe('pesquisador@gmail.com')
+    expect(email.parse('a@empresa.com.br')).toBe('a@empresa.com.br')
   })
 
-  it('aceita subdomínio, que é o e-mail de aluno', () => {
-    expect(email.safeParse('aluno@grad.ufsc.br').success).toBe(true)
-    expect(email.safeParse('aluna@posgrad.ufsc.br').success).toBe(true)
-  })
-
-  it('recusa e-mail de fora da UFSC, dizendo qual e-mail usar', () => {
-    const r = email.safeParse('pesquisador@gmail.com')
-    expect(r.success).toBe(false)
-    if (!r.success) expect(r.error.issues[0]?.message).toMatch(/terminado em ufsc\.br/)
-  })
-
-  it('recusa domínio que só termina parecido', () => {
-    expect(email.safeParse('a@naoufsc.br').success).toBe(false)
-    expect(email.safeParse('a@ufsc.br.com').success).toBe(false)
+  it('recusa o que não tem formato de e-mail, dizendo o formato', () => {
+    for (const valor of ['sem-arroba', 'a@', '@b.com', 'a b@c.com']) {
+      const r = email.safeParse(valor)
+      expect(r.success).toBe(false)
+      if (!r.success) expect(r.error.issues[0]?.message).toMatch(/nome@exemplo\.com/)
+    }
   })
 
   it('tira espaço e passa para minúsculas: o mesmo e-mail não vira duas contas', () => {
@@ -34,8 +29,8 @@ describe('e-mail — só da UFSC', () => {
     if (!r.success) expect(r.error.issues[0]?.message).toMatch(/Informe o seu e-mail/)
   })
 
-  it('recusa lista de endereços disfarçada de e-mail da UFSC', () => {
-    for (const valor of ['eu@gmail.com,x@ufsc.br', '"eu@gmail.com"@ufsc.br']) {
+  it('recusa lista de endereços disfarçada de e-mail', () => {
+    for (const valor of ['eu@gmail.com,x@ufsc.br', '"eu@gmail.com"@ufsc.br', 'eu,voce@gmail.com']) {
       expect(email.safeParse(valor).success).toBe(false)
     }
   })
