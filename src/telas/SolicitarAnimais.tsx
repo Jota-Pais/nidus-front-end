@@ -16,8 +16,8 @@ import {
 import type { TomDeEtiqueta } from '@/componentes'
 import {
   useCatalogo,
+  useConferirViabilidade,
   useCriarSolicitacao,
-  useEstoque,
   useRecusarSolicitacao,
   useRegistrarEntrega,
   useSolicitacoes,
@@ -30,12 +30,14 @@ import {
   porDataDeEntrega,
   totalDeAnimais,
 } from '@/dominio/solicitacao'
-import type { CodigoEspecie, Solicitacao, StatusSolicitacao } from '@/dominio/tipos'
+import type { NovaSolicitacao } from '@/dominio/consultas'
+import type { CodigoEspecie, Solicitacao, StatusSolicitacao, Viabilidade } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { formatarData, hoje } from '@/lib/data'
 import { CampoDeIdade } from './CampoDeIdade'
 import { CampoDoProtocolo } from './CampoDoProtocolo'
+import { ConfirmarPedido } from './ConfirmarPedido'
 import { PECA_UM_ANIMAL, montarPedido, temAnimal, validadorDoPedido } from './solicitacao.schema'
 import type { CamposDoPedido } from './solicitacao.schema'
 import './Solicitacao.css'
@@ -101,29 +103,23 @@ export function SolicitarAnimais() {
   const catalogo = useCatalogo()
   const solicitacoes = useSolicitacoes()
   const criar = useCriarSolicitacao()
+  const conferir = useConferirViabilidade()
   const falha = useFalhaDoFormulario(form, CAMPOS_COM_ERRO)
   const [entregando, setEntregando] = useState<Solicitacao | null>(null)
   const [recusando, setRecusando] = useState<Solicitacao | null>(null)
+  // O pedido já validado à espera da confirmação, com o veredito da viabilidade. 'null' no
+  // veredito é a conferência que falhou
+  const [aConfirmar, setAConfirmar] = useState<{
+    pedido: NovaSolicitacao
+    viabilidade: Viabilidade | null
+  } | null>(null)
 
   const especie = Form.useWatch('especie', form)
-  const machos = Form.useWatch('machos', form) ?? 0
-  const femeas = Form.useWatch('femeas', form) ?? 0
-  const total = totalDeAnimais({ machos, femeas, qualquer: Form.useWatch('qualquer', form) })
-  const idLinhagem = Form.useWatch('idLinhagem', form)
-  const estoque = useEstoque(especie)
-  const daLinhagem = estoque.data?.linhagens.find((l) => l.idLinhagem === idLinhagem)
-  const passaDoEstoque =
-    daLinhagem !== undefined &&
-    (machos > daLinhagem.total.m ||
-      femeas > daLinhagem.total.f ||
-      total > daLinhagem.total.m + daLinhagem.total.f)
-  // O que a colônia tem da linhagem, embaixo dos números
-  const avisoDoEstoque =
-    daLinhagem && total > 0
-      ? passaDoEstoque
-        ? `Atenção: hoje a colônia tem ${daLinhagem.total.m} M · ${daLinhagem.total.f} F livres de ${daLinhagem.linhagem}, contando partos previstos. O pedido pode precisar de casais novos.`
-        : `Viável: a colônia tem ${daLinhagem.total.m} M · ${daLinhagem.total.f} F livres de ${daLinhagem.linhagem}, contando partos previstos.`
-      : undefined
+  const total = totalDeAnimais({
+    machos: Form.useWatch('machos', form),
+    femeas: Form.useWatch('femeas', form),
+    qualquer: Form.useWatch('qualquer', form),
+  })
   // O pesquisador só recebe os pedidos dele: a coluna de quem pediu e as ações são da equipe
   const colunasDaTabela = colunas(
     pesquisador ? undefined : { aoEntregar: setEntregando, aoRecusar: setRecusando },
@@ -134,14 +130,27 @@ export function SolicitarAnimais() {
       ?.linhagens.filter((l) => l.ativa)
       .map((l) => ({ value: l.id, label: l.nome })) ?? []
 
-  function enviar(campos: CamposDoPedido) {
+  // Antes de criar, a viabilidade: quem pede fica sabendo se dá ou não dá, e decide no modal
+  function conferirAntes(campos: CamposDoPedido) {
     falha.limpar()
-    criar.mutate(montarPedido(campos), {
+    const pedido = montarPedido(campos)
+    conferir.mutate(pedido, {
+      onSuccess: (viabilidade) => setAConfirmar({ pedido, viabilidade }),
+      onError: () => setAConfirmar({ pedido, viabilidade: null }),
+    })
+  }
+
+  function enviar(pedido: NovaSolicitacao) {
+    criar.mutate(pedido, {
       onSuccess: () => {
+        setAConfirmar(null)
         void message.success('Solicitação enviada. A equipe técnica vai analisar.')
         form.resetFields(CAMPOS_DO_PEDIDO)
       },
-      onError: falha.mostrar,
+      onError: (erro) => {
+        setAConfirmar(null)
+        falha.mostrar(erro)
+      },
     })
   }
 
@@ -153,8 +162,8 @@ export function SolicitarAnimais() {
         <Secao>
           <Formulario<CamposDoPedido>
             form={form}
-            onFinish={enviar}
-            disabled={criar.isPending}
+            onFinish={conferirAntes}
+            disabled={criar.isPending || conferir.isPending}
             initialValues={{
               especie: 'rato',
               modoIdade: 'faixa',
@@ -265,12 +274,6 @@ export function SolicitarAnimais() {
                     </Texto>
                   </Formulario.Campo>
                 </div>
-
-                {avisoDoEstoque && (
-                  <Texto tom="secundario" className="solicitacao__estoque">
-                    {avisoDoEstoque}
-                  </Texto>
-                )}
               </div>
 
               <div className="solicitacao__coluna">
@@ -309,7 +312,11 @@ export function SolicitarAnimais() {
                 </Formulario.Campo>
 
                 <div className="solicitacao__acoes">
-                  <Botao variante="primario" htmlType="submit" loading={criar.isPending}>
+                  <Botao
+                    variante="primario"
+                    htmlType="submit"
+                    loading={conferir.isPending || criar.isPending}
+                  >
                     Enviar solicitação
                   </Botao>
                 </div>
@@ -317,6 +324,15 @@ export function SolicitarAnimais() {
             </div>
           </Formulario>
         </Secao>
+      )}
+
+      {aConfirmar && (
+        <ConfirmarPedido
+          viabilidade={aConfirmar.viabilidade}
+          enviando={criar.isPending}
+          aoEnviar={() => enviar(aConfirmar.pedido)}
+          aoVoltar={() => setAConfirmar(null)}
+        />
       )}
 
       <EstadoDaConsulta consulta={solicitacoes} rotulo="Carregando as solicitações…">

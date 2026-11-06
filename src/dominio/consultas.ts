@@ -19,6 +19,7 @@ import type {
   SituacaoDoProjeto,
   Solicitacao,
   Usuario,
+  Viabilidade,
 } from './tipos'
 
 export function useKanban(especie: CodigoEspecie) {
@@ -204,6 +205,14 @@ export function useCriarSolicitacao() {
     mutationFn: (pedido: NovaSolicitacao) =>
       api<{ id: number }>('/api/solicitacoes', { metodo: 'POST', corpo: pedido }),
     onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
+  })
+}
+
+/** Antes de enviar, quem pede confere se o CPMR consegue atender. Não grava nada */
+export function useConferirViabilidade() {
+  return useMutation({
+    mutationFn: (pedido: NovaSolicitacao) =>
+      api<Viabilidade>('/api/solicitacoes/viabilidade', { metodo: 'POST', corpo: pedido }),
   })
 }
 
