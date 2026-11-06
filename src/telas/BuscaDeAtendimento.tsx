@@ -305,22 +305,36 @@ export function BuscaDeAtendimento() {
             />
 
             {escolhida && busca.data?.length === 1 && (
-              <div className="solicitacao__acoes">
-                <Botao
-                  variante="primario"
-                  loading={alocar.isPending}
-                  disabled={!resultado.candidatas.some((c) => c.sugerida)}
-                  onClick={() => alocarSugeridas(resultado)}
-                >
-                  Alocar as caixas sugeridas na solicitação #{escolhida.id}
-                </Botao>
-              </div>
+              <>
+                {/* a API só aloca o pedido inteiro: com falta, o botão nem tenta */}
+                {!cobreOPedido(resultado) && (
+                  <Texto tom="secundario">
+                    Só dá para alocar o pedido inteiro. Sem animais para completar, recuse a
+                    solicitação com o motivo ou aguarde.
+                  </Texto>
+                )}
+                <div className="solicitacao__acoes">
+                  <Botao
+                    variante="primario"
+                    loading={alocar.isPending}
+                    disabled={!cobreOPedido(resultado)}
+                    onClick={() => alocarSugeridas(resultado)}
+                  >
+                    Alocar as caixas sugeridas na solicitação #{escolhida.id}
+                  </Botao>
+                </div>
+              </>
             )}
           </Pilha>
         </Secao>
       ))}
     </Pilha>
   )
+}
+
+/** As caixas sugeridas cobrem tudo o que foi pedido, sem faltar animal */
+function cobreOPedido({ candidatas, deficit }: ResultadoDaBusca): boolean {
+  return candidatas.some((c) => c.sugerida) && deficit.m + deficit.f + deficit.qualquer === 0
 }
 
 function Resumo({ resultado }: { resultado: ResultadoDaBusca }) {
