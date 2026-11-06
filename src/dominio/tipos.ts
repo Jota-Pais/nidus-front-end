@@ -23,6 +23,15 @@ interface CasalNoCard {
   partoAtual: number
   partoPrevisto: DataISO | null
   encerrado: boolean
+  /** só as ninhadas que já nasceram: o que existe de cada uma e a idade de hoje */
+  ninhadas: NinhadaNoCard[]
+}
+
+export interface NinhadaNoCard {
+  parto: number
+  m: number
+  f: number
+  idadeDias: number
 }
 
 // GET /api/quadro?especie=
@@ -191,7 +200,7 @@ export interface Solicitacao {
 }
 
 /** de onde vem o animal: já desmamado, já nascido, ou parto ainda previsto */
-export type Origem = 'de_fato' | 'previsao' | 'previsao_parto'
+export type Origem = 'de_fato' | 'previsao'
 
 // GET /api/busca
 export interface CaixaCandidata {
@@ -227,9 +236,7 @@ export interface EstoqueDaLinhagem {
   linhagem: string
   confirmado: PorSexo
   previsto: PorSexo
-  projetado: PorSexo
   total: PorSexo
-  proximoParto: DataISO | null
 }
 
 export interface Estoque {

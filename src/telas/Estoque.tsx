@@ -4,7 +4,6 @@ import { CabecalhoDaTela, Pilha, Secao } from '@/componentes'
 import { useEstoque } from '@/dominio/consultas'
 import type { CodigoEspecie, EstoqueDaLinhagem } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
-import { formatarData } from '@/lib/data'
 
 const ESPECIES: { value: CodigoEspecie; label: string }[] = [
   { value: 'rato', label: 'Rato' },
@@ -13,7 +12,7 @@ const ESPECIES: { value: CodigoEspecie; label: string }[] = [
 
 const sexos = ({ m, f }: { m: number; f: number }) => `${m} M · ${f} F`
 
-/** O que a colônia tem livre hoje e o que vem dos partos previstos, por linhagem */
+/** O que a colônia tem livre hoje, por linhagem: só animal que já nasceu */
 export function Estoque() {
   const [especie, setEspecie] = useState<CodigoEspecie>('rato')
   const estoque = useEstoque(especie)
@@ -23,7 +22,7 @@ export function Estoque() {
       <CabecalhoDaTela
         rotulo="Colônia"
         titulo="Estoque"
-        descricao="Animais livres por linhagem, já sem o que está comprometido com solicitações. Desmamados são certos, nascidos ainda podem mudar no desmame e os previstos dependem do parto."
+        descricao="Animais que já nasceram e estão livres, por linhagem, já sem o que está comprometido com solicitações. Desmamados são certos; nascidos ainda podem mudar no desmame. Parto que ainda não aconteceu não conta."
       />
 
       <Secao>
@@ -47,9 +46,7 @@ export function Estoque() {
               { title: 'Linhagem', dataIndex: 'linhagem' },
               { title: 'Desmamados', render: (_, l) => sexos(l.confirmado) },
               { title: 'Nascidos', render: (_, l) => sexos(l.previsto) },
-              { title: 'Partos previstos', render: (_, l) => sexos(l.projetado) },
               { title: 'Total livre', render: (_, l) => <strong>{sexos(l.total)}</strong> },
-              { title: 'Próximo parto', render: (_, l) => formatarData(l.proximoParto) },
             ]}
           />
         </EstadoDaConsulta>
