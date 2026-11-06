@@ -26,6 +26,7 @@ const pedido: Solicitacao = {
   observacoes: null,
   status: 'enviada',
   motivoRecusa: null,
+  reservaEmFalta: null,
 }
 
 /** uma caixa com 2 M e 1 F: cobre os machos e só uma das fêmeas */

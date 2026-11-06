@@ -29,6 +29,20 @@
   margin-top: auto;
 }
 
+/* Pedido aceito com a reserva em falta: devolver para análise em cima, a entrega embaixo. Na
+   coluna da tabela cada botão tem a largura do texto; na linha compacta ocupam a linha, como o
+   botão sozinho */
+.solicitacao__acoesDoPedido {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.solicitacao__compacta > .solicitacao__acoesDoPedido {
+  align-items: stretch;
+}
+
 /* Dentro da coluna, fileiras que se leem como frase. Em tela estreita cada campo desce
    inteiro para a linha de baixo */
 .solicitacao__fileira {

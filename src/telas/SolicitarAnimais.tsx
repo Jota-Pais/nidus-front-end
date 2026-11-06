@@ -31,6 +31,7 @@ import {
   useCatalogo,
   useConferirViabilidade,
   useCriarSolicitacao,
+  useDevolverParaAnalise,
   useRecusarSolicitacao,
   useRegistrarEntrega,
   useSolicitacoes,
@@ -121,6 +122,7 @@ export function SolicitarAnimais() {
   const falha = useFalhaDoFormulario(form, CAMPOS_COM_ERRO)
   const [entregando, setEntregando] = useState<Solicitacao | null>(null)
   const [recusando, setRecusando] = useState<Solicitacao | null>(null)
+  const [devolvendo, setDevolvendo] = useState<Solicitacao | null>(null)
   // O pedido já validado à espera da confirmação, com o veredito da viabilidade. 'null' no
   // veredito é a conferência que falhou
   const [aConfirmar, setAConfirmar] = useState<{
@@ -140,7 +142,10 @@ export function SolicitarAnimais() {
   const telaLarga = Grid.useBreakpoint().sm === true
   const colunasDaTabela = pesquisador
     ? colunasDeQuemPediu(telaLarga)
-    : colunasDaEquipe({ aoEntregar: setEntregando, aoRecusar: setRecusando }, telaLarga)
+    : colunasDaEquipe(
+        { aoEntregar: setEntregando, aoRecusar: setRecusando, aoDevolver: setDevolvendo },
+        telaLarga,
+      )
   const linhagens =
     catalogo.data?.especies
       .find((e) => e.codigo === especie)
@@ -389,6 +394,9 @@ export function SolicitarAnimais() {
       {recusando && (
         <RecusarSolicitacao solicitacao={recusando} aoFechar={() => setRecusando(null)} />
       )}
+      {devolvendo && (
+        <DevolverParaAnalise solicitacao={devolvendo} aoFechar={() => setDevolvendo(null)} />
+      )}
     </Pilha>
   )
 }
@@ -396,10 +404,17 @@ export function SolicitarAnimais() {
 interface AcoesDaEquipe {
   aoEntregar: (s: Solicitacao) => void
   aoRecusar: (s: Solicitacao) => void
+  aoDevolver: (s: Solicitacao) => void
 }
 
-/** Embaixo da situação, para a equipe: quando decidiu, ou até quando tem de responder */
+/**
+ * Embaixo da situação, para a equipe: a reserva em falta, quando decidiu, ou até quando tem de
+ * responder
+ */
 function situacaoParaAEquipe(s: Solicitacao): string | null {
+  if (s.reservaEmFalta) {
+    return `Reserva em falta: ${s.reservaEmFalta.m} M e ${s.reservaEmFalta.f} F`
+  }
   if (s.dataRecusa) return `Recusada em ${formatarData(s.dataRecusa)}`
   if (s.dataAceite) return `Aceita em ${formatarData(s.dataAceite)}`
   if (s.prazoResposta) return `Responder até ${formatarData(s.prazoResposta)}`
@@ -463,10 +478,22 @@ function AcaoDaEquipe({
   equipe: AcoesDaEquipe
 }) {
   if (s.status === 'aprovada') {
-    return (
+    const entregar = (
       <Botao variante="fantasma" onClick={() => equipe.aoEntregar(s)}>
         Registrar entrega
       </Botao>
+    )
+
+    if (!s.reservaEmFalta) return entregar
+
+    // a ninhada reservada ficou com menos animais: a equipe devolve o pedido para alocar de novo
+    return (
+      <div className="solicitacao__acoesDoPedido">
+        <Botao variante="fantasma" onClick={() => equipe.aoDevolver(s)}>
+          Devolver para análise
+        </Botao>
+        {entregar}
+      </div>
     )
   }
   if (s.status === 'enviada') {
@@ -590,7 +617,8 @@ function colunasDaEquipe(equipe: AcoesDaEquipe, telaLarga: boolean): TableColumn
     },
     {
       title: '',
-      width: 170,
+      // cabe o "Devolver para análise" do pedido com a reserva em falta
+      width: 220,
       render: (_, s) => <AcaoDaEquipe solicitacao={s} equipe={equipe} />,
     },
   ]
@@ -742,6 +770,53 @@ function RecusarSolicitacao({
           <Input.TextArea rows={3} maxLength={200} showCount />
         </Form.Item>
       </Form>
+    </Modal>
+  )
+}
+
+function DevolverParaAnalise({
+  solicitacao,
+  aoFechar,
+}: {
+  solicitacao: Solicitacao
+  aoFechar: () => void
+}) {
+  const { message } = App.useApp()
+  const devolver = useDevolverParaAnalise()
+  const falta = solicitacao.reservaEmFalta
+
+  function confirmar() {
+    devolver.mutate(solicitacao.id, {
+      onSuccess: () => {
+        void message.success(`Solicitação #${solicitacao.id} devolvida para análise.`)
+        aoFechar()
+      },
+      onError: (erro) => void message.error(erro.message),
+    })
+  }
+
+  return (
+    <Modal
+      open
+      title={`Devolver para análise · #${solicitacao.id}`}
+      okText="Devolver para análise"
+      cancelText="Cancelar"
+      onOk={confirmar}
+      onCancel={aoFechar}
+      confirmLoading={devolver.isPending}
+    >
+      <Pilha>
+        {falta && (
+          <Texto>
+            A ninhada reservada para este pedido ficou com menos animais: faltam até {falta.m} M e{' '}
+            {falta.f} F.
+          </Texto>
+        )}
+        <Texto>
+          As reservas do pedido são canceladas e ele volta para Aguardando análise, com 14 dias para a
+          resposta a partir de hoje. Depois, aloque o pedido inteiro de novo. Quem pediu não é avisado.
+        </Texto>
+      </Pilha>
     </Modal>
   )
 }

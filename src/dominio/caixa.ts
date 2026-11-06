@@ -2,7 +2,7 @@
 // dos tokens: a de cada coluna é --estado-<coluna>-fundo/borda/texto, e a grade de estantes pinta
 // a caixa com a mesma; a de cada parto é COR_DO_PARTO
 import { COR_DO_PARTO } from '@/app/tokens'
-import type { EstadoCaixa } from './tipos'
+import type { EstadoCaixa, FaltaNaReserva } from './tipos'
 
 interface Coluna {
   estado: EstadoCaixa
@@ -42,4 +42,20 @@ export function pintaNaGrade(estado: EstadoCaixa, temCasal: boolean): boolean {
 /** Caixa de estoque, reserva ou enviada não tem casal produzindo: não mostra parto previsto */
 export function mostraPrevisao(estado: EstadoCaixa): boolean {
   return estado === 'livres' || estado === 'pre_reserva'
+}
+
+/**
+ * A ninhada que ficou com menos animais do que o reservado, depois do desmame ou da correção:
+ * quanto falta, de quais pedidos, e o que a equipe pode fazer
+ */
+export function descreverFalta(falta: FaltaNaReserva): string {
+  const pedidos = falta.pedidos
+    .map((pedido) => `#${pedido.idSolicitacao} (${pedido.m} M, ${pedido.f} F)`)
+    .join(', ')
+
+  return (
+    `A ninhada ficou com menos animais do que o reservado: faltam ${falta.m} M e ${falta.f} F. ` +
+    `Reservado para ${falta.pedidos.length > 1 ? 'os pedidos' : 'o pedido'} ${pedidos}. ` +
+    'Em Solicitações, o pedido em falta pode ser devolvido para análise.'
+  )
 }

@@ -15,6 +15,11 @@ interface PorSexo {
   f: number
 }
 
+/** Reserva acima do que a ninhada tem: quanto falta e o reservado de cada pedido nela */
+export interface FaltaNaReserva extends PorSexo {
+  pedidos: (PorSexo & { idSolicitacao: number })[]
+}
+
 /** O casal no card do kanban e na célula da grade */
 interface CasalNoCard {
   /** dupla de grupos genéticos, macho primeiro. ex: AB */
@@ -108,6 +113,8 @@ export interface Parto {
   comprometido: PorSexo
   /** já saiu da caixa: a entrega da solicitação foi registrada */
   entregue: PorSexo
+  /** reserva acima do que a ninhada tem depois do desmame ou da correção; null quando cabe */
+  falta: FaltaNaReserva | null
 }
 
 export interface Casal {
@@ -207,6 +214,8 @@ export interface Solicitacao {
   observacoes: string | null
   status: StatusSolicitacao
   motivoRecusa: string | null
+  /** pedido aceito cuja ninhada ficou com menos animais do que o reservado: quanto pode faltar */
+  reservaEmFalta: PorSexo | null
 }
 
 /** de onde vem o animal: já desmamado, já nascido, ou parto ainda previsto */
