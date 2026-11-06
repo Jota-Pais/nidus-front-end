@@ -17,7 +17,7 @@ import {
 import type { CasalNovo, EventoCorrigivel } from '@/dominio/consultas'
 import type { CodigoEspecie, Ficha, Parto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
-import { formatarData, hoje } from '@/lib/data'
+import { descreverDias, formatarData, hoje, idadeEmDias } from '@/lib/data'
 import { useMudarDeColuna } from './useMudarDeColuna'
 import './FichaDaCaixa.css'
 
@@ -653,7 +653,12 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
       <h3>Parto</h3>
       {nasceu ? (
         <>
-          <Campo rotulo="Data do parto real">{formatarData(parto.dtPartoReal)}</Campo>
+          <LadoALado>
+            <Campo rotulo="Data do parto real">{formatarData(parto.dtPartoReal)}</Campo>
+            <Campo rotulo="Idade hoje">
+              {parto.dtPartoReal ? descreverDias(idadeEmDias(parto.dtPartoReal)) : '—'}
+            </Campo>
+          </LadoALado>
           <LadoALado>
             <Campo rotulo="Machos nascidos">{parto.nascidoM ?? '—'}</Campo>
             <Campo rotulo="Fêmeas nascidas">{parto.nascidoF ?? '—'}</Campo>

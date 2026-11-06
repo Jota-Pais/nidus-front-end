@@ -6,7 +6,7 @@ import { COLUNA, COLUNAS, corDoParto, MAX_PARTOS_POR_CASAL, mostraPrevisao } fro
 import { useKanban } from '@/dominio/consultas'
 import type { CardDoKanban, CodigoEspecie, EstadoCaixa } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
-import { formatarDataCurta } from '@/lib/data'
+import { descreverDias, formatarDataCurta } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import { LegendaDosPartos } from './LegendaDosPartos'
 import { useMudarDeColuna } from './useMudarDeColuna'
@@ -140,6 +140,20 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
             <span className="kanban__previsao">P: {formatarDataCurta(casal.partoPrevisto)}</span>
           )}
         </div>
+      )}
+
+      {casal && casal.ninhadas.length > 0 && (
+        <ul className="kanban__ninhadas" aria-label="Animais na caixa">
+          {casal.ninhadas.map((ninhada) => (
+            <li key={ninhada.parto}>
+              <span>{ninhada.parto}º</span>
+              <span>
+                {ninhada.m} M · {ninhada.f} F
+              </span>
+              <span>{descreverDias(ninhada.idadeDias)}</span>
+            </li>
+          ))}
+        </ul>
       )}
 
       <div className="kanban__status">

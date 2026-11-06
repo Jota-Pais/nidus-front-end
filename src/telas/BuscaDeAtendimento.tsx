@@ -21,7 +21,6 @@ import './Solicitacao.css'
 const ORIGEM: Record<Origem, { rotulo: string; tom: TomDeEtiqueta }> = {
   de_fato: { rotulo: 'De fato', tom: 'sucesso' },
   previsao: { rotulo: 'Previsão', tom: 'informacao' },
-  previsao_parto: { rotulo: 'Previsão de parto', tom: 'atencao' },
 }
 
 /** Os números vêm nulos quando o técnico apaga o campo */
