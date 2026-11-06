@@ -236,6 +236,13 @@ export interface Estoque {
   linhagens: EstoqueDaLinhagem[]
 }
 
+// POST /api/solicitacoes/viabilidade: só se o CPMR consegue atender, sem números da colônia
+export interface Viabilidade {
+  viavel: boolean
+  /** por que não dá, escrito para quem pede; nulo quando dá */
+  motivo: string | null
+}
+
 // GET /api/usuarios
 export interface Usuario {
   id: number

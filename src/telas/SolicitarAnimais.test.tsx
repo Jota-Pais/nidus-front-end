@@ -30,7 +30,7 @@ const solicitacao = (
 
 vi.mock('@/dominio/consultas', () => ({
   useCatalogo: () => consulta({ especies: [], paresGeneticos: [] }),
-  useEstoque: () => consulta(undefined),
+  useConferirViabilidade: mutacao,
   useSolicitacoes: () =>
     consulta([
       solicitacao(1, 'enviada'),

@@ -102,12 +102,6 @@
   white-space: nowrap;
 }
 
-/* O aviso de estoque fica embaixo da fileira, com o respiro do campo */
-.solicitacao__estoque {
-  display: block;
-  margin-bottom: 24px;
-}
-
 .solicitacao__aviso {
   margin-bottom: 16px;
 }
