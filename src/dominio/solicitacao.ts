@@ -1,6 +1,6 @@
 // Como um pedido de animais se escreve na tela. A solicitação e a busca de atendimento usam
 // as mesmas frases: o que o pesquisador conferiu é o que a equipe lê
-import type { Cronograma } from './tipos'
+import type { Cronograma, Solicitacao } from './tipos'
 
 export const ROTULO_CRONOGRAMA: Record<Cronograma, string> = {
   unica: 'Cota única',
@@ -68,4 +68,47 @@ export function porDataDeEntrega<T extends { id: number; dataEntrega: string }>(
 ): T[] {
   // A data vem como AAAA-MM-DD, então a ordem do texto é a ordem do calendário
   return [...pedidos].sort((a, b) => a.dataEntrega.localeCompare(b.dataEntrega) || a.id - b.id)
+}
+
+export type FiltroDeSolicitacao = 'todas' | 'pendentes' | 'aceitas' | 'recusadas'
+
+export const FILTROS_DE_SOLICITACAO: { valor: FiltroDeSolicitacao; rotulo: string }[] = [
+  { valor: 'todas', rotulo: 'Todas' },
+  { valor: 'pendentes', rotulo: 'Pendentes' },
+  { valor: 'aceitas', rotulo: 'Aceitas' },
+  { valor: 'recusadas', rotulo: 'Recusadas' },
+]
+
+export function entraNoFiltro(filtro: FiltroDeSolicitacao, s: Solicitacao): boolean {
+  switch (filtro) {
+    case 'todas':
+      return true
+    case 'pendentes':
+      return s.status === 'enviada' || s.status === 'em_analise'
+    case 'aceitas':
+      return s.status === 'aprovada' || s.status === 'ajustada' || s.status === 'em_atendimento'
+    case 'recusadas':
+      return s.status === 'recusada'
+  }
+}
+
+export type OrdemDeSolicitacao = 'pedido' | 'entrega'
+
+export const ORDENS_DE_SOLICITACAO: { value: OrdemDeSolicitacao; label: string }[] = [
+  { value: 'pedido', label: 'Data do pedido' },
+  { value: 'entrega', label: 'Data de entrega' },
+]
+
+export function porDataDoPedido<T extends { id: number; dataSolicitacao: string }>(
+  pedidos: readonly T[],
+): T[] {
+  return [...pedidos].sort(
+    (a, b) => b.dataSolicitacao.localeCompare(a.dataSolicitacao) || b.id - a.id,
+  )
+}
+
+export function ordenarSolicitacoes<
+  T extends { id: number; dataSolicitacao: string; dataEntrega: string },
+>(ordem: OrdemDeSolicitacao, pedidos: readonly T[]): T[] {
+  return ordem === 'entrega' ? porDataDeEntrega(pedidos) : porDataDoPedido(pedidos)
 }

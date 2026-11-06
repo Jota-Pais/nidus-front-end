@@ -166,6 +166,10 @@ export type StatusSolicitacao =
 // GET /api/solicitacoes
 export interface Solicitacao {
   id: number
+  dataSolicitacao: DataISO
+  prazoResposta: DataISO | null
+  dataAceite: DataISO | null
+  dataRecusa: DataISO | null
   /** o processo 23080.XXXXXX/AAAA-XX ou os 10 dígitos do Sistema CEUA (@/dominio/protocolo) */
   protocoloCeua: string
   /** o nome que a pessoa digitou no pedido */

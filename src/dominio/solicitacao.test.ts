@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import type { Solicitacao } from './tipos'
 import {
+  entraNoFiltro,
   descreverAnimais,
   descreverIdade,
   faixaDeIdade,
+  ordenarSolicitacoes,
   porDataDeEntrega,
   totalDeAnimais,
 } from './solicitacao'
@@ -78,5 +81,39 @@ describe('porDataDeEntrega', () => {
 
     porDataDeEntrega(pedidos)
     expect(pedidos.map((p) => p.id)).toEqual([1, 2])
+  })
+})
+
+describe('entraNoFiltro', () => {
+  const com = (status: Solicitacao['status'], dataAceite: string | null = null) =>
+    ({ status, dataAceite }) as Solicitacao
+
+  it('pendente é a que espera resposta; aceita é a que ainda falta entregar', () => {
+    expect(entraNoFiltro('pendentes', com('enviada'))).toBe(true)
+    expect(entraNoFiltro('pendentes', com('aprovada', '2026-11-03'))).toBe(false)
+    expect(entraNoFiltro('aceitas', com('aprovada', '2026-11-03'))).toBe(true)
+    expect(entraNoFiltro('aceitas', com('concluida', '2026-11-03'))).toBe(false)
+    expect(entraNoFiltro('aceitas', com('enviada'))).toBe(false)
+  })
+
+  it('recusadas só as recusadas; todas mostra tudo', () => {
+    expect(entraNoFiltro('recusadas', com('recusada'))).toBe(true)
+    expect(entraNoFiltro('todas', com('cancelada'))).toBe(true)
+  })
+})
+
+describe('ordenarSolicitacoes', () => {
+  const pedidos = [
+    { id: 1, dataSolicitacao: '2026-11-01', dataEntrega: '2026-12-20' },
+    { id: 2, dataSolicitacao: '2026-11-03', dataEntrega: '2026-12-05' },
+    { id: 3, dataSolicitacao: '2026-11-03', dataEntrega: '2026-12-10' },
+  ]
+
+  it('pela data do pedido, o mais novo primeiro', () => {
+    expect(ordenarSolicitacoes('pedido', pedidos).map((p) => p.id)).toEqual([3, 2, 1])
+  })
+
+  it('pela data de entrega, a mais próxima primeiro', () => {
+    expect(ordenarSolicitacoes('entrega', pedidos).map((p) => p.id)).toEqual([2, 3, 1])
   })
 })

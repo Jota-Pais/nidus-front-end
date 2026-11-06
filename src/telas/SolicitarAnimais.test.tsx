@@ -10,6 +10,10 @@ const solicitacao = (
   motivoRecusa: string | null = null,
 ): Solicitacao => ({
   id,
+  dataSolicitacao: '2026-11-0' + id,
+  prazoResposta: status === 'enviada' ? '2026-11-15' : null,
+  dataAceite: status === 'aprovada' ? '2026-11-03' : null,
+  dataRecusa: status === 'recusada' ? '2026-11-04' : null,
   protocoloCeua: '23080.000001/2026-54',
   pesquisador: 'Ana',
   email: 'ana@ufsc.br',
@@ -21,7 +25,7 @@ const solicitacao = (
   qualquer: 0,
   idadeMin: 28,
   idadeMax: 28,
-  dataEntrega: '2026-12-01',
+  dataEntrega: '2026-12-0' + id,
   cronograma: 'unica',
   observacoes: null,
   status,
@@ -50,7 +54,8 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     expect(screen.getAllByRole('button', { name: 'Recusar' })).toHaveLength(1)
     expect(screen.getAllByRole('button', { name: 'Registrar entrega' })).toHaveLength(1)
     // a equipe se refere ao pedido pelo número
-    expect(screen.getAllByRole('columnheader', { name: '#' }).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalhes' })[0]!)
+    expect(screen.getByText('#3')).toBeTruthy()
   })
 
   it('o técnico e o gestor não veem o formulário de pedido', () => {
@@ -70,16 +75,75 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
     expect(screen.getByRole('heading', { name: 'Minhas solicitações' })).toBeTruthy()
-    expect(screen.queryByRole('columnheader', { name: '#' })).toBeNull()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalhes' })[0]!)
+    expect(screen.queryByText('Nº do pedido')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Recusar' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Registrar entrega' })).toBeNull()
   })
 
-  it('quem pediu vê o motivo da recusa', () => {
+  it('de cara mostra a data, a situação com a data da decisão, quem pediu e o que pediu', () => {
+    renderizar(<SolicitarAnimais />, 'tecnico')
+
+    expect(screen.getByText('01/11/2026')).toBeTruthy()
+    expect(screen.getByText('Responder até 15/11/2026')).toBeTruthy()
+    expect(screen.getByText('Aceita em 03/11/2026')).toBeTruthy()
+    expect(screen.getByText('Recusada em 04/11/2026')).toBeTruthy()
+    expect(screen.getAllByText('Wistar · 2 M · 2 F')).toHaveLength(3)
+    expect(screen.queryByText('ana@ufsc.br')).toBeNull()
+  })
+
+  it('em tela larga, as quatro informações ficam em colunas, sem rolar de lado', () => {
+    const original = window.matchMedia
+    window.matchMedia = ((query: string) => ({
+      ...original(query),
+      matches: true,
+    })) as typeof window.matchMedia
+    try {
+      renderizar(<SolicitarAnimais />, 'tecnico')
+
+      for (const coluna of ['Pedido em', 'Situação', 'Quem pediu e o quê']) {
+        expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
+      }
+      expect(screen.getAllByText('Ana')).toHaveLength(3)
+    } finally {
+      window.matchMedia = original
+    }
+  })
+
+  it('quem pediu vê o motivo da recusa ao abrir a setinha', () => {
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
-    expect(screen.getByText(/Motivo: Sem Wistar ate dezembro/)).toBeTruthy()
+    expect(screen.queryByText('Sem Wistar ate dezembro')).toBeNull()
+    fireEvent.click(screen.getByRole('radio', { name: /Recusadas/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes' }))
+
+    expect(screen.getByText('Sem Wistar ate dezembro')).toBeTruthy()
     expect(screen.getByText('Recusada')).toBeTruthy()
+  })
+
+  it('o filtro separa pendentes, aceitas e recusadas, com a contagem', () => {
+    renderizar(<SolicitarAnimais />, 'tecnico')
+
+    expect(screen.getByText('Pendentes (1)')).toBeTruthy()
+    expect(screen.getByText('Aceitas (1)')).toBeTruthy()
+    expect(screen.queryByText(/A cumprir/)).toBeNull()
+    expect(screen.getByText('Recusadas (1)')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('radio', { name: /Pendentes/ }))
+    expect(screen.getByRole('button', { name: 'Recusar' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Registrar entrega' })).toBeNull()
+  })
+
+  it('a equipe vê o pedido mais novo primeiro, e o pesquisador a entrega mais próxima', () => {
+    const datas = () =>
+      screen.getAllByText(/^0[1-3]\/11\/2026$/).map((celula) => celula.textContent)
+
+    const equipe = renderizar(<SolicitarAnimais />, 'tecnico')
+    expect(datas()).toEqual(['03/11/2026', '02/11/2026', '01/11/2026'])
+    equipe.unmount()
+
+    renderizar(<SolicitarAnimais />, 'pesquisador')
+    expect(datas()).toEqual(['01/11/2026', '02/11/2026', '03/11/2026'])
   })
 
   it('a alocada aparece como Aprovada, e não como linguagem da equipe', () => {
