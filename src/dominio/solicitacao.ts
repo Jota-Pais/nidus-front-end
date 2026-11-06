@@ -44,15 +44,24 @@ export function descreverIdade({ idadeMin, idadeMax }: { idadeMin: number; idade
   return idadeMin === idadeMax ? `${idadeMin} dias` : `${idadeMin} a ${idadeMax} dias`
 }
 
-/**
- * Os pedidos de quem pede, pela data de entrega, da mais cedo para a mais tarde. No mesmo dia,
- * o pedido feito antes vem primeiro. Devolve uma cópia: a lista do cache não é mexida
- */
-export function porDataDeEntrega<T extends { id: number; dataEntrega: string }>(
-  pedidos: readonly T[],
-): T[] {
-  // A data vem como AAAA-MM-DD, então a ordem do texto é a ordem do calendário
-  return [...pedidos].sort((a, b) => a.dataEntrega.localeCompare(b.dataEntrega) || a.id - b.id)
+// A ordem das colunas de data, na ordem crescente: a seta da coluna inverte. As datas vêm como
+// AAAA-MM-DD, então a ordem do texto é a ordem do calendário. No mesmo dia, o número do pedido
+// desempata, e o pedido feito antes vem primeiro
+
+/** Pela data do pedido, do mais antigo para o mais novo */
+export function compararDataDoPedido(
+  a: { id: number; dataSolicitacao: string },
+  b: { id: number; dataSolicitacao: string },
+): number {
+  return a.dataSolicitacao.localeCompare(b.dataSolicitacao) || a.id - b.id
+}
+
+/** Pela data de entrega, da mais cedo para a mais tarde */
+export function compararDataDeEntrega(
+  a: { id: number; dataEntrega: string },
+  b: { id: number; dataEntrega: string },
+): number {
+  return a.dataEntrega.localeCompare(b.dataEntrega) || a.id - b.id
 }
 
 export type FiltroDeSolicitacao = 'todas' | 'pendentes' | 'aceitas' | 'recusadas'
@@ -75,25 +84,4 @@ export function entraNoFiltro(filtro: FiltroDeSolicitacao, s: Solicitacao): bool
     case 'recusadas':
       return s.status === 'recusada'
   }
-}
-
-export type OrdemDeSolicitacao = 'pedido' | 'entrega'
-
-export const ORDENS_DE_SOLICITACAO: { value: OrdemDeSolicitacao; label: string }[] = [
-  { value: 'pedido', label: 'Data do pedido' },
-  { value: 'entrega', label: 'Data de entrega' },
-]
-
-export function porDataDoPedido<T extends { id: number; dataSolicitacao: string }>(
-  pedidos: readonly T[],
-): T[] {
-  return [...pedidos].sort(
-    (a, b) => b.dataSolicitacao.localeCompare(a.dataSolicitacao) || b.id - a.id,
-  )
-}
-
-export function ordenarSolicitacoes<
-  T extends { id: number; dataSolicitacao: string; dataEntrega: string },
->(ordem: OrdemDeSolicitacao, pedidos: readonly T[]): T[] {
-  return ordem === 'entrega' ? porDataDeEntrega(pedidos) : porDataDoPedido(pedidos)
 }

@@ -99,7 +99,18 @@ export const tema: ThemeConfig = {
     Input: { controlHeight: ALTURA_DE_CONTROLE },
     InputNumber: { controlHeight: ALTURA_DE_CONTROLE },
     Select: { controlHeight: ALTURA_DE_CONTROLE },
-    Table: { cellPaddingBlock: 14, headerBg: COR.suave, headerColor: COR.suaveFrente },
+    /**
+     * A coluna que ordena não ganha fundo próprio, nem no cabeçalho nem nas linhas: quem mostra
+     * a ordem são as setas. O cabeçalho que ordena escurece um pouco com o mouse
+     */
+    Table: {
+      cellPaddingBlock: 14,
+      headerBg: COR.suave,
+      headerColor: COR.suaveFrente,
+      headerSortActiveBg: COR.suave,
+      headerSortHoverBg: misturar(COR.suaveFrente, COR.suave, HOVER),
+      bodySortBg: COR.cartao,
+    },
     Layout: { headerBg: COR.marca, bodyBg: COR.fundo, siderBg: COR.cartao },
     Menu: { itemBorderRadius: RAIO.sm, itemMarginInline: 8 },
     Modal: { borderRadiusLG: RAIO.lg },

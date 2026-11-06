@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { Solicitacao } from './tipos'
 import {
+  compararDataDeEntrega,
+  compararDataDoPedido,
   entraNoFiltro,
   descreverAnimais,
   descreverIdade,
   faixaDeIdade,
-  ordenarSolicitacoes,
-  porDataDeEntrega,
   totalDeAnimais,
 } from './solicitacao'
 
@@ -61,7 +61,7 @@ describe('descreverIdade', () => {
   })
 })
 
-describe('porDataDeEntrega', () => {
+describe('compararDataDeEntrega', () => {
   it('a entrega mais cedo vem primeiro e, no mesmo dia, o pedido mais antigo', () => {
     const pedidos = [
       { id: 3, dataEntrega: '2026-12-10' },
@@ -70,17 +70,19 @@ describe('porDataDeEntrega', () => {
       { id: 2, dataEntrega: '2026-12-10' },
     ]
 
-    expect(porDataDeEntrega(pedidos).map((p) => p.id)).toEqual([4, 2, 3, 1])
+    expect(pedidos.sort(compararDataDeEntrega).map((p) => p.id)).toEqual([4, 2, 3, 1])
   })
+})
 
-  it('não mexe na lista que recebeu', () => {
+describe('compararDataDoPedido', () => {
+  it('o pedido mais antigo vem primeiro e, no mesmo dia, o de número menor', () => {
     const pedidos = [
-      { id: 1, dataEntrega: '2027-01-05' },
-      { id: 2, dataEntrega: '2026-11-20' },
+      { id: 1, dataSolicitacao: '2026-11-01' },
+      { id: 3, dataSolicitacao: '2026-11-03' },
+      { id: 2, dataSolicitacao: '2026-11-03' },
     ]
 
-    porDataDeEntrega(pedidos)
-    expect(pedidos.map((p) => p.id)).toEqual([1, 2])
+    expect(pedidos.sort(compararDataDoPedido).map((p) => p.id)).toEqual([1, 2, 3])
   })
 })
 
@@ -99,21 +101,5 @@ describe('entraNoFiltro', () => {
   it('recusadas só as recusadas; todas mostra tudo', () => {
     expect(entraNoFiltro('recusadas', com('recusada'))).toBe(true)
     expect(entraNoFiltro('todas', com('cancelada'))).toBe(true)
-  })
-})
-
-describe('ordenarSolicitacoes', () => {
-  const pedidos = [
-    { id: 1, dataSolicitacao: '2026-11-01', dataEntrega: '2026-12-20' },
-    { id: 2, dataSolicitacao: '2026-11-03', dataEntrega: '2026-12-05' },
-    { id: 3, dataSolicitacao: '2026-11-03', dataEntrega: '2026-12-10' },
-  ]
-
-  it('pela data do pedido, o mais novo primeiro', () => {
-    expect(ordenarSolicitacoes('pedido', pedidos).map((p) => p.id)).toEqual([3, 2, 1])
-  })
-
-  it('pela data de entrega, a mais próxima primeiro', () => {
-    expect(ordenarSolicitacoes('entrega', pedidos).map((p) => p.id)).toEqual([2, 3, 1])
   })
 })
