@@ -169,7 +169,13 @@ export function useRegistrarEntrega() {
   return useMutation({
     mutationFn: ({ idSolicitacao, dtEntrega }: { idSolicitacao: number; dtEntrega: string }) =>
       api(`/api/solicitacoes/${idSolicitacao}/entrega`, { metodo: 'POST', corpo: { dtEntrega } }),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
+    // o entregue sai da caixa, e a caixa que ficou vazia ou sem reserva muda de coluna
+    onSuccess: () =>
+      Promise.all([
+        cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
+        cliente.invalidateQueries({ queryKey: ['caixa'] }),
+        invalidarColonia(cliente),
+      ]),
   })
 }
 
