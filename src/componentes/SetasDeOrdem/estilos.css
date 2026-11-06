@@ -1,0 +1,55 @@
+/*
+ * O cabeçalho das colunas que ordenam. As regras do Ant Design vêm com
+ * `.ant-table-wrapper` na frente, então as daqui precisam de uma classe a mais para valer
+ */
+
+/* O título e as setas lado a lado, e não as setas lá na ponta da coluna */
+.ant-table-wrapper .ant-table-thead .ant-table-column-sorters {
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.ant-table-wrapper .ant-table-thead .ant-table-column-title {
+  flex: 0 1 auto;
+}
+
+/*
+ * O traço entre os títulos continua na coluna que ordena e com o mouse em cima. O Ant Design
+ * apaga o traço nesses dois casos com !important, e só outro !important o traz de volta
+ */
+.ant-table-wrapper .ant-table-thead > tr > th.ant-table-column-has-sorters:not(:last-child)::before {
+  background-color: var(--cor-borda) !important;
+}
+
+.setas-de-ordem {
+  display: inline-flex;
+  flex-direction: column;
+  flex: none;
+  font-size: 10px;
+  line-height: 0;
+  color: var(--cor-suave-frente);
+  opacity: 0;
+  transition: opacity var(--movimento-rapido) var(--movimento-curva);
+}
+
+.setas-de-ordem__seta:first-child {
+  margin-bottom: -2px;
+}
+
+.setas-de-ordem__seta--ativa {
+  color: var(--cor-acao);
+}
+
+/* Aparecem no cabeçalho com o mouse ou o foco do teclado; na coluna que ordena, sempre */
+.ant-table-thead th:hover .setas-de-ordem,
+.ant-table-thead th:focus-visible .setas-de-ordem,
+.setas-de-ordem--ordenando {
+  opacity: 1;
+}
+
+/* Na tela de toque não há mouse para passar por cima: as setas ficam sempre à vista */
+@media (hover: none) {
+  .setas-de-ordem {
+    opacity: 1;
+  }
+}

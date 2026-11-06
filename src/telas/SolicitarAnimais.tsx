@@ -21,9 +21,9 @@ import {
   Entrada,
   Etiqueta,
   Formulario,
-  Linha,
   Pilha,
   Secao,
+  SetasDeOrdem,
   Texto,
 } from '@/componentes'
 import type { TomDeEtiqueta } from '@/componentes'
@@ -37,15 +37,15 @@ import {
 } from '@/dominio/consultas'
 import {
   FILTROS_DE_SOLICITACAO,
-  ORDENS_DE_SOLICITACAO,
+  compararDataDeEntrega,
+  compararDataDoPedido,
   descreverAnimais,
   descreverIdade,
   entraNoFiltro,
-  ordenarSolicitacoes,
   totalDeAnimais,
 } from '@/dominio/solicitacao'
 import type { NovaSolicitacao } from '@/dominio/consultas'
-import type { FiltroDeSolicitacao, OrdemDeSolicitacao } from '@/dominio/solicitacao'
+import type { FiltroDeSolicitacao } from '@/dominio/solicitacao'
 import type { CodigoEspecie, Solicitacao, StatusSolicitacao, Viabilidade } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
@@ -128,7 +128,6 @@ export function SolicitarAnimais() {
     viabilidade: Viabilidade | null
   } | null>(null)
   const [filtro, setFiltro] = useState<FiltroDeSolicitacao>('todas')
-  const [ordem, setOrdem] = useState<OrdemDeSolicitacao>(pesquisador ? 'entrega' : 'pedido')
 
   const especie = Form.useWatch('especie', form)
   const total = totalDeAnimais({
@@ -344,35 +343,26 @@ export function SolicitarAnimais() {
           titulo={pesquisador ? 'Minhas solicitações' : undefined}
           semPreenchimento
           acoes={
-            <Linha>
-              <Segmented<FiltroDeSolicitacao>
-                className="solicitacao__filtro"
-                aria-label="Filtrar solicitações"
-                value={filtro}
-                onChange={setFiltro}
-                options={FILTROS_DE_SOLICITACAO.map(({ valor, rotulo }) => ({
-                  value: valor,
-                  label: `${rotulo} (${(solicitacoes.data ?? []).filter((s) => entraNoFiltro(valor, s)).length})`,
-                }))}
-              />
-              <Select<OrdemDeSolicitacao>
-                aria-label="Ordenar solicitações"
-                className="solicitacao__ordem"
-                prefix="Ordenar por"
-                value={ordem}
-                onChange={setOrdem}
-                options={ORDENS_DE_SOLICITACAO}
-              />
-            </Linha>
+            <Segmented<FiltroDeSolicitacao>
+              className="solicitacao__filtro"
+              aria-label="Filtrar solicitações"
+              value={filtro}
+              onChange={setFiltro}
+              options={FILTROS_DE_SOLICITACAO.map(({ valor, rotulo }) => ({
+                value: valor,
+                label: `${rotulo} (${(solicitacoes.data ?? []).filter((s) => entraNoFiltro(valor, s)).length})`,
+              }))}
+            />
           }
         >
+          {/* A ordem é a das setas no cabeçalho da coluna de data. Sem seta acesa, fica a da API,
+              do pedido mais novo para o mais antigo */}
           <Table<Solicitacao>
             rowKey="id"
             className="solicitacao__lista"
             tableLayout="fixed"
-            dataSource={ordenarSolicitacoes(ordem, solicitacoes.data ?? []).filter((s) =>
-              entraNoFiltro(filtro, s),
-            )}
+            dataSource={(solicitacoes.data ?? []).filter((s) => entraNoFiltro(filtro, s))}
+            showSorterTooltip={false}
             pagination={false}
             locale={{ emptyText: 'Nenhuma solicitação aqui.' }}
             columns={colunasDaTabela}
@@ -489,12 +479,38 @@ function AcaoDaEquipe({
   return null
 }
 
-/** Para quem pediu: quando chega, se aceitaram e o que pediu. O resto fica na setinha */
+/**
+ * A coluna ordena pelas setas do cabeçalho: crescente, decrescente e sem ordem, a cada clique.
+ * Abre na ordem dada
+ */
+function ordenaPor(
+  comparar: (a: Solicitacao, b: Solicitacao) => number,
+  inicio: 'ascend' | 'descend',
+): Pick<TableColumnsType<Solicitacao>[number], 'sorter' | 'defaultSortOrder' | 'sortIcon'> {
+  return {
+    sorter: comparar,
+    defaultSortOrder: inicio,
+    sortIcon: ({ sortOrder }) => <SetasDeOrdem sortOrder={sortOrder} />,
+  }
+}
+
+/** Para quem pediu: a entrega mais próxima primeiro */
+const PELA_ENTREGA = ordenaPor(compararDataDeEntrega, 'ascend')
+
+/** Para a equipe: o pedido mais novo primeiro */
+const PELO_PEDIDO = ordenaPor(compararDataDoPedido, 'descend')
+
+/**
+ * Para quem pediu: quando chega, se aceitaram e o que pediu. O resto fica na setinha. Na tela
+ * estreita a coluna única ordena pela entrega, que é a data no topo de cada pedido
+ */
 function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
   if (!telaLarga) {
     return [
       {
+        key: 'solicitacao',
         title: 'Solicitação',
+        ...PELA_ENTREGA,
         render: (_, s) => (
           <div className="solicitacao__compacta">
             <div className="solicitacao__compactaTopo">
@@ -510,8 +526,10 @@ function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
 
   return [
     {
+      key: 'entrega',
       title: 'Entrega',
       width: 140,
+      ...PELA_ENTREGA,
       render: (_, s) => <Entrega solicitacao={s} />,
     },
     {
@@ -526,12 +544,17 @@ function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
   ]
 }
 
-/** Para a equipe: quando pediram, a situação, quem pediu e o quê, e o que fazer com o pedido */
+/**
+ * Para a equipe: quando pediram, a situação, quem pediu e o quê, e o que fazer com o pedido. Na
+ * tela estreita a coluna única ordena pela data do pedido, que é a data no topo de cada um
+ */
 function colunasDaEquipe(equipe: AcoesDaEquipe, telaLarga: boolean): TableColumnsType<Solicitacao> {
   if (!telaLarga) {
     return [
       {
+        key: 'solicitacao',
         title: 'Solicitação',
+        ...PELO_PEDIDO,
         render: (_, s) => (
           <div className="solicitacao__compacta">
             <div className="solicitacao__compactaTopo">
@@ -548,9 +571,12 @@ function colunasDaEquipe(equipe: AcoesDaEquipe, telaLarga: boolean): TableColumn
 
   return [
     {
+      key: 'pedidoEm',
       title: 'Pedido em',
-      width: 120,
+      // a data inteira e, no cabeçalho, o título com as setas ao lado
+      width: 140,
       className: 'solicitacao__semQuebra',
+      ...PELO_PEDIDO,
       render: (_, s) => formatarData(s.dataSolicitacao),
     },
     {
