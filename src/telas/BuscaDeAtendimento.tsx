@@ -203,7 +203,7 @@ export function BuscaDeAtendimento() {
               <CampoDeIdade className="busca__idade" idadeMinima={1} />
             </div>
 
-            <Texto tom="rotulo">Remessas</Texto>
+            <Texto tom="rotulo">Entregas</Texto>
             <Form.List name="remessas">
               {(campos, { add, remove }) => (
                 <>
@@ -239,7 +239,7 @@ export function BuscaDeAtendimento() {
                   ))}
                   <div className="busca__acoes">
                     <Botao onClick={() => add({ machos: 0, femeas: 0, qualquer: 0 })}>
-                      Mais uma remessa
+                      Mais uma entrega
                     </Botao>
                     <Botao variante="primario" htmlType="submit" loading={busca.isPending}>
                       Buscar caixas
@@ -260,7 +260,7 @@ export function BuscaDeAtendimento() {
       {busca.data?.map(({ remessa, busca: resultado }, indice) => (
         <Secao
           key={indice}
-          titulo={`Remessa #${indice + 1} · ${formatarData(remessa.dataEntrega)}`}
+          titulo={`Entrega #${indice + 1} · ${formatarData(remessa.dataEntrega)}`}
           acoes={
             <Etiqueta>
               {descreverAnimais(remessa)} · idade aceita {resultado.faixa.min} a{' '}
@@ -343,7 +343,7 @@ function Resumo({ resultado }: { resultado: ResultadoDaBusca }) {
   const falta = { machos: deficit.m, femeas: deficit.f, qualquer: deficit.qualquer }
 
   if (deficit.m + deficit.f + deficit.qualquer === 0) {
-    return <Aviso tom="sucesso" titulo="O plantel cobre esta remessa." />
+    return <Aviso tom="sucesso" titulo="O plantel cobre esta entrega." />
   }
 
   return (

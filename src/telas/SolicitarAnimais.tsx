@@ -670,7 +670,7 @@ function RegistrarEntrega({
       confirmLoading={registrar.isPending}
     >
       <Texto>
-        {descreverAnimais(solicitacao)} de {solicitacao.linhagem} para o projeto{' '}
+        {descreverAnimais(solicitacao)} de {solicitacao.linhagem}, protocolo CEUA{' '}
         {solicitacao.protocoloCeua}.
       </Texto>
       <Form form={form} layout="vertical" onFinish={salvar} initialValues={{ dtEntrega: hoje() }}>

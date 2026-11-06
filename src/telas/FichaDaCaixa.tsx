@@ -778,7 +778,7 @@ function AbaAgrupamento({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
         <Campo rotulo="Disponíveis para reserva">
           {parto.disponivel.m} M / {parto.disponivel.f} F
         </Campo>
-        <Campo rotulo="Já alocados em projetos">
+        <Campo rotulo="Já alocados em solicitações">
           {parto.comprometido.m} M / {parto.comprometido.f} F
         </Campo>
       </LadoALado>
