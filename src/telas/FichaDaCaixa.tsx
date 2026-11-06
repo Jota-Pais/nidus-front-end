@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Aviso, Botao, Etiqueta, Linha, Texto } from '@/componentes'
 import { COR_DO_PARTO } from '@/app/tokens'
-import { corDoParto, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
+import { corDoParto, descreverFalta, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
 import {
   useCatalogo,
   useCorrigirEvento,
@@ -581,7 +581,7 @@ function RegistrarEvento({
   botao: string
   extra?: Record<string, unknown>
 }) {
-  const { message } = App.useApp()
+  const { message, modal } = App.useApp()
   const registrar = useRegistrarNaFicha(idCaixa)
   const [form] = Form.useForm<Record<string, unknown>>()
   const falha = useFalhaDoFormulario(
@@ -600,7 +600,11 @@ function RegistrarEvento({
         registrar.mutate(
           { caminho, corpo: { ...valores, ...extra } },
           {
-            onSuccess: () => void message.success('Registrado.'),
+            onSuccess: ({ falta }) => {
+              void message.success('Registrado.')
+              // grava o que aconteceu, mesmo abaixo do reservado, e avisa
+              if (falta) modal.warning({ title: 'Reserva em falta', content: descreverFalta(falta) })
+            },
             onError: falha.mostrar,
           },
         )
@@ -666,9 +670,10 @@ function CorrigirEvento({
         corrigir.mutate(
           { idParto, evento, corpo },
           {
-            onSuccess: ({ alerta }) => {
+            onSuccess: ({ parto }) => {
               void message.success('Correção registrada.')
-              if (alerta) modal.warning({ title: 'Confira os compromissos', content: alerta })
+              // grava o que aconteceu, mesmo abaixo do reservado, e avisa
+              if (parto.falta) modal.warning({ title: 'Reserva em falta', content: descreverFalta(parto.falta) })
               setAberto(false)
             },
             onError: falha.mostrar,
@@ -708,6 +713,17 @@ function CorrigirEvento({
   )
 }
 
+/** A ninhada ficou com menos animais do que o reservado: o aviso fica enquanto a reserva passar */
+function ReservaEmFalta({ parto }: { parto: Parto }) {
+  if (!parto.falta) return null
+
+  return (
+    <Aviso tom="atencao" titulo="Reserva em falta">
+      {descreverFalta(parto.falta)}
+    </Aviso>
+  )
+}
+
 function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
   const parto = partoDaOrdem(ficha, ordem)
 
@@ -724,6 +740,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
 
   return (
     <div className="ficha__aba">
+      <ReservaEmFalta parto={parto} />
       <LadoALado>
         <Campo rotulo="Acasalamento">{formatarData(parto.dtAcasalamento)}</Campo>
         <Campo rotulo="Previsão de parto">{formatarData(parto.dtPartoPrevisto)}</Campo>
@@ -868,6 +885,7 @@ function AbaAgrupamento({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
 
   return (
     <div className="ficha__aba">
+      <ReservaEmFalta parto={parto} />
       <h3>Estoque desta caixa — {ordem}º parto</h3>
       <LadoALado>
         <Campo rotulo="Disponíveis para reserva">

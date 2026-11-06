@@ -7,10 +7,12 @@ import type {
   CodigoEspecie,
   EstadoCaixa,
   Estante,
+  FaltaNaReserva,
   Ficha,
   Grade,
   Kanban,
   Estoque,
+  Parto,
   Perfil,
   Projeto,
   RegistroDoHistorico,
@@ -132,6 +134,11 @@ export function useFormarCasal() {
   })
 }
 
+/** O registro de parto, seleção e desmame devolve o parto, que pode vir com a reserva em falta */
+export interface RespostaDoRegistro {
+  falta?: FaltaNaReserva | null
+}
+
 /**
  * Os registros feitos de dentro da ficha (parto, seleção, desmame, encerramento). Cada um é um
  * POST com o seu caminho; depois dele kanban, grade e a própria ficha recarregam
@@ -141,7 +148,7 @@ export function useRegistrarNaFicha(idCaixa: number) {
 
   return useMutation({
     mutationFn: ({ caminho, corpo }: { caminho: string; corpo: unknown }) =>
-      api(caminho, { metodo: 'POST', corpo }),
+      api<RespostaDoRegistro>(caminho, { metodo: 'POST', corpo }),
     onSuccess: () => invalidarColonia(cliente, idCaixa),
   })
 }
@@ -174,6 +181,21 @@ export function useRegistrarEntrega() {
       Promise.all([
         cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
         cliente.invalidateQueries({ queryKey: ['caixa'] }),
+        invalidarColonia(cliente),
+      ]),
+  })
+}
+
+/** O pedido aceito com reserva em falta volta para análise: as reservas dele são canceladas */
+export function useDevolverParaAnalise() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (idSolicitacao: number) =>
+      api(`/api/solicitacoes/${idSolicitacao}/devolucao`, { metodo: 'POST' }),
+    onSuccess: () =>
+      Promise.all([
+        cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
         invalidarColonia(cliente),
       ]),
   })
@@ -282,7 +304,7 @@ export function useCatalogo() {
 
 export type EventoCorrigivel = 'nascimento' | 'selecao' | 'desmame'
 
-/** A correção de um evento já registrado do parto: sempre com motivo, e pode voltar um alerta */
+/** A correção de um evento já registrado do parto: sempre com motivo, e volta o parto corrigido */
 export function useCorrigirEvento(idCaixa: number) {
   const cliente = useQueryClient()
 
@@ -296,7 +318,7 @@ export function useCorrigirEvento(idCaixa: number) {
       evento: EventoCorrigivel
       corpo: Record<string, unknown>
     }) =>
-      api<{ alerta: string | null }>(`/api/partos/${idParto}/${evento}`, {
+      api<{ parto: Parto; alerta: string | null }>(`/api/partos/${idParto}/${evento}`, {
         metodo: 'PATCH',
         corpo,
       }),

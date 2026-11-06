@@ -23,6 +23,7 @@ const parto = (parcial: Partial<Parto> = {}): Parto => ({
   disponivel: { m: 4, f: 4 },
   comprometido: { m: 0, f: 0 },
   entregue: { m: 0, f: 0 },
+  falta: null,
   ...parcial,
 })
 
@@ -91,8 +92,9 @@ beforeEach(() => {
 /** o formulário do antd valida e responde depois de alguns ciclos: no jsdom, passa de 1 s */
 const DEMORA = { timeout: 5000 }
 
-// O modal do antd com as abas leva segundos para montar no jsdom
-describe('formulários da ficha', { timeout: 20_000 }, () => {
+// O modal do antd com as abas leva segundos para montar no jsdom, e o envio do formulário mais
+// alguns: com a suíte inteira rodando, passa de 20 s
+describe('formulários da ficha', { timeout: 40_000 }, () => {
   it('a recusa da API aparece no campo que ela aponta, e não só "confira os campos"', async () => {
     banco.falha = erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
       desmamadoM: 'Nao pode passar do nascido menos a selecao (4 M, 4 F).',
@@ -121,6 +123,27 @@ describe('formulários da ficha', { timeout: 20_000 }, () => {
 
     expect(await screen.findByText('Este casal ja esta encerrado.', {}, DEMORA)).toBeTruthy()
     expect(screen.queryByText('Confira os campos destacados.')).toBeNull()
+  })
+})
+
+describe('ninhada com a reserva em falta', { timeout: 20_000 }, () => {
+  it('avisa quanto falta e de quais pedidos', async () => {
+    banco.ficha = fichaDe({
+      partos: [
+        parto({
+          dtDesmameReal: '2026-10-16',
+          desmamadoM: 2,
+          desmamadoF: 4,
+          falta: { m: 2, f: 0, pedidos: [{ idSolicitacao: 12, m: 4, f: 0 }] },
+        }),
+      ],
+    })
+
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Ninhada' }))
+
+    expect(await screen.findByText('Reserva em falta')).toBeTruthy()
+    expect(screen.getByText(/faltam 2 M e 0 F\. Reservado para o pedido #12 \(4 M, 0 F\)/)).toBeTruthy()
   })
 })
 

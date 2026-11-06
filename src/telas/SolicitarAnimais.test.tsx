@@ -8,6 +8,7 @@ const solicitacao = (
   id: number,
   status: Solicitacao['status'],
   motivoRecusa: string | null = null,
+  reservaEmFalta: Solicitacao['reservaEmFalta'] = null,
 ): Solicitacao => ({
   id,
   dataSolicitacao: '2026-11-0' + id,
@@ -29,7 +30,11 @@ const solicitacao = (
   observacoes: null,
   status,
   motivoRecusa,
+  reservaEmFalta,
 })
+
+/** pedidos a mais, só no teste que precisa deles */
+const extras = vi.hoisted(() => ({ lista: [] as Solicitacao[] }))
 
 vi.mock('@/dominio/consultas', () => ({
   useCatalogo: () => consulta({ especies: [], paresGeneticos: [] }),
@@ -39,9 +44,11 @@ vi.mock('@/dominio/consultas', () => ({
       solicitacao(1, 'enviada'),
       solicitacao(2, 'aprovada'),
       solicitacao(3, 'recusada', 'Sem Wistar ate dezembro'),
+      ...extras.lista,
     ]),
   useCriarSolicitacao: mutacao,
   useRecusarSolicitacao: mutacao,
+  useDevolverParaAnalise: mutacao,
   useRegistrarEntrega: mutacao,
 }))
 
@@ -162,6 +169,23 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
 
     renderizar(<SolicitarAnimais />, 'pesquisador')
     expect(datas('12')).toEqual(['01/12/2026', '02/12/2026', '03/12/2026'])
+  })
+
+  it('o pedido aceito com a reserva em falta mostra quanto falta e pode voltar para análise', async () => {
+    extras.lista = [solicitacao(4, 'aprovada', null, { m: 2, f: 0 })]
+    try {
+      renderizar(<SolicitarAnimais />, 'tecnico')
+
+      expect(screen.getByText('Reserva em falta: 2 M e 0 F')).toBeTruthy()
+      expect(screen.getAllByRole('button', { name: 'Devolver para análise' })).toHaveLength(1)
+
+      // confirma antes, dizendo o que acontece com as reservas e que quem pediu não é avisado
+      fireEvent.click(screen.getByRole('button', { name: 'Devolver para análise' }))
+      expect(await screen.findByText(/Quem pediu não é avisado/)).toBeTruthy()
+      expect(screen.getByText(/faltam até 2 M e 0 F/)).toBeTruthy()
+    } finally {
+      extras.lista = []
+    }
   })
 
   it('a alocada aparece como Aprovada, e não como linguagem da equipe', () => {
