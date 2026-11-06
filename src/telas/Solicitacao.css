@@ -159,6 +159,15 @@
   gap: 8px;
 }
 
+/* O botão de alocar leva o número da solicitação e não cabe numa linha do celular: o texto
+   quebra dentro do botão em vez de o botão sair da tela pela esquerda */
+.busca__alocar.ant-btn {
+  max-width: 100%;
+  height: auto;
+  min-height: var(--altura-de-controle);
+  white-space: normal;
+}
+
 .solicitacao__filtro {
   max-width: 100%;
 }
