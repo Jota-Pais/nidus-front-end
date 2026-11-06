@@ -36,10 +36,8 @@ import {
   useSolicitacoes,
 } from '@/dominio/consultas'
 import {
-  CRONOGRAMAS_DO_PEDIDO,
   FILTROS_DE_SOLICITACAO,
   ORDENS_DE_SOLICITACAO,
-  ROTULO_CRONOGRAMA,
   descreverAnimais,
   descreverIdade,
   entraNoFiltro,
@@ -101,7 +99,6 @@ const CAMPOS_DO_PEDIDO: (keyof CamposDoPedido)[] = [
   'femeas',
   'qualquer',
   'dataEntrega',
-  'cronograma',
   'observacoes',
 ]
 
@@ -188,7 +185,6 @@ export function SolicitarAnimais() {
             initialValues={{
               especie: 'rato',
               modoIdade: 'faixa',
-              cronograma: 'unica',
               ...(nomeDaConta ? { nomePesquisador: nomeDaConta } : {}),
             }}
           >
@@ -298,7 +294,7 @@ export function SolicitarAnimais() {
               </div>
 
               <div className="solicitacao__coluna">
-                {/* Quando */}
+                {/* Quando. Uma data por pedido: quem quer várias entregas faz um pedido para cada */}
                 <div className="solicitacao__fileira">
                   <Formulario.Campo
                     name="dataEntrega"
@@ -307,19 +303,6 @@ export function SolicitarAnimais() {
                     className="solicitacao__campo--quando"
                   >
                     <Entrada type="date" min={hoje()} />
-                  </Formulario.Campo>
-
-                  <Formulario.Campo
-                    name="cronograma"
-                    rotulo="Cronograma"
-                    className="solicitacao__campo--quando"
-                  >
-                    <Select
-                      options={CRONOGRAMAS_DO_PEDIDO.map((valor) => ({
-                        value: valor,
-                        label: ROTULO_CRONOGRAMA[valor],
-                      }))}
-                    />
                   </Formulario.Campo>
                 </div>
 
@@ -458,14 +441,9 @@ function Situacao({
   )
 }
 
-/** A data de entrega e o cronograma */
+/** A data de entrega, sem se partir */
 function Entrega({ solicitacao: s }: { solicitacao: Solicitacao }) {
-  return (
-    <div className="solicitacao__duasLinhas solicitacao__entrega">
-      <span>{formatarData(s.dataEntrega)}</span>
-      <Texto tom="secundario">{ROTULO_CRONOGRAMA[s.cronograma]}</Texto>
-    </div>
-  )
+  return <span className="solicitacao__semQuebra">{formatarData(s.dataEntrega)}</span>
 }
 
 /** Os animais pedidos e a idade, sem o nome de quem pediu */
@@ -613,7 +591,7 @@ function Detalhes({ solicitacao: s, equipe }: { solicitacao: Solicitacao; equipe
         {
           key: 'entrega',
           label: 'Entrega',
-          children: `${formatarData(s.dataEntrega)} · ${ROTULO_CRONOGRAMA[s.cronograma]}`,
+          children: formatarData(s.dataEntrega),
         },
         protocolo,
         ...(s.motivoRecusa

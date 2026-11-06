@@ -2,7 +2,7 @@
 import { z } from 'zod'
 import type { NovaSolicitacao } from '@/dominio/consultas'
 import { formatarProtocolo } from '@/dominio/protocolo'
-import type { CodigoEspecie, Cronograma } from '@/dominio/tipos'
+import type { CodigoEspecie } from '@/dominio/tipos'
 import { faixaDeIdade, totalDeAnimais } from '@/dominio/solicitacao'
 import type { CamposDeIdade } from '@/dominio/solicitacao'
 import { hoje } from '@/lib/data'
@@ -85,7 +85,6 @@ export interface CamposDoPedido extends CamposDeIdade {
   femeas?: number | null
   qualquer?: number | null
   dataEntrega: string
-  cronograma: Cronograma
   observacoes?: string
 }
 
@@ -109,7 +108,6 @@ export function montarPedido(campos: CamposDoPedido): NovaSolicitacao {
     qualquer: campos.qualquer ?? 0,
     ...faixaDeIdade(campos),
     dataEntrega: campos.dataEntrega,
-    cronograma: campos.cronograma,
     ...(observacoes ? { observacoes } : {}),
   }
 }

@@ -5,7 +5,6 @@ import { api } from '@/lib/api'
 import type {
   Catalogo,
   CodigoEspecie,
-  Cronograma,
   EstadoCaixa,
   Estante,
   Ficha,
@@ -197,7 +196,6 @@ export interface NovaSolicitacao {
   idadeMin: number
   idadeMax: number
   dataEntrega: string
-  cronograma: Cronograma
   observacoes?: string
 }
 

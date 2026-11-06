@@ -93,7 +93,6 @@ describe('montarPedido', () => {
     femeas: null,
     qualquer: 10,
     dataEntrega: '2026-12-10',
-    cronograma: 'unica',
     observacoes: '  Lab. 12, bloco B  ',
   }
 
@@ -108,7 +107,6 @@ describe('montarPedido', () => {
       idadeMin: 20,
       idadeMax: 40,
       dataEntrega: '2026-12-10',
-      cronograma: 'unica',
       observacoes: 'Lab. 12, bloco B',
     })
   })
