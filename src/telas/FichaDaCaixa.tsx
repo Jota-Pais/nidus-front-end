@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Botao, Etiqueta, Linha, Texto } from '@/componentes'
 import { COR_DO_PARTO } from '@/app/tokens'
-import { COLUNAS, corDoParto, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
+import { corDoParto, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
 import {
   useCatalogo,
   useCorrigirEvento,
@@ -18,7 +18,6 @@ import type { CasalNovo, EventoCorrigivel } from '@/dominio/consultas'
 import type { CodigoEspecie, Ficha, Parto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { descreverDias, formatarData, hoje, idadeEmDias } from '@/lib/data'
-import { useMudarDeColuna } from './useMudarDeColuna'
 import './FichaDaCaixa.css'
 
 /** Posição vazia da grade: a ficha abre com o formulário de casal, e a caixa nasce com ele */
@@ -185,24 +184,9 @@ function AbaReproducao({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
   const { caixa, casal } = ficha
   const parto = partoDaOrdem(ficha, ordem)
   const confirmados = ficha.partos.filter((p) => p.dtPartoReal !== null).length
-  const mudarDeColuna = useMudarDeColuna()
-  const [mudando, setMudando] = useState(false)
 
   return (
     <div className="ficha__aba">
-      <div className="ficha__campo">
-        <Texto tom="rotulo">Status da caixa</Texto>
-        <Select
-          value={caixa.estado}
-          loading={mudando}
-          disabled={mudando}
-          options={COLUNAS.map((coluna) => ({ value: coluna.estado, label: coluna.rotulo }))}
-          onChange={(estado) => {
-            setMudando(true)
-            mudarDeColuna(caixa.id, estado, () => setMudando(false))
-          }}
-        />
-      </div>
       <MoverDePosicao idCaixa={caixa.id} />
       <LadoALado>
         <Campo rotulo="Espécie">{ROTULO_ESPECIE[caixa.especie]}</Campo>
