@@ -1,7 +1,7 @@
 import { App, Form, Input, InputNumber, Modal, Select, Tabs } from 'antd'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Botao, Etiqueta, Linha, Texto } from '@/componentes'
+import { Aviso, Botao, Etiqueta, Linha, Texto } from '@/componentes'
 import { COR_DO_PARTO } from '@/app/tokens'
 import { corDoParto, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
 import {
@@ -17,6 +17,7 @@ import {
 import type { CasalNovo, EventoCorrigivel } from '@/dominio/consultas'
 import type { CodigoEspecie, Ficha, Parto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
+import { motivoDaFalha, useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { descreverDias, formatarData, hoje, idadeEmDias } from '@/lib/data'
 import './FichaDaCaixa.css'
 
@@ -274,7 +275,8 @@ function MoverDePosicao({ idCaixa }: { idCaixa: number }) {
           void message.success(`Caixa movida para ${codigo}.`)
           fechar()
         },
-        onError: (erro) => void message.error(erro.message),
+        // sem campo para destacar: o motivo vai no aviso
+        onError: (erro) => void message.error(motivoDaFalha(erro)),
       },
     )
   }
@@ -357,6 +359,9 @@ interface CamposDoCasal {
   dtFormacao: string
 }
 
+/** Onde a API pode apontar erro na formação do casal */
+const CAMPOS_DO_CASAL: (keyof CamposDoCasal)[] = ['idLinhagem', 'grupoMacho', 'grupoFemea', 'dtFormacao']
+
 function FormarCasal({
   alvo,
   especie,
@@ -371,6 +376,7 @@ function FormarCasal({
   const catalogo = useCatalogo()
   const formar = useFormarCasal()
   const [form] = Form.useForm<CamposDoCasal>()
+  const falha = useFalhaDoFormulario(form, CAMPOS_DO_CASAL)
 
   const especies = (catalogo.data?.especies ?? []).filter((e) => especie === null || e.codigo === especie)
   const linhagens = especies.map((e) => ({
@@ -385,6 +391,7 @@ function FormarCasal({
   }
 
   function salvar(campos: CamposDoCasal) {
+    falha.limpar()
     formar.mutate(
       { ...alvo, ...campos },
       {
@@ -392,7 +399,7 @@ function FormarCasal({
           void message.success(`Casal ${campos.grupoMacho}${campos.grupoFemea} formado.`)
           aoFormar?.(idCaixa)
         },
-        onError: (erro) => void message.error(erro.message),
+        onError: falha.mostrar,
       },
     )
   }
@@ -405,6 +412,7 @@ function FormarCasal({
       initialValues={{ dtFormacao: hoje() }}
       className="ficha__formulario"
     >
+      {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
       <Form.Item name="idLinhagem" label="Linhagem" rules={[{ required: true, message: 'Escolha a linhagem' }]}>
         <Select options={linhagens} loading={catalogo.isPending} placeholder="Selecione a linhagem" />
       </Form.Item>
@@ -426,10 +434,17 @@ function FormarCasal({
   )
 }
 
+interface CamposDoEncerramento {
+  dtEncerramento: string
+  motivo: string
+}
+
 function EncerrarCasal({ idCaixa, idCasal }: { idCaixa: number; idCasal: number }) {
   const { message } = App.useApp()
   const registrar = useRegistrarNaFicha(idCaixa)
   const [aberto, setAberto] = useState(false)
+  const [form] = Form.useForm<CamposDoEncerramento>()
+  const falha = useFalhaDoFormulario(form, ['dtEncerramento', 'motivo'])
 
   if (!aberto) {
     return (
@@ -441,10 +456,12 @@ function EncerrarCasal({ idCaixa, idCasal }: { idCaixa: number; idCasal: number 
 
   return (
     <Form
+      form={form}
       layout="vertical"
       initialValues={{ dtEncerramento: hoje() }}
       className="ficha__formulario"
-      onFinish={(corpo: { dtEncerramento: string; motivo: string }) =>
+      onFinish={(corpo: CamposDoEncerramento) => {
+        falha.limpar()
         registrar.mutate(
           { caminho: `/api/casais/${idCasal}/encerramento`, corpo },
           {
@@ -452,11 +469,12 @@ function EncerrarCasal({ idCaixa, idCasal }: { idCaixa: number; idCasal: number 
               void message.success('Casal encerrado.')
               setAberto(false)
             },
-            onError: (erro) => void message.error(erro.message),
+            onError: falha.mostrar,
           },
         )
-      }
+      }}
     >
+      {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
       <LadoALado>
         <Form.Item name="dtEncerramento" label="Data" rules={[{ required: true, message: 'Data' }]}>
           <Input type="date" />
@@ -501,22 +519,30 @@ function RegistrarEvento({
 }) {
   const { message } = App.useApp()
   const registrar = useRegistrarNaFicha(idCaixa)
+  const [form] = Form.useForm<Record<string, unknown>>()
+  const falha = useFalhaDoFormulario(
+    form,
+    campos.map((campo) => campo.nome),
+  )
 
   return (
     <Form
+      form={form}
       layout="vertical"
       initialValues={inicial}
       className="ficha__formulario"
-      onFinish={(valores: Record<string, unknown>) =>
+      onFinish={(valores: Record<string, unknown>) => {
+        falha.limpar()
         registrar.mutate(
           { caminho, corpo: { ...valores, ...extra } },
           {
             onSuccess: () => void message.success('Registrado.'),
-            onError: (erro) => void message.error(erro.message),
+            onError: falha.mostrar,
           },
         )
-      }
+      }}
     >
+      {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
       <LadoALado>
         {campos.map((campo) => (
           <Form.Item
@@ -552,6 +578,8 @@ function CorrigirEvento({
   const { message, modal } = App.useApp()
   const corrigir = useCorrigirEvento(idCaixa)
   const [aberto, setAberto] = useState(false)
+  const [form] = Form.useForm<Record<string, unknown>>()
+  const falha = useFalhaDoFormulario(form, [...campos.map((campo) => campo.nome), 'motivo'])
 
   if (!aberto) {
     return (
@@ -565,10 +593,12 @@ function CorrigirEvento({
 
   return (
     <Form
+      form={form}
       layout="vertical"
       initialValues={atual}
       className="ficha__formulario"
-      onFinish={(corpo: Record<string, unknown>) =>
+      onFinish={(corpo: Record<string, unknown>) => {
+        falha.limpar()
         corrigir.mutate(
           { idParto, evento, corpo },
           {
@@ -577,11 +607,12 @@ function CorrigirEvento({
               if (alerta) modal.warning({ title: 'Confira os compromissos', content: alerta })
               setAberto(false)
             },
-            onError: (erro) => void message.error(erro.message),
+            onError: falha.mostrar,
           },
         )
-      }
+      }}
     >
+      {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
       <LadoALado>
         {campos.map((campo) => (
           <Form.Item

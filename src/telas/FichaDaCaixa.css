@@ -101,6 +101,11 @@
   margin-bottom: 12px;
 }
 
+/* o motivo da recusa da API, em cima dos campos */
+.ficha__formulario > .ant-alert {
+  margin-bottom: 12px;
+}
+
 .ficha__formulario > .ant-btn,
 .ficha__botoes {
   margin-bottom: 12px;
