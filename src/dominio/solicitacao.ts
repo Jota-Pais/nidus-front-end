@@ -1,21 +1,6 @@
 // Como um pedido de animais se escreve na tela. A solicitação e a busca de atendimento usam
 // as mesmas frases: o que o pesquisador conferiu é o que a equipe lê
-import type { Cronograma, Solicitacao } from './tipos'
-
-export const ROTULO_CRONOGRAMA: Record<Cronograma, string> = {
-  unica: 'Cota única',
-  semanal: 'Semanal',
-  quinzenal: 'Quinzenal',
-  mensal: 'Mensal',
-}
-
-/** As opções do pedido, na ordem do seletor */
-export const CRONOGRAMAS_DO_PEDIDO = [
-  'unica',
-  'semanal',
-  'quinzenal',
-  'mensal',
-] as const satisfies readonly Cronograma[]
+import type { Solicitacao } from './tipos'
 
 /** Campo vazio do formulário conta como zero */
 interface Quantidades {

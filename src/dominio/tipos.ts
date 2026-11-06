@@ -150,8 +150,6 @@ export interface Projeto {
   situacao: SituacaoDoProjeto
 }
 
-export type Cronograma = 'unica' | 'semanal' | 'quinzenal' | 'mensal'
-
 export type StatusSolicitacao =
   | 'rascunho'
   | 'enviada'
@@ -187,7 +185,6 @@ export interface Solicitacao {
   idadeMin: number
   idadeMax: number
   dataEntrega: DataISO
-  cronograma: Cronograma
   observacoes: string | null
   status: StatusSolicitacao
   motivoRecusa: string | null

@@ -26,7 +26,6 @@ const solicitacao = (
   idadeMin: 28,
   idadeMax: 28,
   dataEntrega: '2026-12-0' + id,
-  cronograma: 'unica',
   observacoes: null,
   status,
   motivoRecusa,

@@ -37,8 +37,8 @@
   column-gap: 24px;
 }
 
-/* O que tem formato fixo fica com a largura do que se digita nele; nome, linhagem e as
-   escolhas da entrega ocupam o resto da fileira, para não sobrar vão do lado */
+/* O que tem formato fixo fica com a largura do que se digita nele, como o protocolo e a data
+   de entrega; nome e linhagem ocupam o resto da fileira, para não sobrar vão do lado */
 .solicitacao__campo--nome {
   flex: 1 1 260px;
 }
@@ -52,7 +52,7 @@
 }
 
 .solicitacao__campo--quando {
-  flex: 1 1 180px;
+  flex: 0 1 200px;
 }
 
 /* Protocolo é código, e código vai em mono, como o endereço da caixa */
@@ -106,18 +106,12 @@
   margin-bottom: 16px;
 }
 
-/* Célula com o dado em cima e o complemento embaixo: quem pediu e o e-mail, a data e o
-   cronograma. Cada linha tem a largura do que mostra: a etiqueta da situação não estica */
+/* Célula com o dado em cima e o complemento embaixo: a situação e a data da decisão, os
+   animais e a idade. Cada linha tem a largura do que mostra: a etiqueta da situação não estica */
 .solicitacao__duasLinhas {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-}
-
-/* A data e o cronograma não se partem, nem no celular */
-.solicitacao__entrega {
-  flex-shrink: 0;
-  white-space: nowrap;
 }
 
 /* Espécie, linhagem e idade da busca. A idade tem a largura do que mostra e, se não couber,
