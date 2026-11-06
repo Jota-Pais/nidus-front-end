@@ -46,6 +46,20 @@ vi.mock('@/dominio/consultas', () => ({
   useRegistrarEntrega: mutacao,
 }))
 
+/** O jsdom não tem largura: aqui o Grid do antd acha que a tela é larga */
+function emTelaLarga(teste: () => void) {
+  const original = window.matchMedia
+  window.matchMedia = ((query: string) => ({
+    ...original(query),
+    matches: true,
+  })) as typeof window.matchMedia
+  try {
+    teste()
+  } finally {
+    window.matchMedia = original
+  }
+}
+
 // A tela inteira do antd no jsdom leva de 4 a 9 s para montar: os 5 s padrão falham à toa
 describe('lista de solicitações', { timeout: 20_000 }, () => {
   it('o técnico recusa a enviada e registra a entrega da alocada', () => {
@@ -93,31 +107,35 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
   })
 
   it('em tela larga, as quatro informações ficam em colunas, sem rolar de lado', () => {
-    const original = window.matchMedia
-    window.matchMedia = ((query: string) => ({
-      ...original(query),
-      matches: true,
-    })) as typeof window.matchMedia
-    try {
+    emTelaLarga(() => {
       renderizar(<SolicitarAnimais />, 'tecnico')
 
       for (const coluna of ['Pedido em', 'Situação', 'Quem pediu e o quê']) {
         expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
       }
       expect(screen.getAllByText('Ana')).toHaveLength(3)
-    } finally {
-      window.matchMedia = original
-    }
+    })
   })
 
-  it('quem pediu vê o motivo da recusa ao abrir a setinha', () => {
+  it('quem pediu vê quando chega, se aceitaram e o que pediu, sem o próprio nome', () => {
+    emTelaLarga(() => {
+      renderizar(<SolicitarAnimais />, 'pesquisador')
+
+      for (const coluna of ['Entrega', 'Situação', 'O que pediu']) {
+        expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
+      }
+      expect(screen.queryByRole('columnheader', { name: 'Quem pediu e o quê' })).toBeNull()
+      expect(screen.queryByText('Ana')).toBeNull()
+      expect(screen.getByText('Resposta até 15/11/2026')).toBeTruthy()
+      expect(screen.getByText('Aceita em 03/11/2026')).toBeTruthy()
+      expect(screen.getAllByText('28 dias de idade')).toHaveLength(3)
+    })
+  })
+
+  it('quem pediu vê o motivo da recusa na própria linha, sem abrir a setinha', () => {
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
-    expect(screen.queryByText('Sem Wistar ate dezembro')).toBeNull()
-    fireEvent.click(screen.getByRole('radio', { name: /Recusadas/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes' }))
-
-    expect(screen.getByText('Sem Wistar ate dezembro')).toBeTruthy()
+    expect(screen.getByText('Motivo: Sem Wistar ate dezembro')).toBeTruthy()
     expect(screen.getByText('Recusada')).toBeTruthy()
   })
 
@@ -135,15 +153,16 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
   })
 
   it('a equipe vê o pedido mais novo primeiro, e o pesquisador a entrega mais próxima', () => {
-    const datas = () =>
-      screen.getAllByText(/^0[1-3]\/11\/2026$/).map((celula) => celula.textContent)
+    const datas = (mes: string) =>
+      screen.getAllByText(new RegExp(`^0[1-3]/${mes}/2026$`)).map((celula) => celula.textContent)
 
+    // a equipe vê a data do pedido; quem pediu, a da entrega
     const equipe = renderizar(<SolicitarAnimais />, 'tecnico')
-    expect(datas()).toEqual(['03/11/2026', '02/11/2026', '01/11/2026'])
+    expect(datas('11')).toEqual(['03/11/2026', '02/11/2026', '01/11/2026'])
     equipe.unmount()
 
     renderizar(<SolicitarAnimais />, 'pesquisador')
-    expect(datas()).toEqual(['01/11/2026', '02/11/2026', '03/11/2026'])
+    expect(datas('12')).toEqual(['01/12/2026', '02/12/2026', '03/12/2026'])
   })
 
   it('a alocada aparece como Aprovada, e não como linguagem da equipe', () => {

@@ -139,12 +139,12 @@ export function SolicitarAnimais() {
     femeas: Form.useWatch('femeas', form),
     qualquer: Form.useWatch('qualquer', form),
   })
-  // O pesquisador só recebe os pedidos dele: a coluna de quem pediu e as ações são da equipe
+  // A equipe quer saber quem pediu e o que fazer com o pedido; quem pediu, se aceitaram e
+  // quando chega. Por isso cada um tem as suas colunas
   const telaLarga = Grid.useBreakpoint().sm === true
-  const colunasDaTabela = colunas(
-    pesquisador ? undefined : { aoEntregar: setEntregando, aoRecusar: setRecusando },
-    telaLarga,
-  )
+  const colunasDaTabela = pesquisador
+    ? colunasDeQuemPediu(telaLarga)
+    : colunasDaEquipe({ aoEntregar: setEntregando, aoRecusar: setRecusando }, telaLarga)
   const linhagens =
     catalogo.data?.especies
       .find((e) => e.codigo === especie)
@@ -410,8 +410,12 @@ export function SolicitarAnimais() {
           />
         </Secao>
       </EstadoDaConsulta>
-      {entregando && <RegistrarEntrega solicitacao={entregando} aoFechar={() => setEntregando(null)} />}
-      {recusando && <RecusarSolicitacao solicitacao={recusando} aoFechar={() => setRecusando(null)} />}
+      {entregando && (
+        <RegistrarEntrega solicitacao={entregando} aoFechar={() => setEntregando(null)} />
+      )}
+      {recusando && (
+        <RecusarSolicitacao solicitacao={recusando} aoFechar={() => setRecusando(null)} />
+      )}
     </Pilha>
   )
 }
@@ -421,19 +425,55 @@ interface AcoesDaEquipe {
   aoRecusar: (s: Solicitacao) => void
 }
 
-function situacaoComData(s: Solicitacao): string | null {
+/** Embaixo da situação, para a equipe: quando decidiu, ou até quando tem de responder */
+function situacaoParaAEquipe(s: Solicitacao): string | null {
   if (s.dataRecusa) return `Recusada em ${formatarData(s.dataRecusa)}`
   if (s.dataAceite) return `Aceita em ${formatarData(s.dataAceite)}`
   if (s.prazoResposta) return `Responder até ${formatarData(s.prazoResposta)}`
   return null
 }
 
-function Situacao({ solicitacao: s }: { solicitacao: Solicitacao }) {
-  const data = situacaoComData(s)
+/** Embaixo da situação, para quem pediu: por que recusaram, quando aceitaram, ou até quando sai a resposta */
+function situacaoParaQuemPediu(s: Solicitacao): string | null {
+  if (s.status === 'recusada') {
+    return s.motivoRecusa ? `Motivo: ${s.motivoRecusa}` : null
+  }
+  if (s.dataAceite) return `Aceita em ${formatarData(s.dataAceite)}`
+  if (s.prazoResposta) return `Resposta até ${formatarData(s.prazoResposta)}`
+  return null
+}
+
+function Situacao({
+  solicitacao: s,
+  embaixo,
+}: {
+  solicitacao: Solicitacao
+  embaixo: string | null
+}) {
   return (
     <div className="solicitacao__duasLinhas">
       <Etiqueta tom={STATUS[s.status].tom}>{STATUS[s.status].rotulo}</Etiqueta>
-      {data && <Texto tom="secundario">{data}</Texto>}
+      {embaixo && <Texto tom="secundario">{embaixo}</Texto>}
+    </div>
+  )
+}
+
+/** A data de entrega e o cronograma */
+function Entrega({ solicitacao: s }: { solicitacao: Solicitacao }) {
+  return (
+    <div className="solicitacao__duasLinhas solicitacao__entrega">
+      <span>{formatarData(s.dataEntrega)}</span>
+      <Texto tom="secundario">{ROTULO_CRONOGRAMA[s.cronograma]}</Texto>
+    </div>
+  )
+}
+
+/** Os animais pedidos e a idade, sem o nome de quem pediu */
+function Animais({ solicitacao: s }: { solicitacao: Solicitacao }) {
+  return (
+    <div className="solicitacao__duasLinhas solicitacao__pedido">
+      <span>{`${s.linhagem} · ${descreverAnimais(s)}`}</span>
+      <Texto tom="secundario">{`${descreverIdade(s)} de idade`}</Texto>
     </div>
   )
 }
@@ -471,10 +511,45 @@ function AcaoDaEquipe({
   return null
 }
 
-function colunas(
-  equipe: AcoesDaEquipe | undefined,
-  telaLarga: boolean,
-): TableColumnsType<Solicitacao> {
+/** Para quem pediu: quando chega, se aceitaram e o que pediu. O resto fica na setinha */
+function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
+  if (!telaLarga) {
+    return [
+      {
+        title: 'Solicitação',
+        render: (_, s) => (
+          <div className="solicitacao__compacta">
+            <div className="solicitacao__compactaTopo">
+              <Entrega solicitacao={s} />
+              <Situacao solicitacao={s} embaixo={situacaoParaQuemPediu(s)} />
+            </div>
+            <Animais solicitacao={s} />
+          </div>
+        ),
+      },
+    ]
+  }
+
+  return [
+    {
+      title: 'Entrega',
+      width: 140,
+      render: (_, s) => <Entrega solicitacao={s} />,
+    },
+    {
+      title: 'Situação',
+      width: 280,
+      render: (_, s) => <Situacao solicitacao={s} embaixo={situacaoParaQuemPediu(s)} />,
+    },
+    {
+      title: 'O que pediu',
+      render: (_, s) => <Animais solicitacao={s} />,
+    },
+  ]
+}
+
+/** Para a equipe: quando pediram, a situação, quem pediu e o quê, e o que fazer com o pedido */
+function colunasDaEquipe(equipe: AcoesDaEquipe, telaLarga: boolean): TableColumnsType<Solicitacao> {
   if (!telaLarga) {
     return [
       {
@@ -483,10 +558,10 @@ function colunas(
           <div className="solicitacao__compacta">
             <div className="solicitacao__compactaTopo">
               <span className="solicitacao__semQuebra">{formatarData(s.dataSolicitacao)}</span>
-              <Situacao solicitacao={s} />
+              <Situacao solicitacao={s} embaixo={situacaoParaAEquipe(s)} />
             </div>
             <Pedido solicitacao={s} />
-            {equipe && <AcaoDaEquipe solicitacao={s} equipe={equipe} />}
+            <AcaoDaEquipe solicitacao={s} equipe={equipe} />
           </div>
         ),
       },
@@ -503,60 +578,66 @@ function colunas(
     {
       title: 'Situação',
       width: 200,
-      render: (_, s) => <Situacao solicitacao={s} />,
+      render: (_, s) => <Situacao solicitacao={s} embaixo={situacaoParaAEquipe(s)} />,
     },
     {
       title: 'Quem pediu e o quê',
       render: (_, s) => <Pedido solicitacao={s} />,
     },
-    ...(equipe
-      ? [
-          {
-            title: '',
-            width: 170,
-            render: (_: unknown, s: Solicitacao) => (
-              <AcaoDaEquipe solicitacao={s} equipe={equipe} />
-            ),
-          },
-        ]
-      : []),
+    {
+      title: '',
+      width: 170,
+      render: (_, s) => <AcaoDaEquipe solicitacao={s} equipe={equipe} />,
+    },
   ]
 }
 
+const ROTULO_ESPECIE: Record<CodigoEspecie, string> = { rato: 'Rato', camundongo: 'Camundongo' }
+
 function Detalhes({ solicitacao: s, equipe }: { solicitacao: Solicitacao; equipe: boolean }) {
-  return (
-    <Descriptions
-      size="small"
-      column={{ xs: 1, sm: 2, lg: 3 }}
-      items={[
-        ...(equipe ? [{ key: 'id', label: 'Nº do pedido', children: `#${s.id}` }] : []),
+  const protocolo = {
+    key: 'ceua',
+    label: 'Protocolo CEUA',
+    children: <span className="solicitacao__protocolo">{s.protocoloCeua}</span>,
+  }
+  const especie = { key: 'especie', label: 'Espécie', children: ROTULO_ESPECIE[s.especie] }
+  const observacoes = { key: 'observacoes', label: 'Observações', children: s.observacoes ?? '—' }
+
+  // Quem pediu já vê na linha a entrega, a idade e o motivo da recusa
+  const itens = equipe
+    ? [
+        { key: 'id', label: 'Nº do pedido', children: `#${s.id}` },
         { key: 'email', label: 'E-mail', children: s.email },
-        {
-          key: 'especie',
-          label: 'Espécie',
-          children: s.especie === 'rato' ? 'Rato' : 'Camundongo',
-        },
+        especie,
         { key: 'idade', label: 'Idade', children: descreverIdade(s) },
         {
           key: 'entrega',
           label: 'Entrega',
           children: `${formatarData(s.dataEntrega)} · ${ROTULO_CRONOGRAMA[s.cronograma]}`,
         },
-        {
-          key: 'ceua',
-          label: 'Protocolo CEUA',
-          children: <span className="solicitacao__protocolo">{s.protocoloCeua}</span>,
-        },
+        protocolo,
         ...(s.motivoRecusa
           ? [{ key: 'motivo', label: 'Motivo da recusa', children: s.motivoRecusa }]
           : []),
-        { key: 'observacoes', label: 'Observações', children: s.observacoes ?? '—' },
-      ]}
-    />
-  )
+        observacoes,
+      ]
+    : [
+        { key: 'pedido', label: 'Pedido em', children: formatarData(s.dataSolicitacao) },
+        protocolo,
+        especie,
+        observacoes,
+      ]
+
+  return <Descriptions size="small" column={{ xs: 1, sm: 2, lg: 3 }} items={itens} />
 }
 
-function RegistrarEntrega({ solicitacao, aoFechar }: { solicitacao: Solicitacao; aoFechar: () => void }) {
+function RegistrarEntrega({
+  solicitacao,
+  aoFechar,
+}: {
+  solicitacao: Solicitacao
+  aoFechar: () => void
+}) {
   const { message } = App.useApp()
   const registrar = useRegistrarEntrega()
   const [form] = Form.useForm<{ dtEntrega: string }>()
@@ -609,7 +690,13 @@ function RegistrarEntrega({ solicitacao, aoFechar }: { solicitacao: Solicitacao;
   )
 }
 
-function RecusarSolicitacao({ solicitacao, aoFechar }: { solicitacao: Solicitacao; aoFechar: () => void }) {
+function RecusarSolicitacao({
+  solicitacao,
+  aoFechar,
+}: {
+  solicitacao: Solicitacao
+  aoFechar: () => void
+}) {
   const { message } = App.useApp()
   const recusar = useRecusarSolicitacao()
   const [form] = Form.useForm<{ motivo: string }>()
@@ -643,7 +730,11 @@ function RecusarSolicitacao({ solicitacao, aoFechar }: { solicitacao: Solicitaca
         {solicitacao.pesquisador}. O motivo aparece para quem pediu.
       </Texto>
       <Form form={form} layout="vertical" onFinish={salvar}>
-        <Form.Item name="motivo" label="Motivo" rules={[{ required: true, whitespace: true, message: 'Diga o motivo' }]}>
+        <Form.Item
+          name="motivo"
+          label="Motivo"
+          rules={[{ required: true, whitespace: true, message: 'Diga o motivo' }]}
+        >
           <Input.TextArea rows={3} maxLength={200} showCount />
         </Form.Item>
       </Form>
