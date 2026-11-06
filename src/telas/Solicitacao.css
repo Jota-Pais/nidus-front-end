@@ -157,3 +157,50 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+.solicitacao__filtro {
+  max-width: 100%;
+}
+
+.solicitacao__filtro .ant-segmented-group {
+  flex-wrap: wrap;
+}
+
+.solicitacao__seta {
+  border: 0;
+  background: none;
+  padding: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.solicitacao__semQuebra {
+  white-space: nowrap;
+}
+
+.solicitacao__pedido {
+  min-width: 0;
+}
+
+.solicitacao__pedido > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.solicitacao__compacta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.solicitacao__compactaTopo {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.solicitacao__ordem {
+  min-width: 230px;
+}

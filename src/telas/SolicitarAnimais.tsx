@@ -1,4 +1,16 @@
-import { App, Form, Input, InputNumber, Modal, Segmented, Select, Table } from 'antd'
+import { DownOutlined, RightOutlined } from '@ant-design/icons'
+import {
+  App,
+  Descriptions,
+  Form,
+  Grid,
+  Input,
+  InputNumber,
+  Modal,
+  Segmented,
+  Select,
+  Table,
+} from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import { usePerfil } from '@/auth/contexto'
@@ -9,6 +21,7 @@ import {
   Entrada,
   Etiqueta,
   Formulario,
+  Linha,
   Pilha,
   Secao,
   Texto,
@@ -24,13 +37,17 @@ import {
 } from '@/dominio/consultas'
 import {
   CRONOGRAMAS_DO_PEDIDO,
+  FILTROS_DE_SOLICITACAO,
+  ORDENS_DE_SOLICITACAO,
   ROTULO_CRONOGRAMA,
   descreverAnimais,
   descreverIdade,
-  porDataDeEntrega,
+  entraNoFiltro,
+  ordenarSolicitacoes,
   totalDeAnimais,
 } from '@/dominio/solicitacao'
 import type { NovaSolicitacao } from '@/dominio/consultas'
+import type { FiltroDeSolicitacao, OrdemDeSolicitacao } from '@/dominio/solicitacao'
 import type { CodigoEspecie, Solicitacao, StatusSolicitacao, Viabilidade } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
@@ -113,6 +130,8 @@ export function SolicitarAnimais() {
     pedido: NovaSolicitacao
     viabilidade: Viabilidade | null
   } | null>(null)
+  const [filtro, setFiltro] = useState<FiltroDeSolicitacao>('todas')
+  const [ordem, setOrdem] = useState<OrdemDeSolicitacao>(pesquisador ? 'entrega' : 'pedido')
 
   const especie = Form.useWatch('especie', form)
   const total = totalDeAnimais({
@@ -121,8 +140,10 @@ export function SolicitarAnimais() {
     qualquer: Form.useWatch('qualquer', form),
   })
   // O pesquisador só recebe os pedidos dele: a coluna de quem pediu e as ações são da equipe
+  const telaLarga = Grid.useBreakpoint().sm === true
   const colunasDaTabela = colunas(
     pesquisador ? undefined : { aoEntregar: setEntregando, aoRecusar: setRecusando },
+    telaLarga,
   )
   const linhagens =
     catalogo.data?.especies
@@ -336,18 +357,56 @@ export function SolicitarAnimais() {
       )}
 
       <EstadoDaConsulta consulta={solicitacoes} rotulo="Carregando as solicitações…">
-        <Secao titulo={pesquisador ? 'Minhas solicitações' : 'Solicitações'} semPreenchimento>
+        <Secao
+          titulo={pesquisador ? 'Minhas solicitações' : undefined}
+          semPreenchimento
+          acoes={
+            <Linha>
+              <Segmented<FiltroDeSolicitacao>
+                className="solicitacao__filtro"
+                aria-label="Filtrar solicitações"
+                value={filtro}
+                onChange={setFiltro}
+                options={FILTROS_DE_SOLICITACAO.map(({ valor, rotulo }) => ({
+                  value: valor,
+                  label: `${rotulo} (${(solicitacoes.data ?? []).filter((s) => entraNoFiltro(valor, s)).length})`,
+                }))}
+              />
+              <Select<OrdemDeSolicitacao>
+                aria-label="Ordenar solicitações"
+                className="solicitacao__ordem"
+                prefix="Ordenar por"
+                value={ordem}
+                onChange={setOrdem}
+                options={ORDENS_DE_SOLICITACAO}
+              />
+            </Linha>
+          }
+        >
           <Table<Solicitacao>
             rowKey="id"
-            dataSource={
-              pesquisador
-                ? porDataDeEntrega(solicitacoes.data ?? [])
-                : (solicitacoes.data ?? [])
-            }
+            className="solicitacao__lista"
+            tableLayout="fixed"
+            dataSource={ordenarSolicitacoes(ordem, solicitacoes.data ?? []).filter((s) =>
+              entraNoFiltro(filtro, s),
+            )}
             pagination={false}
-            scroll={{ x: larguraMinima(colunasDaTabela) }}
-            locale={{ emptyText: 'Nenhuma solicitação ainda.' }}
+            locale={{ emptyText: 'Nenhuma solicitação aqui.' }}
             columns={colunasDaTabela}
+            expandable={{
+              expandedRowRender: (s) => <Detalhes solicitacao={s} equipe={!pesquisador} />,
+              expandIcon: ({ expanded, onExpand, record }) => (
+                <button
+                  type="button"
+                  className="solicitacao__seta"
+                  aria-label={expanded ? 'Esconder detalhes' : 'Ver detalhes'}
+                  aria-expanded={expanded}
+                  onClick={(evento) => onExpand(record, evento)}
+                >
+                  {expanded ? <DownOutlined /> : <RightOutlined />}
+                </button>
+              ),
+            }}
           />
         </Secao>
       </EstadoDaConsulta>
@@ -357,103 +416,144 @@ export function SolicitarAnimais() {
   )
 }
 
-/**
- * As colunas de valor curto têm largura fixa, do tamanho do maior valor que cabe nelas. As
- * observações, que são texto livre, ficam com o espaço que sobra e terminam em reticências.
- * A tabela do pesquisador cabe em 1366 px; a da equipe tem a coluna de quem pediu e rola de
- * lado, com o número e a situação presos à esquerda para a linha não se perder. O número
- * do pedido é da equipe, que o usa para se referir a ele: quem pede reconhece o pedido pelo
- * que pediu e pela data
- */
-const OBSERVACOES_NO_MINIMO = 200
-
 interface AcoesDaEquipe {
   aoEntregar: (s: Solicitacao) => void
   aoRecusar: (s: Solicitacao) => void
 }
 
-function colunas(equipe: AcoesDaEquipe | undefined): TableColumnsType<Solicitacao> {
+function situacaoComData(s: Solicitacao): string | null {
+  if (s.dataRecusa) return `Recusada em ${formatarData(s.dataRecusa)}`
+  if (s.dataAceite) return `Aceita em ${formatarData(s.dataAceite)}`
+  if (s.prazoResposta) return `Responder até ${formatarData(s.prazoResposta)}`
+  return null
+}
+
+function Situacao({ solicitacao: s }: { solicitacao: Solicitacao }) {
+  const data = situacaoComData(s)
+  return (
+    <div className="solicitacao__duasLinhas">
+      <Etiqueta tom={STATUS[s.status].tom}>{STATUS[s.status].rotulo}</Etiqueta>
+      {data && <Texto tom="secundario">{data}</Texto>}
+    </div>
+  )
+}
+
+function Pedido({ solicitacao: s }: { solicitacao: Solicitacao }) {
+  return (
+    <div className="solicitacao__duasLinhas solicitacao__pedido">
+      <span title={s.pesquisador}>{s.pesquisador}</span>
+      <Texto tom="secundario">{`${s.linhagem} · ${descreverAnimais(s)}`}</Texto>
+    </div>
+  )
+}
+
+function AcaoDaEquipe({
+  solicitacao: s,
+  equipe,
+}: {
+  solicitacao: Solicitacao
+  equipe: AcoesDaEquipe
+}) {
+  if (s.status === 'aprovada') {
+    return (
+      <Botao variante="fantasma" onClick={() => equipe.aoEntregar(s)}>
+        Registrar entrega
+      </Botao>
+    )
+  }
+  if (s.status === 'enviada') {
+    return (
+      <Botao variante="fantasma" onClick={() => equipe.aoRecusar(s)}>
+        Recusar
+      </Botao>
+    )
+  }
+  return null
+}
+
+function colunas(
+  equipe: AcoesDaEquipe | undefined,
+  telaLarga: boolean,
+): TableColumnsType<Solicitacao> {
+  if (!telaLarga) {
+    return [
+      {
+        title: 'Solicitação',
+        render: (_, s) => (
+          <div className="solicitacao__compacta">
+            <div className="solicitacao__compactaTopo">
+              <span className="solicitacao__semQuebra">{formatarData(s.dataSolicitacao)}</span>
+              <Situacao solicitacao={s} />
+            </div>
+            <Pedido solicitacao={s} />
+            {equipe && <AcaoDaEquipe solicitacao={s} equipe={equipe} />}
+          </div>
+        ),
+      },
+    ]
+  }
+
   return [
-    ...(equipe ? [{ title: '#', dataIndex: 'id', width: 56, fixed: 'left' as const }] : []),
+    {
+      title: 'Pedido em',
+      width: 120,
+      className: 'solicitacao__semQuebra',
+      render: (_, s) => formatarData(s.dataSolicitacao),
+    },
     {
       title: 'Situação',
-      width: 170,
-      fixed: 'left',
-      render: (_, s) => (
-        <div className="solicitacao__duasLinhas" title={s.motivoRecusa ?? undefined}>
-          <Etiqueta tom={STATUS[s.status].tom}>{STATUS[s.status].rotulo}</Etiqueta>
-          {s.motivoRecusa && <Texto tom="secundario">Motivo: {s.motivoRecusa}</Texto>}
-        </div>
-      ),
-    },
-    ...(equipe
-      ? [
-          {
-            title: 'Pesquisador',
-            width: 220,
-            render: (_: unknown, s: Solicitacao) => (
-              <div className="solicitacao__duasLinhas">
-                <span>{s.pesquisador}</span>
-                <Texto tom="secundario">{s.email}</Texto>
-              </div>
-            ),
-          },
-        ]
-      : []),
-    {
-      title: 'Linhagem',
-      width: 140,
-      render: (_, s) => (
-        <div className="solicitacao__duasLinhas">
-          <span>{s.linhagem}</span>
-          <Texto tom="secundario">{s.especie}</Texto>
-        </div>
-      ),
-    },
-    { title: 'Animais', width: 200, render: (_, s) => descreverAnimais(s) },
-    { title: 'Idade', width: 130, render: (_, s) => descreverIdade(s) },
-    {
-      // A data e o cronograma juntos: uma coluna a menos
-      title: 'Entrega',
-      width: 130,
-      render: (_, s) => (
-        <div className="solicitacao__duasLinhas">
-          <span>{formatarData(s.dataEntrega)}</span>
-          <Texto tom="secundario">{ROTULO_CRONOGRAMA[s.cronograma]}</Texto>
-        </div>
-      ),
+      width: 200,
+      render: (_, s) => <Situacao solicitacao={s} />,
     },
     {
-      title: 'CEUA',
-      // os 20 caracteres do protocolo em mono, sem quebrar no hífen
-      width: 230,
-      render: (_, s) => <span className="solicitacao__protocolo">{s.protocoloCeua}</span>,
-    },
-    {
-      title: 'Observações',
-      dataIndex: 'observacoes',
-      ellipsis: true,
-      render: (observacoes: string | null) => observacoes ?? '—',
+      title: 'Quem pediu e o quê',
+      render: (_, s) => <Pedido solicitacao={s} />,
     },
     ...(equipe
       ? [
           {
             title: '',
             width: 170,
-            render: (_: unknown, s: Solicitacao) =>
-              s.status === 'aprovada' ? (
-                <Botao variante="fantasma" onClick={() => equipe.aoEntregar(s)}>
-                  Registrar entrega
-                </Botao>
-              ) : s.status === 'enviada' ? (
-                <Botao variante="fantasma" onClick={() => equipe.aoRecusar(s)}>
-                  Recusar
-                </Botao>
-              ) : null,
+            render: (_: unknown, s: Solicitacao) => (
+              <AcaoDaEquipe solicitacao={s} equipe={equipe} />
+            ),
           },
         ]
       : []),
   ]
+}
+
+function Detalhes({ solicitacao: s, equipe }: { solicitacao: Solicitacao; equipe: boolean }) {
+  return (
+    <Descriptions
+      size="small"
+      column={{ xs: 1, sm: 2, lg: 3 }}
+      items={[
+        ...(equipe ? [{ key: 'id', label: 'Nº do pedido', children: `#${s.id}` }] : []),
+        { key: 'email', label: 'E-mail', children: s.email },
+        {
+          key: 'especie',
+          label: 'Espécie',
+          children: s.especie === 'rato' ? 'Rato' : 'Camundongo',
+        },
+        { key: 'idade', label: 'Idade', children: descreverIdade(s) },
+        {
+          key: 'entrega',
+          label: 'Entrega',
+          children: `${formatarData(s.dataEntrega)} · ${ROTULO_CRONOGRAMA[s.cronograma]}`,
+        },
+        {
+          key: 'ceua',
+          label: 'Protocolo CEUA',
+          children: <span className="solicitacao__protocolo">{s.protocoloCeua}</span>,
+        },
+        ...(s.motivoRecusa
+          ? [{ key: 'motivo', label: 'Motivo da recusa', children: s.motivoRecusa }]
+          : []),
+        { key: 'observacoes', label: 'Observações', children: s.observacoes ?? '—' },
+      ]}
+    />
+  )
 }
 
 function RegistrarEntrega({ solicitacao, aoFechar }: { solicitacao: Solicitacao; aoFechar: () => void }) {
@@ -549,10 +649,4 @@ function RecusarSolicitacao({ solicitacao, aoFechar }: { solicitacao: Solicitaca
       </Form>
     </Modal>
   )
-}
-
-/** Abaixo disso a tabela rola de lado, em vez de espremer as colunas */
-function larguraMinima(lista: TableColumnsType<Solicitacao>): number {
-  const fixas = lista.reduce((soma, c) => soma + (typeof c.width === 'number' ? c.width : 0), 0)
-  return fixas + OBSERVACOES_NO_MINIMO
 }
