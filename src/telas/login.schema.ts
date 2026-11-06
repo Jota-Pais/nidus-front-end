@@ -9,8 +9,8 @@ export const credenciais = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .min(1, 'Informe o e-mail institucional')
-    .email('E-mail inválido — use o formato nome@ufsc.br'),
+    .min(1, 'Informe o e-mail')
+    .email('E-mail inválido — use o formato nome@exemplo.com'),
   senha: z.string().min(1, 'Informe a senha'),
 })
 

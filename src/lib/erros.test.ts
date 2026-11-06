@@ -72,10 +72,10 @@ describe('camposDeErro — VALIDACAO traz campos', () => {
       erro: {
         codigo: 'VALIDACAO',
         mensagem: 'Entrada inválida.',
-        campos: { email: 'Informe o e-mail institucional.' },
+        campos: { email: 'Informe o e-mail.' },
       },
     }
-    expect(camposDeErro(corpo)).toEqual({ email: 'Informe o e-mail institucional.' })
+    expect(camposDeErro(corpo)).toEqual({ email: 'Informe o e-mail.' })
   })
 
   it('devolve objeto vazio quando não há campos', () => {

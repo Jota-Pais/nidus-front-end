@@ -58,10 +58,13 @@ export function useMudarDePosicao() {
 
   return useMutation({
     mutationFn: ({ idCaixa, ...posicao }: PosicaoNova) =>
-      api<{ idCaixa: number; idEstante: number; codigo: string }>(`/api/caixas/${idCaixa}/posicao`, {
-        metodo: 'PATCH',
-        corpo: posicao,
-      }),
+      api<{ idCaixa: number; idEstante: number; codigo: string }>(
+        `/api/caixas/${idCaixa}/posicao`,
+        {
+          metodo: 'PATCH',
+          corpo: posicao,
+        },
+      ),
     onSuccess: (_resposta, { idCaixa }) => invalidarColonia(cliente, idCaixa),
   })
 }
@@ -339,24 +342,36 @@ export interface ContaNova {
   nome: string
   email: string
   perfil: Perfil
-  senha: string
+}
+
+/** A conta nasce sem senha: a API manda à pessoa o código para definir a dela */
+export function useCriarConta() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (conta: ContaNova) =>
+      api<{ codigoEnviado: boolean }>('/api/usuarios', { metodo: 'POST', corpo: conta }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.usuarios }),
+  })
+}
+
+/** O gestor não define a senha de ninguém: a API manda à pessoa o código do "esqueci a senha" */
+export function useEnviarRedefinicaoDeSenha() {
+  return useMutation({
+    mutationFn: (id: number) =>
+      api<{ email: string }>(`/api/usuarios/${id}/redefinicao-de-senha`, { metodo: 'POST' }),
+  })
 }
 
 export function useSalvarUsuario() {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: (
-      pedido:
-        | { tipo: 'criar'; conta: ContaNova }
-        | { tipo: 'alterar'; id: number; dados: { nome?: string; perfil?: Perfil; ativo?: boolean } }
-        | { tipo: 'senha'; id: number; senha: string },
-    ) => {
-      if (pedido.tipo === 'criar') return api('/api/usuarios', { metodo: 'POST', corpo: pedido.conta })
-      if (pedido.tipo === 'alterar')
-        return api(`/api/usuarios/${pedido.id}`, { metodo: 'PATCH', corpo: pedido.dados })
-      return api(`/api/usuarios/${pedido.id}/senha`, { metodo: 'POST', corpo: { senha: pedido.senha } })
-    },
+    mutationFn: (pedido: {
+      tipo: 'alterar'
+      id: number
+      dados: { nome?: string; perfil?: Perfil; ativo?: boolean }
+    }) => api(`/api/usuarios/${pedido.id}`, { metodo: 'PATCH', corpo: pedido.dados }),
     onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.usuarios }),
   })
 }

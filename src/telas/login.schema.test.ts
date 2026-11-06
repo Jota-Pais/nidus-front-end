@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { credenciais } from './login.schema'
 
 describe('credenciais — só e-mail e senha', () => {
-  it('aceita e-mail institucional e senha', () => {
+  it('aceita e-mail e senha', () => {
     const r = credenciais.safeParse({ email: 'tecnico@ufsc.br', senha: 'seg' })
     expect(r.success).toBe(true)
   })
