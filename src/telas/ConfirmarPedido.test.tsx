@@ -8,12 +8,13 @@ const DATA_PROXIMA =
   'Essa data é muito próxima: o CPMR provavelmente não consegue entregar esses animais a tempo.'
 
 describe('confirmacaoDoPedido', () => {
-  it('quando dá, só diz que dá, sem números, e envia normalmente', () => {
+  it('quando dá, diz que é possível, sem números nem promessa, e envia normalmente', () => {
     const confirmacao = confirmacaoDoPedido({ viavel: true, motivo: null })
 
     expect(confirmacao).toEqual({
       tom: 'sucesso',
-      titulo: 'O CPMR consegue atender esse pedido.',
+      titulo: 'Esse pedido é possível.',
+      detalhe: 'A equipe do CPMR vai avaliar e, estando tudo certo, segue com o seu pedido.',
       enviar: 'Enviar solicitação',
       voltar: 'Voltar',
     })
@@ -57,7 +58,7 @@ describe('ConfirmarPedido', { timeout: 20_000 }, () => {
       />,
     )
 
-    expect(screen.getByText('O CPMR consegue atender esse pedido.')).toBeTruthy()
+    expect(screen.getByText('Esse pedido é possível.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitação' }))
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }))
 

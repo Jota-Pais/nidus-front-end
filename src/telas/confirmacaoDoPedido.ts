@@ -13,8 +13,10 @@ const NAO_DA = 'O CPMR provavelmente não consegue atender esse pedido.'
 
 /**
  * O que o modal diz antes de enviar. Quem pede só quer saber se dá ou não dá: quando dá, sem
- * números; quando não dá, o motivo em vermelho, e o envio continua possível. Sem a conferência
- * (rede, API dormindo), o pedido também não trava: a equipe técnica confere ao analisar
+ * números e sem prometer, porque a conferência é pelo que a colônia tem hoje e quem decide é
+ * a equipe técnica; quando não dá, o motivo em vermelho, e o envio continua possível. Sem a
+ * conferência (rede, API dormindo), o pedido também não trava: a equipe técnica confere ao
+ * analisar
  */
 export function confirmacaoDoPedido(viabilidade: Viabilidade | null): Confirmacao {
   if (viabilidade === null) {
@@ -30,7 +32,8 @@ export function confirmacaoDoPedido(viabilidade: Viabilidade | null): Confirmaca
   if (viabilidade.viavel) {
     return {
       tom: 'sucesso',
-      titulo: 'O CPMR consegue atender esse pedido.',
+      titulo: 'Esse pedido é possível.',
+      detalhe: 'A equipe do CPMR vai avaliar e, estando tudo certo, segue com o seu pedido.',
       enviar: 'Enviar solicitação',
       voltar: 'Voltar',
     }
