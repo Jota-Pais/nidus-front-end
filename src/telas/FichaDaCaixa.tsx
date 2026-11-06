@@ -782,6 +782,9 @@ function AbaAgrupamento({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           {parto.comprometido.m} M / {parto.comprometido.f} F
         </Campo>
       </LadoALado>
+      <Campo rotulo="Já entregues">
+        {parto.entregue.m} M / {parto.entregue.f} F
+      </Campo>
     </div>
   )
 }
