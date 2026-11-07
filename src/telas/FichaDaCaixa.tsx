@@ -853,7 +853,6 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
       )}
 
       <h3>Desmame</h3>
-      <Campo rotulo="Previsão de desmame">{formatarData(parto.dtDesmamePrevisto)}</Campo>
       {parto.dtDesmameReal ? (
         <>
           <Campo rotulo="Data do desmame real">{formatarData(parto.dtDesmameReal)}</Campo>
