@@ -29,16 +29,18 @@ import {
 } from '@/componentes'
 import type { TomDeEtiqueta } from '@/componentes'
 import {
+  useAprovarSolicitacao,
   useCatalogo,
   useConferirViabilidade,
   useCriarSolicitacao,
-  useDevolverParaAnalise,
+  useDesfazerReserva,
   useRecusarSolicitacao,
   useRegistrarEntrega,
   useSolicitacoes,
 } from '@/dominio/consultas'
 import {
   FILTROS_DE_SOLICITACAO,
+  avisoDeEntregaSemReserva,
   compararDataDeEntrega,
   compararDataDoPedido,
   descreverAnimais,
@@ -65,14 +67,26 @@ const ESPECIES: { value: CodigoEspecie; label: string }[] = [
   { value: 'camundongo', label: 'Camundongo' },
 ]
 
-const STATUS: Record<StatusSolicitacao, { rotulo: string; tom: TomDeEtiqueta }> = {
+/**
+ * A etiqueta de cada situação. Quando quem pediu lê outra coisa, o rótulo dele vem à parte: o
+ * aprovado ainda sem os animais é trabalho da equipe, e para quem pediu já é pedido aceito
+ */
+const STATUS: Record<
+  StatusSolicitacao,
+  { rotulo: string; paraQuemPediu?: string; tom: TomDeEtiqueta }
+> = {
   rascunho: { rotulo: 'Rascunho', tom: 'neutro' },
   enviada: { rotulo: 'Aguardando análise', tom: 'informacao' },
   em_analise: { rotulo: 'Em análise', tom: 'informacao' },
-  aprovada: { rotulo: 'Aprovada', tom: 'sucesso' },
+  aprovada: { rotulo: 'Animais reservados', tom: 'sucesso' },
   recusada: { rotulo: 'Recusada', tom: 'erro' },
   ajustada: { rotulo: 'Ajustada', tom: 'atencao' },
-  em_atendimento: { rotulo: 'Em atendimento', tom: 'institucional' },
+  // ainda em andamento, como o que aguarda análise: o verde fica para os animais reservados
+  em_atendimento: {
+    rotulo: 'Aguardando animais',
+    paraQuemPediu: 'Aceito, em andamento',
+    tom: 'informacao',
+  },
   concluida: { rotulo: 'Entregue', tom: 'neutro' },
   cancelada: { rotulo: 'Cancelada', tom: 'neutro' },
 }
@@ -122,10 +136,11 @@ export function SolicitarAnimais() {
   const criar = useCriarSolicitacao()
   const conferir = useConferirViabilidade()
   const falha = useFalhaDoFormulario(form, CAMPOS_COM_ERRO)
-  const [atendendo, setAtendendo] = useState<Solicitacao | null>(null)
+  const [aprovando, setAprovando] = useState<Solicitacao | null>(null)
+  const [reservando, setReservando] = useState<Solicitacao | null>(null)
   const [entregando, setEntregando] = useState<Solicitacao | null>(null)
   const [recusando, setRecusando] = useState<Solicitacao | null>(null)
-  const [devolvendo, setDevolvendo] = useState<Solicitacao | null>(null)
+  const [desfazendo, setDesfazendo] = useState<Solicitacao | null>(null)
   // O pedido já validado à espera da confirmação, com o veredito da viabilidade. 'null' no
   // veredito é a conferência que falhou
   const [aConfirmar, setAConfirmar] = useState<{
@@ -147,10 +162,11 @@ export function SolicitarAnimais() {
     ? colunasDeQuemPediu(telaLarga)
     : colunasDaEquipe(
         {
-          aoAtender: setAtendendo,
+          aoAprovar: setAprovando,
+          aoReservar: setReservando,
           aoEntregar: setEntregando,
           aoRecusar: setRecusando,
-          aoDevolver: setDevolvendo,
+          aoDesfazer: setDesfazendo,
         },
         telaLarga,
       )
@@ -396,13 +412,16 @@ export function SolicitarAnimais() {
           />
         </Secao>
       </EstadoDaConsulta>
-      {atendendo && (
+      {aprovando && (
+        <AprovarSolicitacao solicitacao={aprovando} aoFechar={() => setAprovando(null)} />
+      )}
+      {reservando && (
         <AtenderPedido
-          solicitacao={atendendo}
-          aoFechar={() => setAtendendo(null)}
+          solicitacao={reservando}
+          aoFechar={() => setReservando(null)}
           aoRecusar={() => {
-            setAtendendo(null)
-            setRecusando(atendendo)
+            setReservando(null)
+            setRecusando(reservando)
           }}
         />
       )}
@@ -412,30 +431,34 @@ export function SolicitarAnimais() {
       {recusando && (
         <RecusarSolicitacao solicitacao={recusando} aoFechar={() => setRecusando(null)} />
       )}
-      {devolvendo && (
-        <DevolverParaAnalise solicitacao={devolvendo} aoFechar={() => setDevolvendo(null)} />
+      {desfazendo && (
+        <DesfazerReserva solicitacao={desfazendo} aoFechar={() => setDesfazendo(null)} />
       )}
     </Pilha>
   )
 }
 
 interface AcoesDaEquipe {
-  aoAtender: (s: Solicitacao) => void
+  aoAprovar: (s: Solicitacao) => void
+  aoReservar: (s: Solicitacao) => void
   aoEntregar: (s: Solicitacao) => void
   aoRecusar: (s: Solicitacao) => void
-  aoDevolver: (s: Solicitacao) => void
+  aoDesfazer: (s: Solicitacao) => void
 }
 
 /**
- * Embaixo da situação, para a equipe: a reserva em falta, quando decidiu, ou até quando tem de
- * responder
+ * Embaixo da situação, para a equipe: a reserva em falta, quando aprovou ou recusou, ou até
+ * quando tem de responder
  */
 function situacaoParaAEquipe(s: Solicitacao): string | null {
   if (s.reservaEmFalta) {
     return `Reserva em falta: ${s.reservaEmFalta.m} M e ${s.reservaEmFalta.f} F`
   }
   if (s.dataRecusa) return `Recusada em ${formatarData(s.dataRecusa)}`
-  if (s.dataAceite) return `Aceita em ${formatarData(s.dataAceite)}`
+  if (s.dataAceite) {
+    const decisao = s.status === 'em_atendimento' ? 'Aprovada' : 'Aceita'
+    return `${decisao} em ${formatarData(s.dataAceite)}`
+  }
   if (s.prazoResposta) return `Responder até ${formatarData(s.prazoResposta)}`
   return null
 }
@@ -445,22 +468,35 @@ function situacaoParaQuemPediu(s: Solicitacao): string | null {
   if (s.status === 'recusada') {
     return s.motivoRecusa ? `Motivo: ${s.motivoRecusa}` : null
   }
-  if (s.dataAceite) return `Aceita em ${formatarData(s.dataAceite)}`
+  if (s.dataAceite) {
+    const decisao = s.status === 'em_atendimento' ? 'Aceito' : 'Aceita'
+    return `${decisao} em ${formatarData(s.dataAceite)}`
+  }
   if (s.prazoResposta) return `Resposta até ${formatarData(s.prazoResposta)}`
   return null
 }
 
+/**
+ * A etiqueta da situação, o que vem embaixo dela e, só para a equipe, o aviso do pedido aprovado
+ * sem reserva com a entrega perto
+ */
 function Situacao({
   solicitacao: s,
-  embaixo,
+  paraQuemPediu,
 }: {
   solicitacao: Solicitacao
-  embaixo: string | null
+  paraQuemPediu: boolean
 }) {
+  const situacao = STATUS[s.status]
+  const rotulo = (paraQuemPediu && situacao.paraQuemPediu) || situacao.rotulo
+  const embaixo = paraQuemPediu ? situacaoParaQuemPediu(s) : situacaoParaAEquipe(s)
+  const aviso = paraQuemPediu ? null : avisoDeEntregaSemReserva(s)
+
   return (
     <div className="solicitacao__duasLinhas">
-      <Etiqueta tom={STATUS[s.status].tom}>{STATUS[s.status].rotulo}</Etiqueta>
+      <Etiqueta tom={situacao.tom}>{rotulo}</Etiqueta>
       {embaixo && <Texto tom="secundario">{embaixo}</Texto>}
+      {aviso && <Texto className="solicitacao__alerta">{aviso}</Texto>}
     </div>
   )
 }
@@ -505,24 +541,38 @@ function AcaoDaEquipe({
 
     if (!s.reservaEmFalta) return entregar
 
-    // a ninhada reservada ficou com menos animais: a equipe devolve o pedido para alocar de novo
+    // a ninhada reservada ficou com menos animais: a equipe desfaz a reserva para reservar de novo
     return (
       <div className="solicitacao__acoesDoPedido">
-        <Botao variante="fantasma" onClick={() => equipe.aoDevolver(s)}>
-          Devolver para análise
+        <Botao variante="fantasma" onClick={() => equipe.aoDesfazer(s)}>
+          Desfazer reserva
         </Botao>
         {entregar}
       </div>
     )
   }
+
+  const recusar = (
+    <Botao variante="fantasma" onClick={() => equipe.aoRecusar(s)}>
+      Recusar
+    </Botao>
+  )
+
   if (s.status === 'enviada') {
-    // atender é o que se faz com o pedido que chega; recusar fica embaixo, sem destaque
+    // aprovar é o que se faz com o pedido que chega; recusar fica embaixo, sem destaque
     return (
       <div className="solicitacao__acoesDoPedido">
-        <Botao onClick={() => equipe.aoAtender(s)}>Atender</Botao>
-        <Botao variante="fantasma" onClick={() => equipe.aoRecusar(s)}>
-          Recusar
-        </Botao>
+        <Botao onClick={() => equipe.aoAprovar(s)}>Aprovar</Botao>
+        {recusar}
+      </div>
+    )
+  }
+  if (s.status === 'em_atendimento') {
+    // aprovado, falta reservar os animais; o que não deu para produzir ainda pode ser recusado
+    return (
+      <div className="solicitacao__acoesDoPedido">
+        <Botao onClick={() => equipe.aoReservar(s)}>Reservar animais</Botao>
+        {recusar}
       </div>
     )
   }
@@ -565,7 +615,7 @@ function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
           <div className="solicitacao__compacta">
             <div className="solicitacao__compactaTopo">
               <Entrega solicitacao={s} />
-              <Situacao solicitacao={s} embaixo={situacaoParaQuemPediu(s)} />
+              <Situacao solicitacao={s} paraQuemPediu />
             </div>
             <Animais solicitacao={s} />
           </div>
@@ -585,7 +635,7 @@ function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
     {
       title: 'Situação',
       width: 280,
-      render: (_, s) => <Situacao solicitacao={s} embaixo={situacaoParaQuemPediu(s)} />,
+      render: (_, s) => <Situacao solicitacao={s} paraQuemPediu />,
     },
     {
       title: 'O que pediu',
@@ -609,7 +659,7 @@ function colunasDaEquipe(equipe: AcoesDaEquipe, telaLarga: boolean): TableColumn
           <div className="solicitacao__compacta">
             <div className="solicitacao__compactaTopo">
               <span className="solicitacao__semQuebra">{formatarData(s.dataSolicitacao)}</span>
-              <Situacao solicitacao={s} embaixo={situacaoParaAEquipe(s)} />
+              <Situacao solicitacao={s} paraQuemPediu={false} />
             </div>
             <Pedido solicitacao={s} />
             <AcaoDaEquipe solicitacao={s} equipe={equipe} />
@@ -632,7 +682,7 @@ function colunasDaEquipe(equipe: AcoesDaEquipe, telaLarga: boolean): TableColumn
     {
       title: 'Situação',
       width: 200,
-      render: (_, s) => <Situacao solicitacao={s} embaixo={situacaoParaAEquipe(s)} />,
+      render: (_, s) => <Situacao solicitacao={s} paraQuemPediu={false} />,
     },
     {
       title: 'Quem pediu e o quê',
@@ -640,7 +690,7 @@ function colunasDaEquipe(equipe: AcoesDaEquipe, telaLarga: boolean): TableColumn
     },
     {
       title: '',
-      // cabe o "Devolver para análise" do pedido com a reserva em falta
+      // cabe o "Reservar animais" do aprovado e o "Registrar entrega" do reservado
       width: 220,
       render: (_, s) => <AcaoDaEquipe solicitacao={s} equipe={equipe} />,
     },
@@ -797,7 +847,8 @@ function RecusarSolicitacao({
   )
 }
 
-function DevolverParaAnalise({
+/** Aprovar é só o "vamos fazer": os animais são reservados depois, quando existirem */
+function AprovarSolicitacao({
   solicitacao,
   aoFechar,
 }: {
@@ -805,13 +856,12 @@ function DevolverParaAnalise({
   aoFechar: () => void
 }) {
   const { message } = App.useApp()
-  const devolver = useDevolverParaAnalise()
-  const falta = solicitacao.reservaEmFalta
+  const aprovar = useAprovarSolicitacao()
 
   function confirmar() {
-    devolver.mutate(solicitacao.id, {
+    aprovar.mutate(solicitacao.id, {
       onSuccess: () => {
-        void message.success(`Solicitação #${solicitacao.id} devolvida para análise.`)
+        void message.success(`Solicitação #${solicitacao.id} aprovada.`)
         aoFechar()
       },
       onError: (erro) => void message.error(erro.message),
@@ -821,12 +871,57 @@ function DevolverParaAnalise({
   return (
     <Modal
       open
-      title={`Devolver para análise · #${solicitacao.id}`}
-      okText="Devolver para análise"
+      title={`Aprovar o pedido #${solicitacao.id}?`}
+      okText="Aprovar"
       cancelText="Cancelar"
       onOk={confirmar}
       onCancel={aoFechar}
-      confirmLoading={devolver.isPending}
+      confirmLoading={aprovar.isPending}
+    >
+      <Pilha>
+        <Texto>
+          {descreverAnimais(solicitacao)} de {solicitacao.linhagem}, pedido por{' '}
+          {solicitacao.pesquisador}, para entrega em {formatarData(solicitacao.dataEntrega)}.
+        </Texto>
+        <Texto>
+          Quem pediu recebe o e-mail de aprovação. Os animais são reservados depois, em Reservar
+          animais, quando houver animais na idade pedida.
+        </Texto>
+      </Pilha>
+    </Modal>
+  )
+}
+
+function DesfazerReserva({
+  solicitacao,
+  aoFechar,
+}: {
+  solicitacao: Solicitacao
+  aoFechar: () => void
+}) {
+  const { message } = App.useApp()
+  const desfazer = useDesfazerReserva()
+  const falta = solicitacao.reservaEmFalta
+
+  function confirmar() {
+    desfazer.mutate(solicitacao.id, {
+      onSuccess: () => {
+        void message.success(`Reserva da solicitação #${solicitacao.id} desfeita.`)
+        aoFechar()
+      },
+      onError: (erro) => void message.error(erro.message),
+    })
+  }
+
+  return (
+    <Modal
+      open
+      title={`Desfazer reserva · #${solicitacao.id}`}
+      okText="Desfazer reserva"
+      cancelText="Cancelar"
+      onOk={confirmar}
+      onCancel={aoFechar}
+      confirmLoading={desfazer.isPending}
     >
       <Pilha>
         {falta && (
@@ -836,8 +931,8 @@ function DevolverParaAnalise({
           </Texto>
         )}
         <Texto>
-          As reservas do pedido são canceladas e ele volta para Aguardando análise, com 14 dias para a
-          resposta a partir de hoje. Depois, é só atender o pedido de novo. Quem pediu não é avisado.
+          As reservas são canceladas e o pedido volta para Aguardando animais; depois, é só reservar
+          de novo. Quem pediu não é avisado.
         </Texto>
       </Pilha>
     </Modal>

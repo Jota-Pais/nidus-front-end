@@ -30,9 +30,9 @@ function somar(reserva: Reserva): PorSexo {
 }
 
 /**
- * Atender um pedido: as caixas com animais na idade pedida para a data, com a sugestão do
- * sistema já marcada. A equipe pode trocar de caixa e mudar quanto reserva de cada uma; o
- * pedido só é aceito inteiro. Sem animais para isso, o caminho é recusar com o motivo
+ * Reservar os animais de um pedido aprovado: as caixas com animais na idade pedida para a data,
+ * com a sugestão do sistema já marcada. A equipe pode trocar de caixa e mudar quanto reserva de
+ * cada uma; o pedido só é reservado inteiro. Sem animais para isso, espera ou recusa com o motivo
  */
 export function AtenderPedido({
   solicitacao,
@@ -78,7 +78,7 @@ export function AtenderPedido({
     setEditada({ ...reserva, [caixa.idParto]: { ...atual, [sexo]: valor ?? 0 } })
   }
 
-  function aceitar() {
+  function reservar() {
     const itens = Object.entries(reserva)
       .filter(([, r]) => r.m + r.f > 0)
       .map(([idParto, r]) => ({ idParto: Number(idParto), machos: r.m, femeas: r.f }))
@@ -87,7 +87,7 @@ export function AtenderPedido({
       { idSolicitacao: solicitacao.id, itens },
       {
         onSuccess: () => {
-          void message.success(`Pedido #${solicitacao.id} aceito: os animais estão reservados.`)
+          void message.success(`Animais reservados para o pedido #${solicitacao.id}.`)
           aoFechar()
         },
         onError: (erro) => void message.error(erro.message),
@@ -99,7 +99,7 @@ export function AtenderPedido({
     <Modal
       open
       width={760}
-      title={`Atender o pedido #${solicitacao.id}`}
+      title={`Reservar animais do pedido #${solicitacao.id}`}
       onCancel={aoFechar}
       footer={
         <div className="atender__rodape">
@@ -112,9 +112,9 @@ export function AtenderPedido({
               variante="primario"
               loading={alocar.isPending}
               disabled={!conferencia.cobre}
-              onClick={aceitar}
+              onClick={reservar}
             >
-              Aceitar e reservar
+              Reservar
             </Botao>
           </div>
         </div>

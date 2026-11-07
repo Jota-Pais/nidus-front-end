@@ -7,8 +7,8 @@ import { AtenderPedido } from './AtenderPedido'
 const pedido: Solicitacao = {
   id: 12,
   dataSolicitacao: '2026-11-02',
-  prazoResposta: '2026-11-16',
-  dataAceite: null,
+  prazoResposta: null,
+  dataAceite: '2026-11-05',
   dataRecusa: null,
   protocoloCeua: '23080.000001/2026-54',
   pesquisador: 'Ana',
@@ -23,7 +23,7 @@ const pedido: Solicitacao = {
   idadeMax: 28,
   dataEntrega: '2026-12-01',
   observacoes: null,
-  status: 'enviada',
+  status: 'em_atendimento',
   motivoRecusa: null,
   reservaEmFalta: null,
 }
@@ -63,7 +63,7 @@ const resultado = (candidatas: CaixaCandidata[], falta = { m: 0, f: 0, qualquer:
   acasalamentoNovo: { dataMinimaDeEntrega: '2027-01-10', viavel: false },
 })
 
-const aceitar = () => screen.getByRole('button', { name: 'Aceitar e reservar' })
+const reservar = () => screen.getByRole('button', { name: 'Reservar' })
 
 beforeEach(() => {
   estado.mutate.mockReset()
@@ -74,17 +74,30 @@ beforeEach(() => {
   ])
 })
 
-describe('atender o pedido', { timeout: 30_000 }, () => {
-  it('com a sugestão cobrindo o pedido, aceita e reserva o que está marcado', () => {
+describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
+  it('com a sugestão cobrindo o pedido, reserva o que está marcado', () => {
     renderizar(<AtenderPedido solicitacao={pedido} aoFechar={() => {}} aoRecusar={() => {}} />)
 
     expect(screen.getByText('Pedido coberto: 2 machos e 2 fêmeas.')).toBeTruthy()
-    fireEvent.click(aceitar())
+    fireEvent.click(reservar())
 
     expect(estado.mutate).toHaveBeenCalledWith(
       { idSolicitacao: 12, itens: [{ idParto: 10, machos: 2, femeas: 2 }] },
       expect.anything(),
     )
+  })
+
+  it('a janela é a de reservar os animais, e diz quando ficaram reservados', async () => {
+    estado.mutate.mockImplementation((_dados: unknown, opcoes: { onSuccess: () => void }) => opcoes.onSuccess())
+    const fechar = vi.fn()
+    renderizar(<AtenderPedido solicitacao={pedido} aoFechar={fechar} aoRecusar={() => {}} />)
+
+    expect(screen.getByText('Reservar animais do pedido #12')).toBeTruthy()
+    expect(screen.queryByText(/Atender/)).toBeNull()
+    fireEvent.click(reservar())
+
+    expect(await screen.findByText('Animais reservados para o pedido #12.')).toBeTruthy()
+    expect(fechar).toHaveBeenCalled()
   })
 
   it('a equipe ajusta a sugestão e completa com outra caixa', async () => {
@@ -94,12 +107,12 @@ describe('atender o pedido', { timeout: 30_000 }, () => {
       target: { value: '1' },
     })
     await waitFor(() => expect(screen.getByText('Falta 1 macho.')).toBeTruthy())
-    expect(aceitar()).toHaveProperty('disabled', true)
+    expect(reservar()).toHaveProperty('disabled', true)
 
     // marcada, a outra caixa entra com o que falta
     fireEvent.click(screen.getByRole('checkbox', { name: /C2B/ }))
-    await waitFor(() => expect(aceitar()).toHaveProperty('disabled', false))
-    fireEvent.click(aceitar())
+    await waitFor(() => expect(reservar()).toHaveProperty('disabled', false))
+    fireEvent.click(reservar())
 
     expect(estado.mutate).toHaveBeenCalledWith(
       {
@@ -122,7 +135,7 @@ describe('atender o pedido', { timeout: 30_000 }, () => {
     const recusar = vi.fn()
     renderizar(<AtenderPedido solicitacao={pedido} aoFechar={() => {}} aoRecusar={recusar} />)
 
-    expect(aceitar()).toHaveProperty('disabled', true)
+    expect(reservar()).toHaveProperty('disabled', true)
     expect(screen.getByText('Falta 1 fêmea.')).toBeTruthy()
     expect(
       screen.getByText(

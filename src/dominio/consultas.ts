@@ -242,8 +242,11 @@ export function useRegistrarEntrega() {
   })
 }
 
-/** O pedido aceito com reserva em falta volta para análise: as reservas dele são canceladas */
-export function useDevolverParaAnalise() {
+/**
+ * Desfaz a reserva em falta: as reservas do pedido são canceladas, e ele continua aprovado,
+ * aguardando animais
+ */
+export function useDesfazerReserva() {
   const cliente = useQueryClient()
 
   return useMutation({
@@ -254,6 +257,17 @@ export function useDevolverParaAnalise() {
         cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
         invalidarColonia(cliente),
       ]),
+  })
+}
+
+/** A equipe aceita fazer o pedido. Os animais são reservados depois, em useAlocar */
+export function useAprovarSolicitacao() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (idSolicitacao: number) =>
+      api(`/api/solicitacoes/${idSolicitacao}/aprovacao`, { metodo: 'POST' }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
   })
 }
 
@@ -302,7 +316,7 @@ export function useConferirViabilidade() {
 }
 
 /**
- * As caixas que atendem o pedido, já com a sugestão do sistema, para a equipe aceitar ou
+ * As caixas que atendem o pedido, já com a sugestão do sistema, para a equipe conferir ou
  * ajustar antes de reservar. Não grava nada
  */
 export function useAtendimento(pedido: Solicitacao) {
@@ -324,7 +338,7 @@ export function useAtendimento(pedido: Solicitacao) {
   })
 }
 
-/** O técnico aceita as caixas sugeridas: cada uma vira compromisso da solicitação */
+/** A equipe reserva as caixas do pedido aprovado: cada uma vira compromisso da solicitação */
 export function useAlocar() {
   const cliente = useQueryClient()
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { descreverDias, formatarData, formatarDataCurta, hoje, idadeEmDias } from './data'
+import { descreverDias, diasAte, formatarData, formatarDataCurta, hoje, idadeEmDias } from './data'
 
 describe('formatarData', () => {
   it('exibe em dd/mm/aaaa', () => {
@@ -36,5 +36,13 @@ describe('idadeEmDias', () => {
   it('descreve 1 dia no singular', () => {
     expect(descreverDias(1)).toBe('1 dia')
     expect(descreverDias(10)).toBe('10 dias')
+  })
+})
+
+describe('diasAte', () => {
+  it('conta os dias que faltam até a data; a de hoje é 0 e a que passou é negativa', () => {
+    expect(diasAte('2026-11-14', '2026-11-07')).toBe(7)
+    expect(diasAte('2026-11-07', '2026-11-07')).toBe(0)
+    expect(diasAte('2026-11-05', '2026-11-07')).toBe(-2)
   })
 })

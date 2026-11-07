@@ -141,6 +141,8 @@ describe('ninhada com a reserva em falta', { timeout: 20_000 }, () => {
 
     expect(await screen.findByText('Reserva em falta')).toBeTruthy()
     expect(screen.getByText(/faltam 2 M e 0 F\. Reservado para o pedido #12 \(4 M, 0 F\)/)).toBeTruthy()
+    // o caminho é desfazer a reserva: o pedido continua aprovado
+    expect(screen.getByText(/Em Solicitações, a reserva do pedido em falta pode ser desfeita\./)).toBeTruthy()
   })
 })
 

@@ -139,6 +139,13 @@
   align-items: flex-start;
 }
 
+/* O aviso para a equipe do pedido aprovado sem reserva com a entrega perto: na cor de atenção,
+   como o "Último parto" do kanban */
+.solicitacao__duasLinhas > .solicitacao__alerta {
+  color: var(--cor-aviso);
+  font-weight: 600;
+}
+
 .solicitacao__acoes {
   display: flex;
   justify-content: flex-end;
