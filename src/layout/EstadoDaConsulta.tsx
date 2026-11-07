@@ -41,9 +41,8 @@ export function EstadoDaConsulta({
 
   if (consulta.isPending) {
     return demorou ? (
-      <Aviso tom="informacao" titulo="Só um instante">
-        Depois de um tempo sem uso, o Nidus leva até um minuto para abrir. Não é erro: é só
-        aguardar.
+      <Aviso tom="informacao" titulo="O servidor está acordando">
+        Depois de um tempo sem uso, ele leva até um minuto para responder. É só aguardar.
       </Aviso>
     ) : (
       <Carregando {...(rotulo ? { rotulo } : {})} />
