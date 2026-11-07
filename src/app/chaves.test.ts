@@ -12,13 +12,19 @@ describe('chaves', () => {
 })
 
 describe('invalidarColonia', () => {
-  it('derruba estantes, grade e kanban de uma vez', async () => {
+  it('derruba estantes, grade, kanban, estoque e histórico de uma vez', async () => {
     const cliente = new QueryClient()
     const espia = vi.spyOn(cliente, 'invalidateQueries').mockResolvedValue()
 
     await invalidarColonia(cliente)
 
-    expect(espia.mock.calls.map((c) => c[0]?.queryKey)).toEqual([['estantes'], ['grade'], ['quadro']])
+    expect(espia.mock.calls.map((c) => c[0]?.queryKey)).toEqual([
+      ['estantes'],
+      ['grade'],
+      ['quadro'],
+      ['estoque'],
+      ['historico'],
+    ])
   })
 
   it('inclui a ficha quando a mudança foi numa caixa específica', async () => {
