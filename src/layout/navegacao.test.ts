@@ -12,17 +12,9 @@ describe('menu por perfil', () => {
     expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/busca', '/estoque'])
   })
 
-  it('só o gestor vê cadastros e histórico', () => {
+  it('só o gestor vê o histórico', () => {
     const caminhos = menuDoPerfil('gestor').map((item) => item.caminho)
-    expect(caminhos).toEqual([
-      '/kanban',
-      '/estantes',
-      '/solicitar',
-      '/busca',
-      '/estoque',
-      '/cadastros',
-      '/historico',
-    ])
+    expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/busca', '/estoque', '/historico'])
   })
 })
 
@@ -37,8 +29,11 @@ describe('solicitações', () => {
 })
 
 describe('configurações', () => {
-  it('usuários fica em Configurações, só para o gestor', () => {
-    expect(configuracoesDoPerfil('gestor').map((item) => item.caminho)).toEqual(['/usuarios'])
+  it('cadastros e usuários ficam em Configurações, só para o gestor', () => {
+    expect(configuracoesDoPerfil('gestor').map((item) => item.caminho)).toEqual([
+      '/cadastros',
+      '/usuarios',
+    ])
     expect(configuracoesDoPerfil('tecnico')).toEqual([])
     expect(configuracoesDoPerfil('pesquisador')).toEqual([])
   })

@@ -73,7 +73,7 @@ export function Usuarios() {
   return (
     <Pilha>
       <CabecalhoDaTela
-        rotulo="Gestão"
+        rotulo="Configurações"
         titulo="Usuários"
         descricao="Quem entra no sistema e com qual perfil. Mudar o perfil ou desativar encerra as sessões abertas da pessoa."
         acoes={
