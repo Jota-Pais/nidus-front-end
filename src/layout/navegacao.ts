@@ -14,12 +14,12 @@ const ITENS_DE_MENU: ItemDeMenu[] = [
   { rotulo: 'Solicitações', caminho: '/solicitar', perfis: ['tecnico', 'gestor'] },
   { rotulo: 'Busca de atendimento', caminho: '/busca', perfis: ['tecnico', 'gestor'] },
   { rotulo: 'Estoque', caminho: '/estoque', perfis: ['tecnico', 'gestor'] },
-  { rotulo: 'Cadastros', caminho: '/cadastros', perfis: ['gestor'] },
   { rotulo: 'Histórico', caminho: '/historico', perfis: ['gestor'] },
 ]
 
 /** O que fica em Configurações, no menu da conta do cabeçalho, fora do menu do dia a dia */
 const ITENS_DE_CONFIGURACAO: ItemDeMenu[] = [
+  { rotulo: 'Cadastros', caminho: '/cadastros', perfis: ['gestor'] },
   { rotulo: 'Usuários', caminho: '/usuarios', perfis: ['gestor'] },
 ]
 

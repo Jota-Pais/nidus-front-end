@@ -26,7 +26,7 @@ export function Cadastros() {
   return (
     <Pilha>
       <CabecalhoDaTela
-        rotulo="Gestão"
+        rotulo="Configurações"
         titulo="Cadastros"
         descricao="Projetos CEUA e linhagens. Nada é apagado: projeto encerrado vira vencido ou suspenso, e linhagem fora de uso fica inativa."
       />
