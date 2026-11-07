@@ -227,6 +227,26 @@ function Caixa({
   )
 }
 
+type Quantidades = { machos: number; femeas: number; qualquer: number }
+
+/** "2 machos, 1 fêmea e 12 animais de qualquer sexo": as quantidades numa frase, sem as vazias */
+function porExtenso({ machos, femeas, qualquer }: Quantidades): string {
+  const partes = [
+    machos ? `${machos} ${machos === 1 ? 'macho' : 'machos'}` : null,
+    femeas ? `${femeas} ${femeas === 1 ? 'fêmea' : 'fêmeas'}` : null,
+    qualquer ? `${qualquer} ${qualquer === 1 ? 'animal' : 'animais'} de qualquer sexo` : null,
+  ].filter((parte) => parte !== null)
+
+  return partes.length > 1 ? `${partes.slice(0, -1).join(', ')} e ${partes.at(-1)}` : (partes[0] ?? '')
+}
+
+/** "Falta 1 macho", mas "Faltam 2 machos" e "Faltam 1 macho e 1 fêmea" */
+function faltam(falta: Quantidades): string {
+  const quantidades = [falta.machos, falta.femeas, falta.qualquer].filter((n) => n > 0)
+  const singular = quantidades.length === 1 && quantidades[0] === 1
+  return `${singular ? 'Falta' : 'Faltam'} ${porExtenso(falta)}.`
+}
+
 /** O total reservado contra o pedido; sem animais no plantel, o que resta fazer */
 function Conferencia({
   conferencia,
@@ -241,29 +261,34 @@ function Conferencia({
     return (
       <Aviso
         tom="sucesso"
-        titulo={`Pedido coberto: ${descreverAnimais({ machos: reservado.m, femeas: reservado.f })}.`}
+        titulo={`Pedido coberto: ${porExtenso({ machos: reservado.m, femeas: reservado.f, qualquer: 0 })}.`}
       />
     )
   }
 
   const { falta, aMais } = conferencia
-  const partes = [
-    falta.machos + falta.femeas + falta.qualquer > 0 ? `Faltam ${descreverAnimais(falta)}` : null,
+  const sobra =
     aMais.machos + aMais.femeas > 0
-      ? `${descreverAnimais({ machos: aMais.machos, femeas: aMais.femeas })} a mais`
+      ? porExtenso({ machos: aMais.machos, femeas: aMais.femeas, qualquer: 0 })
       : aMais.total > 0
-        ? `${aMais.total} ${aMais.total === 1 ? 'animal' : 'animais'} a mais`
-        : null,
-  ].filter((parte) => parte !== null)
+        ? `${aMais.total} ${aMais.total === 1 ? 'animal' : 'animais'}`
+        : null
+  const titulo = [
+    falta.machos + falta.femeas + falta.qualquer > 0 ? faltam(falta) : null,
+    sobra ? `Há ${sobra} a mais.` : null,
+  ]
+    .filter((frase) => frase !== null)
+    .join(' ')
 
-  // o plantel inteiro não cobre: não adianta trocar de caixa
+  // o plantel todo não cobre: não adianta trocar de caixa
   const semAnimais = busca.deficit.m + busca.deficit.f + busca.deficit.qualquer > 0
+  const casais = busca.casaisAFormar
 
   return (
-    <Aviso tom="atencao" titulo={`${partes.join('; ')}.`}>
+    <Aviso tom="atencao" titulo={titulo}>
       {semAnimais
-        ? `As caixas não têm animais para o pedido inteiro, e ele só é aceito inteiro. Recuse com o motivo, ou forme ${busca.casaisAFormar} ${busca.casaisAFormar === 1 ? 'casal novo' : 'casais novos'}: com eles, a entrega fica possível a partir de ${formatarData(busca.acasalamentoNovo.dataMinimaDeEntrega)}.`
-        : 'O pedido só é aceito inteiro: ajuste as caixas marcadas até cobrir.'}
+        ? `As caixas não têm animais para o pedido, então recuse com o motivo ou forme ${casais} ${casais === 1 ? 'casal novo: com ele' : 'casais novos: com eles'}, a entrega passa a ser possível a partir de ${formatarData(busca.acasalamentoNovo.dataMinimaDeEntrega)}.`
+        : 'Ajuste as caixas marcadas até cobrir o pedido.'}
     </Aviso>
   )
 }

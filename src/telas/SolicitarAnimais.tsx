@@ -837,7 +837,7 @@ function DevolverParaAnalise({
         )}
         <Texto>
           As reservas do pedido são canceladas e ele volta para Aguardando análise, com 14 dias para a
-          resposta a partir de hoje. Depois, aloque o pedido inteiro de novo. Quem pediu não é avisado.
+          resposta a partir de hoje. Depois, é só atender o pedido de novo. Quem pediu não é avisado.
         </Texto>
       </Pilha>
     </Modal>
