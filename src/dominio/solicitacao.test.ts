@@ -3,6 +3,7 @@ import type { Solicitacao } from './tipos'
 import {
   compararDataDeEntrega,
   compararDataDoPedido,
+  conferirReserva,
   entraNoFiltro,
   descreverAnimais,
   descreverIdade,
@@ -101,5 +102,31 @@ describe('entraNoFiltro', () => {
   it('recusadas só as recusadas; todas mostra tudo', () => {
     expect(entraNoFiltro('recusadas', com('recusada'))).toBe(true)
     expect(entraNoFiltro('todas', com('cancelada'))).toBe(true)
+  })
+})
+
+describe('conferirReserva', () => {
+  const pedido = { machos: 2, femeas: 2, qualquer: 2 }
+
+  it('cobre com os sexos pedidos e o "qualquer" de um sexo ou de outro', () => {
+    expect(conferirReserva(pedido, { m: 4, f: 2 }).cobre).toBe(true)
+    expect(conferirReserva(pedido, { m: 3, f: 3 }).cobre).toBe(true)
+  })
+
+  it('diz quanto falta de cada sexo e de qualquer sexo', () => {
+    const conferencia = conferirReserva(pedido, { m: 1, f: 2 })
+
+    expect(conferencia.cobre).toBe(false)
+    expect(conferencia.falta).toEqual({ machos: 1, femeas: 0, qualquer: 2 })
+  })
+
+  it('o que passa do pedido não cobre, nem com o total certo', () => {
+    // 6 machos fecham a soma, mas faltam as 2 fêmeas pedidas e sobram 2 machos
+    const conferencia = conferirReserva(pedido, { m: 6, f: 0 })
+
+    expect(conferencia.cobre).toBe(false)
+    expect(conferencia.falta.femeas).toBe(2)
+    expect(conferencia.aMais).toEqual({ machos: 2, femeas: 0, total: 0 })
+    expect(conferirReserva(pedido, { m: 4, f: 4 }).aMais.total).toBe(2)
   })
 })

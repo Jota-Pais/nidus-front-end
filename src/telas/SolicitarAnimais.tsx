@@ -51,6 +51,7 @@ import type { CodigoEspecie, Solicitacao, StatusSolicitacao, Viabilidade } from 
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { formatarData, hoje } from '@/lib/data'
+import { AtenderPedido } from './AtenderPedido'
 import { CampoDeIdade } from './CampoDeIdade'
 import { CampoDoProtocolo } from './CampoDoProtocolo'
 import { ConfirmarPedido } from './ConfirmarPedido'
@@ -120,6 +121,7 @@ export function SolicitarAnimais() {
   const criar = useCriarSolicitacao()
   const conferir = useConferirViabilidade()
   const falha = useFalhaDoFormulario(form, CAMPOS_COM_ERRO)
+  const [atendendo, setAtendendo] = useState<Solicitacao | null>(null)
   const [entregando, setEntregando] = useState<Solicitacao | null>(null)
   const [recusando, setRecusando] = useState<Solicitacao | null>(null)
   const [devolvendo, setDevolvendo] = useState<Solicitacao | null>(null)
@@ -143,7 +145,12 @@ export function SolicitarAnimais() {
   const colunasDaTabela = pesquisador
     ? colunasDeQuemPediu(telaLarga)
     : colunasDaEquipe(
-        { aoEntregar: setEntregando, aoRecusar: setRecusando, aoDevolver: setDevolvendo },
+        {
+          aoAtender: setAtendendo,
+          aoEntregar: setEntregando,
+          aoRecusar: setRecusando,
+          aoDevolver: setDevolvendo,
+        },
         telaLarga,
       )
   const linhagens =
@@ -388,6 +395,16 @@ export function SolicitarAnimais() {
           />
         </Secao>
       </EstadoDaConsulta>
+      {atendendo && (
+        <AtenderPedido
+          solicitacao={atendendo}
+          aoFechar={() => setAtendendo(null)}
+          aoRecusar={() => {
+            setAtendendo(null)
+            setRecusando(atendendo)
+          }}
+        />
+      )}
       {entregando && (
         <RegistrarEntrega solicitacao={entregando} aoFechar={() => setEntregando(null)} />
       )}
@@ -402,6 +419,7 @@ export function SolicitarAnimais() {
 }
 
 interface AcoesDaEquipe {
+  aoAtender: (s: Solicitacao) => void
   aoEntregar: (s: Solicitacao) => void
   aoRecusar: (s: Solicitacao) => void
   aoDevolver: (s: Solicitacao) => void
@@ -497,10 +515,14 @@ function AcaoDaEquipe({
     )
   }
   if (s.status === 'enviada') {
+    // atender é o que se faz com o pedido que chega; recusar fica embaixo, sem destaque
     return (
-      <Botao variante="fantasma" onClick={() => equipe.aoRecusar(s)}>
-        Recusar
-      </Botao>
+      <div className="solicitacao__acoesDoPedido">
+        <Botao onClick={() => equipe.aoAtender(s)}>Atender</Botao>
+        <Botao variante="fantasma" onClick={() => equipe.aoRecusar(s)}>
+          Recusar
+        </Botao>
+      </div>
     )
   }
   return null

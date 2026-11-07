@@ -76,7 +76,7 @@ export function Login() {
         </Botao>
       </Formulario>
 
-      {/* Leva o destino junto: quem veio de um link para /busca volta para lá depois */}
+      {/* Leva o destino junto: quem veio de um link para /estoque volta para lá depois */}
       <Link to="/definir-senha" state={state} className="telaDeEntrada__link">
         Primeiro acesso ou esqueceu a senha?
       </Link>

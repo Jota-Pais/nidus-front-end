@@ -1,0 +1,73 @@
+/* Quem pediu e o quê, em cima da lista de caixas */
+.atender__pedido {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.atender__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+/* Cada ninhada numa linha: a escolha, o que ela tem e, marcada, quanto reservar. Sem largura,
+   o que não cabe desce */
+.atender__caixa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+}
+
+.atender__caixa--marcada {
+  border-color: var(--cor-acao-borda);
+  background: var(--cor-acao-fundo);
+}
+
+/* O endereço da caixa é código, e código vai em mono */
+.atender__codigo {
+  font-family: var(--fonte-mono);
+  font-weight: 600;
+}
+
+.atender__ninhada {
+  display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.atender__quantos {
+  display: flex;
+  gap: 12px;
+}
+
+.atender__quantos label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.atender__quantos .ant-input-number {
+  width: 64px;
+}
+
+/* Recusar à esquerda, longe do Aceitar; Cancelar e Aceitar à direita */
+.atender__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.atender__rodapeFim {
+  display: flex;
+  gap: 8px;
+}
