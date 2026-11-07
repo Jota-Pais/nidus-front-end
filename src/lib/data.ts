@@ -32,6 +32,11 @@ export function idadeEmDias(nascimento: DataISO, hojeEm: DataISO = hoje()): numb
   return dayjs(hojeEm, FORMATO_DA_API, true).diff(dayjs(nascimento, FORMATO_DA_API, true), 'day')
 }
 
+/** Quantos dias faltam até a data: a de hoje dá 0, e a que já passou, negativo */
+export function diasAte(data: DataISO, hojeEm: DataISO = hoje()): number {
+  return dayjs(data, FORMATO_DA_API, true).diff(dayjs(hojeEm, FORMATO_DA_API, true), 'day')
+}
+
 /** "1 dia" ou "N dias" */
 export function descreverDias(dias: number): string {
   return dias === 1 ? '1 dia' : `${dias} dias`

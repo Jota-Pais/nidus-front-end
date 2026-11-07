@@ -51,6 +51,6 @@ export function descreverFalta(falta: FaltaNaReserva): string {
   return (
     `A ninhada ficou com menos animais do que o reservado: faltam ${falta.m} M e ${falta.f} F. ` +
     `Reservado para ${falta.pedidos.length > 1 ? 'os pedidos' : 'o pedido'} ${pedidos}. ` +
-    'Em Solicitações, o pedido em falta pode ser devolvido para análise.'
+    'Em Solicitações, a reserva do pedido em falta pode ser desfeita.'
   )
 }

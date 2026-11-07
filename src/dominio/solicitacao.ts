@@ -1,6 +1,7 @@
 // Como um pedido de animais se escreve na tela. A solicitação e o atendimento usam as mesmas
 // frases: o que o pesquisador conferiu é o que a equipe lê
-import type { PorSexo, Solicitacao } from './tipos'
+import { descreverDias, diasAte, hoje } from '@/lib/data'
+import type { DataISO, PorSexo, Solicitacao } from './tipos'
 
 /** Campo vazio do formulário conta como zero */
 interface Quantidades {
@@ -105,6 +106,30 @@ export const FILTROS_DE_SOLICITACAO: { valor: FiltroDeSolicitacao; rotulo: strin
   { valor: 'aceitas', rotulo: 'Aceitas' },
   { valor: 'recusadas', rotulo: 'Recusadas' },
 ]
+
+/**
+ * Até quantos dias antes da entrega a equipe vê o aviso do pedido aprovado que ainda está sem os
+ * animais reservados
+ */
+export const AVISO_DE_ENTREGA_SEM_RESERVA_EM_DIAS = 7
+
+/**
+ * O aviso para a equipe do pedido aprovado sem reserva com a entrega perto, hoje ou já passada:
+ * "Entrega em 3 dias, sem reserva". Fora disso, null
+ */
+export function avisoDeEntregaSemReserva(
+  s: Pick<Solicitacao, 'status' | 'dataEntrega'>,
+  hojeEm: DataISO = hoje(),
+): string | null {
+  if (s.status !== 'em_atendimento') return null
+
+  const dias = diasAte(s.dataEntrega, hojeEm)
+
+  if (dias > AVISO_DE_ENTREGA_SEM_RESERVA_EM_DIAS) return null
+  if (dias < 0) return 'Entrega vencida, sem reserva'
+  if (dias === 0) return 'Entrega hoje, sem reserva'
+  return `Entrega em ${descreverDias(dias)}, sem reserva`
+}
 
 export function entraNoFiltro(filtro: FiltroDeSolicitacao, s: Solicitacao): boolean {
   switch (filtro) {

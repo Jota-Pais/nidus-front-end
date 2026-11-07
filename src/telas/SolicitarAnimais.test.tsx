@@ -1,5 +1,6 @@
-import { fireEvent, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, screen, within } from '@testing-library/react'
+import dayjs from 'dayjs'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Solicitacao } from '@/dominio/tipos'
 import { consulta, mutacao, renderizar } from '@/testes/renderizar'
 import { SolicitarAnimais } from './SolicitarAnimais'
@@ -13,7 +14,8 @@ const solicitacao = (
   id,
   dataSolicitacao: '2026-11-0' + id,
   prazoResposta: status === 'enviada' ? '2026-11-15' : null,
-  dataAceite: status === 'aprovada' ? '2026-11-03' : null,
+  dataAceite:
+    status === 'aprovada' ? '2026-11-03' : status === 'em_atendimento' ? '2026-11-05' : null,
   dataRecusa: status === 'recusada' ? '2026-11-04' : null,
   protocoloCeua: '23080.000001/2026-54',
   pesquisador: 'Ana',
@@ -36,6 +38,8 @@ const solicitacao = (
 /** pedidos a mais, só no teste que precisa deles */
 const extras = vi.hoisted(() => ({ lista: [] as Solicitacao[] }))
 
+const aprovar = vi.hoisted(() => vi.fn())
+
 vi.mock('@/dominio/consultas', () => ({
   useCatalogo: () => consulta({ especies: [], paresGeneticos: [] }),
   useConferirViabilidade: mutacao,
@@ -48,9 +52,22 @@ vi.mock('@/dominio/consultas', () => ({
     ]),
   useCriarSolicitacao: mutacao,
   useRecusarSolicitacao: mutacao,
-  useDevolverParaAnalise: mutacao,
+  useAprovarSolicitacao: () => ({ mutate: aprovar, isPending: false }),
+  useDesfazerReserva: mutacao,
   useRegistrarEntrega: mutacao,
+  // a janela de reservar
+  useAtendimento: () => consulta(null),
+  useAlocar: mutacao,
 }))
+
+/** daqui a tantos dias, no formato da API: o aviso da entrega conta a partir de hoje */
+const daqui = (dias: number) => dayjs().add(dias, 'day').format('YYYY-MM-DD')
+
+/** aprovada, ainda sem os animais reservados */
+const aprovadaSemReserva = (id: number, dataEntrega = daqui(30)): Solicitacao => ({
+  ...solicitacao(id, 'em_atendimento'),
+  dataEntrega,
+})
 
 /** O jsdom não tem largura: aqui o Grid do antd acha que a tela é larga */
 function emTelaLarga(teste: () => void) {
@@ -171,28 +188,121 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     expect(datas('12')).toEqual(['01/12/2026', '02/12/2026', '03/12/2026'])
   })
 
-  it('o pedido aceito com a reserva em falta mostra quanto falta e pode voltar para análise', async () => {
+  it('o pedido com a reserva em falta mostra quanto falta e pode ter a reserva desfeita', async () => {
     extras.lista = [solicitacao(4, 'aprovada', null, { m: 2, f: 0 })]
     try {
       renderizar(<SolicitarAnimais />, 'tecnico')
 
       expect(screen.getByText('Reserva em falta: 2 M e 0 F')).toBeTruthy()
-      expect(screen.getAllByRole('button', { name: 'Devolver para análise' })).toHaveLength(1)
+      expect(screen.getAllByRole('button', { name: 'Desfazer reserva' })).toHaveLength(1)
+      expect(screen.queryByRole('button', { name: 'Devolver para análise' })).toBeNull()
 
       // confirma antes, dizendo o que acontece com as reservas e que quem pediu não é avisado
-      fireEvent.click(screen.getByRole('button', { name: 'Devolver para análise' }))
-      expect(await screen.findByText(/Quem pediu não é avisado/)).toBeTruthy()
+      fireEvent.click(screen.getByRole('button', { name: 'Desfazer reserva' }))
+      expect(
+        await screen.findByText(
+          'As reservas são canceladas e o pedido volta para Aguardando animais; depois, é só reservar de novo. Quem pediu não é avisado.',
+        ),
+      ).toBeTruthy()
       expect(screen.getByText(/faltam até 2 M e 0 F/)).toBeTruthy()
     } finally {
       extras.lista = []
     }
   })
 
-  it('a alocada aparece como Aprovada, e não como linguagem da equipe', () => {
+  it('a alocada aparece como Animais reservados, e não como linguagem da equipe', () => {
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
-    expect(screen.getByText('Aprovada')).toBeTruthy()
+    expect(screen.getByText('Animais reservados')).toBeTruthy()
+    expect(screen.queryByText('Aprovada')).toBeNull()
     expect(screen.queryByText('Caixas alocadas')).toBeNull()
+  })
+})
+
+describe('aprovar e reservar', { timeout: 20_000 }, () => {
+  afterEach(() => {
+    extras.lista = []
+    aprovar.mockReset()
+  })
+
+  it('a equipe aprova ou recusa o pedido que chega, e reserva os animais ou recusa o aprovado', () => {
+    extras.lista = [aprovadaSemReserva(5)]
+    renderizar(<SolicitarAnimais />, 'tecnico')
+
+    expect(screen.getAllByRole('button', { name: 'Aprovar' })).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: 'Reservar animais' })).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: 'Recusar' })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: 'Registrar entrega' })).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: 'Atender' })).toBeNull()
+  })
+
+  it('aprovar pede confirmação: quem pediu recebe o e-mail, e os animais são reservados depois', async () => {
+    renderizar(<SolicitarAnimais />, 'tecnico')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aprovar' }))
+    const janela = await screen.findByRole('dialog')
+
+    expect(within(janela).getByText('Aprovar o pedido #1?')).toBeTruthy()
+    expect(
+      within(janela).getByText(
+        'Quem pediu recebe o e-mail de aprovação. Os animais são reservados depois, em Reservar animais, quando houver animais na idade pedida.',
+      ),
+    ).toBeTruthy()
+    expect(aprovar).not.toHaveBeenCalled()
+
+    fireEvent.click(within(janela).getByRole('button', { name: 'Aprovar' }))
+    expect(aprovar).toHaveBeenCalledWith(1, expect.anything())
+  })
+
+  it('Reservar animais abre a janela de reserva do pedido', async () => {
+    extras.lista = [aprovadaSemReserva(5)]
+    renderizar(<SolicitarAnimais />, 'tecnico')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reservar animais' }))
+
+    expect(await screen.findByText('Reservar animais do pedido #5')).toBeTruthy()
+  })
+
+  it('a equipe vê Aguardando animais e quando aprovou; quem pediu, Aceito, em andamento', () => {
+    extras.lista = [aprovadaSemReserva(5)]
+    const equipe = renderizar(<SolicitarAnimais />, 'tecnico')
+
+    expect(screen.getByText('Aguardando animais')).toBeTruthy()
+    expect(screen.getByText('Aprovada em 05/11/2026')).toBeTruthy()
+    expect(screen.getByText('Animais reservados')).toBeTruthy()
+    expect(screen.queryByText('Aceito, em andamento')).toBeNull()
+    // o verde (sucesso e institucional) é só dos animais reservados; o aprovado ainda está em
+    // andamento, no tom do que aguarda análise
+    expect(screen.getByText('Aguardando animais').className).toContain('etiqueta--informacao')
+    expect(screen.getByText('Animais reservados').className).toContain('etiqueta--sucesso')
+    equipe.unmount()
+
+    renderizar(<SolicitarAnimais />, 'pesquisador')
+
+    expect(screen.getByText('Aceito, em andamento')).toBeTruthy()
+    expect(screen.getByText('Aceito em 05/11/2026')).toBeTruthy()
+    expect(screen.getByText('Animais reservados')).toBeTruthy()
+    expect(screen.queryByText('Aguardando animais')).toBeNull()
+  })
+
+  it('a equipe é avisada do aprovado sem reserva com a entrega perto; quem pediu não vê o aviso', () => {
+    extras.lista = [
+      aprovadaSemReserva(5, daqui(3)),
+      aprovadaSemReserva(6, daqui(0)),
+      aprovadaSemReserva(7, daqui(-1)),
+      aprovadaSemReserva(8, daqui(8)),
+    ]
+    const equipe = renderizar(<SolicitarAnimais />, 'tecnico')
+
+    expect(screen.getByText('Entrega em 3 dias, sem reserva')).toBeTruthy()
+    expect(screen.getByText('Entrega hoje, sem reserva')).toBeTruthy()
+    expect(screen.getByText('Entrega vencida, sem reserva')).toBeTruthy()
+    expect(screen.getAllByText(/sem reserva$/)).toHaveLength(3)
+    equipe.unmount()
+
+    renderizar(<SolicitarAnimais />, 'pesquisador')
+
+    expect(screen.queryByText(/sem reserva$/)).toBeNull()
   })
 })
 

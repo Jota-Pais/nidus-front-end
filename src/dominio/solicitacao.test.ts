@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Solicitacao } from './tipos'
 import {
+  AVISO_DE_ENTREGA_SEM_RESERVA_EM_DIAS,
+  avisoDeEntregaSemReserva,
   compararDataDeEntrega,
   compararDataDoPedido,
   conferirReserva,
@@ -95,6 +97,9 @@ describe('entraNoFiltro', () => {
     expect(entraNoFiltro('pendentes', com('enviada'))).toBe(true)
     expect(entraNoFiltro('pendentes', com('aprovada', '2026-11-03'))).toBe(false)
     expect(entraNoFiltro('aceitas', com('aprovada', '2026-11-03'))).toBe(true)
+    // aprovada e ainda sem os animais reservados também já foi aceita
+    expect(entraNoFiltro('aceitas', com('em_atendimento', '2026-11-03'))).toBe(true)
+    expect(entraNoFiltro('pendentes', com('em_atendimento', '2026-11-03'))).toBe(false)
     expect(entraNoFiltro('aceitas', com('concluida', '2026-11-03'))).toBe(false)
     expect(entraNoFiltro('aceitas', com('enviada'))).toBe(false)
   })
@@ -128,5 +133,40 @@ describe('conferirReserva', () => {
     expect(conferencia.falta.femeas).toBe(2)
     expect(conferencia.aMais).toEqual({ machos: 2, femeas: 0, total: 0 })
     expect(conferirReserva(pedido, { m: 4, f: 4 }).aMais.total).toBe(2)
+  })
+})
+
+describe('avisoDeEntregaSemReserva', () => {
+  const aprovada = (dataEntrega: string) => ({ status: 'em_atendimento' as const, dataEntrega })
+  const hoje = '2026-11-07'
+
+  it('avisa a equipe do pedido aprovado sem reserva com a entrega a até 7 dias', () => {
+    expect(AVISO_DE_ENTREGA_SEM_RESERVA_EM_DIAS).toBe(7)
+    expect(avisoDeEntregaSemReserva(aprovada('2026-11-14'), hoje)).toBe(
+      'Entrega em 7 dias, sem reserva',
+    )
+    expect(avisoDeEntregaSemReserva(aprovada('2026-11-10'), hoje)).toBe(
+      'Entrega em 3 dias, sem reserva',
+    )
+    expect(avisoDeEntregaSemReserva(aprovada('2026-11-08'), hoje)).toBe(
+      'Entrega em 1 dia, sem reserva',
+    )
+  })
+
+  it('a entrega de hoje e a que já passou também avisam', () => {
+    expect(avisoDeEntregaSemReserva(aprovada('2026-11-07'), hoje)).toBe('Entrega hoje, sem reserva')
+    expect(avisoDeEntregaSemReserva(aprovada('2026-11-02'), hoje)).toBe(
+      'Entrega vencida, sem reserva',
+    )
+  })
+
+  it('sem aviso com a entrega mais longe, ou com os animais já reservados', () => {
+    expect(avisoDeEntregaSemReserva(aprovada('2026-11-15'), hoje)).toBeNull()
+    expect(
+      avisoDeEntregaSemReserva({ status: 'aprovada', dataEntrega: '2026-11-08' }, hoje),
+    ).toBeNull()
+    expect(
+      avisoDeEntregaSemReserva({ status: 'enviada', dataEntrega: '2026-11-08' }, hoje),
+    ).toBeNull()
   })
 })
