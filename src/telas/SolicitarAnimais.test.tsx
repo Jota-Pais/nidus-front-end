@@ -83,16 +83,36 @@ function emTelaLarga(teste: () => void) {
   }
 }
 
+/** abre o pedido pela seta no fim da linha, e devolve a janela dele */
+async function abrir(nome: string) {
+  fireEvent.click(screen.getByRole('button', { name: nome }))
+  return screen.findByRole('dialog')
+}
+
 // A tela inteira do antd no jsdom leva de 4 a 9 s para montar: os 5 s padrão falham à toa
 describe('lista de solicitações', { timeout: 20_000 }, () => {
-  it('o técnico recusa a enviada e registra a entrega da alocada', () => {
+  it('a linha não tem ação: o pedido aberto mostra tudo, e a equipe o vê pelo número', async () => {
     renderizar(<SolicitarAnimais />, 'tecnico')
 
-    expect(screen.getAllByRole('button', { name: 'Recusar' })).toHaveLength(1)
-    expect(screen.getAllByRole('button', { name: 'Registrar entrega' })).toHaveLength(1)
-    // a equipe se refere ao pedido pelo número
-    fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalhes' })[0]!)
-    expect(screen.getByText('#3')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Recusar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Registrar entrega' })).toBeNull()
+
+    const janela = await abrir('Abrir o pedido #3')
+    expect(within(janela).getByText('Pedido #3')).toBeTruthy()
+    expect(within(janela).getByText('ana@ufsc.br')).toBeTruthy()
+    expect(within(janela).getByText('23080.000001/2026-54')).toBeTruthy()
+    expect(within(janela).getByText('Sem Wistar ate dezembro')).toBeTruthy()
+    // recusada não tem o que fazer: só fechar
+    expect(within(janela).getByRole('button', { name: 'Fechar' })).toBeTruthy()
+    expect(within(janela).queryByRole('button', { name: 'Recusar' })).toBeNull()
+  })
+
+  it('clicar em qualquer lugar da linha abre o pedido', async () => {
+    renderizar(<SolicitarAnimais />, 'tecnico')
+
+    fireEvent.click(screen.getByText('Responder até 15/11/2026'))
+
+    expect(within(await screen.findByRole('dialog')).getByText('Pedido #1')).toBeTruthy()
   })
 
   it('o técnico e o gestor não veem o formulário de pedido', () => {
@@ -108,14 +128,17 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     expect(screen.getByRole('button', { name: 'Enviar solicitação' })).toBeTruthy()
   })
 
-  it('o pesquisador vê só as dele, sem o número do pedido, e não decide nem registra entrega', () => {
+  it('o pesquisador vê só as dele, sem o número do pedido, e não decide nem registra entrega', async () => {
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
     expect(screen.getByRole('heading', { name: 'Minhas solicitações' })).toBeTruthy()
-    fireEvent.click(screen.getAllByRole('button', { name: 'Ver detalhes' })[0]!)
-    expect(screen.queryByText('Nº do pedido')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Recusar' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Registrar entrega' })).toBeNull()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Abrir o pedido' })[0]!)
+    const janela = await screen.findByRole('dialog')
+
+    expect(within(janela).queryByText(/#\d/)).toBeNull()
+    expect(within(janela).queryByText('ana@ufsc.br')).toBeNull()
+    expect(within(janela).queryByRole('button', { name: 'Recusar' })).toBeNull()
+    expect(within(janela).queryByRole('button', { name: 'Registrar entrega' })).toBeNull()
   })
 
   it('de cara mostra a data, a situação com a data da decisão, quem pediu e o que pediu', () => {
@@ -125,15 +148,15 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     expect(screen.getByText('Responder até 15/11/2026')).toBeTruthy()
     expect(screen.getByText('Aceita em 03/11/2026')).toBeTruthy()
     expect(screen.getByText('Recusada em 04/11/2026')).toBeTruthy()
-    expect(screen.getAllByText('Wistar · 2 M · 2 F')).toHaveLength(3)
+    expect(screen.getAllByText('2 M · 2 F · Wistar')).toHaveLength(3)
     expect(screen.queryByText('ana@ufsc.br')).toBeNull()
   })
 
-  it('em tela larga, as quatro informações ficam em colunas, sem rolar de lado', () => {
+  it('em tela larga, as informações ficam em colunas, sem rolar de lado', () => {
     emTelaLarga(() => {
       renderizar(<SolicitarAnimais />, 'tecnico')
 
-      for (const coluna of ['Pedido em', 'Situação', 'Quem pediu e o quê']) {
+      for (const coluna of ['Pedido em', 'Situação', 'Quem pediu e o quê', 'Entrega']) {
         expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
       }
       expect(screen.getAllByText('Ana')).toHaveLength(3)
@@ -151,11 +174,11 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
       expect(screen.queryByText('Ana')).toBeNull()
       expect(screen.getByText('Resposta até 15/11/2026')).toBeTruthy()
       expect(screen.getByText('Aceita em 03/11/2026')).toBeTruthy()
-      expect(screen.getAllByText('28 dias de idade')).toHaveLength(3)
+      expect(screen.getAllByText('Wistar · 28 dias de idade')).toHaveLength(3)
     })
   })
 
-  it('quem pediu vê o motivo da recusa na própria linha, sem abrir a setinha', () => {
+  it('quem pediu vê o motivo da recusa na própria linha, sem abrir o pedido', () => {
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
     expect(screen.getByText('Motivo: Sem Wistar ate dezembro')).toBeTruthy()
@@ -171,8 +194,8 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     expect(screen.getByText('Recusadas (1)')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('radio', { name: /Pendentes/ }))
-    expect(screen.getByRole('button', { name: 'Recusar' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Registrar entrega' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Abrir o pedido #1' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Abrir o pedido #2' })).toBeNull()
   })
 
   it('a equipe vê o pedido mais novo primeiro, e o pesquisador a entrega mais próxima', () => {
@@ -194,11 +217,11 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
       renderizar(<SolicitarAnimais />, 'tecnico')
 
       expect(screen.getByText('Reserva em falta: 2 M e 0 F')).toBeTruthy()
-      expect(screen.getAllByRole('button', { name: 'Desfazer reserva' })).toHaveLength(1)
-      expect(screen.queryByRole('button', { name: 'Devolver para análise' })).toBeNull()
+      const janela = await abrir('Abrir o pedido #4')
+      expect(within(janela).getByRole('button', { name: 'Registrar entrega' })).toBeTruthy()
 
       // confirma antes, dizendo o que acontece com as reservas e que quem pediu não é avisado
-      fireEvent.click(screen.getByRole('button', { name: 'Desfazer reserva' }))
+      fireEvent.click(within(janela).getByRole('button', { name: 'Desfazer reserva' }))
       expect(
         await screen.findByText(
           'As reservas são canceladas e o pedido volta para Aguardando animais; depois, é só reservar de novo. Quem pediu não é avisado.',
@@ -225,24 +248,26 @@ describe('aprovar e reservar', { timeout: 20_000 }, () => {
     aprovar.mockReset()
   })
 
-  it('a equipe aprova ou recusa o pedido que chega, e reserva os animais ou recusa o aprovado', () => {
+  it('o pedido que chega se aprova ou recusa; o aprovado, se reserva ou recusa', async () => {
     extras.lista = [aprovadaSemReserva(5)]
     renderizar(<SolicitarAnimais />, 'tecnico')
 
-    expect(screen.getAllByRole('button', { name: 'Aprovar' })).toHaveLength(1)
-    expect(screen.getAllByRole('button', { name: 'Reservar animais' })).toHaveLength(1)
-    expect(screen.getAllByRole('button', { name: 'Recusar' })).toHaveLength(2)
-    expect(screen.getAllByRole('button', { name: 'Registrar entrega' })).toHaveLength(1)
-    expect(screen.queryByRole('button', { name: 'Atender' })).toBeNull()
+    const chegou = await abrir('Abrir o pedido #1')
+    expect(within(chegou).getByRole('button', { name: 'Aprovar' })).toBeTruthy()
+    expect(within(chegou).getByRole('button', { name: 'Recusar' })).toBeTruthy()
+    expect(within(chegou).queryByRole('button', { name: 'Reservar animais' })).toBeNull()
+    fireEvent.click(within(chegou).getByRole('button', { name: 'Fechar' }))
+
+    const aprovado = await abrir('Abrir o pedido #5')
+    expect(within(aprovado).getByRole('button', { name: 'Reservar animais' })).toBeTruthy()
+    expect(within(aprovado).getByRole('button', { name: 'Recusar' })).toBeTruthy()
+    expect(within(aprovado).queryByRole('button', { name: 'Aprovar' })).toBeNull()
   })
 
-  it('aprovar pede confirmação, com o resumo do pedido', async () => {
+  it('aprova direto do pedido aberto, que mostra o resumo', async () => {
     renderizar(<SolicitarAnimais />, 'tecnico')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Aprovar' }))
-    const janela = await screen.findByRole('dialog')
-
-    expect(within(janela).getByText('Aprovar o pedido #1?')).toBeTruthy()
+    const janela = await abrir('Abrir o pedido #1')
     expect(within(janela).getByText('Machos')).toBeTruthy()
     expect(within(janela).getByText('Entrega')).toBeTruthy()
     expect(aprovar).not.toHaveBeenCalled()
@@ -251,11 +276,22 @@ describe('aprovar e reservar', { timeout: 20_000 }, () => {
     expect(aprovar).toHaveBeenCalledWith(1, expect.anything())
   })
 
+  it('recusar abre o motivo por cima do pedido', async () => {
+    renderizar(<SolicitarAnimais />, 'tecnico')
+
+    const janela = await abrir('Abrir o pedido #1')
+    fireEvent.click(within(janela).getByRole('button', { name: 'Recusar' }))
+
+    expect(await screen.findByText('O motivo aparece para quem pediu.')).toBeTruthy()
+    expect(screen.getAllByRole('dialog')).toHaveLength(2)
+  })
+
   it('Reservar animais abre a janela de reserva do pedido', async () => {
     extras.lista = [aprovadaSemReserva(5)]
     renderizar(<SolicitarAnimais />, 'tecnico')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reservar animais' }))
+    const janela = await abrir('Abrir o pedido #5')
+    fireEvent.click(within(janela).getByRole('button', { name: 'Reservar animais' }))
 
     expect(await screen.findByText('Reservar animais do pedido #5')).toBeTruthy()
   })

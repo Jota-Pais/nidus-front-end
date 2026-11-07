@@ -76,7 +76,14 @@ beforeEach(() => {
 
 describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
   it('com a sugestão cobrindo o pedido, reserva o que está marcado', () => {
-    renderizar(<AtenderPedido solicitacao={pedido} aoFechar={() => {}} aoRecusar={() => {}} />)
+    renderizar(
+      <AtenderPedido
+        solicitacao={pedido}
+        aoFechar={() => {}}
+        aoConcluir={() => {}}
+        aoRecusar={() => {}}
+      />,
+    )
 
     expect(screen.getByText('Pedido coberto: 2 machos e 2 fêmeas.')).toBeTruthy()
     fireEvent.click(reservar())
@@ -88,20 +95,39 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
   })
 
   it('a janela é a de reservar os animais, e diz quando ficaram reservados', async () => {
-    estado.mutate.mockImplementation((_dados: unknown, opcoes: { onSuccess: () => void }) => opcoes.onSuccess())
+    estado.mutate.mockImplementation((_dados: unknown, opcoes: { onSuccess: () => void }) =>
+      opcoes.onSuccess(),
+    )
     const fechar = vi.fn()
-    renderizar(<AtenderPedido solicitacao={pedido} aoFechar={fechar} aoRecusar={() => {}} />)
+    const concluir = vi.fn()
+    renderizar(
+      <AtenderPedido
+        solicitacao={pedido}
+        aoFechar={fechar}
+        aoConcluir={concluir}
+        aoRecusar={() => {}}
+      />,
+    )
 
     expect(screen.getByText('Reservar animais do pedido #12')).toBeTruthy()
     expect(screen.queryByText(/Atender/)).toBeNull()
     fireEvent.click(reservar())
 
     expect(await screen.findByText('Animais reservados para o pedido #12.')).toBeTruthy()
-    expect(fechar).toHaveBeenCalled()
+    // reservado, fecha também o pedido aberto embaixo
+    expect(concluir).toHaveBeenCalled()
+    expect(fechar).not.toHaveBeenCalled()
   })
 
   it('a equipe ajusta a sugestão e completa com outra caixa', async () => {
-    renderizar(<AtenderPedido solicitacao={pedido} aoFechar={() => {}} aoRecusar={() => {}} />)
+    renderizar(
+      <AtenderPedido
+        solicitacao={pedido}
+        aoFechar={() => {}}
+        aoConcluir={() => {}}
+        aoRecusar={() => {}}
+      />,
+    )
 
     fireEvent.change(screen.getByLabelText('Machos a reservar da caixa F1A'), {
       target: { value: '1' },
@@ -127,13 +153,23 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
   })
 
   it('sem animais para o pedido, não aceita e aponta a recusa', () => {
-    estado.busca = resultado([caixa({ sugerida: true, disponivel: { m: 2, f: 1 }, alocar: { m: 2, f: 1 } })], {
-      m: 0,
-      f: 1,
-      qualquer: 0,
-    })
+    estado.busca = resultado(
+      [caixa({ sugerida: true, disponivel: { m: 2, f: 1 }, alocar: { m: 2, f: 1 } })],
+      {
+        m: 0,
+        f: 1,
+        qualquer: 0,
+      },
+    )
     const recusar = vi.fn()
-    renderizar(<AtenderPedido solicitacao={pedido} aoFechar={() => {}} aoRecusar={recusar} />)
+    renderizar(
+      <AtenderPedido
+        solicitacao={pedido}
+        aoFechar={() => {}}
+        aoConcluir={() => {}}
+        aoRecusar={recusar}
+      />,
+    )
 
     expect(reservar()).toHaveProperty('disabled', true)
     expect(screen.getByText('Falta 1 fêmea.')).toBeTruthy()
@@ -157,6 +193,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
       <AtenderPedido
         solicitacao={{ ...pedido, machos: 0, femeas: 0, qualquer: 12 }}
         aoFechar={() => {}}
+        aoConcluir={() => {}}
         aoRecusar={() => {}}
       />,
     )
