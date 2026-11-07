@@ -7,9 +7,6 @@ import { RaizPorPerfil } from '@/layout/RaizPorPerfil'
 import { RotaProtegida } from '@/layout/RotaProtegida'
 import { Login } from '@/telas/Login'
 
-const BuscaDeAtendimento = lazy(() =>
-  import('@/telas/BuscaDeAtendimento').then((m) => ({ default: m.BuscaDeAtendimento })),
-)
 const Cadastros = lazy(() => import('@/telas/Cadastros').then((m) => ({ default: m.Cadastros })))
 const DefinirSenha = lazy(() =>
   import('@/telas/DefinirSenha').then((m) => ({ default: m.DefinirSenha })),
@@ -63,14 +60,6 @@ export const rotas = createBrowserRouter([
         ),
       },
       { path: 'solicitar', element: <SolicitarAnimais /> },
-      {
-        path: 'busca',
-        element: (
-          <RotaProtegida perfis={[...COLONIA]}>
-            <BuscaDeAtendimento />
-          </RotaProtegida>
-        ),
-      },
       {
         path: 'estoque',
         element: (

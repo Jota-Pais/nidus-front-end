@@ -11,6 +11,7 @@ export const chaves = {
   quadro: (especie: CodigoEspecie) => ['quadro', especie] as const,
   projetos: ['projetos'] as const,
   solicitacoes: ['solicitacoes'] as const,
+  atendimento: (idSolicitacao: number) => ['atendimento', idSolicitacao] as const,
   estoque: (especie: CodigoEspecie) => ['estoque', especie] as const,
   usuarios: ['usuarios'] as const,
   historico: ['historico'] as const,

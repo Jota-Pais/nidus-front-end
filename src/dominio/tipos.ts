@@ -10,7 +10,7 @@ export type DataISO = string
 /** As 5 colunas do kanban, na ordem da tela */
 export type EstadoCaixa = 'livres' | 'pre_reserva' | 'estoque' | 'reserva' | 'enviado'
 
-interface PorSexo {
+export interface PorSexo {
   m: number
   f: number
 }

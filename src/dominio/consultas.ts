@@ -245,33 +245,27 @@ export function useConferirViabilidade() {
   })
 }
 
-interface PedidoDeBusca {
-  especie: CodigoEspecie
-  idLinhagem?: number | undefined
-  machos: number
-  femeas: number
-  qualquer: number
-  idadeMin: number
-  idadeMax: number
-  dataEntrega: string
-  /** caixas já sugeridas nas remessas anteriores */
-  excluir: number[]
-}
-
-export function buscarAtendimento(pedido: PedidoDeBusca): Promise<ResultadoDaBusca> {
-  const parametros = new URLSearchParams({
-    especie: pedido.especie,
-    machos: String(pedido.machos),
-    femeas: String(pedido.femeas),
-    qualquer: String(pedido.qualquer),
-    idadeMin: String(pedido.idadeMin),
-    idadeMax: String(pedido.idadeMax),
-    dataEntrega: pedido.dataEntrega,
-    excluir: pedido.excluir.join(','),
+/**
+ * As caixas que atendem o pedido, já com a sugestão do sistema, para a equipe aceitar ou
+ * ajustar antes de reservar. Não grava nada
+ */
+export function useAtendimento(pedido: Solicitacao) {
+  return useQuery({
+    queryKey: chaves.atendimento(pedido.id),
+    queryFn: () => {
+      const parametros = new URLSearchParams({
+        especie: pedido.especie,
+        idLinhagem: String(pedido.idLinhagem),
+        machos: String(pedido.machos),
+        femeas: String(pedido.femeas),
+        qualquer: String(pedido.qualquer),
+        idadeMin: String(pedido.idadeMin),
+        idadeMax: String(pedido.idadeMax),
+        dataEntrega: pedido.dataEntrega,
+      })
+      return api<ResultadoDaBusca>(`/api/busca?${parametros.toString()}`)
+    },
   })
-  if (pedido.idLinhagem !== undefined) parametros.set('idLinhagem', String(pedido.idLinhagem))
-
-  return api<ResultadoDaBusca>(`/api/busca?${parametros.toString()}`)
 }
 
 /** O técnico aceita as caixas sugeridas: cada uma vira compromisso da solicitação */

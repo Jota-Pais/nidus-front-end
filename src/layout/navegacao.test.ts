@@ -2,19 +2,19 @@ import { describe, expect, it } from 'vitest'
 import { configuracoesDoPerfil, menuDoPerfil, mostraBarraLateral, rotaInicial } from './navegacao'
 
 describe('menu por perfil', () => {
-  it('o pesquisador só solicita animais: não vê a colônia nem a busca', () => {
+  it('o pesquisador só solicita animais: não vê a colônia', () => {
     const caminhos = menuDoPerfil('pesquisador').map((item) => item.caminho)
     expect(caminhos).toEqual(['/solicitar'])
   })
 
   it('o técnico vê as telas da colônia e o estoque', () => {
     const caminhos = menuDoPerfil('tecnico').map((item) => item.caminho)
-    expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/busca', '/estoque'])
+    expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/estoque'])
   })
 
   it('o gestor vê as mesmas telas do dia a dia que o técnico', () => {
     const caminhos = menuDoPerfil('gestor').map((item) => item.caminho)
-    expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/busca', '/estoque'])
+    expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/estoque'])
   })
 })
 

@@ -1,6 +1,6 @@
-// Como um pedido de animais se escreve na tela. A solicitação e a busca de atendimento usam
-// as mesmas frases: o que o pesquisador conferiu é o que a equipe lê
-import type { Solicitacao } from './tipos'
+// Como um pedido de animais se escreve na tela. A solicitação e o atendimento usam as mesmas
+// frases: o que o pesquisador conferiu é o que a equipe lê
+import type { PorSexo, Solicitacao } from './tipos'
 
 /** Campo vazio do formulário conta como zero */
 interface Quantidades {
@@ -42,6 +42,39 @@ export function faixaDeIdade({ modoIdade, idadeMin, idadeMax }: CamposDeIdade) {
 /** "20 a 40 dias", ou "28 dias" quando a idade é exata */
 export function descreverIdade({ idadeMin, idadeMax }: { idadeMin: number; idadeMax: number }) {
   return idadeMin === idadeMax ? `${idadeMin} dias` : `${idadeMin} a ${idadeMax} dias`
+}
+
+/** O que a reserva cobre do pedido, com as quantidades no formato de descreverAnimais */
+export interface ConferenciaDaReserva {
+  /** cobre o pedido inteiro, sem faltar nem passar: só assim a API aceita */
+  cobre: boolean
+  falta: { machos: number; femeas: number; qualquer: number }
+  /** o que passou do pedido em cada sexo, e no total */
+  aMais: { machos: number; femeas: number; total: number }
+}
+
+/**
+ * Confere a reserva contra o pedido, com a mesma regra da API: os machos e as fêmeas pedidos,
+ * e os de qualquer sexo como macho ou fêmea, sem passar do total
+ */
+export function conferirReserva(
+  pedido: { machos: number; femeas: number; qualquer: number },
+  reservado: PorSexo,
+): ConferenciaDaReserva {
+  const total = pedido.machos + pedido.femeas + pedido.qualquer
+  const faltaM = Math.max(0, pedido.machos - reservado.m)
+  const faltaF = Math.max(0, pedido.femeas - reservado.f)
+  const restante = total - reservado.m - reservado.f
+
+  return {
+    cobre: faltaM === 0 && faltaF === 0 && restante === 0,
+    falta: { machos: faltaM, femeas: faltaF, qualquer: Math.max(0, restante - faltaM - faltaF) },
+    aMais: {
+      machos: Math.max(0, reservado.m - pedido.machos - pedido.qualquer),
+      femeas: Math.max(0, reservado.f - pedido.femeas - pedido.qualquer),
+      total: Math.max(0, -restante),
+    },
+  }
 }
 
 // A ordem das colunas de data, na ordem crescente: a seta da coluna inverte. As datas vêm como
