@@ -13,6 +13,7 @@ import {
   useUsuarios,
 } from '@/dominio/consultas'
 import type { DadosDoProjeto } from '@/dominio/consultas'
+import { proximoNumeroDeEstante } from '@/dominio/estante'
 import { formatarProtocolo } from '@/dominio/protocolo'
 import type { Catalogo, Estante, Projeto, Sala, SituacaoDoProjeto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
@@ -534,6 +535,7 @@ function FormularioDaEstante({
 }) {
   const { message } = App.useApp()
   const salas = useSalas()
+  const estantes = useEstantes()
   const salvar = useSalvarEstante()
   const [form] = Form.useForm<CamposDaEstante>()
 
@@ -581,7 +583,11 @@ function FormularioDaEstante({
         initialValues={
           estante
             ? { idSala: estante.idSala, numeroVisivel: estante.numeroVisivel }
-            : { idSala: salas.data?.[0]?.id, modelo: 0 }
+            : {
+                idSala: salas.data?.[0]?.id,
+                modelo: 0,
+                numeroVisivel: proximoNumeroDeEstante(estantes.data ?? []),
+              }
         }
       >
         <Form.Item

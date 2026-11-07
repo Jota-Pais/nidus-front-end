@@ -111,13 +111,11 @@ describe('salas', { timeout: 60_000 }, () => {
 })
 
 describe('estantes', { timeout: 60_000 }, () => {
-  it('nova estante manda a sala e o modelo escolhido, com a topologia dele', async () => {
+  it('nova estante já vem com o número seguinte e manda a sala e o modelo, com a topologia dele', async () => {
     abrirAba()
 
     fireEvent.click(screen.getByRole('button', { name: 'Nova estante' }))
-    fireEvent.change(await screen.findByLabelText('Número da estante'), {
-      target: { value: 'E-05' },
-    })
+    expect(await screen.findByLabelText('Número da estante')).toHaveProperty('value', 'E-02')
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar estante' }))
 
     await waitFor(() =>
@@ -126,7 +124,7 @@ describe('estantes', { timeout: 60_000 }, () => {
           tipo: 'criar',
           dados: {
             idSala: 1,
-            numeroVisivel: 'E-05',
+            numeroVisivel: 'E-02',
             faces: 2,
             fabricante: 'ALESCO',
             modelo: 'Modelo 1',
