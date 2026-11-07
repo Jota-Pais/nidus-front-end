@@ -236,18 +236,15 @@ describe('aprovar e reservar', { timeout: 20_000 }, () => {
     expect(screen.queryByRole('button', { name: 'Atender' })).toBeNull()
   })
 
-  it('aprovar pede confirmação: quem pediu recebe o e-mail, e os animais são reservados depois', async () => {
+  it('aprovar pede confirmação, com o resumo do pedido', async () => {
     renderizar(<SolicitarAnimais />, 'tecnico')
 
     fireEvent.click(screen.getByRole('button', { name: 'Aprovar' }))
     const janela = await screen.findByRole('dialog')
 
     expect(within(janela).getByText('Aprovar o pedido #1?')).toBeTruthy()
-    expect(
-      within(janela).getByText(
-        'Quem pediu recebe o e-mail de aprovação. Os animais são reservados depois, em Reservar animais, quando houver animais na idade pedida.',
-      ),
-    ).toBeTruthy()
+    expect(within(janela).getByText('Machos')).toBeTruthy()
+    expect(within(janela).getByText('Entrega')).toBeTruthy()
     expect(aprovar).not.toHaveBeenCalled()
 
     fireEvent.click(within(janela).getByRole('button', { name: 'Aprovar' }))

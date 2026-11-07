@@ -736,6 +736,51 @@ function Detalhes({ solicitacao: s, equipe }: { solicitacao: Solicitacao; equipe
   return <Descriptions size="small" column={{ xs: 1, sm: 2, lg: 3 }} items={itens} />
 }
 
+/**
+ * O pedido nas janelas da equipe, para bater o olho antes de decidir: quem pediu e a linhagem
+ * em cima; embaixo, cada quantidade, a idade e a entrega com o seu rótulo
+ */
+function ResumoDoPedido({ solicitacao: s }: { solicitacao: Solicitacao }) {
+  const quantidades = [
+    { rotulo: 'Machos', valor: s.machos },
+    { rotulo: 'Fêmeas', valor: s.femeas },
+    { rotulo: 'Qualquer sexo', valor: s.qualquer },
+  ].filter(({ valor }) => valor > 0)
+
+  return (
+    <div className="solicitacao__resumo">
+      <div className="solicitacao__resumoQuem">
+        <span className="solicitacao__resumoNome">{s.pesquisador}</span>
+        <Texto tom="secundario">
+          {ROTULO_ESPECIE[s.especie]} · {s.linhagem}
+        </Texto>
+      </div>
+      <dl className="solicitacao__resumoDados">
+        {quantidades.map(({ rotulo, valor }) => (
+          <div key={rotulo}>
+            <dt>
+              <Texto tom="rotulo">{rotulo}</Texto>
+            </dt>
+            <dd className="solicitacao__resumoNumero">{valor}</dd>
+          </div>
+        ))}
+        <div>
+          <dt>
+            <Texto tom="rotulo">Idade</Texto>
+          </dt>
+          <dd>{descreverIdade(s)}</dd>
+        </div>
+        <div>
+          <dt>
+            <Texto tom="rotulo">Entrega</Texto>
+          </dt>
+          <dd>{formatarData(s.dataEntrega)}</dd>
+        </div>
+      </dl>
+    </div>
+  )
+}
+
 function RegistrarEntrega({
   solicitacao,
   aoFechar,
@@ -830,10 +875,10 @@ function RecusarSolicitacao({
       onCancel={aoFechar}
       confirmLoading={recusar.isPending}
     >
-      <Texto>
-        {descreverAnimais(solicitacao)} de {solicitacao.linhagem}, pedido por{' '}
-        {solicitacao.pesquisador}. O motivo aparece para quem pediu.
-      </Texto>
+      <Pilha>
+        <ResumoDoPedido solicitacao={solicitacao} />
+        <Texto>O motivo aparece para quem pediu.</Texto>
+      </Pilha>
       <Form form={form} layout="vertical" onFinish={salvar}>
         <Form.Item
           name="motivo"
@@ -878,16 +923,7 @@ function AprovarSolicitacao({
       onCancel={aoFechar}
       confirmLoading={aprovar.isPending}
     >
-      <Pilha>
-        <Texto>
-          {descreverAnimais(solicitacao)} de {solicitacao.linhagem}, pedido por{' '}
-          {solicitacao.pesquisador}, para entrega em {formatarData(solicitacao.dataEntrega)}.
-        </Texto>
-        <Texto>
-          Quem pediu recebe o e-mail de aprovação. Os animais são reservados depois, em Reservar
-          animais, quando houver animais na idade pedida.
-        </Texto>
-      </Pilha>
+      <ResumoDoPedido solicitacao={solicitacao} />
     </Modal>
   )
 }
