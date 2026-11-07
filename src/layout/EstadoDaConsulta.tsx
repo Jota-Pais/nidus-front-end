@@ -41,9 +41,9 @@ export function EstadoDaConsulta({
 
   if (consulta.isPending) {
     return demorou ? (
-      <Aviso tom="informacao" titulo="Acordando o servidor">
-        A primeira requisição do dia pode levar até um minuto: a API entra em repouso por
-        inatividade. Não é erro — pode aguardar.
+      <Aviso tom="informacao" titulo="Só um instante">
+        Depois de um tempo sem uso, o Nidus leva até um minuto para abrir. Não é erro: é só
+        aguardar.
       </Aviso>
     ) : (
       <Carregando {...(rotulo ? { rotulo } : {})} />
