@@ -4,6 +4,7 @@ import type { Estante, Sala } from '@/dominio/tipos'
 import { consulta, mutacao, renderizar } from '@/testes/renderizar'
 import { Cadastros } from './Cadastros'
 
+const usarEstantes = vi.hoisted(() => vi.fn())
 const salvarSala = vi.hoisted(() => vi.fn())
 const removerSala = vi.hoisted(() => vi.fn())
 const salvarEstante = vi.hoisted(() => vi.fn())
@@ -35,7 +36,7 @@ vi.mock('@/dominio/consultas', () => ({
   useSalvarProjeto: mutacao,
   useSalvarLinhagem: mutacao,
   useSalas: () => consulta(salas),
-  useEstantes: () => consulta(estantes),
+  useEstantes: usarEstantes,
   useSalvarSala: () => ({ mutate: salvarSala, mutateAsync: removerSala, isPending: false }),
   useSalvarEstante: () => ({
     mutate: salvarEstante,
@@ -45,6 +46,7 @@ vi.mock('@/dominio/consultas', () => ({
 }))
 
 beforeEach(() => {
+  usarEstantes.mockReturnValue(consulta(estantes))
   salvarSala.mockReset()
   removerSala.mockReset()
   salvarEstante.mockReset()
@@ -111,6 +113,13 @@ describe('salas', { timeout: 60_000 }, () => {
 })
 
 describe('estantes', { timeout: 60_000 }, () => {
+  it('nova estante só abre depois que as estantes chegam, para o número sugerido sair certo', () => {
+    usarEstantes.mockReturnValue({ data: undefined, isPending: true, error: null })
+    abrirAba()
+
+    expect(screen.getByRole('button', { name: 'Nova estante' })).toHaveProperty('disabled', true)
+  })
+
   it('nova estante já vem com o número seguinte e manda a sala e o modelo, com a topologia dele', async () => {
     abrirAba()
 
