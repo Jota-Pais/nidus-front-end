@@ -78,7 +78,7 @@ describe('atender o pedido', { timeout: 30_000 }, () => {
   it('com a sugestão cobrindo o pedido, aceita e reserva o que está marcado', () => {
     renderizar(<AtenderPedido solicitacao={pedido} aoFechar={() => {}} aoRecusar={() => {}} />)
 
-    expect(screen.getByText(/Pedido coberto/)).toBeTruthy()
+    expect(screen.getByText('Pedido coberto: 2 machos e 2 fêmeas.')).toBeTruthy()
     fireEvent.click(aceitar())
 
     expect(estado.mutate).toHaveBeenCalledWith(
@@ -93,7 +93,7 @@ describe('atender o pedido', { timeout: 30_000 }, () => {
     fireEvent.change(screen.getByLabelText('Machos a reservar da caixa F1A'), {
       target: { value: '1' },
     })
-    await waitFor(() => expect(screen.getByText(/Faltam 1 M/)).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('Falta 1 macho.')).toBeTruthy())
     expect(aceitar()).toHaveProperty('disabled', true)
 
     // marcada, a outra caixa entra com o que falta
@@ -113,7 +113,7 @@ describe('atender o pedido', { timeout: 30_000 }, () => {
     )
   })
 
-  it('sem animais para o pedido inteiro, não aceita e aponta a recusa', () => {
+  it('sem animais para o pedido, não aceita e aponta a recusa', () => {
     estado.busca = resultado([caixa({ sugerida: true, disponivel: { m: 2, f: 1 }, alocar: { m: 2, f: 1 } })], {
       m: 0,
       f: 1,
@@ -123,10 +123,36 @@ describe('atender o pedido', { timeout: 30_000 }, () => {
     renderizar(<AtenderPedido solicitacao={pedido} aoFechar={() => {}} aoRecusar={recusar} />)
 
     expect(aceitar()).toHaveProperty('disabled', true)
-    expect(screen.getByText(/Faltam 1 F/)).toBeTruthy()
-    expect(screen.getByText(/Recuse com o motivo/)).toBeTruthy()
+    expect(screen.getByText('Falta 1 fêmea.')).toBeTruthy()
+    expect(
+      screen.getByText(
+        'As caixas não têm animais para o pedido, então recuse com o motivo ou forme 1 casal novo: com ele, a entrega passa a ser possível a partir de 10/01/2027.',
+      ),
+    ).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Recusar' }))
     expect(recusar).toHaveBeenCalled()
+  })
+
+  it('escreve a falta por extenso, no plural, com os casais a formar', () => {
+    estado.busca = {
+      ...resultado([], { m: 0, f: 0, qualquer: 12 }),
+      casaisAFormar: 2,
+      acasalamentoNovo: { dataMinimaDeEntrega: '2026-12-21', viavel: false },
+    }
+    renderizar(
+      <AtenderPedido
+        solicitacao={{ ...pedido, machos: 0, femeas: 0, qualquer: 12 }}
+        aoFechar={() => {}}
+        aoRecusar={() => {}}
+      />,
+    )
+
+    expect(screen.getByText('Faltam 12 animais de qualquer sexo.')).toBeTruthy()
+    expect(
+      screen.getByText(
+        'As caixas não têm animais para o pedido, então recuse com o motivo ou forme 2 casais novos: com eles, a entrega passa a ser possível a partir de 21/12/2026.',
+      ),
+    ).toBeTruthy()
   })
 })
