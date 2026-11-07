@@ -162,6 +162,16 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
     expect(within(aba).getByText('1/5')).toBeTruthy()
   })
 
+  it('mostra o parto e o desmame previstos do parto escolhido', async () => {
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+
+    const aba = await screen.findByRole('tabpanel')
+    expect(within(aba).getByText('Parto previsto')).toBeTruthy()
+    expect(within(aba).getByText('24/09/2026')).toBeTruthy()
+    expect(within(aba).getByText('Desmame previsto')).toBeTruthy()
+    expect(within(aba).getByText('16/10/2026')).toBeTruthy()
+  })
+
   it('casal encerrado diz quando encerrou', async () => {
     banco.ficha = fichaDe({ casal: casal(1, 'AB', false) })
     renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
