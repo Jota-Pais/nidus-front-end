@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Casal, Ficha, Parto } from '@/dominio/tipos'
 import { ErroDeApi } from '@/lib/api'
@@ -141,6 +141,17 @@ describe('ninhada com a reserva em falta', { timeout: 20_000 }, () => {
 
     expect(await screen.findByText('Reserva em falta')).toBeTruthy()
     expect(screen.getByText(/faltam 2 M e 0 F\. Reservado para o pedido #12 \(4 M, 0 F\)/)).toBeTruthy()
+  })
+})
+
+describe('aba Reprodução', { timeout: 20_000 }, () => {
+  it('mostra a data do acasalamento uma vez só: a formação do casal é o acasalamento do 1º parto', async () => {
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+
+    const aba = await screen.findByRole('tabpanel')
+    // conta no texto da aba: a data do casal vinha no meio da linha, não num elemento só dela
+    expect(aba.textContent?.match(/01\/09\/2026/g)).toHaveLength(1)
+    expect(within(aba).getByText(/1\/5 partos/)).toBeTruthy()
   })
 })
 
