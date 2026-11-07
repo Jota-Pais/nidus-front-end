@@ -145,13 +145,26 @@ describe('ninhada com a reserva em falta', { timeout: 20_000 }, () => {
 })
 
 describe('aba Reprodução', { timeout: 20_000 }, () => {
-  it('mostra a data do acasalamento uma vez só: a formação do casal é o acasalamento do 1º parto', async () => {
+  // conta no texto da aba: os repetidos vinham no meio de uma linha, não num elemento só deles
+  it('mostra cada dado do casal e do acasalamento uma vez só', async () => {
     renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
 
     const aba = await screen.findByRole('tabpanel')
-    // conta no texto da aba: a data do casal vinha no meio da linha, não num elemento só dela
-    expect(aba.textContent?.match(/01\/09\/2026/g)).toHaveLength(1)
-    expect(within(aba).getByText(/1\/5 partos/)).toBeTruthy()
+    const texto = aba.textContent ?? ''
+    // a formação do casal é o acasalamento do 1º parto
+    expect(texto.match(/01\/09\/2026/g)).toHaveLength(1)
+    // o título da seção é o parto, e "Acasalamento" fica só no campo
+    expect(texto.match(/Acasalamento/g)).toHaveLength(1)
+    // AB é o macho A e a fêmea B, que já aparecem nos campos
+    expect(texto).not.toContain('AB')
+    expect(within(aba).getByText('1/5')).toBeTruthy()
+  })
+
+  it('casal encerrado diz quando encerrou', async () => {
+    banco.ficha = fichaDe({ casal: casal(1, 'AB', false) })
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+
+    expect(await screen.findByText('Casal encerrado em 27/10/2026')).toBeTruthy()
   })
 })
 

@@ -282,19 +282,24 @@ function AbaReproducao({
       </LadoALado>
 
       <h3>Casal</h3>
+      {/*
+       * Cada dado uma vez: a identificação (AB) é o macho e a fêmea juntos, e a data de formação
+       * é o acasalamento do 1º parto, na seção do parto
+       */}
       {casal && (
         <>
-          <div className="ficha__casal">
-            {/* a data de formação não aparece aqui: é o acasalamento do 1º parto, logo abaixo */}
-            <strong>{casal.identificacao}</strong> — {confirmados}/{MAX_PARTOS_POR_CASAL} partos
-            {!casal.ativo && ` | Encerrado em ${formatarData(casal.dtEncerramento)}`}
-          </div>
+          {!casal.ativo && (
+            <div className="ficha__casal">Casal encerrado em {formatarData(casal.dtEncerramento)}</div>
+          )}
           {casal.ativo && confirmados >= MAX_PARTOS_POR_CASAL - 1 && (
             <Etiqueta tom="atencao">Último parto: o casal encerra sozinho no {MAX_PARTOS_POR_CASAL}º</Etiqueta>
           )}
           <LadoALado>
             <Campo rotulo="Macho (A-E)">{casal.grupoMacho}</Campo>
             <Campo rotulo="Fêmea (A-E)">{casal.grupoFemea}</Campo>
+            <Campo rotulo="Partos">
+              {confirmados}/{MAX_PARTOS_POR_CASAL}
+            </Campo>
           </LadoALado>
         </>
       )}
@@ -305,8 +310,8 @@ function AbaReproducao({
       )}
 
       <h3>
-        Acasalamento — <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(ordem).cor }} />{' '}
-        {ordem}º parto{casalDeAntes && ` do casal ${casalDeAntes.identificacao}`}
+        <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(ordem).cor }} /> {ordem}º parto
+        {casalDeAntes && ` do casal ${casalDeAntes.identificacao}`}
       </h3>
       {parto ? (
         <Campo rotulo="Acasalamento" destaque>
