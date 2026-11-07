@@ -1,0 +1,46 @@
+import { DatePicker } from 'antd'
+import dayjs from 'dayjs'
+import type { Dayjs } from 'dayjs'
+import type { AriaAttributes } from 'react'
+import type { DataISO } from '@/dominio/tipos'
+// '@/lib/data' também deixa o dayjs em português, para o calendário
+import { FORMATO_DA_API } from '@/lib/data'
+
+/** O primeiro é o que aparece; os outros só valem para digitar, com ou sem as barras */
+const FORMATOS = ['DD/MM/YYYY', 'DDMMYYYY', 'D/M/YYYY']
+
+/** O que o Form.Item do antd injeta no campo (valor, id e os aria-*), mais os limites */
+type Props = AriaAttributes & {
+  /** 'aaaa-mm-dd', o formato da API */
+  value?: DataISO | null | undefined
+  onChange?: ((valor: DataISO | undefined) => void) | undefined
+  id?: string
+  disabled?: boolean
+  className?: string
+  /** o primeiro dia que dá para escolher, em 'aaaa-mm-dd' */
+  min?: DataISO | undefined
+  /** o último dia que dá para escolher, em 'aaaa-mm-dd' */
+  max?: DataISO | undefined
+}
+
+const paraDia = (data: DataISO): Dayjs => dayjs(data, FORMATO_DA_API, true)
+
+/**
+ * Campo de data sempre em dd/mm/aaaa. O campo nativo do navegador segue o idioma do navegador,
+ * e num navegador em inglês aparecia mm/dd/aaaa. O valor continua 'aaaa-mm-dd', como a API e
+ * as regras do formulário esperam
+ */
+export function CampoDeData({ value, onChange, min, max, ...resto }: Props) {
+  return (
+    <DatePicker
+      {...resto}
+      value={value ? paraDia(value) : null}
+      onChange={(dia: Dayjs | null) => onChange?.(dia ? dia.format(FORMATO_DA_API) : undefined)}
+      format={FORMATOS}
+      placeholder="dd/mm/aaaa"
+      {...(min === undefined ? {} : { minDate: paraDia(min) })}
+      {...(max === undefined ? {} : { maxDate: paraDia(max) })}
+      style={{ width: '100%' }}
+    />
+  )
+}

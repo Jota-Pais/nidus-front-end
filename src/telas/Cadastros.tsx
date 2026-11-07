@@ -1,6 +1,6 @@
 import { App, Form, Input, InputNumber, Modal, Select, Switch, Table, Tabs } from 'antd'
 import { useState } from 'react'
-import { Botao, CabecalhoDaTela, Etiqueta, Linha, Pilha, Secao } from '@/componentes'
+import { Botao, CabecalhoDaTela, CampoDeData, Etiqueta, Linha, Pilha, Secao } from '@/componentes'
 import {
   useCatalogo,
   useEstantes,
@@ -193,14 +193,14 @@ function FormularioDoProjeto({
             label="Início da vigência"
             rules={[{ required: true, message: 'Data' }]}
           >
-            <Input type="date" />
+            <CampoDeData />
           </Form.Item>
           <Form.Item
             name="dtVigenciaFim"
             label="Fim da vigência"
             rules={[{ required: true, message: 'Data' }]}
           >
-            <Input type="date" />
+            <CampoDeData />
           </Form.Item>
           <Form.Item
             name="cotaAutorizada"

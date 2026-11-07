@@ -1,7 +1,7 @@
 import { App, Form, Input, InputNumber, Modal, Select, Tabs } from 'antd'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Aviso, Botao, Etiqueta, Linha, Texto } from '@/componentes'
+import { Aviso, Botao, CampoDeData, Etiqueta, Linha, Texto } from '@/componentes'
 import { COR_DO_PARTO } from '@/app/tokens'
 import { corDoParto, descreverFalta, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
 import {
@@ -511,7 +511,7 @@ function FormarCasal({
           <Select options={GRUPOS} />
         </Form.Item>
         <Form.Item name="dtFormacao" label="Acasalamento" rules={[{ required: true, message: 'Data' }]}>
-          <Input type="date" />
+          <CampoDeData />
         </Form.Item>
       </LadoALado>
       <Botao variante="primario" htmlType="submit" loading={formar.isPending}>
@@ -564,7 +564,7 @@ function EncerrarCasal({ idCaixa, idCasal }: { idCaixa: number; idCasal: number 
       {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
       <LadoALado>
         <Form.Item name="dtEncerramento" label="Data" rules={[{ required: true, message: 'Data' }]}>
-          <Input type="date" />
+          <CampoDeData />
         </Form.Item>
         <Form.Item name="motivo" label="Motivo" rules={[{ required: true, message: 'Diga o motivo' }]}>
           <Input placeholder="ex: queda de produtividade" maxLength={200} />
@@ -642,7 +642,7 @@ function RegistrarEvento({
             label={campo.rotulo}
             rules={[{ required: true, message: 'Obrigatório' }]}
           >
-            {campo.tipo === 'data' ? <Input type="date" /> : <InputNumber min={0} style={{ width: '100%' }} />}
+            {campo.tipo === 'data' ? <CampoDeData /> : <InputNumber min={0} style={{ width: '100%' }} />}
           </Form.Item>
         ))}
       </LadoALado>
@@ -713,7 +713,7 @@ function CorrigirEvento({
             label={campo.rotulo}
             rules={[{ required: true, message: 'Obrigatório' }]}
           >
-            {campo.tipo === 'data' ? <Input type="date" /> : <InputNumber min={0} style={{ width: '100%' }} />}
+            {campo.tipo === 'data' ? <CampoDeData /> : <InputNumber min={0} style={{ width: '100%' }} />}
           </Form.Item>
         ))}
       </LadoALado>
