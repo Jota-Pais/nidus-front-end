@@ -100,6 +100,18 @@ export const tema: ThemeConfig = {
     InputNumber: { controlHeight: ALTURA_DE_CONTROLE },
     Select: { controlHeight: ALTURA_DE_CONTROLE },
     /**
+     * O campo tem a altura dos outros, mas o calendário não: o Ant Design tira o tamanho de
+     * cada dia da altura de controle, e com 48 o calendário dobrava de tamanho
+     */
+    DatePicker: {
+      controlHeight: ALTURA_DE_CONTROLE,
+      cellHeight: 28,
+      // com a fonte de 16, "Dom Seg Ter" encostam abaixo de 40
+      cellWidth: 40,
+      textHeight: 40,
+      withoutTimeCellHeight: 56,
+    },
+    /**
      * A coluna que ordena não ganha fundo próprio, nem no cabeçalho nem nas linhas: quem mostra
      * a ordem são as setas. O cabeçalho que ordena escurece um pouco com o mouse
      */
