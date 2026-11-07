@@ -39,11 +39,6 @@ export function pintaNaGrade(estado: EstadoCaixa, temCasal: boolean): boolean {
   return temCasal || estado !== 'livres'
 }
 
-/** Caixa de estoque, reserva ou enviada não tem casal produzindo: não mostra parto previsto */
-export function mostraPrevisao(estado: EstadoCaixa): boolean {
-  return estado === 'livres' || estado === 'pre_reserva'
-}
-
 /**
  * A ninhada que ficou com menos animais do que o reservado, depois do desmame ou da correção:
  * quanto falta, de quais pedidos, e o que a equipe pode fazer

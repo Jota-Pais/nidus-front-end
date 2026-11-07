@@ -230,9 +230,36 @@ function partoDaOrdem(ficha: Ficha, ordem: number): Parto | undefined {
   return ficha.partos.find((parto) => parto.ordem === ordem)
 }
 
-/** O que mostrar no lugar de uma data que ainda não existe */
-function aguardando(ordem: number): string {
-  return ordem === 1 ? 'Informe o acasalamento' : 'Parto real anterior + 6 dias'
+function ProximoAcasalamento({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
+  const { casal } = ficha
+  const ultimo = ficha.partos.at(-1)
+  const seguinte = (ultimo?.ordem ?? 0) + 1
+
+  if (!casal?.ativo) {
+    return <p className="ficha__vazio">O {ordem}º parto não aconteceu: o casal está encerrado.</p>
+  }
+
+  if (ultimo && ultimo.dtPartoReal === null) {
+    return (
+      <p className="ficha__vazio">
+        Registre o {ultimo.ordem}º parto antes do acasalamento seguinte.
+      </p>
+    )
+  }
+
+  if (ordem !== seguinte) {
+    return <p className="ficha__vazio">Registre antes o acasalamento do {seguinte}º parto.</p>
+  }
+
+  return (
+    <RegistrarEvento
+      idCaixa={ficha.caixa.id}
+      caminho={`/api/casais/${casal.id}/acasalamento`}
+      campos={[{ nome: 'dtAcasalamento', rotulo: 'Data do acasalamento', tipo: 'data' }]}
+      inicial={{ dtAcasalamento: hoje() }}
+      botao="Registrar acasalamento"
+    />
+  )
 }
 
 function AbaReproducao({
@@ -282,20 +309,16 @@ function AbaReproducao({
       )}
 
       <h3>
-        Datas previstas — <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(ordem).cor }} />{' '}
+        Acasalamento — <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(ordem).cor }} />{' '}
         {ordem}º parto{casalDeAntes && ` do casal ${casalDeAntes.identificacao}`}
       </h3>
-      <LadoALado>
-        <Campo rotulo="Acasalamento" destaque={!!parto}>
-          {parto ? formatarData(parto.dtAcasalamento) : aguardando(ordem)}
+      {parto ? (
+        <Campo rotulo="Acasalamento" destaque>
+          {formatarData(parto.dtAcasalamento)}
         </Campo>
-        <Campo rotulo="Parto previsto" destaque={!!parto}>
-          {parto ? formatarData(parto.dtPartoPrevisto) : '+23 dias após o acasalamento'}
-        </Campo>
-      </LadoALado>
-      <Campo rotulo="Desmame previsto" destaque={!!parto}>
-        {parto ? formatarData(parto.dtDesmamePrevisto) : '+22 dias após o parto'}
-      </Campo>
+      ) : (
+        <ProximoAcasalamento ficha={ficha} ordem={ordem} />
+      )}
     </div>
   )
 }
@@ -728,7 +751,11 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
   const parto = partoDaOrdem(ficha, ordem)
 
   if (!parto) {
-    return <p className="ficha__vazio">O {ordem}º parto ainda não começou. {aguardando(ordem)}.</p>
+    return (
+      <div className="ficha__aba">
+        <ProximoAcasalamento ficha={ficha} ordem={ordem} />
+      </div>
+    )
   }
 
   const idCaixa = ficha.caixa.id
@@ -741,10 +768,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
   return (
     <div className="ficha__aba">
       <ReservaEmFalta parto={parto} />
-      <LadoALado>
-        <Campo rotulo="Acasalamento">{formatarData(parto.dtAcasalamento)}</Campo>
-        <Campo rotulo="Previsão de parto">{formatarData(parto.dtPartoPrevisto)}</Campo>
-      </LadoALado>
+      <Campo rotulo="Acasalamento">{formatarData(parto.dtAcasalamento)}</Campo>
 
       <h3>Parto</h3>
       {nasceu ? (
