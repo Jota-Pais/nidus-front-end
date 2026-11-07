@@ -846,7 +846,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
             { nome: 'eutanasiadoF', rotulo: 'Fêmeas', tipo: 'numero' },
           ]}
           inicial={{ dtSelecao: parto.dtPartoReal, eutanasiadoM: 0, eutanasiadoF: 0 }}
-          botao="Registrar seleção"
+          botao="Registrar eutanásia"
         />
       ) : (
         <p className="ficha__vazio">Feita no dia do parto real.</p>
