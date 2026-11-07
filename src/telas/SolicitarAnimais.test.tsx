@@ -110,7 +110,7 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
   it('clicar em qualquer lugar da linha abre o pedido', async () => {
     renderizar(<SolicitarAnimais />, 'tecnico')
 
-    fireEvent.click(screen.getByText('Responder até 15/11/2026'))
+    fireEvent.click(screen.getByText('Entrega em 01/12/2026'))
 
     expect(within(await screen.findByRole('dialog')).getByText('Pedido #1')).toBeTruthy()
   })
@@ -141,13 +141,17 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     expect(within(janela).queryByRole('button', { name: 'Registrar entrega' })).toBeNull()
   })
 
-  it('de cara mostra a data, a situação com a data da decisão, quem pediu e o que pediu', () => {
+  it('de cara mostra a data, a situação com a entrega, quem pediu e o que pediu', () => {
     renderizar(<SolicitarAnimais />, 'tecnico')
 
     expect(screen.getByText('01/11/2026')).toBeTruthy()
-    expect(screen.getByText('Responder até 15/11/2026')).toBeTruthy()
-    expect(screen.getByText('Aceita em 03/11/2026')).toBeTruthy()
-    expect(screen.getByText('Recusada em 04/11/2026')).toBeTruthy()
+    for (const entrega of ['01/12/2026', '02/12/2026', '03/12/2026']) {
+      expect(screen.getByText(`Entrega em ${entrega}`)).toBeTruthy()
+    }
+    // o prazo para responder e a data da decisão ficam no pedido aberto
+    expect(screen.queryByText(/Responder até/)).toBeNull()
+    expect(screen.queryByText('Aceita em 03/11/2026')).toBeNull()
+    expect(screen.queryByText('Recusada em 04/11/2026')).toBeNull()
     expect(screen.getAllByText('2 M · 2 F · Wistar')).toHaveLength(3)
     expect(screen.queryByText('ana@ufsc.br')).toBeNull()
   })
@@ -156,10 +160,14 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     emTelaLarga(() => {
       renderizar(<SolicitarAnimais />, 'tecnico')
 
-      for (const coluna of ['Pedido em', 'Situação', 'Quem pediu e o quê', 'Entrega']) {
+      for (const coluna of ['Pedido em', 'Situação', 'Quem pediu', 'O que pediu']) {
         expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
       }
+      // a entrega vem embaixo da situação, e não numa coluna a mais
+      expect(screen.queryByRole('columnheader', { name: 'Entrega' })).toBeNull()
+      expect(screen.getByText('Entrega em 01/12/2026')).toBeTruthy()
       expect(screen.getAllByText('Ana')).toHaveLength(3)
+      expect(screen.getAllByText('2 M · 2 F · Wistar')).toHaveLength(3)
     })
   })
 
@@ -170,11 +178,12 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
       for (const coluna of ['Entrega', 'Situação', 'O que pediu']) {
         expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
       }
-      expect(screen.queryByRole('columnheader', { name: 'Quem pediu e o quê' })).toBeNull()
+      expect(screen.queryByRole('columnheader', { name: 'Quem pediu' })).toBeNull()
       expect(screen.queryByText('Ana')).toBeNull()
       expect(screen.getByText('Resposta até 15/11/2026')).toBeTruthy()
       expect(screen.getByText('Aceita em 03/11/2026')).toBeTruthy()
-      expect(screen.getAllByText('Wistar · 28 dias de idade')).toHaveLength(3)
+      expect(screen.getAllByText('2 M · 2 F · Wistar')).toHaveLength(3)
+      expect(screen.getAllByText('28 dias de idade')).toHaveLength(3)
     })
   })
 
@@ -253,6 +262,8 @@ describe('aprovar e reservar', { timeout: 20_000 }, () => {
     renderizar(<SolicitarAnimais />, 'tecnico')
 
     const chegou = await abrir('Abrir o pedido #1')
+    // o prazo para responder, que não vai na lista
+    expect(within(chegou).getByText('Responder até 15/11/2026')).toBeTruthy()
     expect(within(chegou).getByRole('button', { name: 'Aprovar' })).toBeTruthy()
     expect(within(chegou).getByRole('button', { name: 'Recusar' })).toBeTruthy()
     expect(within(chegou).queryByRole('button', { name: 'Reservar animais' })).toBeNull()
@@ -296,20 +307,24 @@ describe('aprovar e reservar', { timeout: 20_000 }, () => {
     expect(await screen.findByText('Reservar animais do pedido #5')).toBeTruthy()
   })
 
-  it('a equipe vê Aguardando animais e quando aprovou; quem pediu, Aceito, em andamento', () => {
+  it('a equipe vê Aguardando animais e, no pedido, quando aprovou', async () => {
     extras.lista = [aprovadaSemReserva(5)]
-    const equipe = renderizar(<SolicitarAnimais />, 'tecnico')
+    renderizar(<SolicitarAnimais />, 'tecnico')
 
     expect(screen.getByText('Aguardando animais')).toBeTruthy()
-    expect(screen.getByText('Aprovada em 05/11/2026')).toBeTruthy()
+    expect(screen.queryByText('Aprovada em 05/11/2026')).toBeNull()
     expect(screen.getByText('Animais reservados')).toBeTruthy()
     expect(screen.queryByText('Aceito, em andamento')).toBeNull()
     // o verde (sucesso e institucional) é só dos animais reservados; o aprovado ainda está em
     // andamento, no tom do que aguarda análise
     expect(screen.getByText('Aguardando animais').className).toContain('etiqueta--informacao')
     expect(screen.getByText('Animais reservados').className).toContain('etiqueta--sucesso')
-    equipe.unmount()
+    const janela = await abrir('Abrir o pedido #5')
+    expect(within(janela).getByText('Aprovada em 05/11/2026')).toBeTruthy()
+  })
 
+  it('quem pediu vê o aprovado como Aceito, em andamento', () => {
+    extras.lista = [aprovadaSemReserva(5)]
     renderizar(<SolicitarAnimais />, 'pesquisador')
 
     expect(screen.getByText('Aceito, em andamento')).toBeTruthy()
