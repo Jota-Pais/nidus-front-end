@@ -69,10 +69,7 @@ vi.mock('@/dominio/consultas', () => ({
   }),
   useCorrigirEvento: mutacao,
   useCatalogo: () => consulta({ especies: [], paresGeneticos: [] }),
-  useEstantes: () => consulta([]),
-  useGrade: () => consulta({ faces: [] }),
   useFormarCasal: mutacao,
-  useMudarDePosicao: mutacao,
 }))
 
 const erroDaApi = (status: number, codigo: string, mensagem: string, campos?: Record<string, string>) =>
