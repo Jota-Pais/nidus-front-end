@@ -9,6 +9,8 @@ import {
   entraNoFiltro,
   descreverAnimais,
   descreverIdade,
+  descreverQuantidadeEEspecie,
+  descreverSexos,
   faixaDeIdade,
   totalDeAnimais,
 } from './solicitacao'
@@ -44,6 +46,48 @@ describe('descreverAnimais', () => {
   it('mostra travessão quando não há animal, e não uma frase vazia', () => {
     expect(descreverAnimais({ machos: 0, femeas: 0, qualquer: 0 })).toBe('—')
     expect(descreverAnimais({})).toBe('—')
+  })
+})
+
+describe('descreverQuantidadeEEspecie', () => {
+  it('conta o total com a espécie no plural, e a linhagem', () => {
+    expect(
+      descreverQuantidadeEEspecie({
+        machos: 4,
+        femeas: 2,
+        qualquer: 0,
+        especie: 'rato',
+        linhagem: 'Wistar',
+      }),
+    ).toBe('6 ratos Wistar')
+    expect(
+      descreverQuantidadeEEspecie({ qualquer: 12, especie: 'camundongo', linhagem: 'C57BL/6' }),
+    ).toBe('12 camundongos C57BL/6')
+  })
+
+  it('um animal só fica no singular', () => {
+    expect(descreverQuantidadeEEspecie({ femeas: 1, especie: 'rato', linhagem: 'Wistar' })).toBe(
+      '1 rato Wistar',
+    )
+  })
+})
+
+describe('descreverSexos', () => {
+  it('diz quantos de cada sexo, no singular e no plural', () => {
+    expect(descreverSexos({ machos: 4, femeas: 2, qualquer: 0 })).toBe('4 machos · 2 fêmeas')
+    expect(descreverSexos({ machos: 1, femeas: 1 })).toBe('1 macho · 1 fêmea')
+    expect(descreverSexos({ femeas: 8 })).toBe('8 fêmeas')
+  })
+
+  it('sem sexo definido, só "qualquer sexo"; misturado, conta o de qualquer sexo junto', () => {
+    expect(descreverSexos({ machos: 0, femeas: 0, qualquer: 12 })).toBe('qualquer sexo')
+    expect(descreverSexos({ machos: 4, femeas: 0, qualquer: 2 })).toBe(
+      '4 machos · 2 de qualquer sexo',
+    )
+  })
+
+  it('mostra travessão quando não há animal', () => {
+    expect(descreverSexos({})).toBe('—')
   })
 })
 

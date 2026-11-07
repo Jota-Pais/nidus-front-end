@@ -152,7 +152,8 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     expect(screen.queryByText(/Responder até/)).toBeNull()
     expect(screen.queryByText('Aceita em 03/11/2026')).toBeNull()
     expect(screen.queryByText('Recusada em 04/11/2026')).toBeNull()
-    expect(screen.getAllByText('2 M · 2 F · Wistar')).toHaveLength(3)
+    expect(screen.getAllByText('4 ratos Wistar')).toHaveLength(3)
+    expect(screen.getAllByText('2 machos · 2 fêmeas')).toHaveLength(3)
     expect(screen.queryByText('ana@ufsc.br')).toBeNull()
   })
 
@@ -160,14 +161,15 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     emTelaLarga(() => {
       renderizar(<SolicitarAnimais />, 'tecnico')
 
-      for (const coluna of ['Pedido em', 'Situação', 'Quem pediu', 'O que pediu']) {
+      for (const coluna of ['Pedido em', 'Situação', 'Quem pediu', 'Pedido']) {
         expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
       }
       // a entrega vem embaixo da situação, e não numa coluna a mais
       expect(screen.queryByRole('columnheader', { name: 'Entrega' })).toBeNull()
       expect(screen.getByText('Entrega em 01/12/2026')).toBeTruthy()
       expect(screen.getAllByText('Ana')).toHaveLength(3)
-      expect(screen.getAllByText('2 M · 2 F · Wistar')).toHaveLength(3)
+      expect(screen.getAllByText('4 ratos Wistar')).toHaveLength(3)
+      expect(screen.getAllByText('2 machos · 2 fêmeas')).toHaveLength(3)
     })
   })
 
@@ -175,15 +177,15 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     emTelaLarga(() => {
       renderizar(<SolicitarAnimais />, 'pesquisador')
 
-      for (const coluna of ['Entrega', 'Situação', 'O que pediu']) {
+      for (const coluna of ['Entrega', 'Situação', 'Pedido']) {
         expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
       }
       expect(screen.queryByRole('columnheader', { name: 'Quem pediu' })).toBeNull()
       expect(screen.queryByText('Ana')).toBeNull()
       expect(screen.getByText('Resposta até 15/11/2026')).toBeTruthy()
       expect(screen.getByText('Aceita em 03/11/2026')).toBeTruthy()
-      expect(screen.getAllByText('2 M · 2 F · Wistar')).toHaveLength(3)
-      expect(screen.getAllByText('28 dias de idade')).toHaveLength(3)
+      expect(screen.getAllByText('4 ratos Wistar')).toHaveLength(3)
+      expect(screen.getAllByText('2 machos · 2 fêmeas · 28 dias de idade')).toHaveLength(3)
     })
   })
 

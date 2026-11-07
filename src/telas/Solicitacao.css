@@ -182,6 +182,12 @@
   white-space: nowrap;
 }
 
+/* Quantos de cada sexo, embaixo do total: o pedido que mistura os três quebra a linha, em vez
+   de sumir nas reticências */
+.solicitacao__pedido > .solicitacao__sexos {
+  white-space: normal;
+}
+
 .solicitacao__compacta {
   display: flex;
   flex-direction: column;
