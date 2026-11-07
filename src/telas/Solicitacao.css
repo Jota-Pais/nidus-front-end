@@ -196,3 +196,45 @@
   gap: 12px;
   align-items: flex-start;
 }
+
+/* O resumo do pedido nas janelas da equipe: um cartão com quem pediu em cima e, embaixo, cada
+   dado sob o seu rótulo. As quantidades vêm maiores, que são o que se confere primeiro; sem
+   largura, o que não cabe desce */
+.solicitacao__resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--raio-md);
+  background: var(--cor-suave);
+}
+
+.solicitacao__resumoQuem {
+  display: flex;
+  flex-direction: column;
+}
+
+.solicitacao__resumoNome {
+  font-weight: 600;
+}
+
+.solicitacao__resumoDados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.solicitacao__resumoDados dd {
+  margin: 0;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+.solicitacao__resumoDados .solicitacao__resumoNumero {
+  font-family: var(--fonte-titulo);
+  font-size: 24px;
+  font-weight: var(--peso-titulo);
+}
