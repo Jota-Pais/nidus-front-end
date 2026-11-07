@@ -1,7 +1,7 @@
 // Como um pedido de animais se escreve na tela. A solicitação e o atendimento usam as mesmas
 // frases: o que o pesquisador conferiu é o que a equipe lê
 import { descreverDias, diasAte, hoje } from '@/lib/data'
-import type { DataISO, PorSexo, Solicitacao } from './tipos'
+import type { CodigoEspecie, DataISO, PorSexo, Solicitacao } from './tipos'
 
 /** Campo vazio do formulário conta como zero */
 interface Quantidades {
@@ -23,6 +23,42 @@ export function descreverAnimais({ machos, femeas, qualquer }: Quantidades): str
   ].filter((parte) => parte !== null)
 
   return partes.length > 0 ? partes.join(' · ') : '—'
+}
+
+/** A espécie no singular e no plural, para contar os animais */
+const ESPECIE: Record<CodigoEspecie, [string, string]> = {
+  rato: ['rato', 'ratos'],
+  camundongo: ['camundongo', 'camundongos'],
+}
+
+const contar = (n: number, singular: string, plural: string) =>
+  `${n} ${n === 1 ? singular : plural}`
+
+/** "6 ratos Wistar": quantos ao todo, a espécie e a linhagem */
+export function descreverQuantidadeEEspecie(
+  s: Quantidades & { especie: CodigoEspecie; linhagem: string },
+): string {
+  const [singular, plural] = ESPECIE[s.especie]
+  return `${contar(totalDeAnimais(s), singular, plural)} ${s.linhagem}`
+}
+
+/**
+ * "4 machos · 2 fêmeas", com o de qualquer sexo junto quando o pedido mistura; sem sexo definido,
+ * só "qualquer sexo"
+ */
+export function descreverSexos({ machos, femeas, qualquer }: Quantidades): string {
+  const m = machos ?? 0
+  const f = femeas ?? 0
+  const q = qualquer ?? 0
+  if (m === 0 && f === 0) return q > 0 ? 'qualquer sexo' : '—'
+
+  return [
+    m ? contar(m, 'macho', 'machos') : null,
+    f ? contar(f, 'fêmea', 'fêmeas') : null,
+    q ? `${q} de qualquer sexo` : null,
+  ]
+    .filter((parte) => parte !== null)
+    .join(' · ')
 }
 
 /** Faixa ("de 20 a 40 dias") ou idade exata: a escolha do pedido e da busca */

@@ -35,6 +35,8 @@ import {
   compararDataDoPedido,
   descreverAnimais,
   descreverIdade,
+  descreverQuantidadeEEspecie,
+  descreverSexos,
   entraNoFiltro,
   totalDeAnimais,
 } from '@/dominio/solicitacao'
@@ -545,29 +547,33 @@ function Entrega({ solicitacao: s }: { solicitacao: Solicitacao }) {
   return <span className="solicitacao__semQuebra">{formatarData(s.dataEntrega)}</span>
 }
 
-/** O que pediu, em destaque: quantos de cada sexo e a linhagem */
-function OQuePediu({ solicitacao: s }: { solicitacao: Solicitacao }) {
-  return <span className="solicitacao__animais">{`${descreverAnimais(s)} · ${s.linhagem}`}</span>
-}
+/**
+ * O pedido, na lista: quantos ao todo, a espécie e a linhagem em destaque e, embaixo, quantos de
+ * cada sexo, ou só "qualquer sexo". Quem pediu vê a idade junto; a equipe na tela estreita vê
+ * ainda o nome de quem pediu
+ */
+function Pedido({
+  solicitacao: s,
+  comIdade = false,
+  comNome = false,
+}: {
+  solicitacao: Solicitacao
+  comIdade?: boolean
+  comNome?: boolean
+}) {
+  const sexos = descreverSexos(s)
 
-/** Para quem pediu: o que pediu em destaque e, embaixo, a idade */
-function Animais({ solicitacao: s }: { solicitacao: Solicitacao }) {
   return (
     <div className="solicitacao__duasLinhas solicitacao__pedido">
-      <OQuePediu solicitacao={s} />
-      <Texto tom="secundario">{`${descreverIdade(s)} de idade`}</Texto>
-    </div>
-  )
-}
-
-/** Para a equipe na tela estreita: o que pediu em destaque e, embaixo, quem pediu */
-function Pedido({ solicitacao: s }: { solicitacao: Solicitacao }) {
-  return (
-    <div className="solicitacao__duasLinhas solicitacao__pedido">
-      <OQuePediu solicitacao={s} />
-      <span title={s.pesquisador}>
-        <Texto tom="secundario">{s.pesquisador}</Texto>
-      </span>
+      <span className="solicitacao__animais">{descreverQuantidadeEEspecie(s)}</span>
+      <Texto className="solicitacao__sexos">
+        {comIdade ? `${sexos} · ${descreverIdade(s)} de idade` : sexos}
+      </Texto>
+      {comNome && (
+        <span title={s.pesquisador}>
+          <Texto tom="secundario">{s.pesquisador}</Texto>
+        </span>
+      )}
     </div>
   )
 }
@@ -610,7 +616,7 @@ function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
               <Entrega solicitacao={s} />
               <Situacao solicitacao={s} paraQuemPediu />
             </div>
-            <Animais solicitacao={s} />
+            <Pedido solicitacao={s} comIdade />
           </div>
         ),
       },
@@ -631,8 +637,8 @@ function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
       render: (_, s) => <Situacao solicitacao={s} paraQuemPediu />,
     },
     {
-      title: 'O que pediu',
-      render: (_, s) => <Animais solicitacao={s} />,
+      title: 'Pedido',
+      render: (_, s) => <Pedido solicitacao={s} comIdade />,
     },
   ]
 }
@@ -655,7 +661,7 @@ function colunasDaEquipe(telaLarga: boolean): TableColumnsType<Solicitacao> {
               <span className="solicitacao__semQuebra">{formatarData(s.dataSolicitacao)}</span>
               <Situacao solicitacao={s} paraQuemPediu={false} naLista />
             </div>
-            <Pedido solicitacao={s} />
+            <Pedido solicitacao={s} comNome />
           </div>
         ),
       },
@@ -683,9 +689,8 @@ function colunasDaEquipe(telaLarga: boolean): TableColumnsType<Solicitacao> {
       render: (_, s) => s.pesquisador,
     },
     {
-      title: 'O que pediu',
-      ellipsis: true,
-      render: (_, s) => <OQuePediu solicitacao={s} />,
+      title: 'Pedido',
+      render: (_, s) => <Pedido solicitacao={s} />,
     },
   ]
 }
