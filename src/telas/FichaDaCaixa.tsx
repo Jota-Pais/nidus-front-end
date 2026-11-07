@@ -313,10 +313,19 @@ function AbaReproducao({
         <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(ordem).cor }} /> {ordem}º parto
         {casalDeAntes && ` do casal ${casalDeAntes.identificacao}`}
       </h3>
+      {/* as previsões vêm da API: parto = acasalamento + 23 dias, desmame = parto + 22 dias */}
       {parto ? (
-        <Campo rotulo="Acasalamento" destaque>
-          {formatarData(parto.dtAcasalamento)}
-        </Campo>
+        <LadoALado>
+          <Campo rotulo="Acasalamento" destaque>
+            {formatarData(parto.dtAcasalamento)}
+          </Campo>
+          <Campo rotulo="Parto previsto" destaque>
+            {formatarData(parto.dtPartoPrevisto)}
+          </Campo>
+          <Campo rotulo="Desmame previsto" destaque>
+            {formatarData(parto.dtDesmamePrevisto)}
+          </Campo>
+        </LadoALado>
       ) : (
         <ProximoAcasalamento ficha={ficha} ordem={ordem} />
       )}
