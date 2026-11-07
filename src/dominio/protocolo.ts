@@ -139,9 +139,9 @@ export function conferirProtocolo(numero: string, diaDeHoje: DataISO = hoje()): 
   }
 
   if (digitos.length !== DIGITOS.sistemaCeua) return 'O número do Sistema CEUA tem 10 dígitos'
+  // a data nos 6 últimos dígitos é conferida, mas a mensagem não explica a regra por dentro
   const registro = dataDoRegistro(digitos)
-  if (registro === null) return 'Os 6 últimos dígitos não formam uma data'
-  if (registro > diaDeHoje) return 'Os 6 últimos dígitos são uma data futura'
+  if (registro === null || registro > diaDeHoje) return 'Protocolo no formato incorreto'
   return null
 }
 
