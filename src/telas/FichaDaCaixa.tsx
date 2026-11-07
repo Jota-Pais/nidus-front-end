@@ -656,7 +656,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
       {nasceu ? (
         <>
           <LadoALado>
-            <Campo rotulo="Data do parto real">{formatarData(parto.dtPartoReal)}</Campo>
+            <Campo rotulo="Data do parto">{formatarData(parto.dtPartoReal)}</Campo>
             <Campo rotulo="Idade hoje">
               {parto.dtPartoReal ? descreverDias(idadeEmDias(parto.dtPartoReal)) : '—'}
             </Campo>
@@ -673,7 +673,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
             idParto={parto.id}
             evento="nascimento"
             campos={[
-              { nome: 'dtPartoReal', rotulo: 'Data do parto real', tipo: 'data' },
+              { nome: 'dtPartoReal', rotulo: 'Data do parto', tipo: 'data' },
               { nome: 'nascidoM', rotulo: 'Machos nascidos', tipo: 'numero' },
               { nome: 'nascidoF', rotulo: 'Fêmeas nascidas', tipo: 'numero' },
             ]}
@@ -685,7 +685,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           idCaixa={idCaixa}
           caminho={`/api/partos/${parto.id}/nascimento`}
           campos={[
-            { nome: 'dtPartoReal', rotulo: 'Data do parto real', tipo: 'data' },
+            { nome: 'dtPartoReal', rotulo: 'Data do parto', tipo: 'data' },
             { nome: 'nascidoM', rotulo: 'Machos nascidos', tipo: 'numero' },
             { nome: 'nascidoF', rotulo: 'Fêmeas nascidas', tipo: 'numero' },
           ]}
@@ -731,7 +731,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           botao="Registrar eutanásia"
         />
       ) : (
-        <p className="ficha__vazio">Feita no dia do parto real.</p>
+        <p className="ficha__vazio">Feita no dia do parto.</p>
       )}
 
       <h3>Desmame</h3>
