@@ -448,8 +448,12 @@ function FormularioDaSala({ sala, aoFechar }: { sala: Sala | null; aoFechar: () 
 function EstantesDasSalas() {
   const { message, modal } = App.useApp()
   const estantes = useEstantes()
+  const salas = useSalas()
   const salvar = useSalvarEstante()
   const [editando, setEditando] = useState<Estante | 'nova' | null>(null)
+  // O formulário tira a sala e o número sugeridos das duas listas quando abre: aberto antes de
+  // elas chegarem (a API acordando leva segundos), viria sem sala e com E-01
+  const listasCarregadas = salas.data !== undefined && estantes.data !== undefined
 
   function remover(estante: Estante) {
     void modal.confirm({
@@ -471,7 +475,7 @@ function EstantesDasSalas() {
       titulo="Estantes"
       semPreenchimento
       acoes={
-        <Botao variante="primario" onClick={() => setEditando('nova')}>
+        <Botao variante="primario" onClick={() => setEditando('nova')} disabled={!listasCarregadas}>
           Nova estante
         </Botao>
       }
