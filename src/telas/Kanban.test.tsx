@@ -39,6 +39,7 @@ const quadro: Quadro = {
           partoAtual: 2,
           partoPrevisto: null,
           encerrado: true,
+          aguardandoDesmame: true,
           ninhadas: [],
         }),
         card(4, null),
@@ -81,6 +82,7 @@ describe('card do kanban', () => {
 
     expect(screen.getAllByText(/Último parto/)).toHaveLength(1)
     expect(screen.getAllByText(/Casal encerrado/)).toHaveLength(2)
+    expect(screen.getAllByText(/Aguardando desmame/)).toHaveLength(1)
   })
 
   it('mostra cada ninhada que já nasceu, com quantos animais e a idade de hoje', () => {
