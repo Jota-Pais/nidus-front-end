@@ -465,14 +465,20 @@ interface AcoesDaEquipe {
   aoDesfazer: (s: Solicitacao) => void
 }
 
+/** O que ficou faltando na reserva do pedido, quando falta */
+function reservaEmFalta(s: Solicitacao): string | null {
+  return s.reservaEmFalta
+    ? `Reserva em falta: ${s.reservaEmFalta.m} M e ${s.reservaEmFalta.f} F`
+    : null
+}
+
 /**
- * Embaixo da situação, para a equipe: a reserva em falta, quando aprovou ou recusou, ou até
- * quando tem de responder
+ * Embaixo da situação, para a equipe no pedido aberto: a reserva em falta, quando aprovou ou
+ * recusou, ou até quando tem de responder
  */
 function situacaoParaAEquipe(s: Solicitacao): string | null {
-  if (s.reservaEmFalta) {
-    return `Reserva em falta: ${s.reservaEmFalta.m} M e ${s.reservaEmFalta.f} F`
-  }
+  const falta = reservaEmFalta(s)
+  if (falta) return falta
   if (s.dataRecusa) return `Recusada em ${formatarData(s.dataRecusa)}`
   if (s.dataAceite) {
     const decisao = s.status === 'em_atendimento' ? 'Aprovada' : 'Aceita'
@@ -497,23 +503,36 @@ function situacaoParaQuemPediu(s: Solicitacao): string | null {
 
 /**
  * A etiqueta da situação, o que vem embaixo dela e, só para a equipe, o aviso do pedido aprovado
- * sem reserva com a entrega perto
+ * sem reserva com a entrega perto. Na lista, a equipe vê embaixo para quando é o pedido; o prazo
+ * para responder e a data da decisão ficam no pedido aberto
  */
 function Situacao({
   solicitacao: s,
   paraQuemPediu,
+  naLista = false,
 }: {
   solicitacao: Solicitacao
   paraQuemPediu: boolean
+  naLista?: boolean
 }) {
   const situacao = STATUS[s.status]
   const rotulo = (paraQuemPediu && situacao.paraQuemPediu) || situacao.rotulo
-  const embaixo = paraQuemPediu ? situacaoParaQuemPediu(s) : situacaoParaAEquipe(s)
+  // na lista da equipe, a entrega no lugar do prazo e da data da decisão; a reserva em falta fica
+  const listaDaEquipe = naLista && !paraQuemPediu
+  const entrega = listaDaEquipe ? `Entrega em ${formatarData(s.dataEntrega)}` : null
+  const embaixo = paraQuemPediu
+    ? situacaoParaQuemPediu(s)
+    : listaDaEquipe
+      ? reservaEmFalta(s)
+      : situacaoParaAEquipe(s)
   const aviso = paraQuemPediu ? null : avisoDeEntregaSemReserva(s)
 
   return (
     <div className="solicitacao__duasLinhas">
-      <Etiqueta tom={situacao.tom}>{rotulo}</Etiqueta>
+      <Etiqueta tom={situacao.tom} grande>
+        {rotulo}
+      </Etiqueta>
+      {entrega && <Texto className="solicitacao__entrega">{entrega}</Texto>}
       {embaixo && <Texto tom="secundario">{embaixo}</Texto>}
       {aviso && <Texto className="solicitacao__alerta">{aviso}</Texto>}
     </div>
@@ -525,24 +544,29 @@ function Entrega({ solicitacao: s }: { solicitacao: Solicitacao }) {
   return <span className="solicitacao__semQuebra">{formatarData(s.dataEntrega)}</span>
 }
 
-/** Os animais pedidos em destaque e, embaixo, a linhagem e a idade */
+/** O que pediu, em destaque: quantos de cada sexo e a linhagem */
+function OQuePediu({ solicitacao: s }: { solicitacao: Solicitacao }) {
+  return <span className="solicitacao__animais">{`${descreverAnimais(s)} · ${s.linhagem}`}</span>
+}
+
+/** Para quem pediu: o que pediu em destaque e, embaixo, a idade */
 function Animais({ solicitacao: s }: { solicitacao: Solicitacao }) {
   return (
     <div className="solicitacao__duasLinhas solicitacao__pedido">
-      <span className="solicitacao__destaque">{descreverAnimais(s)}</span>
-      <Texto tom="secundario">{`${s.linhagem} · ${descreverIdade(s)} de idade`}</Texto>
+      <OQuePediu solicitacao={s} />
+      <Texto tom="secundario">{`${descreverIdade(s)} de idade`}</Texto>
     </div>
   )
 }
 
-/** Quem pediu em destaque e, embaixo, o que pediu */
+/** Para a equipe na tela estreita: o que pediu em destaque e, embaixo, quem pediu */
 function Pedido({ solicitacao: s }: { solicitacao: Solicitacao }) {
   return (
     <div className="solicitacao__duasLinhas solicitacao__pedido">
-      <span className="solicitacao__destaque" title={s.pesquisador}>
-        {s.pesquisador}
+      <OQuePediu solicitacao={s} />
+      <span title={s.pesquisador}>
+        <Texto tom="secundario">{s.pesquisador}</Texto>
       </span>
-      <Texto tom="secundario">{`${descreverAnimais(s)} · ${s.linhagem}`}</Texto>
     </div>
   )
 }
@@ -613,9 +637,9 @@ function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
 }
 
 /**
- * Para a equipe: quando pediram, a situação, quem pediu e o quê, e a entrega. O que fazer com o
- * pedido fica nele aberto. Na tela estreita a coluna única ordena pela data do pedido, que é a
- * data no topo de cada um
+ * Para a equipe: quando pediram, a situação com a entrega embaixo, quem pediu e o quê. O que fazer
+ * com o pedido fica nele aberto. Na tela estreita a coluna única ordena pela data do pedido, que é
+ * a data no topo de cada um
  */
 function colunasDaEquipe(telaLarga: boolean): TableColumnsType<Solicitacao> {
   if (!telaLarga) {
@@ -628,10 +652,9 @@ function colunasDaEquipe(telaLarga: boolean): TableColumnsType<Solicitacao> {
           <div className="solicitacao__compacta">
             <div className="solicitacao__compactaTopo">
               <span className="solicitacao__semQuebra">{formatarData(s.dataSolicitacao)}</span>
-              <Situacao solicitacao={s} paraQuemPediu={false} />
+              <Situacao solicitacao={s} paraQuemPediu={false} naLista />
             </div>
             <Pedido solicitacao={s} />
-            <Texto tom="secundario">Entrega em {formatarData(s.dataEntrega)}</Texto>
           </div>
         ),
       },
@@ -650,17 +673,18 @@ function colunasDaEquipe(telaLarga: boolean): TableColumnsType<Solicitacao> {
     },
     {
       title: 'Situação',
-      width: 200,
-      render: (_, s) => <Situacao solicitacao={s} paraQuemPediu={false} />,
+      width: 280,
+      render: (_, s) => <Situacao solicitacao={s} paraQuemPediu={false} naLista />,
     },
     {
-      title: 'Quem pediu e o quê',
-      render: (_, s) => <Pedido solicitacao={s} />,
+      title: 'Quem pediu',
+      ellipsis: true,
+      render: (_, s) => s.pesquisador,
     },
     {
-      title: 'Entrega',
-      width: 140,
-      render: (_, s) => <Entrega solicitacao={s} />,
+      title: 'O que pediu',
+      ellipsis: true,
+      render: (_, s) => <OQuePediu solicitacao={s} />,
     },
   ]
 }

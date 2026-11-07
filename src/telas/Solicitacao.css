@@ -117,8 +117,8 @@
   margin-bottom: 16px;
 }
 
-/* Célula com o dado em cima e o complemento embaixo: a situação e a data da decisão, os
-   animais e a idade. Cada linha tem a largura do que mostra: a etiqueta da situação não estica */
+/* Célula com o dado em cima e o complemento embaixo: a situação e a entrega, os animais e a
+   idade. Cada linha tem a largura do que mostra: a etiqueta da situação não estica */
 .solicitacao__duasLinhas {
   display: flex;
   flex-direction: column;
@@ -129,6 +129,18 @@
    como o "Último parto" do kanban */
 .solicitacao__duasLinhas > .solicitacao__alerta {
   color: var(--cor-aviso);
+  font-weight: 600;
+}
+
+/* Para quando é o pedido, logo embaixo da etiqueta, com folga para ela, numa linha só */
+.solicitacao__duasLinhas > .solicitacao__entrega {
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+/* O que pediu, na lista: quantos e de que linhagem, maior que o resto da linha */
+.solicitacao__animais {
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -177,9 +189,11 @@
   min-width: 0;
 }
 
+/* A data e a situação lado a lado; no celular estreito, a situação desce para baixo da data */
 .solicitacao__compactaTopo {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 4px 12px;
   align-items: flex-start;
 }
 
@@ -233,7 +247,7 @@
   overflow-wrap: anywhere;
 }
 
-/* O que mais importa na linha, e no topo do resumo: quem pediu, ou o que pediu */
+/* No topo do resumo: quem pediu, ou o que pediu */
 .solicitacao__destaque {
   font-weight: 600;
 }

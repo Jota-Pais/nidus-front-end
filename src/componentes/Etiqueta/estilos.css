@@ -13,6 +13,13 @@
   white-space: nowrap;
 }
 
+/* Maior e mais forte: a etiqueta que se lê primeiro na linha */
+.etiqueta--grande {
+  padding: 3px 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /*
  * Superfície clara e texto escurecido: é o que faz a etiqueta passar em AA.
  * A cor institucional crua ficaria em 3.9:1 com texto branco por cima.
