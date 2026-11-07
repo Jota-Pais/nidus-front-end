@@ -39,6 +39,7 @@ describe('menu da conta', () => {
 
     expect(await screen.findByText('Configurações')).toBeTruthy()
     expect(screen.getByRole('menuitem', { name: 'Cadastros' })).toBeTruthy()
+    expect(screen.getByRole('menuitem', { name: 'Histórico' })).toBeTruthy()
     expect(screen.getByRole('menuitem', { name: 'Usuários' })).toBeTruthy()
     expect(screen.getByRole('menuitem', { name: /Sair/ })).toBeTruthy()
     expect(gatilho().getAttribute('aria-expanded')).toBe('true')
