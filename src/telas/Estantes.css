@@ -91,6 +91,48 @@
   letter-spacing: 0.08em;
 }
 
+/*
+ * Arraste: a caixa pega fica apagada no lugar dela, as posições vazias se marcam como destino
+ * e a que está embaixo do cursor se destaca. Os filhos da vazia não recebem o ponteiro, senão
+ * passar pelo código dispara dragleave e o destaque pisca
+ */
+.posicao[draggable='true'] {
+  cursor: grab;
+}
+
+.posicao[draggable='true']:active {
+  cursor: grabbing;
+}
+
+.posicao--vazia * {
+  pointer-events: none;
+}
+
+.posicao--vazia:disabled {
+  cursor: default;
+}
+
+.posicao--erguida {
+  opacity: 0.4;
+}
+
+.posicao--destino {
+  border-color: var(--cor-acao-borda);
+  color: var(--cor-acao);
+}
+
+.posicao--sobre {
+  border-style: solid;
+  border-color: var(--cor-acao);
+  background: var(--cor-acao-fundo);
+  box-shadow: 0 0 0 1px var(--cor-acao);
+}
+
+.posicao--movendo {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .posicao:focus-visible {
   outline: 2px solid var(--cor-acao);
   outline-offset: 1px;
