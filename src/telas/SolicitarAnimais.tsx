@@ -18,6 +18,7 @@ import {
   Aviso,
   Botao,
   CabecalhoDaTela,
+  CampoDeData,
   Entrada,
   Etiqueta,
   Formulario,
@@ -313,7 +314,7 @@ export function SolicitarAnimais() {
                     rules={[{ validator: validadorDoPedido('dataEntrega') }]}
                     className="solicitacao__campo--quando"
                   >
-                    <Entrada type="date" min={hoje()} />
+                    <CampoDeData min={hoje()} />
                   </Formulario.Campo>
                 </div>
 
@@ -737,7 +738,7 @@ function RegistrarEntrega({
             },
           ]}
         >
-          <Input type="date" max={hoje()} />
+          <CampoDeData max={hoje()} />
         </Form.Item>
       </Form>
     </Modal>

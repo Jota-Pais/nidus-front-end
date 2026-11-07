@@ -3,6 +3,7 @@
 export { Aviso } from './Aviso'
 export { Botao } from './Botao'
 export { CabecalhoDaTela } from './CabecalhoDaTela'
+export { CampoDeData } from './CampoDeData'
 export { Entrada } from './Entrada'
 export { Etiqueta } from './Etiqueta'
 export type { TomDeEtiqueta } from './Etiqueta'

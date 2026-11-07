@@ -1,11 +1,15 @@
 // Datas na tela: a API manda 'aaaa-mm-dd', a tela mostra dd/mm/aaaa
 import dayjs from 'dayjs'
+import 'dayjs/locale/pt-br'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import type { DataISO } from '@/dominio/tipos'
 
 dayjs.extend(customParseFormat)
+// o calendário dos campos de data com os meses e os dias da semana em português
+dayjs.locale('pt-br')
 
-const FORMATO_DA_API = 'YYYY-MM-DD'
+/** Como a API escreve as datas: 'aaaa-mm-dd' */
+export const FORMATO_DA_API = 'YYYY-MM-DD'
 
 function formatar(data: DataISO | null | undefined, formato: string): string {
   if (!data) return '—'
