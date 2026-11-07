@@ -32,7 +32,7 @@ export function Historico() {
   return (
     <Pilha>
       <CabecalhoDaTela
-        rotulo="Gestão"
+        rotulo="Configurações"
         titulo="Histórico"
         descricao="Quem fez cada alteração, quando e o quê. Mostra as 300 mais recentes do filtro escolhido."
       />
