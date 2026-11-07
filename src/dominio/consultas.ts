@@ -5,6 +5,11 @@ import { api } from '@/lib/api'
 import type {
   Catalogo,
   CodigoEspecie,
+  DestinosDoEstoque,
+  Face,
+  FichaDeEstoque,
+  RetiradaDaEntrega,
+  Sexo,
   EstadoCaixa,
   Estante,
   FaltaNaReserva,
@@ -164,7 +169,8 @@ export function useSalvarEstante() {
 export function useFicha(idCaixa: number | null) {
   return useQuery({
     queryKey: chaves.caixa(idCaixa ?? 0),
-    queryFn: () => api<Ficha>(`/api/caixas/${idCaixa}`),
+    // a caixa de estoque tem a ficha dela, sem casal nem parto
+    queryFn: () => api<Ficha | FichaDeEstoque>(`/api/caixas/${idCaixa}`),
     enabled: idCaixa !== null,
   })
 }
@@ -206,6 +212,62 @@ export function useRegistrarNaFicha(idCaixa: number) {
     mutationFn: ({ caminho, corpo }: { caminho: string; corpo: unknown }) =>
       api<RespostaDoRegistro>(caminho, { metodo: 'POST', corpo }),
     onSuccess: () => invalidarColonia(cliente, idCaixa),
+  })
+}
+
+/** As caixas de estoque que recebem os desmamados do parto: mesmo sexo, espécie e linhagem */
+export function useDestinosDoEstoque(idParto: number | null) {
+  return useQuery({
+    queryKey: chaves.destinosDoEstoque(idParto ?? 0),
+    queryFn: () => api<DestinosDoEstoque>(`/api/partos/${idParto}/destinos-do-estoque`),
+    enabled: idParto !== null,
+  })
+}
+
+/** Para onde vão os desmamados de um sexo: uma caixa de estoque, ou uma posição vazia */
+export type DestinoDoEstoque =
+  | { idCaixa: number }
+  | { posicao: { idEstante: number; face: Face; linha: number; coluna: number } }
+
+export interface PassagemParaOEstoque {
+  idParto: number
+  machos?: { qtd: number; destino: DestinoDoEstoque }
+  femeas?: { qtd: number; destino: DestinoDoEstoque }
+}
+
+/** Os desmamados saem da caixa do casal para caixas de estoque, machos numa e fêmeas noutra */
+export function usePassarParaOEstoque(idCaixa: number) {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idParto, ...dados }: PassagemParaOEstoque) =>
+      api<{ caixas: { idCaixa: number; codigo: string; sexo: Sexo; qtd: number }[] }>(
+        `/api/partos/${idParto}/estoque`,
+        { metodo: 'POST', corpo: dados },
+      ),
+    onSuccess: () => invalidarColonia(cliente, idCaixa),
+  })
+}
+
+/** A caixa do casal encerrado vira caixa de estoque no lugar, com os desmamados dela */
+export function useVirarCaixaDeEstoque() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (idCaixa: number) =>
+      api<{ idCaixa: number; sexo: Sexo }>(`/api/caixas/${idCaixa}/estoque`, { metodo: 'POST' }),
+    onSuccess: (_resposta, idCaixa) => invalidarColonia(cliente, idCaixa),
+  })
+}
+
+/** De qual caixa tirar os animais do pedido na entrega */
+export function useRetirada(idSolicitacao: number | null) {
+  return useQuery({
+    queryKey: chaves.retirada(idSolicitacao ?? 0),
+    queryFn: async () =>
+      (await api<{ retirada: RetiradaDaEntrega[] }>(`/api/solicitacoes/${idSolicitacao}/retirada`))
+        .retirada,
+    enabled: idSolicitacao !== null,
   })
 }
 

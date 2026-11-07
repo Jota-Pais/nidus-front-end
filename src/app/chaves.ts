@@ -9,6 +9,8 @@ export const chaves = {
   estantes: ['estantes'] as const,
   grade: (idEstante: number) => ['grade', idEstante] as const,
   caixa: (idCaixa: number) => ['caixa', idCaixa] as const,
+  destinosDoEstoque: (idParto: number) => ['destinos-do-estoque', idParto] as const,
+  retirada: (idSolicitacao: number) => ['retirada', idSolicitacao] as const,
   quadro: (especie: CodigoEspecie) => ['quadro', especie] as const,
   projetos: ['projetos'] as const,
   solicitacoes: ['solicitacoes'] as const,
@@ -26,6 +28,9 @@ export function invalidarColonia(cliente: QueryClient, idCaixa?: number): Promis
     ['quadro'],
     ['estoque'],
     [...chaves.historico],
+    // o que cada caixa de estoque tem e de onde a entrega tira mudam junto com as caixas
+    ['destinos-do-estoque'],
+    ['retirada'],
     ...(idCaixa === undefined ? [] : [[...chaves.caixa(idCaixa)]]),
   ]
 

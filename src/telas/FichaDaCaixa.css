@@ -71,6 +71,25 @@
   border-radius: var(--raio-sm);
 }
 
+/* a caixa de estoque: de onde vieram os animais e para quais pedidos estão reservados */
+.ficha__lotes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ficha__lotes li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 8px 12px;
+  background: var(--cor-suave);
+  border-radius: var(--raio-sm);
+}
+
 .ficha__total {
   padding: 8px 12px;
   background: var(--superficie-sucesso-fundo);

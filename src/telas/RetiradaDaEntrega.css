@@ -1,0 +1,31 @@
+/* a lista de onde tirar os animais, na janela de registrar a entrega */
+.retirada {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.retirada__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.retirada__lista li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  padding: 8px 12px;
+  background: var(--cor-suave);
+  border-radius: var(--raio-sm);
+}
+
+.retirada__origem {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--cor-suave-frente);
+}

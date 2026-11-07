@@ -77,6 +77,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* a caixa de estoque: o sexo e quantos animais tem, no lugar da bolinha do parto */
+.posicao__sexo {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .posicao__linhagem {
   overflow: hidden;
   text-overflow: ellipsis;

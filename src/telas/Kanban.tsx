@@ -2,11 +2,19 @@ import { Segmented } from 'antd'
 import { useState } from 'react'
 import type { DragEvent } from 'react'
 import { CabecalhoDaTela, Etiqueta, Linha, Pilha, Secao } from '@/componentes'
-import { COLUNA, COLUNAS, corDoParto, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
+import {
+  COLUNA,
+  COLUNAS,
+  contarDoSexo,
+  corDoParto,
+  descreverEstoque,
+  MAX_PARTOS_POR_CASAL,
+  SIMBOLO_DO_SEXO,
+} from '@/dominio/caixa'
 import { useKanban } from '@/dominio/consultas'
 import type { CardDoKanban, CodigoEspecie, EstadoCaixa } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
-import { descreverDias } from '@/lib/data'
+import { descreverDias, idadeEmDias } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import { LegendaDosPartos } from './LegendaDosPartos'
 import { useMudarDeColuna } from './useMudarDeColuna'
@@ -45,7 +53,8 @@ export function Kanban() {
     const idCaixa = Number(evento.dataTransfer.getData('text/plain'))
     const origem = colunas.find((coluna) => coluna.cards.some((card) => card.idCaixa === idCaixa))
     const card = origem?.cards.find((c) => c.idCaixa === idCaixa)
-    if (!card || origem?.estado === destino) return
+    // a caixa de estoque nao se arrasta: a coluna dela sai do que esta reservado
+    if (!card || card.estoque || origem?.estado === destino) return
 
     setMovimento({ card, destino })
     mudarDeColuna(card.idCaixa, destino, () => setMovimento(null))
@@ -56,7 +65,7 @@ export function Kanban() {
       <CabecalhoDaTela
         rotulo="Reprodução"
         titulo="Kanban"
-        descricao="Um quadro por espécie. Arraste o card para mudar a coluna; clique para abrir a ficha."
+        descricao="Um quadro por espécie. A caixa de casal alterna entre Livres e Pré-reserva arrastando; a de estoque muda de coluna sozinha, pelo que tem reservado. Clique no card para abrir a ficha."
         acoes={<Etiqueta>{total} caixas</Etiqueta>}
       />
 
@@ -124,22 +133,38 @@ function statusDoCard(casal: CardDoKanban['casal'], estado: EstadoCaixa): string
     ? [COLUNA[estado].legenda, 'Último parto']
     : [COLUNA[estado].legenda]
 }
+/** A idade dos animais da caixa de estoque hoje: "28 dias", ou "25 a 31 dias" com idades diferentes */
+function idadeDoEstoque(estoque: NonNullable<CardDoKanban['estoque']>): string | null {
+  if (!estoque.nascimentoDe || !estoque.nascimentoAte) return null
+
+  const maisVelho = idadeEmDias(estoque.nascimentoDe)
+  const maisNovo = idadeEmDias(estoque.nascimentoAte)
+
+  return maisVelho === maisNovo ? descreverDias(maisVelho) : `${maisNovo} a ${descreverDias(maisVelho)}`
+}
+
 function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCaixa; aoAbrir: () => void }) {
-  const { casal } = card
+  const { casal, estoque } = card
+  const idade = estoque ? idadeDoEstoque(estoque) : null
 
   return (
     <div
       className={`kanban__card kanban__card--${estado}`}
-      draggable
+      draggable={!estoque}
       onDragStart={(evento) => evento.dataTransfer.setData('text/plain', String(card.idCaixa))}
       onClick={aoAbrir}
       onKeyDown={(evento) => evento.key === 'Enter' && aoAbrir()}
       role="button"
       tabIndex={0}
-      title="Clique para abrir a ficha; arraste para mudar de coluna"
+      title={
+        estoque
+          ? 'Caixa de estoque: clique para abrir a ficha. Ela muda de coluna sozinha, pelo que tem reservado'
+          : 'Clique para abrir a ficha; arraste para mudar de coluna'
+      }
     >
       <div className="kanban__topo">
-        <span className="kanban__codigo">{card.codigo}</span>
+        {/* a caixa enviada ja nao ocupa a posicao: o endereco vai entre parenteses */}
+        <span className="kanban__codigo">{estado === 'enviado' ? `(${card.codigo})` : card.codigo}</span>
         <span className="kanban__estante">{card.numeroVisivel}</span>
         {casal && (
           <span className="parto kanban__parto" title={`Parto atual: ${casal.partoAtual}º`}>
@@ -150,9 +175,21 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
             {casal.partoAtual}º
           </span>
         )}
+        {estoque && (
+          <span className="kanban__parto" title={contarDoSexo(estoque.total, estoque.sexo)}>
+            {SIMBOLO_DO_SEXO[estoque.sexo]} {estoque.total}
+          </span>
+        )}
       </div>
 
       {card.linhagem && <p className="kanban__linhagem">{card.linhagem}</p>}
+
+      {estoque && estado !== 'enviado' && (
+        <p className="kanban__linhagem">
+          {descreverEstoque(estoque)}
+          {idade && ` · ${idade}`}
+        </p>
+      )}
 
       {casal && (
         <div className="kanban__casal">

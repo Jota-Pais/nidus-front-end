@@ -12,7 +12,7 @@ describe('chaves', () => {
 })
 
 describe('invalidarColonia', () => {
-  it('derruba estantes, grade, kanban, estoque e histórico de uma vez', async () => {
+  it('derruba estantes, grade, kanban, estoque, histórico e as caixas de estoque de uma vez', async () => {
     const cliente = new QueryClient()
     const espia = vi.spyOn(cliente, 'invalidateQueries').mockResolvedValue()
 
@@ -24,6 +24,8 @@ describe('invalidarColonia', () => {
       ['quadro'],
       ['estoque'],
       ['historico'],
+      ['destinos-do-estoque'],
+      ['retirada'],
     ])
   })
 

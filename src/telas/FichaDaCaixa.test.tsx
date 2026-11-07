@@ -1,6 +1,6 @@
 import { fireEvent, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Casal, Ficha, Parto } from '@/dominio/tipos'
+import type { Casal, Ficha, FichaDeEstoque, Parto } from '@/dominio/tipos'
 import { ErroDeApi } from '@/lib/api'
 import { consulta, mutacao, renderizar } from '@/testes/renderizar'
 import { FichaDaCaixa } from './FichaDaCaixa'
@@ -24,6 +24,8 @@ const parto = (parcial: Partial<Parto> = {}): Parto => ({
   comprometido: { m: 0, f: 0 },
   entregue: { m: 0, f: 0 },
   falta: null,
+  naCaixa: { m: 4, f: 4 },
+  noEstoque: [],
   ...parcial,
 })
 
@@ -39,6 +41,8 @@ const casal = (id: number, identificacao: string, ativo: boolean): Casal => ({
 })
 
 const fichaDe = (parcial: Partial<Ficha> = {}): Ficha => ({
+  tipo: 'casal',
+  virarEstoque: null,
   caixa: {
     id: 7,
     endereco: { numeroVisivel: 'E-01', sala: 'Sala 1', codigo: 'F1A' },
@@ -70,6 +74,11 @@ vi.mock('@/dominio/consultas', () => ({
   useCorrigirEvento: mutacao,
   useCatalogo: () => consulta({ especies: [], paresGeneticos: [] }),
   useFormarCasal: mutacao,
+  useDestinosDoEstoque: () => consulta({ machos: [], femeas: [] }),
+  usePassarParaOEstoque: mutacao,
+  useVirarCaixaDeEstoque: mutacao,
+  useEstantes: () => consulta([]),
+  useGrade: () => consulta({ faces: [] }),
 }))
 
 const erroDaApi = (status: number, codigo: string, mensagem: string, campos?: Record<string, string>) =>
@@ -192,5 +201,110 @@ describe('casal novo na caixa', { timeout: 20_000 }, () => {
 
     expect(await screen.findByText('Ninhadas do casal AB (encerrado)')).toBeTruthy()
     expect(screen.getByText(/5º parto do casal AB/)).toBeTruthy()
+  })
+})
+
+/** O 1º parto já desmamado: 4 M e 4 F, ainda na caixa do casal */
+const desmamado = (parcial: Partial<Parto> = {}) =>
+  parto({
+    dtDesmameReal: '2026-10-16',
+    desmamadoM: 4,
+    desmamadoF: 4,
+    naCaixa: { m: 4, f: 4 },
+    ...parcial,
+  })
+
+const fichaDeEstoque: FichaDeEstoque = {
+  tipo: 'estoque',
+  caixa: {
+    id: 20,
+    endereco: { numeroVisivel: 'E-01', sala: 'Sala 1', codigo: 'F2C' },
+    especie: 'rato',
+    linhagem: 'Wistar',
+    estado: 'estoque',
+    sexo: 'M',
+  },
+  total: 6,
+  reservado: 2,
+  livre: 4,
+  nascimentoDe: '2026-09-24',
+  nascimentoAte: '2026-09-24',
+  lotes: [
+    {
+      idParto: 10,
+      qtd: 6,
+      ordem: 1,
+      casal: 'AB',
+      linhagem: 'Wistar',
+      origem: { codigo: 'F1A', numeroVisivel: 'E-01' },
+      dtNascimento: '2026-09-24',
+      idadeDias: 44,
+    },
+  ],
+  pedidos: [{ idSolicitacao: 12, qtd: 2 }],
+}
+
+describe('caixa de estoque', { timeout: 20_000 }, () => {
+  it('abre a ficha dela: quantos tem, de onde vieram e para quem estão reservados', async () => {
+    banco.ficha = fichaDeEstoque
+    renderizar(<FichaDaCaixa idCaixa={20} aoFechar={() => {}} />)
+
+    expect(await screen.findByText('Caixa de estoque ♂')).toBeTruthy()
+    expect(screen.getByText('1º parto do casal AB, caixa F1A (E-01)')).toBeTruthy()
+    expect(screen.getByText('Pedido #12')).toBeTruthy()
+    // a ficha de estoque não tem casal nem parto
+    expect(screen.queryByRole('tab', { name: 'Ninhada' })).toBeNull()
+  })
+})
+
+describe('desmamados na caixa do casal', { timeout: 40_000 }, () => {
+  it('depois do desmame, os que ficaram na caixa do casal passam para o estoque', async () => {
+    banco.ficha = fichaDe({ partos: [desmamado()] })
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Ninhada' }))
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Passar para o estoque' }))
+
+    expect(await screen.findByText('♂ Machos (até 4)')).toBeTruthy()
+    expect(screen.getByText('♀ Fêmeas (até 4)')).toBeTruthy()
+  })
+
+  it('com todos já no estoque, mostra onde estão e não oferece passar de novo', async () => {
+    banco.ficha = fichaDe({
+      partos: [
+        desmamado({
+          naCaixa: { m: 0, f: 0 },
+          noEstoque: [
+            { idCaixa: 20, codigo: 'F2C', numeroVisivel: 'E-01', sexo: 'M', qtd: 4 },
+            { idCaixa: 21, codigo: 'F2D', numeroVisivel: 'E-01', sexo: 'F', qtd: 4 },
+          ],
+        }),
+      ],
+    })
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Ninhada' }))
+
+    expect(await screen.findByText('♂ 4 em F2C (E-01) · ♀ 4 em F2D (E-01)')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Passar para o estoque' })).toBeNull()
+  })
+
+  it('casal encerrado com desmamados na caixa: casal novo só depois que eles forem para o estoque', async () => {
+    banco.ficha = fichaDe({ casal: casal(1, 'AB', false), partos: [desmamado()] })
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+
+    expect(await screen.findByText(/A caixa ainda tem desmamados/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Formar casal' })).toBeNull()
+  })
+
+  it('a caixa do casal encerrado que ficou com um sexo só pode virar caixa de estoque', async () => {
+    banco.ficha = fichaDe({
+      casal: casal(1, 'AB', false),
+      virarEstoque: 'F',
+      partos: [desmamado({ naCaixa: { m: 0, f: 4 } })],
+    })
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+
+    expect(await screen.findByRole('button', { name: 'Virar caixa de estoque' })).toBeTruthy()
+    expect(screen.getByText('Sobraram na caixa só desmamados de um sexo: 4 fêmeas')).toBeTruthy()
   })
 })
