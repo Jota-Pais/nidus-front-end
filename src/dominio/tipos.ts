@@ -59,9 +59,18 @@ export interface Kanban {
   colunas: { estado: EstadoCaixa; cards: CardDoKanban[] }[]
 }
 
+// GET /api/salas: as salas ativas, cada uma com quantas estantes ativas tem
+export interface Sala {
+  id: number
+  nome: string
+  estantes: number
+}
+
 // GET /api/estantes e GET /api/estantes/:id/grade
 export interface Estante {
   id: number
+  idSala: number
+  /** o nome da sala, que a grade usa para separar as estantes */
   sala: string
   fabricante: string
   modelo: string

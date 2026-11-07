@@ -6,6 +6,7 @@ import { Estantes } from './Estantes'
 
 const estante = (id: number, sala: string, numeroVisivel: string): Estante => ({
   id,
+  idSala: id,
   sala,
   fabricante: 'ALESCO',
   modelo: 'Modelo 2',

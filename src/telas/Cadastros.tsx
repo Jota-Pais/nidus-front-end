@@ -3,15 +3,20 @@ import { useState } from 'react'
 import { Botao, CabecalhoDaTela, Etiqueta, Linha, Pilha, Secao } from '@/componentes'
 import {
   useCatalogo,
+  useEstantes,
   useProjetos,
+  useSalas,
+  useSalvarEstante,
   useSalvarLinhagem,
   useSalvarProjeto,
+  useSalvarSala,
   useUsuarios,
 } from '@/dominio/consultas'
 import type { DadosDoProjeto } from '@/dominio/consultas'
 import { formatarProtocolo } from '@/dominio/protocolo'
-import type { Catalogo, Projeto, SituacaoDoProjeto } from '@/dominio/tipos'
+import type { Catalogo, Estante, Projeto, Sala, SituacaoDoProjeto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
+import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
 import { formatarData } from '@/lib/data'
 import { CampoDoProtocolo } from './CampoDoProtocolo'
 
@@ -21,19 +26,20 @@ const SITUACOES: { value: SituacaoDoProjeto; label: string }[] = [
   { value: 'suspenso', label: 'Suspenso' },
 ]
 
-/** Projetos CEUA e linhagens: o que antes só entrava pela carga inicial */
+/** Projetos CEUA, linhagens, salas e estantes: o que antes só entrava pela carga inicial */
 export function Cadastros() {
   return (
     <Pilha>
       <CabecalhoDaTela
         rotulo="Configurações"
         titulo="Cadastros"
-        descricao="Projetos CEUA e linhagens. Nada é apagado: projeto encerrado vira vencido ou suspenso, e linhagem fora de uso fica inativa."
+        descricao="Projetos CEUA, linhagens, salas e estantes. Nada é apagado: projeto encerrado vira vencido ou suspenso, linhagem fora de uso fica inativa, e sala ou estante removida sai das listas, mas fica no histórico."
       />
       <Tabs
         items={[
           { key: 'projetos', label: 'Projetos CEUA', children: <Projetos /> },
           { key: 'linhagens', label: 'Linhagens', children: <Linhagens /> },
+          { key: 'salas', label: 'Salas e estantes', children: <SalasEEstantes /> },
         ]}
       />
     </Pilha>
@@ -296,5 +302,330 @@ function LinhagensDaEspecie({ especie }: { especie: Catalogo['especies'][number]
         ]}
       />
     </Secao>
+  )
+}
+
+/** Os quatro modelos de estante da spec do cliente (seção 1.2), todos com duas faces */
+const MODELOS = [
+  { fabricante: 'ALESCO', modelo: 'Modelo 1', linhas: 8, colunas: 8 },
+  { fabricante: 'ALESCO', modelo: 'Modelo 2', linhas: 5, colunas: 5 },
+  { fabricante: 'TECNIPLAST', modelo: 'Modelo 1', linhas: 8, colunas: 7 },
+  { fabricante: 'TECNIPLAST', modelo: 'Modelo 2', linhas: 5, colunas: 4 },
+]
+
+function descricaoDoModelo(estante: {
+  fabricante: string
+  modelo: string
+  faces: number
+  linhas: number
+  colunas: number
+}): string {
+  return `${estante.fabricante} ${estante.modelo} - ${estante.linhas} x ${estante.colunas} por face (${estante.faces * estante.linhas * estante.colunas} caixas)`
+}
+
+/**
+ * Sala pode existir sem estante, e a estante nasce numa sala. Remover só tira da lista, e o
+ * back só aceita a sala sem estante e a estante vazia
+ */
+function SalasEEstantes() {
+  return (
+    <Pilha>
+      <Salas />
+      <EstantesDasSalas />
+    </Pilha>
+  )
+}
+
+function Salas() {
+  const { message, modal } = App.useApp()
+  const salas = useSalas()
+  const salvar = useSalvarSala()
+  const [editando, setEditando] = useState<Sala | 'nova' | null>(null)
+
+  function remover(sala: Sala) {
+    void modal.confirm({
+      title: `Remover ${sala.nome}?`,
+      content: 'A sala sai das listas. Só dá para remover a sala que não tem estante.',
+      okText: 'Remover',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancelar',
+      onOk: () =>
+        salvar.mutateAsync({ tipo: 'remover', id: sala.id }).then(
+          () => void message.success(`${sala.nome} removida.`),
+          (erro: Error) => void message.error(erro.message),
+        ),
+    })
+  }
+
+  return (
+    <Secao
+      titulo="Salas"
+      semPreenchimento
+      acoes={
+        <Botao variante="primario" onClick={() => setEditando('nova')}>
+          Nova sala
+        </Botao>
+      }
+    >
+      <EstadoDaConsulta consulta={salas} rotulo="Carregando as salas…">
+        <Table<Sala>
+          rowKey="id"
+          dataSource={salas.data ?? []}
+          pagination={false}
+          scroll={{ x: true }}
+          locale={{ emptyText: 'Nenhuma sala cadastrada.' }}
+          columns={[
+            { title: 'Sala', dataIndex: 'nome' },
+            { title: 'Estantes', dataIndex: 'estantes' },
+            {
+              title: '',
+              align: 'right',
+              render: (_, sala) => (
+                <Linha espaco={4} distribuicao="flex-end" estilo={{ flexWrap: 'nowrap' }}>
+                  <Botao variante="fantasma" onClick={() => setEditando(sala)}>
+                    Renomear
+                  </Botao>
+                  <Botao variante="fantasma" onClick={() => remover(sala)}>
+                    Remover
+                  </Botao>
+                </Linha>
+              ),
+            },
+          ]}
+        />
+      </EstadoDaConsulta>
+      {editando && (
+        <FormularioDaSala
+          sala={editando === 'nova' ? null : editando}
+          aoFechar={() => setEditando(null)}
+        />
+      )}
+    </Secao>
+  )
+}
+
+function FormularioDaSala({ sala, aoFechar }: { sala: Sala | null; aoFechar: () => void }) {
+  const { message } = App.useApp()
+  const salvar = useSalvarSala()
+  const [form] = Form.useForm<{ nome: string }>()
+
+  function enviar(campos: { nome: string }) {
+    const nome = campos.nome.trim()
+
+    salvar.mutate(sala ? { tipo: 'renomear', id: sala.id, nome } : { tipo: 'criar', nome }, {
+      onSuccess: () => {
+        void message.success(sala ? `${sala.nome} renomeada para ${nome}.` : `${nome} cadastrada.`)
+        aoFechar()
+      },
+      onError: (erro) => void message.error(motivoDaFalha(erro)),
+    })
+  }
+
+  return (
+    <Modal
+      open
+      title={sala ? `Renomear ${sala.nome}` : 'Nova sala'}
+      okText="Salvar"
+      cancelText="Cancelar"
+      onOk={() => form.submit()}
+      onCancel={aoFechar}
+      confirmLoading={salvar.isPending}
+    >
+      <Form form={form} layout="vertical" onFinish={enviar} initialValues={{ nome: sala?.nome }}>
+        <Form.Item
+          name="nome"
+          label="Nome"
+          rules={[{ required: true, whitespace: true, message: 'Informe o nome da sala' }]}
+        >
+          <Input maxLength={60} placeholder="Sala 4" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  )
+}
+
+function EstantesDasSalas() {
+  const { message, modal } = App.useApp()
+  const estantes = useEstantes()
+  const salvar = useSalvarEstante()
+  const [editando, setEditando] = useState<Estante | 'nova' | null>(null)
+
+  function remover(estante: Estante) {
+    void modal.confirm({
+      title: `Remover a estante ${estante.numeroVisivel}?`,
+      content: `Ela sai da grade da ${estante.sala}. Só dá para remover a estante vazia, sem caixa em nenhuma posição.`,
+      okText: 'Remover',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancelar',
+      onOk: () =>
+        salvar.mutateAsync({ tipo: 'remover', id: estante.id }).then(
+          () => void message.success(`Estante ${estante.numeroVisivel} removida.`),
+          (erro: Error) => void message.error(erro.message),
+        ),
+    })
+  }
+
+  return (
+    <Secao
+      titulo="Estantes"
+      semPreenchimento
+      acoes={
+        <Botao variante="primario" onClick={() => setEditando('nova')}>
+          Nova estante
+        </Botao>
+      }
+    >
+      <EstadoDaConsulta consulta={estantes} rotulo="Carregando as estantes…">
+        <Table<Estante>
+          rowKey="id"
+          dataSource={estantes.data ?? []}
+          pagination={false}
+          scroll={{ x: true }}
+          locale={{ emptyText: 'Nenhuma estante cadastrada.' }}
+          columns={[
+            { title: 'Número', dataIndex: 'numeroVisivel' },
+            { title: 'Sala', dataIndex: 'sala' },
+            { title: 'Modelo', render: (_, e) => `${e.fabricante} ${e.modelo}` },
+            {
+              title: 'Capacidade',
+              render: (_, e) =>
+                `${e.faces * e.linhas * e.colunas} caixas (${e.linhas} x ${e.colunas} por face)`,
+            },
+            {
+              title: '',
+              align: 'right',
+              render: (_, estante) => (
+                <Linha espaco={4} distribuicao="flex-end" estilo={{ flexWrap: 'nowrap' }}>
+                  <Botao variante="fantasma" onClick={() => setEditando(estante)}>
+                    Editar
+                  </Botao>
+                  <Botao variante="fantasma" onClick={() => remover(estante)}>
+                    Remover
+                  </Botao>
+                </Linha>
+              ),
+            },
+          ]}
+        />
+      </EstadoDaConsulta>
+      {editando && (
+        <FormularioDaEstante
+          estante={editando === 'nova' ? null : editando}
+          aoFechar={() => setEditando(null)}
+        />
+      )}
+    </Secao>
+  )
+}
+
+interface CamposDaEstante {
+  idSala: number
+  /** o índice em MODELOS; só no cadastro */
+  modelo: number
+  numeroVisivel: string
+}
+
+function FormularioDaEstante({
+  estante,
+  aoFechar,
+}: {
+  estante: Estante | null
+  aoFechar: () => void
+}) {
+  const { message } = App.useApp()
+  const salas = useSalas()
+  const salvar = useSalvarEstante()
+  const [form] = Form.useForm<CamposDaEstante>()
+
+  function enviar(campos: CamposDaEstante) {
+    const numeroVisivel = campos.numeroVisivel.trim()
+    const aviso = (texto: string) => ({
+      onSuccess: () => {
+        void message.success(texto)
+        aoFechar()
+      },
+      onError: (erro: Error) => void message.error(motivoDaFalha(erro)),
+    })
+
+    if (estante) {
+      salvar.mutate(
+        { tipo: 'alterar', id: estante.id, dados: { numeroVisivel, idSala: campos.idSala } },
+        aviso(`Estante ${numeroVisivel} salva.`),
+      )
+      return
+    }
+
+    const modelo = MODELOS[campos.modelo]
+    if (!modelo) return
+
+    salvar.mutate(
+      { tipo: 'criar', dados: { idSala: campos.idSala, numeroVisivel, faces: 2, ...modelo } },
+      aviso(`Estante ${numeroVisivel} cadastrada.`),
+    )
+  }
+
+  return (
+    <Modal
+      open
+      title={estante ? `Editar estante · ${estante.numeroVisivel}` : 'Nova estante'}
+      okText={estante ? 'Salvar' : 'Cadastrar estante'}
+      cancelText="Cancelar"
+      onOk={() => form.submit()}
+      onCancel={aoFechar}
+      confirmLoading={salvar.isPending}
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={enviar}
+        initialValues={
+          estante
+            ? { idSala: estante.idSala, numeroVisivel: estante.numeroVisivel }
+            : { idSala: salas.data?.[0]?.id, modelo: 0 }
+        }
+      >
+        <Form.Item
+          name="idSala"
+          label="Sala"
+          rules={[{ required: true, message: 'Escolha a sala' }]}
+        >
+          <Select
+            options={(salas.data ?? []).map((sala) => ({ value: sala.id, label: sala.nome }))}
+            loading={salas.isPending}
+            notFoundContent="Cadastre uma sala antes"
+          />
+        </Form.Item>
+        {estante ? (
+          <Form.Item
+            label="Modelo"
+            extra="O modelo não muda depois do cadastro. Para trocar, remova a estante e cadastre de novo."
+          >
+            <Input value={descricaoDoModelo(estante)} disabled />
+          </Form.Item>
+        ) : (
+          <Form.Item name="modelo" label="Modelo" rules={[{ required: true }]}>
+            <Select
+              options={MODELOS.map((opcao, indice) => ({
+                value: indice,
+                label: descricaoDoModelo({ ...opcao, faces: 2 }),
+              }))}
+            />
+          </Form.Item>
+        )}
+        <Form.Item
+          name="numeroVisivel"
+          label="Número da estante"
+          rules={[
+            {
+              required: true,
+              whitespace: true,
+              message: 'Informe o número, como está na etiqueta. ex: E-05',
+            },
+          ]}
+        >
+          <Input placeholder="E-05" maxLength={30} />
+        </Form.Item>
+      </Form>
+    </Modal>
   )
 }

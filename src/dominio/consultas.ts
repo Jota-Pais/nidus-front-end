@@ -17,6 +17,7 @@ import type {
   Projeto,
   RegistroDoHistorico,
   ResultadoDaBusca,
+  Sala,
   SituacaoDoProjeto,
   Solicitacao,
   Usuario,
@@ -85,8 +86,44 @@ export function useGrade(idEstante: number) {
   })
 }
 
+/** As salas ativas, com quantas estantes cada uma tem. Só o gestor muda, nos Cadastros */
+export function useSalas() {
+  return useQuery({
+    queryKey: chaves.salas,
+    queryFn: async () => (await api<{ salas: Sala[] }>('/api/salas')).salas,
+  })
+}
+
+/** Remover é a sala sair das listas: o back só aceita a sala sem estante */
+export function useSalvarSala() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (
+      pedido:
+        | { tipo: 'criar'; nome: string }
+        | { tipo: 'renomear'; id: number; nome: string }
+        | { tipo: 'remover'; id: number },
+    ) => {
+      if (pedido.tipo === 'criar') {
+        return api('/api/salas', { metodo: 'POST', corpo: { nome: pedido.nome } })
+      }
+      if (pedido.tipo === 'renomear') {
+        return api(`/api/salas/${pedido.id}`, { metodo: 'PATCH', corpo: { nome: pedido.nome } })
+      }
+      return api(`/api/salas/${pedido.id}`, { metodo: 'DELETE' })
+    },
+    // a estante traz o nome da sala: renomear muda as abas da tela Estantes
+    onSuccess: () =>
+      Promise.all([
+        cliente.invalidateQueries({ queryKey: chaves.salas }),
+        invalidarColonia(cliente),
+      ]),
+  })
+}
+
 export interface NovaEstante {
-  sala: string
+  idSala: number
   fabricante: string
   modelo: string
   numeroVisivel: string
@@ -95,12 +132,31 @@ export interface NovaEstante {
   colunas: number
 }
 
-export function useCadastrarEstante() {
+/** O modelo não muda depois do cadastro: a edição leva só o número e a sala */
+export function useSalvarEstante() {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: (estante: NovaEstante) => api('/api/estantes', { metodo: 'POST', corpo: estante }),
-    onSuccess: () => invalidarColonia(cliente),
+    mutationFn: (
+      pedido:
+        | { tipo: 'criar'; dados: NovaEstante }
+        | { tipo: 'alterar'; id: number; dados: { numeroVisivel: string; idSala: number } }
+        | { tipo: 'remover'; id: number },
+    ) => {
+      if (pedido.tipo === 'criar') {
+        return api('/api/estantes', { metodo: 'POST', corpo: pedido.dados })
+      }
+      if (pedido.tipo === 'alterar') {
+        return api(`/api/estantes/${pedido.id}`, { metodo: 'PATCH', corpo: pedido.dados })
+      }
+      return api(`/api/estantes/${pedido.id}`, { metodo: 'DELETE' })
+    },
+    // a lista de salas conta as estantes de cada uma
+    onSuccess: () =>
+      Promise.all([
+        cliente.invalidateQueries({ queryKey: chaves.salas }),
+        invalidarColonia(cliente),
+      ]),
   })
 }
 

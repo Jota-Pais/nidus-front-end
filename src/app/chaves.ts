@@ -5,6 +5,7 @@ import type { CodigoEspecie } from '@/dominio/tipos'
 export const chaves = {
   sessao: ['sessao'] as const,
   catalogo: ['catalogo'] as const,
+  salas: ['salas'] as const,
   estantes: ['estantes'] as const,
   grade: (idEstante: number) => ['grade', idEstante] as const,
   caixa: (idCaixa: number) => ['caixa', idCaixa] as const,
