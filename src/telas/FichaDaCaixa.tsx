@@ -285,8 +285,8 @@ function AbaReproducao({
       {casal && (
         <>
           <div className="ficha__casal">
-            <strong>{casal.identificacao}</strong> — {confirmados}/{MAX_PARTOS_POR_CASAL} partos |
-            Acasalamento: {formatarData(casal.dtFormacao)}
+            {/* a data de formação não aparece aqui: é o acasalamento do 1º parto, logo abaixo */}
+            <strong>{casal.identificacao}</strong> — {confirmados}/{MAX_PARTOS_POR_CASAL} partos
             {!casal.ativo && ` | Encerrado em ${formatarData(casal.dtEncerramento)}`}
           </div>
           {casal.ativo && confirmados >= MAX_PARTOS_POR_CASAL - 1 && (
