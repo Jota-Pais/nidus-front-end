@@ -1,13 +1,13 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { Botao, Formulario } from '@/componentes'
 import type { CamposDeIdade } from '@/dominio/solicitacao'
 import { renderizar } from '@/testes/renderizar'
 import { CampoDeIdade } from './CampoDeIdade'
 
-function Pedido() {
+function Pedido({ aoEnviar }: { aoEnviar?: (campos: CamposDeIdade) => void }) {
   return (
-    <Formulario<CamposDeIdade> initialValues={{ modoIdade: 'faixa' }}>
+    <Formulario<CamposDeIdade> initialValues={{ modoIdade: 'faixa' }} onFinish={aoEnviar}>
       <CampoDeIdade />
       <Botao htmlType="submit">Enviar</Botao>
     </Formulario>
@@ -54,11 +54,24 @@ describe('CampoDeIdade', { timeout: 20_000 }, () => {
     expect(screen.getByLabelText('Idade mínima (dias)').getAttribute('aria-invalid')).toBeNull()
   })
 
-  it('na idade exata o segundo número some', async () => {
+  it('na idade exata o segundo número some, mas guarda o lugar', async () => {
     renderizar(<Pedido />)
     fireEvent.click(screen.getByText('Exata'))
 
-    await waitFor(() => expect(screen.queryByLabelText('Idade máxima (dias)')).toBeNull(), ESPERA)
-    expect(screen.getByLabelText('Idade (dias)')).toBeTruthy()
+    await waitFor(() => expect(screen.getByLabelText('Idade (dias)')).toBeTruthy(), ESPERA)
+    // inerte e invisível, fora do Tab e do leitor de tela, mas no mesmo lugar: assim o campo
+    // ao lado não cresce no vão
+    expect(screen.getByLabelText('Idade máxima (dias)').closest('[inert]')).not.toBeNull()
+  })
+
+  it('na idade exata a máxima que sobrou da faixa não barra o envio', async () => {
+    const enviar = vi.fn()
+    renderizar(<Pedido aoEnviar={enviar} />)
+    digitar('Idade mínima (dias)', '40')
+    digitar('Idade máxima (dias)', '25')
+    fireEvent.click(screen.getByText('Exata'))
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    await waitFor(() => expect(enviar).toHaveBeenCalled(), ESPERA)
   })
 })

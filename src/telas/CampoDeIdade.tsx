@@ -55,24 +55,33 @@ export function CampoDeIdade({
         <InputNumber {...DIAS} />
       </Formulario.Campo>
 
-      {!exata && (
+      {/* Na exata a idade máxima some, mas o lugar dela fica: sem ele, o campo ao lado (a
+          linhagem, no pedido) cresce no vão e os campos mudam de lugar a cada troca. Inerte e
+          invisível, ela sai do Tab e do leitor de tela, e sem regra não barra o envio */}
+      <div
+        className={exata ? 'solicitacao__campo--dias solicitacao__guardado' : 'solicitacao__campo--dias'}
+        inert={exata}
+      >
         <Formulario.Campo
           name="idadeMax"
           rotulo="Idade máxima (dias)"
-          className="solicitacao__campo--dias"
           dependencies={['idadeMin']}
-          rules={[
-            ({ getFieldValue }) => ({
-              validator: (_, valor: number | null | undefined) => {
-                const erro = conferirIdadeMaxima(getFieldValue('idadeMin'), valor, idadeMinima)
-                return erro ? Promise.reject(new Error(erro)) : Promise.resolve()
-              },
-            }),
-          ]}
+          rules={
+            exata
+              ? []
+              : [
+                  ({ getFieldValue }) => ({
+                    validator: (_, valor: number | null | undefined) => {
+                      const erro = conferirIdadeMaxima(getFieldValue('idadeMin'), valor, idadeMinima)
+                      return erro ? Promise.reject(new Error(erro)) : Promise.resolve()
+                    },
+                  }),
+                ]
+          }
         >
           <InputNumber {...DIAS} />
         </Formulario.Campo>
-      )}
+      </div>
     </div>
   )
 }

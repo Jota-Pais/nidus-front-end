@@ -109,6 +109,17 @@
   column-gap: 12px;
 }
 
+/*
+ * A idade máxima na idade exata: some, mas guarda a largura (CampoDeIdade), para o campo ao
+ * lado não crescer. A altura não: na tela estreita ela desce para uma linha só dela, e ali o
+ * lugar guardado seria uma linha em branco. O conteúdo invisível e inerte transborda sem
+ * ocupar espaço
+ */
+.solicitacao__guardado {
+  visibility: hidden;
+  max-height: 0;
+}
+
 /* O texto solto ao lado dos números ("= 5 animais") tem a altura da caixa, e fica na linha
    do texto dela */
 .solicitacao__unidade {
