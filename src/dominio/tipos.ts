@@ -80,7 +80,7 @@ export interface Estante {
   colunas: number
 }
 
-interface CaixaNaGrade {
+export interface CaixaNaGrade {
   id: number
   estado: EstadoCaixa
   linhagem: string | null
