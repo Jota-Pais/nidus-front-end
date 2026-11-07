@@ -37,10 +37,13 @@ function somar(reserva: Reserva): PorSexo {
 export function AtenderPedido({
   solicitacao,
   aoFechar,
+  aoConcluir,
   aoRecusar,
 }: {
   solicitacao: Solicitacao
   aoFechar: () => void
+  /** os animais reservados: fecha também o pedido aberto embaixo */
+  aoConcluir: () => void
   aoRecusar: () => void
 }) {
   const { message } = App.useApp()
@@ -88,7 +91,7 @@ export function AtenderPedido({
       {
         onSuccess: () => {
           void message.success(`Animais reservados para o pedido #${solicitacao.id}.`)
-          aoFechar()
+          aoConcluir()
         },
         onError: (erro) => void message.error(erro.message),
       },
@@ -125,7 +128,8 @@ export function AtenderPedido({
           {solicitacao.pesquisador} · {solicitacao.linhagem} · {descreverAnimais(solicitacao)}
         </span>
         <Texto tom="secundario">
-          {descreverIdade(solicitacao)} de idade · entrega em {formatarData(solicitacao.dataEntrega)}
+          {descreverIdade(solicitacao)} de idade · entrega em{' '}
+          {formatarData(solicitacao.dataEntrega)}
         </Texto>
       </div>
 
@@ -134,7 +138,8 @@ export function AtenderPedido({
           <>
             {candidatas.length === 0 ? (
               <Aviso tom="atencao" titulo="Nenhuma caixa tem animais para este pedido.">
-                Não há animais na idade pedida, já desmamados até {formatarData(solicitacao.dataEntrega)}.
+                Não há animais na idade pedida, já desmamados até{' '}
+                {formatarData(solicitacao.dataEntrega)}.
               </Aviso>
             ) : (
               <>
@@ -157,11 +162,7 @@ export function AtenderPedido({
               </>
             )}
 
-            <Conferencia
-              conferencia={conferencia}
-              reservado={reservado}
-              busca={atendimento.data}
-            />
+            <Conferencia conferencia={conferencia} reservado={reservado} busca={atendimento.data} />
           </>
         )}
       </EstadoDaConsulta>
@@ -237,7 +238,9 @@ function porExtenso({ machos, femeas, qualquer }: Quantidades): string {
     qualquer ? `${qualquer} ${qualquer === 1 ? 'animal' : 'animais'} de qualquer sexo` : null,
   ].filter((parte) => parte !== null)
 
-  return partes.length > 1 ? `${partes.slice(0, -1).join(', ')} e ${partes.at(-1)}` : (partes[0] ?? '')
+  return partes.length > 1
+    ? `${partes.slice(0, -1).join(', ')} e ${partes.at(-1)}`
+    : (partes[0] ?? '')
 }
 
 /** "Falta 1 macho", mas "Faltam 2 machos" e "Faltam 1 macho e 1 fêmea" */

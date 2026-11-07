@@ -1,18 +1,8 @@
-import { DownOutlined, RightOutlined } from '@ant-design/icons'
-import {
-  App,
-  Descriptions,
-  Form,
-  Grid,
-  Input,
-  InputNumber,
-  Modal,
-  Segmented,
-  Select,
-  Table,
-} from 'antd'
+import { RightOutlined } from '@ant-design/icons'
+import { App, Form, Grid, Input, InputNumber, Modal, Segmented, Select, Table } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { usePerfil } from '@/auth/contexto'
 import {
   Aviso,
@@ -136,7 +126,9 @@ export function SolicitarAnimais() {
   const criar = useCriarSolicitacao()
   const conferir = useConferirViabilidade()
   const falha = useFalhaDoFormulario(form, CAMPOS_COM_ERRO)
-  const [aprovando, setAprovando] = useState<Solicitacao | null>(null)
+  // O pedido aberto na janela, pelo número: depois de cada ação a lista volta da API, e a janela
+  // mostra o pedido como ficou
+  const [aberto, setAberto] = useState<number | null>(null)
   const [reservando, setReservando] = useState<Solicitacao | null>(null)
   const [entregando, setEntregando] = useState<Solicitacao | null>(null)
   const [recusando, setRecusando] = useState<Solicitacao | null>(null)
@@ -158,18 +150,17 @@ export function SolicitarAnimais() {
   // A equipe quer saber quem pediu e o que fazer com o pedido; quem pediu, se aceitaram e
   // quando chega. Por isso cada um tem as suas colunas
   const telaLarga = Grid.useBreakpoint().sm === true
-  const colunasDaTabela = pesquisador
-    ? colunasDeQuemPediu(telaLarga)
-    : colunasDaEquipe(
-        {
-          aoAprovar: setAprovando,
-          aoReservar: setReservando,
-          aoEntregar: setEntregando,
-          aoRecusar: setRecusando,
-          aoDesfazer: setDesfazendo,
-        },
-        telaLarga,
-      )
+  const colunasDaTabela = pesquisador ? colunasDeQuemPediu(telaLarga) : colunasDaEquipe(telaLarga)
+  const pedidoAberto = solicitacoes.data?.find((s) => s.id === aberto) ?? null
+
+  // A ação feita até o fim fecha também o pedido; cancelada, volta para ele
+  function concluir() {
+    setReservando(null)
+    setEntregando(null)
+    setRecusando(null)
+    setDesfazendo(null)
+    setAberto(null)
+  }
   const linhagens =
     catalogo.data?.especies
       .find((e) => e.codigo === especie)
@@ -394,31 +385,47 @@ export function SolicitarAnimais() {
             showSorterTooltip={false}
             pagination={false}
             locale={{ emptyText: 'Nenhuma solicitação aqui.' }}
-            columns={colunasDaTabela}
-            expandable={{
-              expandedRowRender: (s) => <Detalhes solicitacao={s} equipe={!pesquisador} />,
-              expandIcon: ({ expanded, onExpand, record }) => (
-                <button
-                  type="button"
-                  className="solicitacao__seta"
-                  aria-label={expanded ? 'Esconder detalhes' : 'Ver detalhes'}
-                  aria-expanded={expanded}
-                  onClick={(evento) => onExpand(record, evento)}
-                >
-                  {expanded ? <DownOutlined /> : <RightOutlined />}
-                </button>
-              ),
-            }}
+            columns={[
+              ...colunasDaTabela,
+              {
+                key: 'abrir',
+                width: 56,
+                render: (_, s) => (
+                  <button
+                    type="button"
+                    className="solicitacao__seta"
+                    aria-label={pesquisador ? 'Abrir o pedido' : `Abrir o pedido #${s.id}`}
+                    onClick={() => setAberto(s.id)}
+                  >
+                    <RightOutlined />
+                  </button>
+                ),
+              },
+            ]}
+            // a linha inteira abre o pedido; a seta no fim é a mesma coisa pelo teclado
+            onRow={(s) => ({ className: 'solicitacao__linha', onClick: () => setAberto(s.id) })}
           />
         </Secao>
       </EstadoDaConsulta>
-      {aprovando && (
-        <AprovarSolicitacao solicitacao={aprovando} aoFechar={() => setAprovando(null)} />
+      {/* As ações abrem por cima do pedido: canceladas, ele continua aberto embaixo */}
+      {pedidoAberto && (
+        <PedidoAberto
+          solicitacao={pedidoAberto}
+          paraQuemPediu={pesquisador}
+          aoFechar={() => setAberto(null)}
+          equipe={{
+            aoReservar: setReservando,
+            aoEntregar: setEntregando,
+            aoRecusar: setRecusando,
+            aoDesfazer: setDesfazendo,
+          }}
+        />
       )}
       {reservando && (
         <AtenderPedido
           solicitacao={reservando}
           aoFechar={() => setReservando(null)}
+          aoConcluir={concluir}
           aoRecusar={() => {
             setReservando(null)
             setRecusando(reservando)
@@ -426,20 +433,32 @@ export function SolicitarAnimais() {
         />
       )}
       {entregando && (
-        <RegistrarEntrega solicitacao={entregando} aoFechar={() => setEntregando(null)} />
+        <RegistrarEntrega
+          solicitacao={entregando}
+          aoFechar={() => setEntregando(null)}
+          aoConcluir={concluir}
+        />
       )}
       {recusando && (
-        <RecusarSolicitacao solicitacao={recusando} aoFechar={() => setRecusando(null)} />
+        <RecusarSolicitacao
+          solicitacao={recusando}
+          aoFechar={() => setRecusando(null)}
+          aoConcluir={concluir}
+        />
       )}
       {desfazendo && (
-        <DesfazerReserva solicitacao={desfazendo} aoFechar={() => setDesfazendo(null)} />
+        <DesfazerReserva
+          solicitacao={desfazendo}
+          aoFechar={() => setDesfazendo(null)}
+          aoConcluir={concluir}
+        />
       )}
     </Pilha>
   )
 }
 
+/** O que a equipe faz com o pedido aberto, cada coisa na sua janela. Aprovar é na própria */
 interface AcoesDaEquipe {
-  aoAprovar: (s: Solicitacao) => void
   aoReservar: (s: Solicitacao) => void
   aoEntregar: (s: Solicitacao) => void
   aoRecusar: (s: Solicitacao) => void
@@ -506,77 +525,26 @@ function Entrega({ solicitacao: s }: { solicitacao: Solicitacao }) {
   return <span className="solicitacao__semQuebra">{formatarData(s.dataEntrega)}</span>
 }
 
-/** Os animais pedidos e a idade, sem o nome de quem pediu */
+/** Os animais pedidos em destaque e, embaixo, a linhagem e a idade */
 function Animais({ solicitacao: s }: { solicitacao: Solicitacao }) {
   return (
     <div className="solicitacao__duasLinhas solicitacao__pedido">
-      <span>{`${s.linhagem} · ${descreverAnimais(s)}`}</span>
-      <Texto tom="secundario">{`${descreverIdade(s)} de idade`}</Texto>
+      <span className="solicitacao__destaque">{descreverAnimais(s)}</span>
+      <Texto tom="secundario">{`${s.linhagem} · ${descreverIdade(s)} de idade`}</Texto>
     </div>
   )
 }
 
+/** Quem pediu em destaque e, embaixo, o que pediu */
 function Pedido({ solicitacao: s }: { solicitacao: Solicitacao }) {
   return (
     <div className="solicitacao__duasLinhas solicitacao__pedido">
-      <span title={s.pesquisador}>{s.pesquisador}</span>
-      <Texto tom="secundario">{`${s.linhagem} · ${descreverAnimais(s)}`}</Texto>
+      <span className="solicitacao__destaque" title={s.pesquisador}>
+        {s.pesquisador}
+      </span>
+      <Texto tom="secundario">{`${descreverAnimais(s)} · ${s.linhagem}`}</Texto>
     </div>
   )
-}
-
-function AcaoDaEquipe({
-  solicitacao: s,
-  equipe,
-}: {
-  solicitacao: Solicitacao
-  equipe: AcoesDaEquipe
-}) {
-  if (s.status === 'aprovada') {
-    const entregar = (
-      <Botao variante="fantasma" onClick={() => equipe.aoEntregar(s)}>
-        Registrar entrega
-      </Botao>
-    )
-
-    if (!s.reservaEmFalta) return entregar
-
-    // a ninhada reservada ficou com menos animais: a equipe desfaz a reserva para reservar de novo
-    return (
-      <div className="solicitacao__acoesDoPedido">
-        <Botao variante="fantasma" onClick={() => equipe.aoDesfazer(s)}>
-          Desfazer reserva
-        </Botao>
-        {entregar}
-      </div>
-    )
-  }
-
-  const recusar = (
-    <Botao variante="fantasma" onClick={() => equipe.aoRecusar(s)}>
-      Recusar
-    </Botao>
-  )
-
-  if (s.status === 'enviada') {
-    // aprovar é o que se faz com o pedido que chega; recusar fica embaixo, sem destaque
-    return (
-      <div className="solicitacao__acoesDoPedido">
-        <Botao onClick={() => equipe.aoAprovar(s)}>Aprovar</Botao>
-        {recusar}
-      </div>
-    )
-  }
-  if (s.status === 'em_atendimento') {
-    // aprovado, falta reservar os animais; o que não deu para produzir ainda pode ser recusado
-    return (
-      <div className="solicitacao__acoesDoPedido">
-        <Botao onClick={() => equipe.aoReservar(s)}>Reservar animais</Botao>
-        {recusar}
-      </div>
-    )
-  }
-  return null
 }
 
 /**
@@ -601,8 +569,8 @@ const PELA_ENTREGA = ordenaPor(compararDataDeEntrega, 'ascend')
 const PELO_PEDIDO = ordenaPor(compararDataDoPedido, 'descend')
 
 /**
- * Para quem pediu: quando chega, se aceitaram e o que pediu. O resto fica na setinha. Na tela
- * estreita a coluna única ordena pela entrega, que é a data no topo de cada pedido
+ * Para quem pediu: quando chega, se aceitaram e o que pediu. O resto fica no pedido aberto. Na
+ * tela estreita a coluna única ordena pela entrega, que é a data no topo de cada pedido
  */
 function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
   if (!telaLarga) {
@@ -645,10 +613,11 @@ function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Solicitacao> {
 }
 
 /**
- * Para a equipe: quando pediram, a situação, quem pediu e o quê, e o que fazer com o pedido. Na
- * tela estreita a coluna única ordena pela data do pedido, que é a data no topo de cada um
+ * Para a equipe: quando pediram, a situação, quem pediu e o quê, e a entrega. O que fazer com o
+ * pedido fica nele aberto. Na tela estreita a coluna única ordena pela data do pedido, que é a
+ * data no topo de cada um
  */
-function colunasDaEquipe(equipe: AcoesDaEquipe, telaLarga: boolean): TableColumnsType<Solicitacao> {
+function colunasDaEquipe(telaLarga: boolean): TableColumnsType<Solicitacao> {
   if (!telaLarga) {
     return [
       {
@@ -662,7 +631,7 @@ function colunasDaEquipe(equipe: AcoesDaEquipe, telaLarga: boolean): TableColumn
               <Situacao solicitacao={s} paraQuemPediu={false} />
             </div>
             <Pedido solicitacao={s} />
-            <AcaoDaEquipe solicitacao={s} equipe={equipe} />
+            <Texto tom="secundario">Entrega em {formatarData(s.dataEntrega)}</Texto>
           </div>
         ),
       },
@@ -689,58 +658,176 @@ function colunasDaEquipe(equipe: AcoesDaEquipe, telaLarga: boolean): TableColumn
       render: (_, s) => <Pedido solicitacao={s} />,
     },
     {
-      title: '',
-      // cabe o "Reservar animais" do aprovado e o "Registrar entrega" do reservado
-      width: 220,
-      render: (_, s) => <AcaoDaEquipe solicitacao={s} equipe={equipe} />,
+      title: 'Entrega',
+      width: 140,
+      render: (_, s) => <Entrega solicitacao={s} />,
     },
   ]
 }
 
 const ROTULO_ESPECIE: Record<CodigoEspecie, string> = { rato: 'Rato', camundongo: 'Camundongo' }
 
-function Detalhes({ solicitacao: s, equipe }: { solicitacao: Solicitacao; equipe: boolean }) {
-  const protocolo = {
-    key: 'ceua',
-    label: 'Protocolo CEUA',
-    children: <span className="solicitacao__protocolo">{s.protocoloCeua}</span>,
-  }
-  const especie = { key: 'especie', label: 'Espécie', children: ROTULO_ESPECIE[s.especie] }
-  const observacoes = { key: 'observacoes', label: 'Observações', children: s.observacoes ?? '—' }
-
-  // Quem pediu já vê na linha a entrega, a idade e o motivo da recusa
-  const itens = equipe
-    ? [
-        { key: 'id', label: 'Nº do pedido', children: `#${s.id}` },
-        { key: 'email', label: 'E-mail', children: s.email },
-        especie,
-        { key: 'idade', label: 'Idade', children: descreverIdade(s) },
-        {
-          key: 'entrega',
-          label: 'Entrega',
-          children: formatarData(s.dataEntrega),
-        },
-        protocolo,
-        ...(s.motivoRecusa
-          ? [{ key: 'motivo', label: 'Motivo da recusa', children: s.motivoRecusa }]
-          : []),
-        observacoes,
-      ]
-    : [
-        { key: 'pedido', label: 'Pedido em', children: formatarData(s.dataSolicitacao) },
-        protocolo,
-        especie,
-        observacoes,
-      ]
-
-  return <Descriptions size="small" column={{ xs: 1, sm: 2, lg: 3 }} items={itens} />
+/**
+ * O pedido aberto, tudo de uma vez: a situação, o resumo e o resto do que foi pedido. Para a
+ * equipe, embaixo, o que fazer com ele na situação em que está; quem pediu só confere
+ */
+function PedidoAberto({
+  solicitacao: s,
+  paraQuemPediu,
+  equipe,
+  aoFechar,
+}: {
+  solicitacao: Solicitacao
+  paraQuemPediu: boolean
+  equipe: AcoesDaEquipe
+  aoFechar: () => void
+}) {
+  return (
+    <Modal
+      open
+      width={600}
+      // quem pediu não vê o número do pedido: para ele, o pedido é a data
+      title={paraQuemPediu ? `Pedido de ${formatarData(s.dataSolicitacao)}` : `Pedido #${s.id}`}
+      onCancel={aoFechar}
+      footer={
+        paraQuemPediu ? (
+          <Botao onClick={aoFechar}>Fechar</Botao>
+        ) : (
+          <AcoesDoPedido solicitacao={s} equipe={equipe} aoFechar={aoFechar} />
+        )
+      }
+    >
+      <Pilha>
+        <Situacao solicitacao={s} paraQuemPediu={paraQuemPediu} />
+        <ResumoDoPedido solicitacao={s} comNome={!paraQuemPediu} />
+        <dl className="solicitacao__ficha">
+          <Dado rotulo="Pedido em">{formatarData(s.dataSolicitacao)}</Dado>
+          <Dado rotulo="Protocolo CEUA">
+            <span className="solicitacao__protocolo">{s.protocoloCeua}</span>
+          </Dado>
+          {!paraQuemPediu && <Dado rotulo="E-mail">{s.email}</Dado>}
+          {/* quem pediu já lê o motivo embaixo da situação */}
+          {!paraQuemPediu && s.motivoRecusa && (
+            <Dado rotulo="Motivo da recusa" largo>
+              {s.motivoRecusa}
+            </Dado>
+          )}
+          <Dado rotulo="Observações" largo>
+            {s.observacoes ?? '—'}
+          </Dado>
+        </dl>
+      </Pilha>
+    </Modal>
+  )
 }
 
 /**
- * O pedido nas janelas da equipe, para bater o olho antes de decidir: quem pediu e a linhagem
- * em cima; embaixo, cada quantidade, a idade e a entrega com o seu rótulo
+ * O que a equipe faz com o pedido em cada situação: a ação que leva o pedido adiante à direita,
+ * em destaque, e a que recusa ou desfaz à esquerda, longe dela. Aprovar é aqui mesmo, sem outra
+ * janela: o pedido inteiro já está à vista
  */
-function ResumoDoPedido({ solicitacao: s }: { solicitacao: Solicitacao }) {
+function AcoesDoPedido({
+  solicitacao: s,
+  equipe,
+  aoFechar,
+}: {
+  solicitacao: Solicitacao
+  equipe: AcoesDaEquipe
+  aoFechar: () => void
+}) {
+  const { message } = App.useApp()
+  const aprovar = useAprovarSolicitacao()
+
+  function aprovarAgora() {
+    aprovar.mutate(s.id, {
+      onSuccess: () => {
+        void message.success(`Solicitação #${s.id} aprovada.`)
+        aoFechar()
+      },
+      onError: (erro) => void message.error(erro.message),
+    })
+  }
+
+  const recusar = (
+    <Botao variante="fantasma" onClick={() => equipe.aoRecusar(s)}>
+      Recusar
+    </Botao>
+  )
+  const [aoLado, principal] =
+    s.status === 'enviada'
+      ? [
+          recusar,
+          <Botao variante="primario" loading={aprovar.isPending} onClick={aprovarAgora}>
+            Aprovar
+          </Botao>,
+        ]
+      : s.status === 'em_atendimento'
+        ? // aprovado, falta reservar; o que não deu para produzir ainda pode ser recusado
+          [
+            recusar,
+            <Botao variante="primario" onClick={() => equipe.aoReservar(s)}>
+              Reservar animais
+            </Botao>,
+          ]
+        : s.status === 'aprovada'
+          ? // a ninhada reservada ficou com menos animais: desfaz a reserva para reservar de novo
+            [
+              s.reservaEmFalta && (
+                <Botao variante="fantasma" onClick={() => equipe.aoDesfazer(s)}>
+                  Desfazer reserva
+                </Botao>
+              ),
+              <Botao variante="primario" onClick={() => equipe.aoEntregar(s)}>
+                Registrar entrega
+              </Botao>,
+            ]
+          : [null, null]
+
+  return (
+    <div className="solicitacao__rodape">
+      <div>{aoLado}</div>
+      <div className="solicitacao__rodapeFim">
+        <Botao onClick={aoFechar}>Fechar</Botao>
+        {principal}
+      </div>
+    </div>
+  )
+}
+
+/** Um dado do pedido com o seu rótulo em cima. 'largo' ocupa a linha inteira da ficha */
+function Dado({
+  rotulo,
+  numero = false,
+  largo = false,
+  children,
+}: {
+  rotulo: string
+  numero?: boolean
+  largo?: boolean
+  children: ReactNode
+}) {
+  return (
+    <div className={largo ? 'solicitacao__dado solicitacao__dado--largo' : 'solicitacao__dado'}>
+      <dt>
+        <Texto tom="rotulo">{rotulo}</Texto>
+      </dt>
+      <dd className={numero ? 'solicitacao__numeroGrande' : undefined}>{children}</dd>
+    </div>
+  )
+}
+
+/**
+ * O pedido para bater o olho: quem pediu e a linhagem em cima; embaixo, cada quantidade, a idade
+ * e a entrega. Para quem pediu, sem o próprio nome
+ */
+function ResumoDoPedido({
+  solicitacao: s,
+  comNome = true,
+}: {
+  solicitacao: Solicitacao
+  comNome?: boolean
+}) {
+  const linhagem = `${ROTULO_ESPECIE[s.especie]} · ${s.linhagem}`
   const quantidades = [
     { rotulo: 'Machos', valor: s.machos },
     { rotulo: 'Fêmeas', valor: s.femeas },
@@ -749,33 +836,22 @@ function ResumoDoPedido({ solicitacao: s }: { solicitacao: Solicitacao }) {
 
   return (
     <div className="solicitacao__resumo">
-      <div className="solicitacao__resumoQuem">
-        <span className="solicitacao__resumoNome">{s.pesquisador}</span>
-        <Texto tom="secundario">
-          {ROTULO_ESPECIE[s.especie]} · {s.linhagem}
-        </Texto>
-      </div>
+      {comNome ? (
+        <div className="solicitacao__duasLinhas">
+          <span className="solicitacao__destaque">{s.pesquisador}</span>
+          <Texto tom="secundario">{linhagem}</Texto>
+        </div>
+      ) : (
+        <span className="solicitacao__destaque">{linhagem}</span>
+      )}
       <dl className="solicitacao__resumoDados">
         {quantidades.map(({ rotulo, valor }) => (
-          <div key={rotulo}>
-            <dt>
-              <Texto tom="rotulo">{rotulo}</Texto>
-            </dt>
-            <dd className="solicitacao__resumoNumero">{valor}</dd>
-          </div>
+          <Dado key={rotulo} rotulo={rotulo} numero>
+            {valor}
+          </Dado>
         ))}
-        <div>
-          <dt>
-            <Texto tom="rotulo">Idade</Texto>
-          </dt>
-          <dd>{descreverIdade(s)}</dd>
-        </div>
-        <div>
-          <dt>
-            <Texto tom="rotulo">Entrega</Texto>
-          </dt>
-          <dd>{formatarData(s.dataEntrega)}</dd>
-        </div>
+        <Dado rotulo="Idade">{descreverIdade(s)}</Dado>
+        <Dado rotulo="Entrega">{formatarData(s.dataEntrega)}</Dado>
       </dl>
     </div>
   )
@@ -784,9 +860,11 @@ function ResumoDoPedido({ solicitacao: s }: { solicitacao: Solicitacao }) {
 function RegistrarEntrega({
   solicitacao,
   aoFechar,
+  aoConcluir,
 }: {
   solicitacao: Solicitacao
   aoFechar: () => void
+  aoConcluir: () => void
 }) {
   const { message } = App.useApp()
   const registrar = useRegistrarEntrega()
@@ -798,7 +876,7 @@ function RegistrarEntrega({
       {
         onSuccess: () => {
           void message.success(`Entrega da solicitação #${solicitacao.id} registrada.`)
-          aoFechar()
+          aoConcluir()
         },
         onError: (erro) => void message.error(erro.message),
       },
@@ -843,9 +921,11 @@ function RegistrarEntrega({
 function RecusarSolicitacao({
   solicitacao,
   aoFechar,
+  aoConcluir,
 }: {
   solicitacao: Solicitacao
   aoFechar: () => void
+  aoConcluir: () => void
 }) {
   const { message } = App.useApp()
   const recusar = useRecusarSolicitacao()
@@ -857,7 +937,7 @@ function RecusarSolicitacao({
       {
         onSuccess: () => {
           void message.success(`Solicitação #${solicitacao.id} recusada.`)
-          aoFechar()
+          aoConcluir()
         },
         onError: (erro) => void message.error(erro.message),
       },
@@ -875,10 +955,7 @@ function RecusarSolicitacao({
       onCancel={aoFechar}
       confirmLoading={recusar.isPending}
     >
-      <Pilha>
-        <ResumoDoPedido solicitacao={solicitacao} />
-        <Texto>O motivo aparece para quem pediu.</Texto>
-      </Pilha>
+      <Texto>O motivo aparece para quem pediu.</Texto>
       <Form form={form} layout="vertical" onFinish={salvar}>
         <Form.Item
           name="motivo"
@@ -892,48 +969,14 @@ function RecusarSolicitacao({
   )
 }
 
-/** Aprovar é só o "vamos fazer": os animais são reservados depois, quando existirem */
-function AprovarSolicitacao({
-  solicitacao,
-  aoFechar,
-}: {
-  solicitacao: Solicitacao
-  aoFechar: () => void
-}) {
-  const { message } = App.useApp()
-  const aprovar = useAprovarSolicitacao()
-
-  function confirmar() {
-    aprovar.mutate(solicitacao.id, {
-      onSuccess: () => {
-        void message.success(`Solicitação #${solicitacao.id} aprovada.`)
-        aoFechar()
-      },
-      onError: (erro) => void message.error(erro.message),
-    })
-  }
-
-  return (
-    <Modal
-      open
-      title={`Aprovar o pedido #${solicitacao.id}?`}
-      okText="Aprovar"
-      cancelText="Cancelar"
-      onOk={confirmar}
-      onCancel={aoFechar}
-      confirmLoading={aprovar.isPending}
-    >
-      <ResumoDoPedido solicitacao={solicitacao} />
-    </Modal>
-  )
-}
-
 function DesfazerReserva({
   solicitacao,
   aoFechar,
+  aoConcluir,
 }: {
   solicitacao: Solicitacao
   aoFechar: () => void
+  aoConcluir: () => void
 }) {
   const { message } = App.useApp()
   const desfazer = useDesfazerReserva()
@@ -943,7 +986,7 @@ function DesfazerReserva({
     desfazer.mutate(solicitacao.id, {
       onSuccess: () => {
         void message.success(`Reserva da solicitação #${solicitacao.id} desfeita.`)
-        aoFechar()
+        aoConcluir()
       },
       onError: (erro) => void message.error(erro.message),
     })

@@ -29,20 +29,6 @@
   margin-top: auto;
 }
 
-/* Pedido aceito com a reserva em falta: devolver para análise em cima, a entrega embaixo. Na
-   coluna da tabela cada botão tem a largura do texto; na linha compacta ocupam a linha, como o
-   botão sozinho */
-.solicitacao__acoesDoPedido {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-}
-
-.solicitacao__compacta > .solicitacao__acoesDoPedido {
-  align-items: stretch;
-}
-
 /* Dentro da coluna, fileiras que se leem como frase. Em tela estreita cada campo desce
    inteiro para a linha de baixo */
 .solicitacao__fileira {
@@ -209,15 +195,6 @@
   background: var(--cor-suave);
 }
 
-.solicitacao__resumoQuem {
-  display: flex;
-  flex-direction: column;
-}
-
-.solicitacao__resumoNome {
-  font-weight: 600;
-}
-
 .solicitacao__resumoDados {
   display: flex;
   flex-wrap: wrap;
@@ -228,13 +205,55 @@
 }
 
 .solicitacao__resumoDados dd {
-  margin: 0;
   font-weight: 600;
   line-height: 32px;
 }
 
-.solicitacao__resumoDados .solicitacao__resumoNumero {
+.solicitacao__resumoDados .solicitacao__numeroGrande {
   font-family: var(--fonte-titulo);
   font-size: 24px;
   font-weight: var(--peso-titulo);
+}
+
+/* O que não cabe no resumo, embaixo dele: duas colunas que viram uma na tela estreita. O texto
+   longo (observações, motivo) ocupa a linha inteira */
+.solicitacao__ficha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 24px;
+  margin: 0;
+}
+
+.solicitacao__dado--largo {
+  grid-column: 1 / -1;
+}
+
+.solicitacao__dado dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* O que mais importa na linha, e no topo do resumo: quem pediu, ou o que pediu */
+.solicitacao__destaque {
+  font-weight: 600;
+}
+
+/* A linha inteira abre o pedido */
+.solicitacao__lista .solicitacao__linha {
+  cursor: pointer;
+}
+
+/* No pedido aberto: recusar ou desfazer à esquerda, longe do que leva o pedido adiante; Fechar e
+   a ação principal à direita. Sem largura, a direita desce */
+.solicitacao__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.solicitacao__rodapeFim {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
 }
