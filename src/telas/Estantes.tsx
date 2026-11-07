@@ -2,7 +2,13 @@ import { App, Segmented } from 'antd'
 import { useState } from 'react'
 import type { DragEvent } from 'react'
 import { CabecalhoDaTela, Linha, Pilha, Secao, Texto, Vazio } from '@/componentes'
-import { COLUNA, corDoParto, pintaNaGrade } from '@/dominio/caixa'
+import {
+  COLUNA,
+  corDoParto,
+  descreverEstoque,
+  pintaNaGrade,
+  SIMBOLO_DO_SEXO,
+} from '@/dominio/caixa'
 import { useEstantes, useGrade, useMudarDePosicao } from '@/dominio/consultas'
 import type { CaixaNaGrade, Estante, Grade, Posicao } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
@@ -284,7 +290,13 @@ function Celula({
       role="button"
       tabIndex={0}
       aria-busy={chegando !== null}
-      title={`${posicao.codigo}: ${pinta ? COLUNA[caixa.estado].legenda : 'sem casal'} - clique para abrir a ficha, arraste para mudar de lugar`}
+      title={`${posicao.codigo}: ${
+        caixa.estoque
+          ? `caixa de estoque, ${descreverEstoque(caixa.estoque)}`
+          : pinta
+            ? COLUNA[caixa.estado].legenda
+            : 'sem casal'
+      } - clique para abrir a ficha, arraste para mudar de lugar`}
       draggable={movimento === null}
       onDragStart={(evento) => {
         evento.dataTransfer.setData('text/plain', String(caixa.id))
@@ -310,9 +322,17 @@ function Celula({
             {caixa.casal.partoAtual}º
           </span>
         )}
+        {caixa.estoque && (
+          <span className="posicao__sexo" title={descreverEstoque(caixa.estoque)}>
+            {SIMBOLO_DO_SEXO[caixa.estoque.sexo]} {caixa.estoque.total}
+          </span>
+        )}
       </span>
       {caixa.linhagem && <span className="posicao__linhagem">{caixa.linhagem}</span>}
       {caixa.casal && <span className="posicao__casal">{caixa.casal.identificacao}</span>}
+      {caixa.estoque && caixa.estoque.reservado > 0 && (
+        <span className="posicao__casal">{caixa.estoque.reservado} res.</span>
+      )}
     </div>
   )
 }

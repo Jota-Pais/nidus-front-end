@@ -48,6 +48,7 @@ import { AtenderPedido } from './AtenderPedido'
 import { CampoDeIdade } from './CampoDeIdade'
 import { CampoDoProtocolo } from './CampoDoProtocolo'
 import { ConfirmarPedido } from './ConfirmarPedido'
+import { RetiradaDaEntrega } from './RetiradaDaEntrega'
 import { PECA_UM_ANIMAL, montarPedido, temAnimal, validadorDoPedido } from './solicitacao.schema'
 import type { CamposDoPedido } from './solicitacao.schema'
 import './Solicitacao.css'
@@ -921,6 +922,7 @@ function RegistrarEntrega({
         {descreverAnimais(solicitacao)} de {solicitacao.linhagem}, protocolo CEUA{' '}
         {solicitacao.protocoloCeua}.
       </Texto>
+      <RetiradaDaEntrega idSolicitacao={solicitacao.id} />
       <Form form={form} layout="vertical" onFinish={salvar} initialValues={{ dtEntrega: hoje() }}>
         <Form.Item
           name="dtEntrega"

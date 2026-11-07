@@ -1,9 +1,8 @@
 import { App, Form, Input, InputNumber, Modal, Select, Tabs } from 'antd'
 import { useState } from 'react'
-import type { ReactNode } from 'react'
 import { Aviso, Botao, CampoDeData, Etiqueta, Linha, Texto } from '@/componentes'
 import { COR_DO_PARTO } from '@/app/tokens'
-import { corDoParto, descreverFalta, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
+import { corDoParto, descreverFalta, MAX_PARTOS_POR_CASAL, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import {
   useCatalogo,
   useCorrigirEvento,
@@ -16,6 +15,8 @@ import type { Casal, CodigoEspecie, Ficha, Parto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { descreverDias, formatarData, hoje, idadeEmDias } from '@/lib/data'
+import { Campo, LadoALado, Total } from './CamposDaFicha'
+import { DesmamadosDoParto, FichaDoEstoque, VirarCaixaDeEstoque } from './EstoqueDaFicha'
 import './FichaDaCaixa.css'
 
 /** Posição vazia da grade: a ficha abre com o formulário de casal, e a caixa nasce com ele */
@@ -46,12 +47,15 @@ export function FichaDaCaixa({
   const id = idCaixa ?? idCriado
   const ficha = useFicha(id)
   const [escolhido, setEscolhido] = useState<Escolha | null>(null)
+  // a caixa de estoque tem a ficha dela, sem casal nem parto
+  const deCasal = ficha.data?.tipo === 'casal' ? ficha.data : undefined
+  const deEstoque = ficha.data?.tipo === 'estoque' ? ficha.data : undefined
 
-  const escolha = escolhido ?? escolhaInicial(ficha.data)
+  const escolha = escolhido ?? escolhaInicial(deCasal)
   const partoAtivo = escolha.ordem
   // parto de um casal de antes: a ninhada e a reserva são as dele, e o resto da ficha é da caixa
-  const anterior = ficha.data?.anteriores.find((a) => a.casal.id === escolha.idCasal)
-  const vista = ficha.data && anterior ? { ...ficha.data, casal: anterior.casal, partos: anterior.partos } : ficha.data
+  const anterior = deCasal?.anteriores.find((a) => a.casal.id === escolha.idCasal)
+  const vista = deCasal && anterior ? { ...deCasal, casal: anterior.casal, partos: anterior.partos } : deCasal
   const endereco = ficha.data?.caixa.endereco ?? posicaoVazia
 
   function fechar() {
@@ -69,7 +73,7 @@ export function FichaDaCaixa({
       destroyOnHidden
       styles={{
         header: {
-          background: corDoParto(partoAtivo).fundo,
+          background: deEstoque ? `var(--estado-${deEstoque.caixa.estado}-fundo)` : corDoParto(partoAtivo).fundo,
           margin: '-20px -24px 0',
           padding: '16px 24px',
         },
@@ -82,6 +86,7 @@ export function FichaDaCaixa({
               {endereco.sala} · {endereco.numeroVisivel}
             </Etiqueta>
           )}
+          {deEstoque && <Etiqueta>Caixa de estoque {SIMBOLO_DO_SEXO[deEstoque.caixa.sexo]}</Etiqueta>}
         </Linha>
       }
     >
@@ -103,7 +108,8 @@ export function FichaDaCaixa({
         </div>
       ) : (
         <EstadoDaConsulta consulta={ficha}>
-          {ficha.data && vista && (
+          {deEstoque && <FichaDoEstoque ficha={deEstoque} />}
+          {deCasal && vista && (
             <>
               <div className="ficha__partos">
                 <Texto tom="rotulo">Parto</Texto>
@@ -117,7 +123,7 @@ export function FichaDaCaixa({
                 ))}
               </div>
               {/* as ninhadas que um casal encerrado deixou na caixa continuam nela */}
-              {ficha.data.anteriores.map(({ casal, partos }) => (
+              {deCasal.anteriores.map(({ casal, partos }) => (
                 <div key={casal.id} className="ficha__partos">
                   <Texto tom="rotulo">Ninhadas do casal {casal.identificacao} (encerrado)</Texto>
                   {partos.map((parto) => (
@@ -138,7 +144,7 @@ export function FichaDaCaixa({
                     label: 'Reprodução',
                     children: (
                       <AbaReproducao
-                        ficha={ficha.data}
+                        ficha={deCasal}
                         ordem={partoAtivo}
                         parto={partoDaOrdem(vista, partoAtivo)}
                         casalDeAntes={anterior?.casal ?? null}
@@ -152,7 +158,7 @@ export function FichaDaCaixa({
                     children: <AbaNinhada key={`${escolha.idCasal ?? 'atual'}-${partoAtivo}`} ficha={vista} ordem={partoAtivo} />,
                   },
                   { key: 'agrupamento', label: 'Agrupamento', children: <AbaAgrupamento ficha={vista} ordem={partoAtivo} /> },
-                  { key: 'eventos', label: 'Eventos', children: <AbaEventos ficha={ficha.data} /> },
+                  { key: 'eventos', label: 'Eventos', children: <AbaEventos ficha={deCasal} /> },
                 ]}
               />
             </>
@@ -161,24 +167,6 @@ export function FichaDaCaixa({
       )}
     </Modal>
   )
-}
-
-function Campo({ rotulo, children, destaque = false }: { rotulo: string; children: ReactNode; destaque?: boolean }) {
-  return (
-    <div className="ficha__campo">
-      <Texto tom="rotulo">{rotulo}</Texto>
-      <span className={`ficha__valor${destaque ? ' ficha__valor--destaque' : ''}`}>{children}</span>
-    </div>
-  )
-}
-
-/** dois ou três campos lado a lado */
-function LadoALado({ children }: { children: ReactNode }) {
-  return <div className="ficha__linha">{children}</div>
-}
-
-function Total({ children }: { children: ReactNode }) {
-  return <div className="ficha__total">{children}</div>
 }
 
 /** O parto escolhido no seletor: do casal da caixa (idCasal null) ou de um casal de antes */
@@ -273,6 +261,16 @@ function AbaReproducao({
 }) {
   const { caixa, casal } = ficha
   const confirmados = ficha.partos.filter((p) => p.dtPartoReal !== null).length
+  // as ninhadas que ainda estão dentro da caixa, deste casal ou de um de antes
+  const naCaixa = [...ficha.partos, ...ficha.anteriores.flatMap((a) => a.partos)].filter(
+    (p) => p.naCaixa.m + p.naCaixa.f > 0,
+  )
+  const ocupada =
+    naCaixa.length === 0
+      ? null
+      : naCaixa.some((p) => p.desmamadoM === null)
+        ? 'A ninhada ainda mama nesta caixa. Casal novo entra depois do desmame, com os desmamados no estoque.'
+        : 'A caixa ainda tem desmamados. Casal novo entra depois que eles forem para o estoque, na aba Ninhada.'
 
   return (
     <div className="ficha__aba">
@@ -305,8 +303,17 @@ function AbaReproducao({
       )}
       {casal?.ativo ? (
         <EncerrarCasal idCaixa={caixa.id} idCasal={casal.id} />
+      ) : ocupada ? (
+        <p className="ficha__vazio">{ocupada}</p>
       ) : (
         <FormarCasal alvo={{ idCaixa: caixa.id }} especie={caixa.especie} />
+      )}
+      {ficha.virarEstoque && (
+        <VirarCaixaDeEstoque
+          idCaixa={caixa.id}
+          sexo={ficha.virarEstoque}
+          total={naCaixa.reduce((soma, p) => soma + (ficha.virarEstoque === 'M' ? p.naCaixa.m : p.naCaixa.f), 0)}
+        />
       )}
 
       <h3>
@@ -770,6 +777,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
             ]}
             atual={{ dtDesmameReal: parto.dtDesmameReal, desmamadoM: parto.desmamadoM, desmamadoF: parto.desmamadoF }}
           />
+          <DesmamadosDoParto idCaixa={idCaixa} parto={parto} />
         </>
       ) : nasceu ? (
         <RegistrarEvento

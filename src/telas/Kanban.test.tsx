@@ -10,6 +10,7 @@ const card = (idCaixa: number, casal: CardDoKanban['casal']): CardDoKanban => ({
   numeroVisivel: 'E-01',
   linhagem: 'Wistar',
   casal,
+  estoque: null,
 })
 
 const quadro: Quadro = {
@@ -60,6 +61,26 @@ const quadro: Quadro = {
         }),
       ],
     },
+    {
+      estado: 'estoque',
+      cards: [
+        {
+          ...card(7, null),
+          codigo: 'F2C',
+          estoque: { sexo: 'M', total: 6, reservado: 2, nascimentoDe: null, nascimentoAte: null },
+        },
+      ],
+    },
+    {
+      estado: 'enviado',
+      cards: [
+        {
+          ...card(8, null),
+          codigo: 'F2D',
+          estoque: { sexo: 'F', total: 0, reservado: 0, nascimentoDe: null, nascimentoAte: null },
+        },
+      ],
+    },
   ],
 }
 
@@ -104,5 +125,31 @@ describe('card do kanban', () => {
     renderizar(<Kanban />)
 
     expect(screen.getByText('Sem casal ativo')).toBeTruthy()
+  })
+})
+
+describe('card da caixa de estoque', () => {
+  it('mostra o sexo, quantos animais tem e quantos estão reservados', () => {
+    renderizar(<Kanban />)
+
+    expect(screen.getByText('♂ 6')).toBeTruthy()
+    expect(screen.getByText('6 machos, 2 reservados')).toBeTruthy()
+    expect(screen.getByText('Animais de estoque')).toBeTruthy()
+  })
+
+  it('não se arrasta: a coluna dela sai do que está reservado', () => {
+    renderizar(<Kanban />)
+
+    const cardDeEstoque = screen.getByText('F2C').closest('.kanban__card')
+    const cardDeCasal = screen.getByText('F1A').closest('.kanban__card')
+
+    expect(cardDeEstoque?.getAttribute('draggable')).toBe('false')
+    expect(cardDeCasal?.getAttribute('draggable')).toBe('true')
+  })
+
+  it('a enviada mostra o endereço entre parênteses: a posição já ficou livre', () => {
+    renderizar(<Kanban />)
+
+    expect(screen.getByText('(F2D)')).toBeTruthy()
   })
 })

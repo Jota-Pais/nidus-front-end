@@ -2,7 +2,7 @@
 // dos tokens: a de cada coluna é --estado-<coluna>-fundo/borda/texto, e a grade de estantes pinta
 // a caixa com a mesma; a de cada parto é COR_DO_PARTO
 import { COR_DO_PARTO } from '@/app/tokens'
-import type { EstadoCaixa, FaltaNaReserva } from './tipos'
+import type { EstadoCaixa, EstoqueNoCard, FaltaNaReserva, Sexo } from './tipos'
 
 interface Coluna {
   estado: EstadoCaixa
@@ -29,6 +29,26 @@ export const MAX_PARTOS_POR_CASAL = 5
 /** A cor do parto, do 1º ao 5º: a bolinha do card e da grade é o parto atual do casal */
 export function corDoParto(parto: number): (typeof COR_DO_PARTO)[number] {
   return COR_DO_PARTO[Math.min(Math.max(parto, 1), COR_DO_PARTO.length) - 1]!
+}
+
+export const SIMBOLO_DO_SEXO: Record<Sexo, string> = { M: '♂', F: '♀' }
+
+/** "6 machos" / "1 fêmea" */
+export function contarDoSexo(qtd: number, sexo: Sexo): string {
+  if (sexo === 'M') return `${qtd} ${qtd === 1 ? 'macho' : 'machos'}`
+  return `${qtd} ${qtd === 1 ? 'fêmea' : 'fêmeas'}`
+}
+
+/** O que a caixa de estoque tem, numa linha: "6 machos, 2 reservados" */
+export function descreverEstoque(estoque: Pick<EstoqueNoCard, 'sexo' | 'total' | 'reservado'>): string {
+  const reservados =
+    estoque.reservado === 0
+      ? ''
+      : estoque.reservado === estoque.total
+        ? ', todos reservados'
+        : `, ${estoque.reservado} ${estoque.reservado === 1 ? 'reservado' : 'reservados'}`
+
+  return `${contarDoSexo(estoque.total, estoque.sexo)}${reservados}`
 }
 
 /**

@@ -15,6 +15,22 @@ export interface PorSexo {
   f: number
 }
 
+/** O sexo de uma caixa de estoque: machos e fêmeas desmamados ficam em caixas separadas */
+export type Sexo = 'M' | 'F'
+
+/**
+ * A caixa de estoque no card do kanban e na célula da grade: os desmamados de um sexo e uma
+ * linhagem, quantos tem e quantos já estão reservados
+ */
+export interface EstoqueNoCard {
+  sexo: Sexo
+  total: number
+  reservado: number
+  /** a data de nascimento do mais velho e do mais novo; só no card */
+  nascimentoDe?: DataISO | null
+  nascimentoAte?: DataISO | null
+}
+
 /** Reserva acima do que a ninhada tem: quanto falta e o reservado de cada pedido nela */
 export interface FaltaNaReserva extends PorSexo {
   pedidos: (PorSexo & { idSolicitacao: number })[]
@@ -53,6 +69,8 @@ export interface CardDoKanban {
   numeroVisivel: string
   linhagem: string | null
   casal: CasalNoCard | null
+  /** só na caixa de estoque, que não tem casal */
+  estoque: EstoqueNoCard | null
 }
 
 export interface Kanban {
@@ -85,6 +103,8 @@ export interface CaixaNaGrade {
   estado: EstadoCaixa
   linhagem: string | null
   casal: CasalNoCard | null
+  /** só na caixa de estoque, que não tem casal */
+  estoque: EstoqueNoCard | null
 }
 
 export interface Posicao {
@@ -125,6 +145,10 @@ export interface Parto {
   entregue: PorSexo
   /** reserva acima do que a ninhada tem depois do desmame ou da correção; null quando cabe */
   falta: FaltaNaReserva | null
+  /** o que ainda está na caixa do casal: mamando, ou desmamado que não foi para o estoque */
+  naCaixa: PorSexo
+  /** as caixas de estoque com desmamados deste parto */
+  noEstoque: { idCaixa: number; codigo: string; numeroVisivel: string; sexo: Sexo; qtd: number }[]
 }
 
 export interface Casal {
@@ -138,7 +162,14 @@ export interface Casal {
   dtEncerramento: DataISO | null
 }
 
+/** A ficha da caixa de casal. A de estoque é 'FichaDeEstoque' */
 export interface Ficha {
+  tipo: 'casal'
+  /**
+   * o sexo que a caixa teria se virasse caixa de estoque no lugar: casal encerrado e só
+   * desmamados de um sexo e uma linhagem nela. null quando não pode
+   */
+  virarEstoque: Sexo | null
   caixa: {
     id: number
     endereco: {
@@ -156,6 +187,66 @@ export interface Ficha {
   /** casais de antes que deixaram ninhada na caixa, com os partos que nasceram */
   anteriores: { casal: Casal; partos: Parto[] }[]
   eventos: { dataHora: string; tipo: string; descricao: string; autor: string }[]
+}
+
+/** Os desmamados de um parto dentro de uma caixa de estoque */
+export interface LoteDoEstoque {
+  idParto: number
+  qtd: number
+  ordem: number
+  casal: string
+  linhagem: string
+  /** a caixa do casal de onde vieram */
+  origem: { codigo: string; numeroVisivel: string }
+  dtNascimento: DataISO | null
+  idadeDias: number | null
+}
+
+/** A ficha da caixa de estoque: o que tem, de onde veio e para quem está reservado */
+export interface FichaDeEstoque {
+  tipo: 'estoque'
+  caixa: {
+    id: number
+    endereco: { numeroVisivel: string; sala: string; codigo: string }
+    especie: CodigoEspecie
+    linhagem: string | null
+    estado: EstadoCaixa
+    sexo: Sexo
+  }
+  total: number
+  reservado: number
+  livre: number
+  nascimentoDe: DataISO | null
+  nascimentoAte: DataISO | null
+  lotes: LoteDoEstoque[]
+  pedidos: { idSolicitacao: number; qtd: number }[]
+}
+
+// GET /api/partos/:id/destinos-do-estoque
+export interface CaixaDeEstoqueDestino {
+  idCaixa: number
+  codigo: string
+  numeroVisivel: string
+  sala: string
+  total: number
+  nascimentoDe: DataISO | null
+  nascimentoAte: DataISO | null
+}
+
+export interface DestinosDoEstoque {
+  machos: CaixaDeEstoqueDestino[]
+  femeas: CaixaDeEstoqueDestino[]
+}
+
+// GET /api/solicitacoes/:id/retirada
+export interface RetiradaDaEntrega {
+  tipo: 'casal' | 'estoque'
+  codigo: string
+  numeroVisivel: string
+  sexo: Sexo
+  qtd: number
+  /** de qual parto saem os animais */
+  partos: { ordem: number; casal: string }[]
 }
 
 // GET /api/catalogo

@@ -28,9 +28,21 @@ const grade: Grade = {
           linha: 1,
           coluna: 1,
           codigo: 'F1A',
-          caixa: { id: 10, estado: 'livres', linhagem: 'Wistar', casal: null },
+          caixa: { id: 10, estado: 'livres', linhagem: 'Wistar', casal: null, estoque: null },
         },
         { linha: 1, coluna: 2, codigo: 'F1B', caixa: null },
+        {
+          linha: 1,
+          coluna: 3,
+          codigo: 'F1C',
+          caixa: {
+            id: 11,
+            estado: 'reserva',
+            linhagem: 'Wistar',
+            casal: null,
+            estoque: { sexo: 'F', total: 4, reservado: 4 },
+          },
+        },
       ],
     },
   ],
@@ -150,5 +162,17 @@ describe('arrastar caixa', { timeout: 20_000 }, () => {
     expect(await screen.findByText('Esta posicao da estante ja tem uma caixa ativa.')).toBeTruthy()
     expect(caixaF1A().getAttribute('aria-busy')).toBe('false')
     expect(vaziaF1B()).toBeTruthy()
+  })
+})
+
+describe('caixa de estoque na grade', { timeout: 20_000 }, () => {
+  it('mostra o sexo e quantos animais tem, na cor da coluna', () => {
+    renderizar(<Estantes />, 'tecnico')
+
+    const celula = screen.getByRole('button', { name: /^F1C/ })
+
+    expect(celula.textContent).toContain('♀ 4')
+    expect(celula.className).toContain('posicao--reserva')
+    expect(celula.getAttribute('title')).toContain('caixa de estoque, 4 fêmeas, todos reservados')
   })
 })
