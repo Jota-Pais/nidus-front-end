@@ -148,12 +148,6 @@
   letter-spacing: 0.08em;
 }
 
-.kanban__previsao {
-  font-weight: 500;
-  letter-spacing: 0;
-  color: var(--cor-suave-frente);
-}
-
 .kanban__ninhadas {
   display: flex;
   flex-direction: column;

@@ -2,11 +2,11 @@ import { Segmented } from 'antd'
 import { useState } from 'react'
 import type { DragEvent } from 'react'
 import { CabecalhoDaTela, Etiqueta, Linha, Pilha, Secao } from '@/componentes'
-import { COLUNA, COLUNAS, corDoParto, MAX_PARTOS_POR_CASAL, mostraPrevisao } from '@/dominio/caixa'
+import { COLUNA, COLUNAS, corDoParto, MAX_PARTOS_POR_CASAL } from '@/dominio/caixa'
 import { useKanban } from '@/dominio/consultas'
 import type { CardDoKanban, CodigoEspecie, EstadoCaixa } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
-import { descreverDias, formatarDataCurta } from '@/lib/data'
+import { descreverDias } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import { LegendaDosPartos } from './LegendaDosPartos'
 import { useMudarDeColuna } from './useMudarDeColuna'
@@ -136,9 +136,6 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
       {casal && (
         <div className="kanban__casal">
           <span>{casal.identificacao}</span>
-          {casal.partoPrevisto && mostraPrevisao(estado) && (
-            <span className="kanban__previsao">P: {formatarDataCurta(casal.partoPrevisto)}</span>
-          )}
         </div>
       )}
 

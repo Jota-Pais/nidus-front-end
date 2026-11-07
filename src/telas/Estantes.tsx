@@ -2,11 +2,10 @@ import { App, Form, Input, Modal, Segmented, Select } from 'antd'
 import { useState } from 'react'
 import { usePerfil } from '@/auth/contexto'
 import { Botao, CabecalhoDaTela, Linha, Pilha, Secao, Texto, Vazio } from '@/componentes'
-import { COLUNA, corDoParto, mostraPrevisao, pintaNaGrade } from '@/dominio/caixa'
+import { COLUNA, corDoParto, pintaNaGrade } from '@/dominio/caixa'
 import { useCadastrarEstante, useEstantes, useGrade } from '@/dominio/consultas'
 import type { Estante, Grade, Posicao } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
-import { formatarDataCurta } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import type { PosicaoVazia } from './FichaDaCaixa'
 import { LegendaDosPartos } from './LegendaDosPartos'
@@ -184,9 +183,6 @@ function Celula({
       </span>
       {caixa.linhagem && <span className="posicao__linhagem">{caixa.linhagem}</span>}
       {caixa.casal && <span className="posicao__casal">{caixa.casal.identificacao}</span>}
-      {caixa.casal?.partoPrevisto && mostraPrevisao(caixa.estado) && (
-        <span className="posicao__previsao">P: {formatarDataCurta(caixa.casal.partoPrevisto)}</span>
-      )}
     </button>
   )
 }
