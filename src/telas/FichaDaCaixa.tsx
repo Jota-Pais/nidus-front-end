@@ -7,17 +7,14 @@ import { corDoParto, descreverFalta, MAX_PARTOS_POR_CASAL } from '@/dominio/caix
 import {
   useCatalogo,
   useCorrigirEvento,
-  useEstantes,
   useFicha,
   useFormarCasal,
-  useGrade,
-  useMudarDePosicao,
   useRegistrarNaFicha,
 } from '@/dominio/consultas'
 import type { CasalNovo, EventoCorrigivel } from '@/dominio/consultas'
 import type { Casal, CodigoEspecie, Ficha, Parto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
-import { motivoDaFalha, useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
+import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { descreverDias, formatarData, hoje, idadeEmDias } from '@/lib/data'
 import './FichaDaCaixa.css'
 
@@ -279,7 +276,6 @@ function AbaReproducao({
 
   return (
     <div className="ficha__aba">
-      <MoverDePosicao idCaixa={caixa.id} />
       <LadoALado>
         <Campo rotulo="Espécie">{ROTULO_ESPECIE[caixa.especie]}</Campo>
         <Campo rotulo="Linhagem">{caixa.linhagem ?? '—'}</Campo>
@@ -320,120 +316,6 @@ function AbaReproducao({
         <ProximoAcasalamento ficha={ficha} ordem={ordem} />
       )}
     </div>
-  )
-}
-
-function MoverDePosicao({ idCaixa }: { idCaixa: number }) {
-  const { message } = App.useApp()
-  const estantes = useEstantes()
-  const mover = useMudarDePosicao()
-  const [aberto, setAberto] = useState(false)
-  const [idEstante, setIdEstante] = useState<number | null>(null)
-  const [posicao, setPosicao] = useState<string | null>(null)
-
-  if (!aberto) {
-    return (
-      <div>
-        <Botao onClick={() => setAberto(true)}>Mover de posição</Botao>
-      </div>
-    )
-  }
-
-  function fechar() {
-    setAberto(false)
-    setIdEstante(null)
-    setPosicao(null)
-  }
-
-  function salvar() {
-    if (idEstante === null || posicao === null) return
-    const [face, linha, coluna] = posicao.split(':')
-
-    mover.mutate(
-      {
-        idCaixa,
-        idEstante,
-        face: face === 'traseira' ? 'traseira' : 'frontal',
-        linha: Number(linha),
-        coluna: Number(coluna),
-      },
-      {
-        onSuccess: ({ codigo }) => {
-          void message.success(`Caixa movida para ${codigo}.`)
-          fechar()
-        },
-        // sem campo para destacar: o motivo vai no aviso
-        onError: (erro) => void message.error(motivoDaFalha(erro)),
-      },
-    )
-  }
-
-  return (
-    <div className="ficha__formulario">
-      <LadoALado>
-        <div className="ficha__campo">
-          <Texto tom="rotulo">Estante</Texto>
-          <Select
-            value={idEstante}
-            loading={estantes.isPending}
-            placeholder="Selecione a estante"
-            options={(estantes.data ?? []).map((estante) => ({
-              value: estante.id,
-              label: `${estante.sala} · ${estante.numeroVisivel}`,
-            }))}
-            onChange={(id) => {
-              setIdEstante(id)
-              setPosicao(null)
-            }}
-          />
-        </div>
-        <div className="ficha__campo">
-          <Texto tom="rotulo">Posição livre</Texto>
-          {idEstante === null ? (
-            <Select disabled placeholder="Escolha a estante" />
-          ) : (
-            <PosicoesLivres idEstante={idEstante} valor={posicao} aoEscolher={setPosicao} />
-          )}
-        </div>
-      </LadoALado>
-      <div className="ficha__botoes">
-        <Botao variante="primario" onClick={salvar} loading={mover.isPending} disabled={posicao === null}>
-          Mover
-        </Botao>
-        <Botao variante="fantasma" onClick={fechar}>
-          Cancelar
-        </Botao>
-      </div>
-    </div>
-  )
-}
-
-function PosicoesLivres({
-  idEstante,
-  valor,
-  aoEscolher,
-}: {
-  idEstante: number
-  valor: string | null
-  aoEscolher: (posicao: string) => void
-}) {
-  const grade = useGrade(idEstante)
-  const livres = (grade.data?.faces ?? []).flatMap((face) =>
-    face.posicoes
-      .filter((posicao) => posicao.caixa === null)
-      .map((posicao) => ({ value: `${face.face}:${posicao.linha}:${posicao.coluna}`, label: posicao.codigo })),
-  )
-
-  return (
-    <Select
-      value={valor}
-      loading={grade.isPending}
-      placeholder={grade.isPending || livres.length > 0 ? 'Selecione a posição' : 'Estante cheia'}
-      disabled={!grade.isPending && livres.length === 0}
-      showSearch
-      options={livres}
-      onChange={aoEscolher}
-    />
   )
 }
 
