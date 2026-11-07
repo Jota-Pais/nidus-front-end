@@ -103,6 +103,27 @@ export function Kanban() {
   )
 }
 
+
+function statusDoCard(casal: CardDoKanban['casal'], estado: EstadoCaixa): string[] {
+  if (!casal) return [estado === 'livres' ? 'Sem casal ativo' : COLUNA[estado].legenda]
+
+  const aguardando = casal.aguardandoDesmame ? 'Aguardando desmame' : null
+
+  if (casal.encerrado && estado === 'livres') {
+    return aguardando ? ['Casal encerrado', aguardando] : ['Casal encerrado']
+  }
+
+  if (casal.encerrado) {
+    return [
+      COLUNA[estado].legenda,
+      aguardando ? 'Casal encerrado aguardando desmame' : 'Casal encerrado',
+    ]
+  }
+
+  return casal.partoAtual >= MAX_PARTOS_POR_CASAL
+    ? [COLUNA[estado].legenda, 'Último parto']
+    : [COLUNA[estado].legenda]
+}
 function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCaixa; aoAbrir: () => void }) {
   const { casal } = card
 
@@ -158,9 +179,14 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
       )}
 
       <div className="kanban__status">
-        {casal || estado !== 'livres' ? COLUNA[estado].legenda : 'Sem casal ativo'}
-        {casal && (casal.partoAtual >= MAX_PARTOS_POR_CASAL || casal.encerrado) && (
-          <span className="kanban__ultimoParto">{casal.encerrado ? ' · Casal encerrado' : ' · Último parto'}</span>
+        {statusDoCard(casal, estado).map((parte, indice) =>
+          indice === 0 ? (
+            parte
+          ) : (
+            <span key={parte} className="kanban__ultimoParto">
+              {` · ${parte}`}
+            </span>
+          ),
         )}
       </div>
     </div>

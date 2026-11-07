@@ -28,6 +28,7 @@ interface CasalNoCard {
   partoAtual: number
   partoPrevisto: DataISO | null
   encerrado: boolean
+  aguardandoDesmame?: boolean
   /**
    * só as ninhadas que já nasceram: o que existe de cada uma e a idade de hoje. Inclui as que um
    * casal encerrado deixou na caixa
