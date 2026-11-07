@@ -10,6 +10,7 @@ const ENTIDADES = [
   { value: 'casal', label: 'Casal' },
   { value: 'parto', label: 'Parto' },
   { value: 'solicitacao', label: 'Solicitação' },
+  { value: 'sala', label: 'Sala' },
   { value: 'estante', label: 'Estante' },
   { value: 'usuario', label: 'Conta' },
   { value: 'projeto', label: 'Projeto' },
