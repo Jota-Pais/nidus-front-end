@@ -5,7 +5,6 @@ import { api } from '@/lib/api'
 import type {
   Catalogo,
   CodigoEspecie,
-  DestinosDoEstoque,
   Face,
   FichaDeEstoque,
   RetiradaDaEntrega,
@@ -212,15 +211,6 @@ export function useRegistrarNaFicha(idCaixa: number) {
     mutationFn: ({ caminho, corpo }: { caminho: string; corpo: unknown }) =>
       api<RespostaDoRegistro>(caminho, { metodo: 'POST', corpo }),
     onSuccess: () => invalidarColonia(cliente, idCaixa),
-  })
-}
-
-/** As caixas de estoque que recebem os desmamados do parto: mesmo sexo, espécie e linhagem */
-export function useDestinosDoEstoque(idParto: number | null) {
-  return useQuery({
-    queryKey: chaves.destinosDoEstoque(idParto ?? 0),
-    queryFn: () => api<DestinosDoEstoque>(`/api/partos/${idParto}/destinos-do-estoque`),
-    enabled: idParto !== null,
   })
 }
 
