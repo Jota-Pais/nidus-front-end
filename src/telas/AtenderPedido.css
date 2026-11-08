@@ -1,34 +1,107 @@
-/* Quem pediu e o quê, em cima da lista de caixas */
-.atender__pedido {
+/* O placar em cima: o pedido contra o que está marcado, cada dado sob o seu rótulo. Os números
+   vêm grandes, que são o que se confere primeiro; sem largura, o que não cabe desce */
+.atender__placar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  margin: 0 0 16px;
+  padding: 16px;
+  border-radius: var(--raio-md);
+  background: var(--cor-suave);
+}
+
+.atender__dado dd {
+  margin: 0;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+/* A idade pedida e, embaixo, a faixa aceita */
+.atender__idade {
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
+}
+
+/* "3 de 4": o marcado grande, em amarelo enquanto falta e em verde quando completa */
+.atender__numero {
+  font-family: var(--fonte-titulo);
+  font-size: 24px;
+  font-weight: var(--peso-titulo);
+  color: var(--cor-aviso);
+}
+
+.atender__conta--completa .atender__numero {
+  color: var(--cor-sucesso);
+}
+
+/* A faixa aceita, embaixo da idade pedida */
+.atender__dado .atender__nota {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
 }
 
 .atender__lista {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin: 12px 0 16px;
+  margin: 0 0 16px;
   padding: 0;
   list-style: none;
 }
 
-/* Cada ninhada numa linha: a escolha, o que ela tem e, marcada, quanto reservar. Sem largura,
-   o que não cabe desce */
-.atender__caixa {
+/* Cada ninhada numa linha: à esquerda quem ela é e onde estão os livres, à direita quantos
+   reservar. Sem largura, os números descem */
+.atender__ninhada {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  padding: 12px;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding: 12px 16px;
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio-md);
 }
 
-.atender__caixa--marcada {
+.atender__ninhada--marcada {
   border-color: var(--cor-acao-borda);
   background: var(--cor-acao-fundo);
+}
+
+.atender__sobre {
+  display: flex;
+  flex: 1 1 300px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.atender__titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* As caixas, alinhadas com o nome da ninhada, depois da caixinha de marcar */
+.atender__lugares {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 24px;
+  list-style: none;
+}
+
+.atender__lugar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+  background: var(--cor-cartao);
+  font-size: 13px;
 }
 
 /* O endereço da caixa é código, e código vai em mono */
@@ -37,29 +110,30 @@
   font-weight: 600;
 }
 
-.atender__ninhada {
-  display: flex;
-  flex: 1 1 240px;
-  flex-direction: column;
-  min-width: 0;
-}
-
 .atender__quantos {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 16px;
 }
 
-.atender__quantos label {
+.atender__quantos label,
+.atender__livres {
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+}
+
+.atender__simbolo {
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .atender__quantos .ant-input-number {
-  width: 64px;
+  width: 56px;
 }
 
-/* Recusar à esquerda, longe do Aceitar; Cancelar e Aceitar à direita */
+/* Recusar à esquerda, longe do Reservar; Cancelar e Reservar à direita */
 .atender__rodape {
   display: flex;
   flex-wrap: wrap;
