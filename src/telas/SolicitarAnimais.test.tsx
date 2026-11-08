@@ -270,8 +270,7 @@ describe('aprovar e reservar', { timeout: 20_000 }, () => {
     aprovar.mockReset()
   })
 
-  it('o pedido que chega se aprova ou recusa; o aprovado, se reserva ou recusa', async () => {
-    extras.lista = [aprovadaSemReserva(5)]
+  it('o pedido que chega se aprova ou recusa', async () => {
     renderizar(<SolicitarAnimais />, 'tecnico')
 
     const chegou = await abrir('Abrir o pedido #1')
@@ -280,7 +279,11 @@ describe('aprovar e reservar', { timeout: 20_000 }, () => {
     expect(within(chegou).getByRole('button', { name: 'Aprovar' })).toBeTruthy()
     expect(within(chegou).getByRole('button', { name: 'Recusar' })).toBeTruthy()
     expect(within(chegou).queryByRole('button', { name: 'Reservar animais' })).toBeNull()
-    fireEvent.click(within(chegou).getByRole('button', { name: 'Fechar' }))
+  })
+
+  it('o aprovado se reserva ou recusa', async () => {
+    extras.lista = [aprovadaSemReserva(5)]
+    renderizar(<SolicitarAnimais />, 'tecnico')
 
     const aprovado = await abrir('Abrir o pedido #5')
     expect(within(aprovado).getByRole('button', { name: 'Reservar animais' })).toBeTruthy()

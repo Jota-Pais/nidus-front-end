@@ -60,7 +60,8 @@ const resultado = (candidatas: CaixaCandidata[], falta = { m: 0, f: 0, qualquer:
   candidatas,
   deficit: falta,
   casaisAFormar: 1,
-  acasalamentoNovo: { dataMinimaDeEntrega: '2027-01-10', viavel: false },
+  // entrega em 01/12 com 28 dias: o casal teria de ser formado até 01/12 - 23 - 28 dias
+  acasalamentoNovo: { dataMinimaDeEntrega: '2027-01-10', acasalarAte: '2026-10-11', viavel: false },
 })
 
 const reservar = () => screen.getByRole('button', { name: 'Reservar' })
@@ -152,7 +153,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     )
   })
 
-  it('sem animais para o pedido, não aceita e aponta a recusa', () => {
+  it('sem animais para o pedido inteiro, não aceita e diz o que seria preciso para a entrega', () => {
     estado.busca = resultado(
       [caixa({ sugerida: true, disponivel: { m: 2, f: 1 }, alocar: { m: 2, f: 1 } })],
       {
@@ -175,7 +176,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     expect(screen.getByText('Falta 1 fêmea.')).toBeTruthy()
     expect(
       screen.getByText(
-        'As caixas não têm animais para o pedido, então recuse com o motivo ou forme 1 casal novo: com ele, a entrega passa a ser possível a partir de 10/01/2027.',
+        'As caixas não têm animais para o pedido inteiro. Para o que falta, seria necessário formar cerca de 1 casal até 11/10/2026, e essa data já passou.',
       ),
     ).toBeTruthy()
 
@@ -183,11 +184,15 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     expect(recusar).toHaveBeenCalled()
   })
 
-  it('escreve a falta por extenso, no plural, com os casais a formar', () => {
+  it('sem nenhuma caixa, diz só que não há animais e quantos casais formar, até quando', () => {
     estado.busca = {
       ...resultado([], { m: 0, f: 0, qualquer: 12 }),
       casaisAFormar: 2,
-      acasalamentoNovo: { dataMinimaDeEntrega: '2026-12-21', viavel: false },
+      acasalamentoNovo: {
+        dataMinimaDeEntrega: '2026-11-20',
+        acasalarAte: '2026-11-17',
+        viavel: true,
+      },
     }
     renderizar(
       <AtenderPedido
@@ -198,11 +203,13 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
       />,
     )
 
-    expect(screen.getByText('Faltam 12 animais de qualquer sexo.')).toBeTruthy()
+    expect(screen.getByText('Não há animais para esta entrega com a idade pedida.')).toBeTruthy()
     expect(
-      screen.getByText(
-        'As caixas não têm animais para o pedido, então recuse com o motivo ou forme 2 casais novos: com eles, a entrega passa a ser possível a partir de 21/12/2026.',
-      ),
+      screen.getByText('Para isso, é necessário formar cerca de 2 casais até 17/11/2026.'),
     ).toBeTruthy()
+    // e mais nada: nem o resumo do pedido, nem a falta
+    expect(screen.queryByText(/de idade · entrega em/)).toBeNull()
+    expect(screen.queryByText(/^Ana ·/)).toBeNull()
+    expect(screen.queryByText(/Faltam/)).toBeNull()
   })
 })
