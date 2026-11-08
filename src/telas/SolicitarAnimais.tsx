@@ -62,19 +62,21 @@ const ESPECIES: { value: CodigoEspecie; label: string }[] = [
 
 /**
  * A etiqueta de cada situação. Quando quem pediu lê outra coisa, o rótulo dele vem à parte: o
- * aprovado ainda sem os animais é trabalho da equipe, e para quem pediu já é pedido aceito
+ * aprovado ainda sem os animais é trabalho da equipe, e para quem pediu já é pedido aceito.
+ * Cada passo do pedido tem a sua cor: amarelo espera a decisão, azul está em andamento, verde
+ * tem os animais reservados, cinza já foi entregue e vermelho foi recusado. Os outros status do
+ * dicionário a API não grava mais, e ficam na cor do passo mais parecido
  */
 const STATUS: Record<
   StatusSolicitacao,
   { rotulo: string; paraQuemPediu?: string; tom: TomDeEtiqueta }
 > = {
   rascunho: { rotulo: 'Rascunho', tom: 'neutro' },
-  enviada: { rotulo: 'Aguardando análise', tom: 'informacao' },
-  em_analise: { rotulo: 'Em análise', tom: 'informacao' },
+  enviada: { rotulo: 'Aguardando análise', tom: 'atencao' },
+  em_analise: { rotulo: 'Em análise', tom: 'atencao' },
   aprovada: { rotulo: 'Animais reservados', tom: 'sucesso' },
   recusada: { rotulo: 'Recusada', tom: 'erro' },
   ajustada: { rotulo: 'Ajustada', tom: 'atencao' },
-  // ainda em andamento, como o que aguarda análise: o verde fica para os animais reservados
   em_atendimento: {
     rotulo: 'Aguardando animais',
     paraQuemPediu: 'Aceito, em andamento',
