@@ -24,7 +24,6 @@ describe('invalidarColonia', () => {
       ['quadro'],
       ['estoque'],
       ['historico'],
-      ['destinos-do-estoque'],
       ['retirada'],
     ])
   })

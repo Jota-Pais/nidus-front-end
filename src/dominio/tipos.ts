@@ -222,22 +222,6 @@ export interface FichaDeEstoque {
   pedidos: { idSolicitacao: number; qtd: number }[]
 }
 
-// GET /api/partos/:id/destinos-do-estoque
-export interface CaixaDeEstoqueDestino {
-  idCaixa: number
-  codigo: string
-  numeroVisivel: string
-  sala: string
-  total: number
-  nascimentoDe: DataISO | null
-  nascimentoAte: DataISO | null
-}
-
-export interface DestinosDoEstoque {
-  machos: CaixaDeEstoqueDestino[]
-  femeas: CaixaDeEstoqueDestino[]
-}
-
 // GET /api/solicitacoes/:id/retirada
 export interface RetiradaDaEntrega {
   tipo: 'casal' | 'estoque'

@@ -777,7 +777,12 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
             ]}
             atual={{ dtDesmameReal: parto.dtDesmameReal, desmamadoM: parto.desmamadoM, desmamadoF: parto.desmamadoF }}
           />
-          <DesmamadosDoParto idCaixa={idCaixa} parto={parto} />
+          <DesmamadosDoParto
+            idCaixa={idCaixa}
+            caixa={ficha.caixa}
+            linhagem={ficha.casal?.linhagem ?? ficha.caixa.linhagem}
+            parto={parto}
+          />
         </>
       ) : nasceu ? (
         <RegistrarEvento

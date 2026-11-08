@@ -2,22 +2,22 @@
 // estoque, cada uma com um sexo e uma linhagem; qualquer posição vazia vira uma. Aqui ficam a
 // ficha da caixa de estoque, os desmamados do parto com o "Passar para o estoque", e a caixa do
 // casal encerrado que vira de estoque no lugar
-import { App, Form, InputNumber, Select } from 'antd'
+import { App, InputNumber, Segmented } from 'antd'
 import { useState } from 'react'
-import { Aviso, Botao } from '@/componentes'
+import { Aviso, Botao, Texto } from '@/componentes'
 import { COLUNA, contarDoSexo, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import {
-  useDestinosDoEstoque,
   useEstantes,
   useGrade,
   usePassarParaOEstoque,
   useVirarCaixaDeEstoque,
 } from '@/dominio/consultas'
 import type { DestinoDoEstoque, PassagemParaOEstoque } from '@/dominio/consultas'
-import type { CaixaDeEstoqueDestino, Face, FichaDeEstoque, Parto, Sexo } from '@/dominio/tipos'
-import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
+import type { Estante, Face, FichaDeEstoque, Parto, PorSexo, Sexo } from '@/dominio/tipos'
+import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
 import { descreverDias, formatarData, idadeEmDias } from '@/lib/data'
 import { Campo, LadoALado } from './CamposDaFicha'
+import './EstoqueDaFicha.css'
 
 /** "28 dias", ou "25 a 31 dias" quando as idades são diferentes */
 function idadeDe(nascimentoDe: string | null, nascimentoAte: string | null): string {
@@ -104,8 +104,26 @@ export function FichaDoEstoque({ ficha }: { ficha: FichaDeEstoque }) {
 
 // ------------------------------------------------------------ os desmamados do parto
 
-/** Onde estão os desmamados do parto, e o formulário que tira da caixa do casal para o estoque */
-export function DesmamadosDoParto({ idCaixa, parto }: { idCaixa: number; parto: Parto }) {
+/** A caixa do casal de onde saem os desmamados: o endereço, para abrir a estante dela */
+interface CaixaDoCasal {
+  endereco: { numeroVisivel: string; sala: string }
+}
+
+const deSexo = (porSexo: PorSexo, sexo: Sexo) => (sexo === 'M' ? porSexo.m : porSexo.f)
+
+/** Onde estão os desmamados do parto, e a passagem da caixa do casal para o estoque */
+export function DesmamadosDoParto({
+  idCaixa,
+  caixa,
+  linhagem,
+  parto,
+}: {
+  idCaixa: number
+  caixa: CaixaDoCasal
+  /** a linhagem do casal que teve o parto: a caixa de estoque que recebe tem de ser a mesma */
+  linhagem: string | null
+  parto: Parto
+}) {
   const [aberto, setAberto] = useState(false)
   const { naCaixa, noEstoque } = parto
   const sobrou = naCaixa.m + naCaixa.f > 0
@@ -131,7 +149,13 @@ export function DesmamadosDoParto({ idCaixa, parto }: { idCaixa: number; parto: 
 
       {sobrou &&
         (aberto ? (
-          <PassarParaOEstoque idCaixa={idCaixa} parto={parto} aoTerminar={() => setAberto(false)} />
+          <PassarParaOEstoque
+            idCaixa={idCaixa}
+            caixa={caixa}
+            linhagem={linhagem}
+            parto={parto}
+            aoTerminar={() => setAberto(false)}
+          />
         ) : (
           <div>
             <Botao variante="primario" onClick={() => setAberto(true)}>
@@ -143,276 +167,288 @@ export function DesmamadosDoParto({ idCaixa, parto }: { idCaixa: number; parto: 
   )
 }
 
-/** O valor do destino no formulário: uma caixa de estoque (o id) ou 'nova', numa posição vazia */
-type EscolhaDeDestino = number | 'nova'
-
-interface CamposDaPassagem {
-  qtdM?: number
-  destinoM?: EscolhaDeDestino
-  estanteM?: number
-  posicaoM?: string
-  qtdF?: number
-  destinoF?: EscolhaDeDestino
-  estanteF?: number
-  posicaoF?: string
+/** A caixa clicada na estante: uma de estoque que já existe (idCaixa) ou uma posição vazia */
+interface Escolha {
+  idEstante: number
+  codigo: string
+  face: Face
+  linha: number
+  coluna: number
+  idCaixa: number | null
 }
 
-/** Onde a API pode apontar erro */
-const CAMPOS_DA_PASSAGEM = ['qtdM', 'destinoM', 'qtdF', 'destinoF']
+const OUTRO_SEXO: Record<Sexo, Sexo> = { M: 'F', F: 'M' }
 
+/** "para os machos" / "para as fêmeas" */
+const OS_DO_SEXO: Record<Sexo, string> = { M: 'os machos', F: 'as fêmeas' }
+
+/**
+ * Para cada sexo, quantos animais e um clique na caixa onde vão: uma posição vazia vira caixa de
+ * estoque nova, e uma caixa de estoque do mesmo sexo e linhagem recebe mais animais
+ */
 function PassarParaOEstoque({
   idCaixa,
+  caixa,
+  linhagem,
   parto,
   aoTerminar,
 }: {
   idCaixa: number
+  caixa: CaixaDoCasal
+  linhagem: string | null
   parto: Parto
   aoTerminar: () => void
 }) {
   const { message } = App.useApp()
   const passar = usePassarParaOEstoque(idCaixa)
-  const destinos = useDestinosDoEstoque(parto.id)
-  const [form] = Form.useForm<CamposDaPassagem>()
-  const falha = useFalhaDoFormulario(form, CAMPOS_DA_PASSAGEM)
-  const sexos = (['M', 'F'] as const).filter(
-    (sexo) => (sexo === 'M' ? parto.naCaixa.m : parto.naCaixa.f) > 0,
-  )
+  const [erro, setErro] = useState<string | null>(null)
+  const [qtd, setQtd] = useState<Record<Sexo, number>>({ M: parto.naCaixa.m, F: parto.naCaixa.f })
+  const [escolha, setEscolha] = useState<Partial<Record<Sexo, Escolha>>>({})
+  const sexos = (['M', 'F'] as const).filter((sexo) => deSexo(parto.naCaixa, sexo) > 0)
 
-  function destinoDe(sexo: Sexo, campos: CamposDaPassagem): DestinoDoEstoque {
-    const escolha = campos[`destino${sexo}`]
-    if (typeof escolha === 'number') return { idCaixa: escolha }
+  const semCaixa = sexos.some((sexo) => qtd[sexo] > 0 && !escolha[sexo])
+  const nenhum = sexos.every((sexo) => qtd[sexo] === 0)
 
-    const [face, linha, coluna] = (campos[`posicao${sexo}`] ?? '').split(':')
-    return {
-      posicao: {
-        idEstante: campos[`estante${sexo}`] ?? 0,
-        face: face as Face,
-        linha: Number(linha),
-        coluna: Number(coluna),
-      },
-    }
-  }
-
-  function salvar(campos: CamposDaPassagem) {
-    falha.limpar()
+  function passarAgora() {
+    setErro(null)
     const pedido: PassagemParaOEstoque = { idParto: parto.id }
 
     for (const sexo of sexos) {
-      const qtd = campos[`qtd${sexo}`] ?? 0
-      if (qtd === 0) continue
-      pedido[sexo === 'M' ? 'machos' : 'femeas'] = { qtd, destino: destinoDe(sexo, campos) }
-    }
+      const onde = escolha[sexo]
+      if (qtd[sexo] === 0 || !onde) continue
 
-    if (!pedido.machos && !pedido.femeas) {
-      falha.mostrar(new Error('Informe quantos animais passam para o estoque.'))
-      return
+      const destino: DestinoDoEstoque =
+        onde.idCaixa !== null
+          ? { idCaixa: onde.idCaixa }
+          : {
+              posicao: {
+                idEstante: onde.idEstante,
+                face: onde.face,
+                linha: onde.linha,
+                coluna: onde.coluna,
+              },
+            }
+      pedido[sexo === 'M' ? 'machos' : 'femeas'] = { qtd: qtd[sexo], destino }
     }
 
     // mutateAsync, e não o retorno do mutate: quando todos saem da caixa do casal, a ficha
-    // recarregada já não mostra este formulário, e o React Query não chama o retorno do mutate
-    // de quem saiu da tela
-    passar.mutateAsync(pedido).then(({ caixas }) => {
-      const feitas = caixas.map(
-        (caixa) => `${contarDoSexo(caixa.qtd, caixa.sexo)} para a caixa de estoque ${caixa.codigo}`,
-      )
-      void message.success(`${feitas.join(' e ')}.`)
-      aoTerminar()
-    }, falha.mostrar)
+    // recarregada já não mostra esta passagem, e o React Query não chama o retorno do mutate de
+    // quem saiu da tela
+    passar.mutateAsync(pedido).then(
+      ({ caixas }) => {
+        const feitas = caixas.map(
+          (feita) => `${contarDoSexo(feita.qtd, feita.sexo)} para a ${feita.codigo}`,
+        )
+        void message.success(`${feitas.join(' e ')}.`)
+        aoTerminar()
+      },
+      (falha: Error) => setErro(motivoDaFalha(falha)),
+    )
   }
 
   return (
-    <Form
-      form={form}
-      layout="vertical"
-      onFinish={salvar}
-      initialValues={{ qtdM: parto.naCaixa.m, qtdF: parto.naCaixa.f }}
-      className="ficha__formulario"
-    >
-      {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
-      {sexos.map((sexo) => (
-        <DestinoDoSexo
-          key={sexo}
-          sexo={sexo}
-          maximo={sexo === 'M' ? parto.naCaixa.m : parto.naCaixa.f}
-          caixas={(sexo === 'M' ? destinos.data?.machos : destinos.data?.femeas) ?? []}
-          carregando={destinos.isPending}
-        />
-      ))}
+    <div className="ficha__formulario passagem">
+      {erro && <Aviso tom="erro" titulo={erro} />}
+      {sexos.map((sexo) => {
+        const maximo = deSexo(parto.naCaixa, sexo)
+
+        return (
+          <div key={sexo} className="passagem__sexo" role="group" aria-label={ROTULO_DO_SEXO[sexo]}>
+            <div className="passagem__quantos">
+              <span className="passagem__rotulo">
+                {SIMBOLO_DO_SEXO[sexo]} {ROTULO_DO_SEXO[sexo]}
+              </span>
+              <InputNumber
+                aria-label={`Quantos ${ROTULO_DO_SEXO[sexo].toLowerCase()}`}
+                min={0}
+                max={maximo}
+                precision={0}
+                value={qtd[sexo]}
+                onChange={(valor) => setQtd({ ...qtd, [sexo]: valor ?? 0 })}
+              />
+              <span className="passagem__de">de {maximo}</span>
+            </div>
+            {qtd[sexo] > 0 && (
+              <EscolherCaixa
+                sexo={sexo}
+                caixa={caixa}
+                linhagem={linhagem}
+                escolhida={escolha[sexo] ?? null}
+                doOutroSexo={escolha[OUTRO_SEXO[sexo]] ?? null}
+                aoEscolher={(onde) => setEscolha({ ...escolha, [sexo]: onde })}
+              />
+            )}
+          </div>
+        )
+      })}
       <div className="ficha__botoes">
-        <Botao variante="primario" htmlType="submit" loading={passar.isPending}>
+        <Botao
+          variante="primario"
+          onClick={passarAgora}
+          loading={passar.isPending}
+          disabled={semCaixa || nenhum}
+        >
           Passar para o estoque
         </Botao>
         <Botao variante="fantasma" onClick={aoTerminar}>
           Cancelar
         </Botao>
       </div>
-    </Form>
+    </div>
   )
 }
 
-/** Quantos animais de um sexo passam, e para qual caixa de estoque ou posição vazia */
-function DestinoDoSexo({
+/** As estantes da sala da caixa do casal, abrindo na dela, para clicar na caixa de destino */
+function EscolherCaixa({
   sexo,
-  maximo,
-  caixas,
-  carregando,
+  caixa,
+  linhagem,
+  escolhida,
+  doOutroSexo,
+  aoEscolher,
 }: {
   sexo: Sexo
-  maximo: number
-  caixas: CaixaDeEstoqueDestino[]
-  carregando: boolean
-}) {
-  const form = Form.useFormInstance<CamposDaPassagem>()
-  const destino = Form.useWatch(`destino${sexo}`, form)
-  const qtd = Form.useWatch(`qtd${sexo}`, form)
-  const estante = Form.useWatch(`estante${sexo}`, form)
-  const opcoes = [
-    ...caixas.map((caixa) => ({
-      value: caixa.idCaixa as EscolhaDeDestino,
-      label: `${caixa.codigo} (${caixa.numeroVisivel}): ${contarDoSexo(caixa.total, sexo)}, ${idadeDe(caixa.nascimentoDe, caixa.nascimentoAte)}`,
-    })),
-    { value: 'nova' as EscolhaDeDestino, label: 'Nova caixa numa posição vazia' },
-  ]
-
-  return (
-    <>
-      <LadoALado>
-        <Form.Item
-          name={`qtd${sexo}`}
-          label={`${SIMBOLO_DO_SEXO[sexo]} ${ROTULO_DO_SEXO[sexo]} (até ${maximo})`}
-          rules={[{ required: true, message: 'Quantos' }]}
-        >
-          <InputNumber min={0} max={maximo} precision={0} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item
-          name={`destino${sexo}`}
-          label="Para"
-          rules={[{ required: (qtd ?? 0) > 0, message: 'Escolha a caixa de estoque' }]}
-        >
-          <Select
-            options={opcoes}
-            loading={carregando}
-            placeholder={
-              caixas.length > 0
-                ? 'Caixa de estoque ou posição vazia'
-                : 'Nova caixa numa posição vazia'
-            }
-            disabled={(qtd ?? 0) === 0}
-          />
-        </Form.Item>
-      </LadoALado>
-      {destino === 'nova' && (qtd ?? 0) > 0 && (
-        <LadoALado>
-          <Form.Item
-            name={`estante${sexo}`}
-            label="Estante"
-            rules={[{ required: true, message: 'Escolha a estante' }]}
-          >
-            <EstantesDaPosicao aoTrocar={() => form.setFieldValue(`posicao${sexo}`, undefined)} />
-          </Form.Item>
-          <Form.Item
-            name={`posicao${sexo}`}
-            label="Posição vazia"
-            rules={[{ required: true, message: 'Escolha a posição' }]}
-          >
-            <PosicoesVazias idEstante={estante ?? null} sexo={sexo} />
-          </Form.Item>
-        </LadoALado>
-      )}
-    </>
-  )
-}
-
-function EstantesDaPosicao({
-  value,
-  onChange,
-  aoTrocar,
-}: {
-  value?: number
-  onChange?: (id: number) => void
-  aoTrocar: () => void
+  caixa: CaixaDoCasal
+  linhagem: string | null
+  escolhida: Escolha | null
+  doOutroSexo: Escolha | null
+  aoEscolher: (onde: Escolha) => void
 }) {
   const estantes = useEstantes()
+  const [idEstante, setIdEstante] = useState<number | null>(null)
+  const daSala = (estantes.data ?? []).filter((estante) => estante.sala === caixa.endereco.sala)
+  const aberta =
+    daSala.find((estante) => estante.id === idEstante) ??
+    daSala.find((estante) => estante.numeroVisivel === caixa.endereco.numeroVisivel) ??
+    daSala[0]
+
+  if (!aberta) {
+    return (
+      <Texto tom="secundario">
+        {estantes.isPending ? 'Carregando as estantes…' : 'Nenhuma estante na sala.'}
+      </Texto>
+    )
+  }
 
   return (
-    <Select
-      {...(value === undefined ? {} : { value })}
-      loading={estantes.isPending}
-      placeholder="Selecione a estante"
-      options={(estantes.data ?? []).map((estante) => ({
-        value: estante.id,
-        label: `${estante.sala} · ${estante.numeroVisivel}`,
-      }))}
-      onChange={(id: number) => {
-        onChange?.(id)
-        aoTrocar()
-      }}
-    />
+    <div className="passagem__estante">
+      {daSala.length > 1 && (
+        <Segmented<number>
+          size="small"
+          value={aberta.id}
+          onChange={setIdEstante}
+          options={daSala.map((estante) => ({ value: estante.id, label: estante.numeroVisivel }))}
+        />
+      )}
+      <MiniGrade
+        estante={aberta}
+        sexo={sexo}
+        linhagem={linhagem}
+        escolhida={escolhida}
+        doOutroSexo={doOutroSexo}
+        aoEscolher={aoEscolher}
+      />
+    </div>
   )
 }
 
-/** As posições vazias da estante escolhida; antes da escolha, o campo espera */
-function PosicoesVazias({
-  idEstante,
+/**
+ * A estante em miniatura. Dá para clicar na posição vazia e na caixa de estoque do mesmo sexo e
+ * linhagem; o resto fica apagado. A posição vazia que o outro sexo já pegou mostra o símbolo dele
+ */
+function MiniGrade({
+  estante,
   sexo,
-  value,
-  onChange,
+  linhagem,
+  escolhida,
+  doOutroSexo,
+  aoEscolher,
 }: {
-  idEstante: number | null
+  estante: Estante
   sexo: Sexo
-  value?: string
-  onChange?: (posicao: string) => void
+  linhagem: string | null
+  escolhida: Escolha | null
+  doOutroSexo: Escolha | null
+  aoEscolher: (onde: Escolha) => void
 }) {
-  if (idEstante === null) return <Select disabled placeholder="Escolha a estante" />
+  const grade = useGrade(estante.id)
+
+  if (grade.isPending) return <Texto tom="secundario">Carregando a estante…</Texto>
+
+  const naPosicao = (onde: Escolha | null, codigo: string) =>
+    onde !== null && onde.idEstante === estante.id && onde.codigo === codigo
 
   return (
-    <PosicoesDaEstante
-      idEstante={idEstante}
-      sexo={sexo}
-      {...(value === undefined ? {} : { value })}
-      {...(onChange ? { onChange } : {})}
-    />
-  )
-}
+    <div className="miniGrade">
+      {(grade.data?.faces ?? []).map((face) => (
+        <div key={face.face} className="miniGrade__face">
+          <span className="miniGrade__rotulo">
+            {face.face === 'frontal' ? 'Frontal' : 'Traseira'}
+          </span>
+          <div
+            className="miniGrade__celulas"
+            style={{ gridTemplateColumns: `repeat(${estante.colunas}, minmax(0, 1fr))` }}
+          >
+            {[...face.posicoes]
+              .sort((a, b) => a.linha - b.linha || a.coluna - b.coluna)
+              .map((posicao) => {
+                const ocupante = posicao.caixa
+                const vazia = ocupante === null
+                const estoque =
+                  ocupante?.estoque &&
+                  ocupante.estoque.sexo === sexo &&
+                  ocupante.linhagem === linhagem
+                    ? ocupante.estoque
+                    : null
+                const doOutro = vazia && naPosicao(doOutroSexo, posicao.codigo)
+                const marcada = naPosicao(escolhida, posicao.codigo)
+                const titulo = estoque
+                  ? `${posicao.codigo}: caixa de estoque com ${contarDoSexo(estoque.total, sexo)}`
+                  : doOutro
+                    ? `${posicao.codigo}: já escolhida para ${OS_DO_SEXO[OUTRO_SEXO[sexo]]}`
+                    : vazia
+                      ? `${posicao.codigo}: posição vazia, vira caixa de estoque nova`
+                      : `${posicao.codigo}: ocupada`
 
-/** A posição que o outro sexo já escolheu na mesma estante fica de fora */
-function PosicoesDaEstante({
-  idEstante,
-  sexo,
-  value,
-  onChange,
-}: {
-  idEstante: number
-  sexo: Sexo
-  value?: string
-  onChange?: (posicao: string) => void
-}) {
-  const form = Form.useFormInstance<CamposDaPassagem>()
-  const outro: Sexo = sexo === 'M' ? 'F' : 'M'
-  const estanteDoOutro = Form.useWatch(`estante${outro}`, form)
-  const posicaoDoOutro = Form.useWatch(`posicao${outro}`, form)
-  const grade = useGrade(idEstante)
-
-  const vazias = (grade.data?.faces ?? []).flatMap((face) =>
-    face.posicoes
-      .filter((posicao) => posicao.caixa === null)
-      .map((posicao) => ({
-        value: `${face.face}:${posicao.linha}:${posicao.coluna}`,
-        label: posicao.codigo,
-      }))
-      .filter((opcao) => !(estanteDoOutro === idEstante && opcao.value === posicaoDoOutro)),
-  )
-
-  return (
-    <Select
-      {...(value === undefined ? {} : { value })}
-      loading={grade.isPending}
-      placeholder={grade.isPending || vazias.length > 0 ? 'Selecione a posição' : 'Estante cheia'}
-      disabled={!grade.isPending && vazias.length === 0}
-      showSearch
-      options={vazias}
-      {...(onChange ? { onChange } : {})}
-    />
+                return (
+                  <button
+                    key={posicao.codigo}
+                    type="button"
+                    className={[
+                      'miniGrade__celula',
+                      vazia && !doOutro ? 'miniGrade__celula--vazia' : '',
+                      estoque ? 'miniGrade__celula--estoque' : '',
+                      marcada ? 'miniGrade__celula--marcada' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    title={titulo}
+                    aria-label={titulo}
+                    aria-pressed={marcada}
+                    disabled={!(estoque || (vazia && !doOutro))}
+                    onClick={() =>
+                      aoEscolher({
+                        idEstante: estante.id,
+                        codigo: posicao.codigo,
+                        face: face.face,
+                        linha: posicao.linha,
+                        coluna: posicao.coluna,
+                        idCaixa: estoque && ocupante ? ocupante.id : null,
+                      })
+                    }
+                  >
+                    {estoque
+                      ? `${SIMBOLO_DO_SEXO[sexo]}${estoque.total}`
+                      : doOutro
+                        ? SIMBOLO_DO_SEXO[OUTRO_SEXO[sexo]]
+                        : posicao.codigo}
+                  </button>
+                )
+              })}
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 

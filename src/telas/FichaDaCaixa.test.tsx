@@ -1,6 +1,6 @@
 import { fireEvent, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Casal, Ficha, FichaDeEstoque, Parto } from '@/dominio/tipos'
+import type { Casal, Estante, Ficha, FichaDeEstoque, Grade, Parto } from '@/dominio/tipos'
 import { ErroDeApi } from '@/lib/api'
 import { consulta, mutacao, renderizar } from '@/testes/renderizar'
 import { FichaDaCaixa } from './FichaDaCaixa'
@@ -57,6 +57,42 @@ const fichaDe = (parcial: Partial<Ficha> = {}): Ficha => ({
   ...parcial,
 })
 
+/** a passagem para o estoque: o que ela manda para a API */
+const passar = vi.hoisted(() => vi.fn())
+
+// a estante da caixa F1A: a F1A com o casal, a F1B e a F1D vazias, a F1C uma caixa de estoque de
+// 3 machos Wistar
+const estanteE01: Estante = {
+  id: 1,
+  idSala: 1,
+  sala: 'Sala 1',
+  fabricante: 'ALESCO',
+  modelo: 'Modelo 2',
+  numeroVisivel: 'E-01',
+  faces: 1,
+  linhas: 1,
+  colunas: 4,
+}
+
+const gradeE01: Grade = {
+  faces: [
+    {
+      face: 'frontal',
+      posicoes: [
+        { linha: 1, coluna: 1, codigo: 'F1A', caixa: { id: 7, estado: 'livres', linhagem: 'Wistar', casal: null, estoque: null } },
+        { linha: 1, coluna: 2, codigo: 'F1B', caixa: null },
+        {
+          linha: 1,
+          coluna: 3,
+          codigo: 'F1C',
+          caixa: { id: 30, estado: 'estoque', linhagem: 'Wistar', casal: null, estoque: { sexo: 'M', total: 3, reservado: 0 } },
+        },
+        { linha: 1, coluna: 4, codigo: 'F1D', caixa: null },
+      ],
+    },
+  ],
+}
+
 const banco = vi.hoisted(() => ({
   ficha: null as unknown,
   /** o que o registro na ficha responde: a falha da API */
@@ -74,11 +110,10 @@ vi.mock('@/dominio/consultas', () => ({
   useCorrigirEvento: mutacao,
   useCatalogo: () => consulta({ especies: [], paresGeneticos: [] }),
   useFormarCasal: mutacao,
-  useDestinosDoEstoque: () => consulta({ machos: [], femeas: [] }),
-  usePassarParaOEstoque: mutacao,
+  usePassarParaOEstoque: () => ({ mutateAsync: passar, isPending: false }),
   useVirarCaixaDeEstoque: mutacao,
-  useEstantes: () => consulta([]),
-  useGrade: () => consulta({ faces: [] }),
+  useEstantes: () => consulta([estanteE01]),
+  useGrade: () => consulta(gradeE01),
 }))
 
 const erroDaApi = (status: number, codigo: string, mensagem: string, campos?: Record<string, string>) =>
@@ -258,15 +293,59 @@ describe('caixa de estoque', { timeout: 20_000 }, () => {
 })
 
 describe('desmamados na caixa do casal', { timeout: 40_000 }, () => {
-  it('depois do desmame, os que ficaram na caixa do casal passam para o estoque', async () => {
+  /** Abre a passagem do 1º parto desmamado, com 4 M e 4 F ainda na caixa do casal */
+  async function abrirPassagem() {
+    passar.mockReset()
+    passar.mockResolvedValue({ caixas: [] })
     banco.ficha = fichaDe({ partos: [desmamado()] })
     renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
     fireEvent.click(screen.getByRole('tab', { name: 'Ninhada' }))
-
     fireEvent.click(await screen.findByRole('button', { name: 'Passar para o estoque' }))
 
-    expect(await screen.findByText('♂ Machos (até 4)')).toBeTruthy()
-    expect(screen.getByText('♀ Fêmeas (até 4)')).toBeTruthy()
+    return {
+      machos: await screen.findByRole('group', { name: 'Machos' }),
+      femeas: screen.getByRole('group', { name: 'Fêmeas' }),
+    }
+  }
+
+  it('para cada sexo é só a quantidade e um clique na caixa: a posição vazia vira caixa nova', async () => {
+    const { machos, femeas } = await abrirPassagem()
+
+    fireEvent.click(within(machos).getByRole('button', { name: /^F1B: posição vazia/ }))
+    fireEvent.click(within(femeas).getByRole('button', { name: /^F1D: posição vazia/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Passar para o estoque' }))
+
+    expect(passar).toHaveBeenCalledWith({
+      idParto: 10,
+      machos: { qtd: 4, destino: { posicao: { idEstante: 1, face: 'frontal', linha: 1, coluna: 2 } } },
+      femeas: { qtd: 4, destino: { posicao: { idEstante: 1, face: 'frontal', linha: 1, coluna: 4 } } },
+    })
+  })
+
+  it('a caixa de estoque do mesmo sexo e linhagem recebe; para o outro sexo ela fica apagada', async () => {
+    const { machos, femeas } = await abrirPassagem()
+
+    expect(within(femeas).getByRole('button', { name: 'F1C: ocupada' })).toHaveProperty('disabled', true)
+
+    fireEvent.click(within(machos).getByRole('button', { name: /^F1C: caixa de estoque com 3 machos/ }))
+    fireEvent.change(within(femeas).getByLabelText('Quantos fêmeas'), { target: { value: '0' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Passar para o estoque' }))
+
+    expect(passar).toHaveBeenCalledWith({ idParto: 10, machos: { qtd: 4, destino: { idCaixa: 30 } } })
+  })
+
+  it('sem a caixa escolhida não passa, e a posição que um sexo pegou não serve para o outro', async () => {
+    const { machos, femeas } = await abrirPassagem()
+
+    expect(screen.getByRole('button', { name: 'Passar para o estoque' })).toHaveProperty('disabled', true)
+
+    fireEvent.click(within(machos).getByRole('button', { name: /^F1B: posição vazia/ }))
+
+    expect(within(femeas).getByRole('button', { name: /^F1B: já escolhida para os machos/ })).toHaveProperty(
+      'disabled',
+      true,
+    )
+    expect(screen.getByRole('button', { name: 'Passar para o estoque' })).toHaveProperty('disabled', true)
   })
 
   it('com todos já no estoque, mostra onde estão e não oferece passar de novo', async () => {
