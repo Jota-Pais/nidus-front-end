@@ -61,11 +61,12 @@ const resultado = (candidatas: CaixaCandidata[], falta = { m: 0, f: 0, qualquer:
   candidatas,
   deficit: falta,
   casaisAFormar: 1,
-  // entrega em 01/12, com 25 a 31 dias: os casais se formariam de 01/12 - 23 - 31 até 01/12 - 23 - 25
+  // entrega em 01/12, com 25 a 31 dias: os casais se formariam até 01/12 - 23 - 25
   acasalamentoNovo: {
     dataMinimaDeEntrega: '2027-01-10',
     viavel: false,
-    formarCasais: { de: '2026-10-08', ate: '2026-10-14' },
+    formarCasais: { de: '2026-10-04', ate: '2026-10-14' },
+    acasalamentos: { min: 1, max: 1 },
   },
 })
 
@@ -73,11 +74,14 @@ const resultado = (candidatas: CaixaCandidata[], falta = { m: 0, f: 0, qualquer:
 const daqui = (dias: number) => dayjs().add(dias, 'day').format('YYYY-MM-DD')
 const naTela = (dias: number) => dayjs().add(dias, 'day').format('DD/MM/YYYY')
 
-/** a janela sem nenhuma caixa que sirva, com 12 de qualquer sexo e 2 casais a formar */
-const semNenhuma = (formarCasais: ResultadoDaBusca['acasalamentoNovo']['formarCasais']) => ({
+/** a janela sem nenhuma caixa que sirva, com 12 de qualquer sexo: de 2 a 4 acasalamentos */
+const semNenhuma = (
+  formarCasais: ResultadoDaBusca['acasalamentoNovo']['formarCasais'],
+  acasalamentos = { min: 2, max: 4 },
+) => ({
   ...resultado([], { m: 0, f: 0, qualquer: 12 }),
   casaisAFormar: 2,
-  acasalamentoNovo: { dataMinimaDeEntrega: daqui(44), viavel: true, formarCasais },
+  acasalamentoNovo: { dataMinimaDeEntrega: daqui(44), viavel: true, formarCasais, acasalamentos },
 })
 
 const renderizarSemNenhuma = () =>
@@ -202,7 +206,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     expect(screen.getByText('Falta 1 fêmea.')).toBeTruthy()
     expect(
       screen.getByText(
-        'As caixas não têm animais para o pedido inteiro. Para o que falta, seria necessário formar cerca de 1 casal até 14/10/2026, e essa data já passou.',
+        'As caixas não têm animais para o pedido inteiro. Para o que falta, seria necessário cerca de 1 acasalamento até 14/10/2026, e essa data já passou.',
       ),
     ).toBeTruthy()
 
@@ -217,7 +221,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     expect(screen.getByText('Não há animais para esta entrega com a idade pedida.')).toBeTruthy()
     expect(
       screen.getByText(
-        `Para isso, é necessário formar cerca de 2 casais entre ${naTela(5)} e ${naTela(10)}.`,
+        `Para atender este pedido, são necessários cerca de 2 a 4 acasalamentos entre ${naTela(5)} e ${naTela(10)}.`,
       ),
     ).toBeTruthy()
     // e mais nada: nem o resumo do pedido, nem a falta
@@ -227,10 +231,13 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
   })
 
   it('a janela de um dia só diz o dia; a que já começou vai de hoje até o fim', () => {
-    estado.busca = semNenhuma({ de: daqui(7), ate: daqui(7) })
+    // e as duas contas dando o mesmo, um número só
+    estado.busca = semNenhuma({ de: daqui(7), ate: daqui(7) }, { min: 2, max: 2 })
     const umDia = renderizarSemNenhuma()
     expect(
-      screen.getByText(`Para isso, é necessário formar cerca de 2 casais em ${naTela(7)}.`),
+      screen.getByText(
+        `Para atender este pedido, são necessários cerca de 2 acasalamentos em ${naTela(7)}.`,
+      ),
     ).toBeTruthy()
     umDia.unmount()
 
@@ -238,7 +245,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     renderizarSemNenhuma()
     expect(
       screen.getByText(
-        `Para isso, é necessário formar cerca de 2 casais entre hoje e ${naTela(4)}.`,
+        `Para atender este pedido, são necessários cerca de 2 a 4 acasalamentos entre hoje e ${naTela(4)}.`,
       ),
     ).toBeTruthy()
   })
@@ -249,7 +256,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
 
     expect(
       screen.getByText(
-        'Para isso, não há quando formar casais novos: na idade pedida, os filhotes ainda não estariam desmamados.',
+        'Para atender este pedido, não há quando acasalar: na idade pedida, os filhotes ainda não estariam desmamados.',
       ),
     ).toBeTruthy()
   })

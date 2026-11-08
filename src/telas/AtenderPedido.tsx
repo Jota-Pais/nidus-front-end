@@ -148,7 +148,7 @@ export function AtenderPedido({
         {atendimento.data &&
           (semNenhuma ? (
             <Aviso tom="atencao" titulo="Não há animais para esta entrega com a idade pedida.">
-              Para isso, {casaisNecessarios(atendimento.data)}.
+              Para atender este pedido, {acasalamentosNecessarios(atendimento.data)}.
             </Aviso>
           ) : (
             <>
@@ -274,22 +274,28 @@ function quandoFormar(janela: { de: DataISO; ate: DataISO }, hojeEm: DataISO): s
 }
 
 /**
- * "é necessário formar cerca de 2 casais entre 10/11/2026 e 16/11/2026": quantos casais novos,
- * pelo esperado de cada um, e quando formá-los para que os filhotes cheguem à entrega na idade
- * pedida e desmamados. Com a janela já passada, no condicional
+ * "são necessários cerca de 2 a 4 acasalamentos entre 12/11/2026 e 16/11/2026": de quantos a
+ * quantos, conforme o tamanho das ninhadas, e quando acasalar para que os filhotes cheguem à
+ * entrega na idade pedida e desmamados. Com a janela já passada, no condicional
  */
-function casaisNecessarios(busca: ResultadoDaBusca, hojeEm: DataISO = hoje()): string {
-  const n = busca.casaisAFormar
-  const casais = `cerca de ${n} ${n === 1 ? 'casal' : 'casais'}`
-  const janela = busca.acasalamentoNovo.formarCasais
+function acasalamentosNecessarios(busca: ResultadoDaBusca, hojeEm: DataISO = hoje()): string {
+  const { acasalamentos, formarCasais: janela } = busca.acasalamentoNovo
+  const numero =
+    acasalamentos.min === acasalamentos.max
+      ? `${acasalamentos.max}`
+      : `${acasalamentos.min} a ${acasalamentos.max}`
+  const quantos = `cerca de ${numero} ${acasalamentos.max === 1 ? 'acasalamento' : 'acasalamentos'}`
+  const plural = acasalamentos.max > 1
 
   if (!janela) {
-    return 'não há quando formar casais novos: na idade pedida, os filhotes ainda não estariam desmamados'
+    return 'não há quando acasalar: na idade pedida, os filhotes ainda não estariam desmamados'
   }
   if (janela.ate < hojeEm) {
-    return `seria necessário formar ${casais} até ${formatarData(janela.ate)}, e essa data já passou`
+    const seriam = plural ? 'seriam necessários' : 'seria necessário'
+    return `${seriam} ${quantos} até ${formatarData(janela.ate)}, e essa data já passou`
   }
-  return `é necessário formar ${casais} ${quandoFormar(janela, hojeEm)}`
+  const sao = plural ? 'são necessários' : 'é necessário'
+  return `${sao} ${quantos} ${quandoFormar(janela, hojeEm)}`
 }
 
 /** O total reservado contra o pedido; sem animais no plantel, o que resta fazer */
@@ -331,7 +337,7 @@ function Conferencia({
   return (
     <Aviso tom="atencao" titulo={titulo}>
       {semAnimais
-        ? `As caixas não têm animais para o pedido inteiro. Para o que falta, ${casaisNecessarios(busca)}.`
+        ? `As caixas não têm animais para o pedido inteiro. Para o que falta, ${acasalamentosNecessarios(busca)}.`
         : 'Ajuste as caixas marcadas até cobrir o pedido.'}
     </Aviso>
   )
