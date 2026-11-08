@@ -1,7 +1,9 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import dayjs from 'dayjs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Casal, Estante, Ficha, FichaDeEstoque, Grade, Parto } from '@/dominio/tipos'
 import { ErroDeApi } from '@/lib/api'
+import { FORMATO_DA_API, hoje } from '@/lib/data'
 import { consulta, mutacao, renderizar } from '@/testes/renderizar'
 import { FichaDaCaixa } from './FichaDaCaixa'
 
@@ -153,6 +155,17 @@ describe('formulários da ficha', { timeout: 40_000 }, () => {
     await registrarDesmame()
 
     expect(await screen.findByText('O desmame deste parto ja foi registrado.', {}, DEMORA)).toBeTruthy()
+  })
+
+  it('o desmame é de hoje para trás: o calendário não oferece amanhã', async () => {
+    await registrarDesmame()
+
+    fireEvent.click(await screen.findByLabelText('Data do desmame'))
+
+    const dia = (data: string) => document.querySelector(`td[title="${data}"]`)
+    await waitFor(() => expect(dia(hoje())).not.toBeNull())
+    expect(dia(hoje())?.className).not.toContain('ant-picker-cell-disabled')
+    expect(dia(dayjs().add(1, 'day').format(FORMATO_DA_API))?.className).toContain('ant-picker-cell-disabled')
   })
 
   it('o campo que o formulário não tem vira o motivo no aviso', async () => {
