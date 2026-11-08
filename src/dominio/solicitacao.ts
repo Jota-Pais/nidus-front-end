@@ -134,12 +134,13 @@ export function compararDataDeEntrega(
   return a.dataEntrega.localeCompare(b.dataEntrega) || a.id - b.id
 }
 
-export type FiltroDeSolicitacao = 'todas' | 'pendentes' | 'aceitas' | 'recusadas'
+export type FiltroDeSolicitacao = 'todas' | 'pendentes' | 'aceitas' | 'entregues' | 'recusadas'
 
 export const FILTROS_DE_SOLICITACAO: { valor: FiltroDeSolicitacao; rotulo: string }[] = [
   { valor: 'todas', rotulo: 'Todas' },
   { valor: 'pendentes', rotulo: 'Pendentes' },
   { valor: 'aceitas', rotulo: 'Aceitas' },
+  { valor: 'entregues', rotulo: 'Entregues' },
   { valor: 'recusadas', rotulo: 'Recusadas' },
 ]
 
@@ -175,6 +176,8 @@ export function entraNoFiltro(filtro: FiltroDeSolicitacao, s: Solicitacao): bool
       return s.status === 'enviada' || s.status === 'em_analise'
     case 'aceitas':
       return s.status === 'aprovada' || s.status === 'ajustada' || s.status === 'em_atendimento'
+    case 'entregues':
+      return s.status === 'concluida'
     case 'recusadas':
       return s.status === 'recusada'
   }

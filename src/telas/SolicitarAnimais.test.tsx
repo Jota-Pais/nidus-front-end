@@ -196,17 +196,28 @@ describe('lista de solicitações', { timeout: 20_000 }, () => {
     expect(screen.getByText('Recusada')).toBeTruthy()
   })
 
-  it('o filtro separa pendentes, aceitas e recusadas, com a contagem', () => {
-    renderizar(<SolicitarAnimais />, 'tecnico')
+  it('o filtro separa pendentes, aceitas, entregues e recusadas, com a contagem', () => {
+    extras.lista = [solicitacao(6, 'concluida')]
+    try {
+      renderizar(<SolicitarAnimais />, 'tecnico')
 
-    expect(screen.getByText('Pendentes (1)')).toBeTruthy()
-    expect(screen.getByText('Aceitas (1)')).toBeTruthy()
-    expect(screen.queryByText(/A cumprir/)).toBeNull()
-    expect(screen.getByText('Recusadas (1)')).toBeTruthy()
+      expect(screen.getByText('Todas (4)')).toBeTruthy()
+      expect(screen.getByText('Pendentes (1)')).toBeTruthy()
+      expect(screen.getByText('Aceitas (1)')).toBeTruthy()
+      expect(screen.queryByText(/A cumprir/)).toBeNull()
+      expect(screen.getByText('Entregues (1)')).toBeTruthy()
+      expect(screen.getByText('Recusadas (1)')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('radio', { name: /Pendentes/ }))
-    expect(screen.getByRole('button', { name: 'Abrir o pedido #1' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Abrir o pedido #2' })).toBeNull()
+      fireEvent.click(screen.getByRole('radio', { name: /Pendentes/ }))
+      expect(screen.getByRole('button', { name: 'Abrir o pedido #1' })).toBeTruthy()
+      expect(screen.queryByRole('button', { name: 'Abrir o pedido #2' })).toBeNull()
+
+      fireEvent.click(screen.getByRole('radio', { name: /Entregues/ }))
+      expect(screen.getByRole('button', { name: 'Abrir o pedido #6' })).toBeTruthy()
+      expect(screen.queryByRole('button', { name: 'Abrir o pedido #1' })).toBeNull()
+    } finally {
+      extras.lista = []
+    }
   })
 
   it('a equipe vê o pedido mais novo primeiro, e o pesquisador a entrega mais próxima', () => {

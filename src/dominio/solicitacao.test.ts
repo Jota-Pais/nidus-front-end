@@ -148,6 +148,12 @@ describe('entraNoFiltro', () => {
     expect(entraNoFiltro('aceitas', com('enviada'))).toBe(false)
   })
 
+  it('entregues só as entregues', () => {
+    expect(entraNoFiltro('entregues', com('concluida', '2026-11-03'))).toBe(true)
+    expect(entraNoFiltro('entregues', com('aprovada', '2026-11-03'))).toBe(false)
+    expect(entraNoFiltro('entregues', com('recusada'))).toBe(false)
+  })
+
   it('recusadas só as recusadas; todas mostra tudo', () => {
     expect(entraNoFiltro('recusadas', com('recusada'))).toBe(true)
     expect(entraNoFiltro('todas', com('cancelada'))).toBe(true)
