@@ -13,7 +13,6 @@ interface Coluna {
 
 export const COLUNAS: Coluna[] = [
   { estado: 'livres', rotulo: 'Livres', legenda: 'Casal ativo' },
-  { estado: 'pre_reserva', rotulo: 'Pré-reserva', legenda: 'Pré-reserva' },
   { estado: 'estoque', rotulo: 'Estoque', legenda: 'Animais de estoque' },
   { estado: 'reserva', rotulo: 'Reserva', legenda: 'Animais de reserva' },
   { estado: 'enviado', rotulo: 'Enviado', legenda: 'Enviado' },

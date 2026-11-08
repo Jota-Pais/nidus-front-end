@@ -125,7 +125,7 @@ describe('contraste da paleta', () => {
       COR_DE_RETORNO.informacao,
       SUPERFICIE_DE_RETORNO.informacaoFundo,
     ],
-    ...(['livres', 'pre_reserva', 'estoque', 'reserva', 'enviado'] as const).map(
+    ...(['livres', 'estoque', 'reserva', 'enviado'] as const).map(
       (coluna): [string, string, string] => [
         `texto da coluna ${coluna}`,
         ESTADO[`${coluna}Texto`],

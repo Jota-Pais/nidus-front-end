@@ -330,6 +330,9 @@ function Celula({
       </span>
       {caixa.linhagem && <span className="posicao__linhagem">{caixa.linhagem}</span>}
       {caixa.casal && <span className="posicao__casal">{caixa.casal.identificacao}</span>}
+      {caixa.casal && caixa.casal.reservado > 0 && (
+        <span className="posicao__casal">{caixa.casal.reservado} res.</span>
+      )}
       {caixa.estoque && caixa.estoque.reservado > 0 && (
         <span className="posicao__casal">{caixa.estoque.reservado} res.</span>
       )}

@@ -4,12 +4,15 @@ import type { CardDoKanban, Kanban as Quadro } from '@/dominio/tipos'
 import { consulta, renderizar } from '@/testes/renderizar'
 import { Kanban } from './Kanban'
 
-const card = (idCaixa: number, casal: CardDoKanban['casal']): CardDoKanban => ({
+/** o casal do card; sem 'reservado', nenhum animal reservado na caixa */
+type Casal = Omit<NonNullable<CardDoKanban['casal']>, 'reservado'> & { reservado?: number }
+
+const card = (idCaixa: number, casal: Casal | null): CardDoKanban => ({
   idCaixa,
   codigo: `F1${String.fromCharCode(64 + idCaixa)}`,
   numeroVisivel: 'E-01',
   linhagem: 'Wistar',
-  casal,
+  casal: casal && { reservado: 0, ...casal },
   estoque: null,
 })
 
@@ -27,6 +30,7 @@ const quadro: Quadro = {
             { casal: 'AB', parto: 1, m: 1, f: 0, idadeDias: 10 },
             { casal: 'AB', parto: 2, m: 2, f: 0, idadeDias: 0 },
           ],
+          reservado: 3,
         }),
         card(2, {
           identificacao: 'BC',
@@ -89,8 +93,6 @@ vi.mock('@/dominio/consultas', () => ({
   useFicha: () => ({ data: undefined, isPending: false, error: null }),
 }))
 
-vi.mock('./useMudarDeColuna', () => ({ useMudarDeColuna: () => () => {} }))
-
 describe('card do kanban', () => {
   it('mostra o número do parto ao lado da bolinha', () => {
     renderizar(<Kanban />)
@@ -121,6 +123,24 @@ describe('card do kanban', () => {
     expect(listas.at(-1)?.textContent).toContain('DE 5º3 M · 4 F10 dias')
   })
 
+  it('a caixa do casal com animais reservados fica em Livres e diz quantos', () => {
+    renderizar(<Kanban />)
+
+    const cardDoCasal = screen.getByText('F1A').closest('.kanban__card')
+    expect(cardDoCasal?.textContent).toContain('Casal ativo · 3 reservados')
+    // só o card do casal que tem reserva: os outros não falam de reservados
+    expect(screen.getAllByText(/^· \d+ reservados?$/)).toHaveLength(1)
+  })
+
+  it('só tem as quatro colunas: não existe Pré-reserva', () => {
+    renderizar(<Kanban />)
+
+    expect(
+      screen.getAllByRole('region').map((coluna) => coluna.getAttribute('aria-label')),
+    ).toEqual(['Livres: 6 caixas', 'Estoque: 1 caixas', 'Reserva: 0 caixas', 'Enviado: 1 caixas'])
+    expect(screen.queryByText(/Pré-reserva/)).toBeNull()
+  })
+
   it('caixa livre sem casal diz que não tem casal ativo', () => {
     renderizar(<Kanban />)
 
@@ -137,14 +157,14 @@ describe('card da caixa de estoque', () => {
     expect(screen.getByText('Animais de estoque')).toBeTruthy()
   })
 
-  it('não se arrasta: a coluna dela sai do que está reservado', () => {
+  it('nenhum card se arrasta: o kanban é só de leitura', () => {
     renderizar(<Kanban />)
 
     const cardDeEstoque = screen.getByText('F2C').closest('.kanban__card')
     const cardDeCasal = screen.getByText('F1A').closest('.kanban__card')
 
-    expect(cardDeEstoque?.getAttribute('draggable')).toBe('false')
-    expect(cardDeCasal?.getAttribute('draggable')).toBe('true')
+    expect(cardDeEstoque?.hasAttribute('draggable')).toBe(false)
+    expect(cardDeCasal?.hasAttribute('draggable')).toBe(false)
   })
 
   it('a enviada mostra o endereço entre parênteses: a posição já ficou livre', () => {

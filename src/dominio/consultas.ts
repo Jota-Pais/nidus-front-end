@@ -9,7 +9,6 @@ import type {
   FichaDeEstoque,
   RetiradaDaEntrega,
   Sexo,
-  EstadoCaixa,
   Estante,
   FaltaNaReserva,
   Ficha,
@@ -33,21 +32,6 @@ export function useKanban(especie: CodigoEspecie) {
     queryKey: chaves.quadro(especie),
     queryFn: () => api<Kanban>(`/api/quadro?especie=${especie}`),
     refetchInterval: 30_000,
-  })
-}
-
-/** Card arrastado para outra coluna. 'confirmar' passa por cima de compromisso já firmado */
-export function useMoverCaixa() {
-  const cliente = useQueryClient()
-
-  return useMutation({
-    mutationFn: (dados: { idCaixa: number; estado: EstadoCaixa; confirmar: boolean }) =>
-      api(`/api/caixas/${dados.idCaixa}/estado`, {
-        metodo: 'PATCH',
-        corpo: { estado: dados.estado, confirmar: dados.confirmar },
-      }),
-    // devolver a promessa faz o 'onSuccess' de quem chamou esperar o kanban recarregado
-    onSuccess: (_resposta, { idCaixa }) => invalidarColonia(cliente, idCaixa),
   })
 }
 

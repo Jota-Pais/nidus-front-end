@@ -1,6 +1,5 @@
 import { Segmented } from 'antd'
 import { useState } from 'react'
-import type { DragEvent } from 'react'
 import { CabecalhoDaTela, Etiqueta, Linha, Pilha, Secao } from '@/componentes'
 import {
   COLUNA,
@@ -17,7 +16,6 @@ import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { descreverDias, idadeEmDias } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import { LegendaDosPartos } from './LegendaDosPartos'
-import { useMudarDeColuna } from './useMudarDeColuna'
 import './Kanban.css'
 
 const ESPECIES: { value: CodigoEspecie; label: string }[] = [
@@ -25,47 +23,29 @@ const ESPECIES: { value: CodigoEspecie; label: string }[] = [
   { value: 'camundongo', label: 'Camundongos' },
 ]
 
-/** Card que acabou de ser solto numa coluna e ainda está sendo gravado */
-interface Movimento {
-  card: CardDoKanban
-  destino: EstadoCaixa
-}
-
-/** Kanban de reprodução: um quadro por espécie, cinco colunas, arrastar muda a coluna */
+/**
+ * Kanban de reprodução: um quadro por espécie, quatro colunas, só de leitura. Ninguém muda a caixa
+ * de coluna: a do casal fica em Livres, dizendo quantos reservados tem, e a de estoque muda
+ * sozinha, pelo que tem reservado
+ */
 export function Kanban() {
   const [especie, setEspecie] = useState<CodigoEspecie>('rato')
   const kanban = useKanban(especie)
-  const mudarDeColuna = useMudarDeColuna()
-  const [movimento, setMovimento] = useState<Movimento | null>(null)
   const [idFicha, setIdFicha] = useState<number | null>(null)
 
-  // Enquanto grava, o card já aparece na coluna nova
-  const colunas = COLUNAS.map((coluna) => {
-    const doServidor = kanban.data?.colunas.find((c) => c.estado === coluna.estado)?.cards ?? []
-    const cards = doServidor.filter((card) => card.idCaixa !== movimento?.card.idCaixa)
-    if (movimento?.destino === coluna.estado) cards.push(movimento.card)
-    return { ...coluna, cards }
-  })
+  const colunas = COLUNAS.map((coluna) => ({
+    ...coluna,
+    cards: kanban.data?.colunas.find((c) => c.estado === coluna.estado)?.cards ?? [],
+  }))
 
   const total = colunas.reduce((soma, coluna) => soma + coluna.cards.length, 0)
-
-  function soltar(evento: DragEvent<HTMLElement>, destino: EstadoCaixa) {
-    const idCaixa = Number(evento.dataTransfer.getData('text/plain'))
-    const origem = colunas.find((coluna) => coluna.cards.some((card) => card.idCaixa === idCaixa))
-    const card = origem?.cards.find((c) => c.idCaixa === idCaixa)
-    // a caixa de estoque nao se arrasta: a coluna dela sai do que esta reservado
-    if (!card || card.estoque || origem?.estado === destino) return
-
-    setMovimento({ card, destino })
-    mudarDeColuna(card.idCaixa, destino, () => setMovimento(null))
-  }
 
   return (
     <Pilha>
       <CabecalhoDaTela
         rotulo="Reprodução"
         titulo="Kanban"
-        descricao="Um quadro por espécie. A caixa de casal alterna entre Livres e Pré-reserva arrastando; a de estoque muda de coluna sozinha, pelo que tem reservado. Clique no card para abrir a ficha."
+        descricao="Um quadro por espécie. A caixa de casal fica em Livres e diz quantos animais reservados tem; a de estoque muda de coluna sozinha, pelo que tem reservado. Clique no card para abrir a ficha."
         acoes={<Etiqueta>{total} caixas</Etiqueta>}
       />
 
@@ -82,8 +62,6 @@ export function Kanban() {
             <section
               key={coluna.estado}
               className={`kanban__coluna kanban__coluna--${coluna.estado}`}
-              onDragOver={(evento) => evento.preventDefault()}
-              onDrop={(evento) => soltar(evento, coluna.estado)}
               aria-label={`${coluna.rotulo}: ${coluna.cards.length} caixas`}
             >
               <header className="kanban__colunaCabecalho">
@@ -116,6 +94,13 @@ export function Kanban() {
 function statusDoCard(casal: CardDoKanban['casal'], estado: EstadoCaixa): string[] {
   if (!casal) return [estado === 'livres' ? 'Sem casal ativo' : COLUNA[estado].legenda]
 
+  const partes = situacaoDoCasal(casal, estado)
+  if (casal.reservado === 0) return partes
+
+  return [...partes, `${casal.reservado} ${casal.reservado === 1 ? 'reservado' : 'reservados'}`]
+}
+
+function situacaoDoCasal(casal: NonNullable<CardDoKanban['casal']>, estado: EstadoCaixa): string[] {
   const aguardando = casal.aguardandoDesmame ? 'Aguardando desmame' : null
 
   if (casal.encerrado && estado === 'livres') {
@@ -150,17 +135,11 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
   return (
     <div
       className={`kanban__card kanban__card--${estado}`}
-      draggable={!estoque}
-      onDragStart={(evento) => evento.dataTransfer.setData('text/plain', String(card.idCaixa))}
       onClick={aoAbrir}
       onKeyDown={(evento) => evento.key === 'Enter' && aoAbrir()}
       role="button"
       tabIndex={0}
-      title={
-        estoque
-          ? 'Caixa de estoque: clique para abrir a ficha. Ela muda de coluna sozinha, pelo que tem reservado'
-          : 'Clique para abrir a ficha; arraste para mudar de coluna'
-      }
+      title="Clique para abrir a ficha"
     >
       <div className="kanban__topo">
         {/* a caixa enviada ja nao ocupa a posicao: o endereco vai entre parenteses */}
