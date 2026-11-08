@@ -340,6 +340,8 @@ export interface ResultadoDaBusca {
      * novos demais ou sem desmamar. Nula quando nenhuma idade aceita chega desmamada
      */
     formarCasais: { de: DataISO; ate: DataISO } | null
+    /** quantos acasalamentos, das ninhadas maiores para as menores */
+    acasalamentos: { min: number; max: number }
   }
 }
 
