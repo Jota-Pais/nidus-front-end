@@ -317,12 +317,20 @@ describe('aprovar e reservar', { timeout: 20_000 }, () => {
     expect(screen.queryByText('Aprovada em 05/11/2026')).toBeNull()
     expect(screen.getByText('Animais reservados')).toBeTruthy()
     expect(screen.queryByText('Aceito, em andamento')).toBeNull()
-    // o verde (sucesso e institucional) é só dos animais reservados; o aprovado ainda está em
-    // andamento, no tom do que aguarda análise
-    expect(screen.getByText('Aguardando animais').className).toContain('etiqueta--informacao')
-    expect(screen.getByText('Animais reservados').className).toContain('etiqueta--sucesso')
     const janela = await abrir('Abrir o pedido #5')
     expect(within(janela).getByText('Aprovada em 05/11/2026')).toBeTruthy()
+  })
+
+  it('cada situação tem a sua cor, do que espera a decisão ao entregue', () => {
+    extras.lista = [aprovadaSemReserva(5), solicitacao(6, 'concluida')]
+    renderizar(<SolicitarAnimais />, 'tecnico')
+
+    const cor = (situacao: string) => screen.getByText(situacao).className
+    expect(cor('Aguardando análise')).toContain('etiqueta--atencao')
+    expect(cor('Aguardando animais')).toContain('etiqueta--informacao')
+    expect(cor('Animais reservados')).toContain('etiqueta--sucesso')
+    expect(cor('Entregue')).toContain('etiqueta--neutro')
+    expect(cor('Recusada')).toContain('etiqueta--erro')
   })
 
   it('quem pediu vê o aprovado como Aceito, em andamento', () => {
