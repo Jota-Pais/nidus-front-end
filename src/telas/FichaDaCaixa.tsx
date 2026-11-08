@@ -157,7 +157,6 @@ export function FichaDaCaixa({
                     // remonta a cada parto escolhido: o formulário aberto é do parto que estava na tela
                     children: <AbaNinhada key={`${escolha.idCasal ?? 'atual'}-${partoAtivo}`} ficha={vista} ordem={partoAtivo} />,
                   },
-                  { key: 'agrupamento', label: 'Agrupamento', children: <AbaAgrupamento ficha={vista} ordem={partoAtivo} /> },
                   { key: 'eventos', label: 'Eventos', children: <AbaEventos ficha={deCasal} /> },
                 ]}
               />
@@ -804,32 +803,6 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           botao="Registrar desmame"
         />
       ) : null}
-    </div>
-  )
-}
-
-function AbaAgrupamento({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
-  const parto = partoDaOrdem(ficha, ordem)
-
-  if (!parto) {
-    return <p className="ficha__vazio">O {ordem}º parto ainda não começou.</p>
-  }
-
-  return (
-    <div className="ficha__aba">
-      <ReservaEmFalta parto={parto} />
-      <h3>Estoque desta caixa — {ordem}º parto</h3>
-      <LadoALado>
-        <Campo rotulo="Disponíveis para reserva">
-          {parto.disponivel.m} M / {parto.disponivel.f} F
-        </Campo>
-        <Campo rotulo="Já alocados em solicitações">
-          {parto.comprometido.m} M / {parto.comprometido.f} F
-        </Campo>
-      </LadoALado>
-      <Campo rotulo="Já entregues">
-        {parto.entregue.m} M / {parto.entregue.f} F
-      </Campo>
     </div>
   )
 }
