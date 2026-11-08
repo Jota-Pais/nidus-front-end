@@ -190,6 +190,18 @@ describe('ninhada com a reserva em falta', { timeout: 20_000 }, () => {
   })
 })
 
+describe('abas da ficha do casal', { timeout: 20_000 }, () => {
+  it('são Reprodução, Ninhada e Eventos: o reservado e o entregue ficam na caixa de estoque', async () => {
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+
+    expect((await screen.findAllByRole('tab')).map((aba) => aba.textContent)).toEqual([
+      'Reprodução',
+      'Ninhada',
+      'Eventos',
+    ])
+  })
+})
+
 describe('aba Reprodução', { timeout: 20_000 }, () => {
   // conta no texto da aba: os repetidos vinham no meio de uma linha, não num elemento só deles
   it('mostra cada dado do casal e do acasalamento uma vez só', async () => {
