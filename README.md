@@ -16,7 +16,7 @@ README). A referência de requisitos é a spec dele, o `instructions.md` v2.7, d
 
 | Tela | Quem usa | O que faz |
 |---|---|---|
-| Kanban | Técnico, gestor | Um quadro por espécie, colunas Livres, Pré-reserva, Estoque, Reserva e Enviado. Arrastar o card muda a coluna |
+| Kanban | Técnico, gestor | Um quadro por espécie, só de leitura, colunas Livres, Estoque, Reserva e Enviado. A caixa do casal fica em Livres e diz quantos reservados tem; a de estoque muda de coluna sozinha |
 | Estantes | Técnico, gestor | As estantes de cada sala, faces frontal e traseira lado a lado, cada caixa na cor da coluna do kanban |
 | Ficha da caixa | Técnico, gestor | Abre pelo card ou pela célula. Forma o casal e registra parto, eutanásia de seleção e desmame, do 1º ao 5º parto |
 | Solicitar animais | Todos | O pedido do pesquisador: nome, protocolo CEUA, linhagem, machos, fêmeas ou qualquer sexo, faixa de idade, data de entrega e observações |

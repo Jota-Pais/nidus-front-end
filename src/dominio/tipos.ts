@@ -7,8 +7,11 @@ export type CodigoEspecie = 'rato' | 'camundongo'
 /** 'aaaa-mm-dd'. Na tela é sempre dd/mm/aaaa (ver 'lib/data.ts') */
 export type DataISO = string
 
-/** As 5 colunas do kanban, na ordem da tela */
-export type EstadoCaixa = 'livres' | 'pre_reserva' | 'estoque' | 'reserva' | 'enviado'
+/**
+ * As 4 colunas do kanban, na ordem da tela. Não existe Pré-reserva: o animal está reservado ou
+ * não, e a caixa do casal com reserva fica em Livres, dizendo quantos reservados tem
+ */
+export type EstadoCaixa = 'livres' | 'estoque' | 'reserva' | 'enviado'
 
 export interface PorSexo {
   m: number
@@ -50,6 +53,8 @@ interface CasalNoCard {
    * casal encerrado deixou na caixa
    */
   ninhadas: NinhadaNoCard[]
+  /** quantos animais reservados e ainda não entregues continuam na caixa do casal */
+  reservado: number
 }
 
 export interface NinhadaNoCard {

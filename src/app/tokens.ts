@@ -108,10 +108,6 @@ export const ESTADO = {
   livresBorda: SUPERFICIE_DE_RETORNO.sucessoBorda,
   livresTexto: COR_DE_RETORNO.sucesso,
 
-  pre_reservaFundo: SUPERFICIE_DE_RETORNO.avisoFundo,
-  pre_reservaBorda: SUPERFICIE_DE_RETORNO.avisoBorda,
-  pre_reservaTexto: COR_DE_RETORNO.aviso,
-
   estoqueFundo: COR.acaoFundo,
   estoqueBorda: COR.acaoBorda,
   estoqueTexto: COR.acao,

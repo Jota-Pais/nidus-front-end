@@ -151,11 +151,6 @@
   border-color: var(--estado-livres-borda);
 }
 
-.posicao--pre_reserva {
-  background: var(--estado-pre_reserva-fundo);
-  border-color: var(--estado-pre_reserva-borda);
-}
-
 .posicao--estoque {
   background: var(--estado-estoque-fundo);
   border-color: var(--estado-estoque-borda);

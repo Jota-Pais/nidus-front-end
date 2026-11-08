@@ -1,5 +1,5 @@
 /*
- * Kanban. As cinco colunas lado a lado, cada uma rolando dentro de si; a cor de cada
+ * Kanban. As quatro colunas lado a lado, cada uma rolando dentro de si; a cor de cada
  * coluna e de cada card vem dos tokens (--estado-<coluna>-*), a mesma da grade de estantes
  */
 
@@ -85,7 +85,7 @@
   border-radius: var(--raio-md);
   background: var(--fundo);
   box-shadow: var(--sombra-sm);
-  cursor: grab;
+  cursor: pointer;
   transition:
     box-shadow var(--movimento-normal) var(--movimento-curva),
     transform var(--movimento-normal) var(--movimento-curva);
@@ -94,10 +94,6 @@
 .kanban__card:hover {
   transform: translateY(-2px);
   box-shadow: var(--sombra-lg);
-}
-
-.kanban__card:active {
-  cursor: grabbing;
 }
 
 .kanban__topo {
@@ -181,7 +177,6 @@
 
 /* cor por coluna */
 .kanban__coluna--livres { --faixa: var(--estado-livres-borda); }
-.kanban__coluna--pre_reserva { --faixa: var(--estado-pre_reserva-borda); }
 .kanban__coluna--estoque { --faixa: var(--estado-estoque-borda); }
 .kanban__coluna--reserva { --faixa: var(--estado-reserva-borda); }
 .kanban__coluna--enviado { --faixa: var(--estado-enviado-borda); }
@@ -190,12 +185,6 @@
   --fundo: var(--estado-livres-fundo);
   --borda: var(--estado-livres-borda);
   --texto: var(--estado-livres-texto);
-}
-
-.kanban__card--pre_reserva {
-  --fundo: var(--estado-pre_reserva-fundo);
-  --borda: var(--estado-pre_reserva-borda);
-  --texto: var(--estado-pre_reserva-texto);
 }
 
 .kanban__card--estoque {

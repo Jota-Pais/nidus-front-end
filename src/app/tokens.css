@@ -110,10 +110,6 @@
   --estado-livres-borda: var(--superficie-sucesso-borda);
   --estado-livres-texto: var(--cor-sucesso);
 
-  --estado-pre_reserva-fundo: var(--superficie-aviso-fundo);
-  --estado-pre_reserva-borda: var(--superficie-aviso-borda);
-  --estado-pre_reserva-texto: var(--cor-aviso);
-
   --estado-estoque-fundo: var(--cor-acao-fundo);
   --estado-estoque-borda: var(--cor-acao-borda);
   --estado-estoque-texto: var(--cor-acao);
