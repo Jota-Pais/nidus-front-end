@@ -1,5 +1,6 @@
 import { App, Form, Input, InputNumber, Modal, Select, Tabs } from 'antd'
 import { useState } from 'react'
+import type { ComponentProps } from 'react'
 import { Aviso, Botao, CampoDeData, Etiqueta, Linha, Texto } from '@/componentes'
 import { COR_DO_PARTO } from '@/app/tokens'
 import { corDoParto, descreverFalta, MAX_PARTOS_POR_CASAL, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
@@ -11,7 +12,7 @@ import {
   useRegistrarNaFicha,
 } from '@/dominio/consultas'
 import type { CasalNovo, EventoCorrigivel } from '@/dominio/consultas'
-import type { Casal, CodigoEspecie, Ficha, Parto } from '@/dominio/tipos'
+import type { Casal, CodigoEspecie, DataISO, Ficha, Parto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { descreverDias, formatarData, hoje, idadeEmDias } from '@/lib/data'
@@ -239,7 +240,9 @@ function ProximoAcasalamento({ ficha, ordem }: { ficha: Ficha; ordem: number }) 
     <RegistrarEvento
       idCaixa={ficha.caixa.id}
       caminho={`/api/casais/${casal.id}/acasalamento`}
-      campos={[{ nome: 'dtAcasalamento', rotulo: 'Data do acasalamento', tipo: 'data' }]}
+      campos={[
+        { nome: 'dtAcasalamento', rotulo: 'Data do acasalamento', tipo: 'data', desde: [ultimo?.dtPartoReal] },
+      ]}
       inicial={{ dtAcasalamento: hoje() }}
       botao="Registrar acasalamento"
     />
@@ -301,7 +304,11 @@ function AbaReproducao({
         </>
       )}
       {casal?.ativo ? (
-        <EncerrarCasal idCaixa={caixa.id} idCasal={casal.id} />
+        <EncerrarCasal
+          idCaixa={caixa.id}
+          idCasal={casal.id}
+          desde={maisTarde(casal.dtFormacao, ficha.partos.at(-1)?.dtAcasalamento)}
+        />
       ) : ocupada ? (
         <p className="ficha__vazio">{ocupada}</p>
       ) : (
@@ -428,7 +435,16 @@ interface CamposDoEncerramento {
   motivo: string
 }
 
-function EncerrarCasal({ idCaixa, idCasal }: { idCaixa: number; idCasal: number }) {
+function EncerrarCasal({
+  idCaixa,
+  idCasal,
+  desde,
+}: {
+  idCaixa: number
+  idCasal: number
+  /** o primeiro dia possível: a formação ou o último acasalamento, o que vier depois */
+  desde: DataISO | undefined
+}) {
   const { message } = App.useApp()
   const registrar = useRegistrarNaFicha(idCaixa)
   const [aberto, setAberto] = useState(false)
@@ -466,7 +482,7 @@ function EncerrarCasal({ idCaixa, idCasal }: { idCaixa: number; idCasal: number 
       {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
       <LadoALado>
         <Form.Item name="dtEncerramento" label="Data" rules={[{ required: true, message: 'Data' }]}>
-          <CampoDeData max={hoje()} />
+          <CampoDeData min={desde} max={hoje()} />
         </Form.Item>
         <Form.Item name="motivo" label="Motivo" rules={[{ required: true, message: 'Diga o motivo' }]}>
           <Input placeholder="ex: queda de produtividade" maxLength={200} />
@@ -488,6 +504,30 @@ interface CampoDoEvento {
   nome: string
   rotulo: string
   tipo: 'data' | 'numero'
+  /** data: os eventos de que ela depende; não pode ser antes de nenhum (no mesmo dia pode) */
+  desde?: (DataISO | null | undefined)[]
+  /** data: os eventos que vêm depois dela; não pode passar de nenhum, nem de hoje */
+  ate?: (DataISO | null | undefined)[]
+}
+
+const existentes = (datas: (DataISO | null | undefined)[]) => datas.filter((data): data is DataISO => Boolean(data))
+
+/** O dia mais tarde entre os que existem: o primeiro que a data pode ter */
+function maisTarde(...datas: (DataISO | null | undefined)[]): DataISO | undefined {
+  return existentes(datas).sort().at(-1)
+}
+
+/** O dia mais cedo entre hoje e os que existem: o último que a data pode ter */
+function ateHoje(...datas: (DataISO | null | undefined)[]): DataISO {
+  return [hoje(), ...existentes(datas)].sort()[0] ?? hoje()
+}
+
+/** O campo de data de um evento, com os dias fora da ordem apagados no calendário */
+function DataDoEvento({
+  campo,
+  ...resto
+}: { campo: CampoDoEvento } & Omit<ComponentProps<typeof CampoDeData>, 'min' | 'max'>) {
+  return <CampoDeData {...resto} min={maisTarde(...(campo.desde ?? []))} max={ateHoje(...(campo.ate ?? []))} />
 }
 
 /** Formulário de um registro do parto: nascimento, eutanásia de seleção ou desmame */
@@ -544,7 +584,7 @@ function RegistrarEvento({
             label={campo.rotulo}
             rules={[{ required: true, message: 'Obrigatório' }]}
           >
-            {campo.tipo === 'data' ? <CampoDeData max={hoje()} /> : <InputNumber min={0} max={999} style={{ width: '100%' }} />}
+            {campo.tipo === 'data' ? <DataDoEvento campo={campo} /> : <InputNumber min={0} max={999} style={{ width: '100%' }} />}
           </Form.Item>
         ))}
       </LadoALado>
@@ -615,7 +655,7 @@ function CorrigirEvento({
             label={campo.rotulo}
             rules={[{ required: true, message: 'Obrigatório' }]}
           >
-            {campo.tipo === 'data' ? <CampoDeData max={hoje()} /> : <InputNumber min={0} max={999} style={{ width: '100%' }} />}
+            {campo.tipo === 'data' ? <DataDoEvento campo={campo} /> : <InputNumber min={0} max={999} style={{ width: '100%' }} />}
           </Form.Item>
         ))}
       </LadoALado>
@@ -661,6 +701,8 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
   }
 
   const idCaixa = ficha.caixa.id
+  // o acasalamento do parto seguinte limita a correção da data deste parto
+  const seguinte = partoDaOrdem(ficha, ordem + 1)
   const nasceu = parto.dtPartoReal !== null
   const nascidos = (parto.nascidoM ?? 0) + (parto.nascidoF ?? 0)
   const restantesM = (parto.nascidoM ?? 0) - (parto.eutanasiadoM ?? 0)
@@ -693,7 +735,13 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
             idParto={parto.id}
             evento="nascimento"
             campos={[
-              { nome: 'dtPartoReal', rotulo: 'Data do parto', tipo: 'data' },
+              {
+                nome: 'dtPartoReal',
+                rotulo: 'Data do parto',
+                tipo: 'data',
+                desde: [parto.dtAcasalamento],
+                ate: [parto.dtSelecao, parto.dtDesmameReal, seguinte?.dtAcasalamento],
+              },
               { nome: 'nascidoM', rotulo: 'Machos nascidos', tipo: 'numero' },
               { nome: 'nascidoF', rotulo: 'Fêmeas nascidas', tipo: 'numero' },
             ]}
@@ -705,7 +753,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           idCaixa={idCaixa}
           caminho={`/api/partos/${parto.id}/nascimento`}
           campos={[
-            { nome: 'dtPartoReal', rotulo: 'Data do parto', tipo: 'data' },
+            { nome: 'dtPartoReal', rotulo: 'Data do parto', tipo: 'data', desde: [parto.dtAcasalamento] },
             { nome: 'nascidoM', rotulo: 'Machos nascidos', tipo: 'numero' },
             { nome: 'nascidoF', rotulo: 'Fêmeas nascidas', tipo: 'numero' },
           ]}
@@ -731,7 +779,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
             idParto={parto.id}
             evento="selecao"
             campos={[
-              { nome: 'dtSelecao', rotulo: 'Data', tipo: 'data' },
+              { nome: 'dtSelecao', rotulo: 'Data', tipo: 'data', desde: [parto.dtPartoReal], ate: [parto.dtDesmameReal] },
               { nome: 'eutanasiadoM', rotulo: 'Machos', tipo: 'numero' },
               { nome: 'eutanasiadoF', rotulo: 'Fêmeas', tipo: 'numero' },
             ]}
@@ -743,7 +791,7 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           idCaixa={idCaixa}
           caminho={`/api/partos/${parto.id}/selecao`}
           campos={[
-            { nome: 'dtSelecao', rotulo: 'Data', tipo: 'data' },
+            { nome: 'dtSelecao', rotulo: 'Data', tipo: 'data', desde: [parto.dtPartoReal] },
             { nome: 'eutanasiadoM', rotulo: 'Machos', tipo: 'numero' },
             { nome: 'eutanasiadoF', rotulo: 'Fêmeas', tipo: 'numero' },
           ]}
@@ -770,7 +818,12 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
             idParto={parto.id}
             evento="desmame"
             campos={[
-              { nome: 'dtDesmameReal', rotulo: 'Data do desmame', tipo: 'data' },
+              {
+                nome: 'dtDesmameReal',
+                rotulo: 'Data do desmame',
+                tipo: 'data',
+                desde: [parto.dtPartoReal, parto.dtSelecao],
+              },
               { nome: 'desmamadoM', rotulo: 'Machos desmamados', tipo: 'numero' },
               { nome: 'desmamadoF', rotulo: 'Fêmeas desmamadas', tipo: 'numero' },
             ]}
@@ -790,7 +843,12 @@ function AbaNinhada({ ficha, ordem }: { ficha: Ficha; ordem: number }) {
           idCaixa={idCaixa}
           caminho={`/api/partos/${parto.id}/desmame`}
           campos={[
-            { nome: 'dtDesmameReal', rotulo: 'Data do desmame', tipo: 'data' },
+            {
+              nome: 'dtDesmameReal',
+              rotulo: 'Data do desmame',
+              tipo: 'data',
+              desde: [parto.dtPartoReal, parto.dtSelecao],
+            },
             { nome: 'desmamadoM', rotulo: 'Machos desmamados', tipo: 'numero' },
             { nome: 'desmamadoF', rotulo: 'Fêmeas desmamadas', tipo: 'numero' },
           ]}

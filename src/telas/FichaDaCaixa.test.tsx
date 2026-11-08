@@ -180,6 +180,51 @@ describe('formulários da ficha', { timeout: 40_000 }, () => {
   })
 })
 
+describe('as datas da ninhada seguem a ordem dos eventos', { timeout: 40_000 }, () => {
+  // acasalou em 01/09, nasceu em 24/09, eutanásia em 26/09 e desmame em 28/09: o calendário abre
+  // em setembro de 2026, na data registrada
+  beforeEach(() => {
+    banco.ficha = fichaDe({
+      partos: [
+        parto({
+          dtSelecao: '2026-09-26',
+          dtDesmameReal: '2026-09-28',
+          desmamadoM: 4,
+          desmamadoF: 4,
+          naCaixa: { m: 0, f: 0 },
+        }),
+      ],
+    })
+  })
+
+  const dia = (data: string) => document.querySelector(`td[title="${data}"]`)?.className ?? '(sem dia)'
+  const APAGADO = 'ant-picker-cell-disabled'
+
+  async function corrigir(qual: number, rotulo: string) {
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Ninhada' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Corrigir' }))[qual] as HTMLElement)
+    fireEvent.click(await screen.findByLabelText(rotulo))
+    await waitFor(() => expect(dia('2026-09-24')).not.toBe('(sem dia)'))
+  }
+
+  it('o parto corrigido fica entre o acasalamento e a eutanásia, os dois dias inclusive', async () => {
+    await corrigir(0, 'Data do parto')
+
+    expect(dia('2026-08-31')).toContain(APAGADO)
+    expect(dia('2026-09-01')).not.toContain(APAGADO)
+    expect(dia('2026-09-26')).not.toContain(APAGADO)
+    expect(dia('2026-09-27')).toContain(APAGADO)
+  })
+
+  it('o desmame corrigido não fica antes da eutanásia', async () => {
+    await corrigir(2, 'Data do desmame')
+
+    expect(dia('2026-09-25')).toContain(APAGADO)
+    expect(dia('2026-09-26')).not.toContain(APAGADO)
+  })
+})
+
 describe('ninhada com a reserva em falta', { timeout: 20_000 }, () => {
   it('avisa quanto falta e de quais pedidos', async () => {
     banco.ficha = fichaDe({
