@@ -544,7 +544,7 @@ function RegistrarEvento({
             label={campo.rotulo}
             rules={[{ required: true, message: 'Obrigatório' }]}
           >
-            {campo.tipo === 'data' ? <CampoDeData max={hoje()} /> : <InputNumber min={0} style={{ width: '100%' }} />}
+            {campo.tipo === 'data' ? <CampoDeData max={hoje()} /> : <InputNumber min={0} max={999} style={{ width: '100%' }} />}
           </Form.Item>
         ))}
       </LadoALado>
@@ -615,7 +615,7 @@ function CorrigirEvento({
             label={campo.rotulo}
             rules={[{ required: true, message: 'Obrigatório' }]}
           >
-            {campo.tipo === 'data' ? <CampoDeData max={hoje()} /> : <InputNumber min={0} style={{ width: '100%' }} />}
+            {campo.tipo === 'data' ? <CampoDeData max={hoje()} /> : <InputNumber min={0} max={999} style={{ width: '100%' }} />}
           </Form.Item>
         ))}
       </LadoALado>
@@ -814,8 +814,8 @@ function AbaEventos({ ficha }: { ficha: Ficha }) {
 
   return (
     <ul className="ficha__eventos">
-      {ficha.eventos.map((evento) => (
-        <li key={`${evento.dataHora}-${evento.tipo}`} className="ficha__evento">
+      {ficha.eventos.map((evento, indice) => (
+        <li key={`${indice}-${evento.dataHora}-${evento.tipo}`} className="ficha__evento">
           <span className="ficha__eventoData">{formatarData(evento.dataHora.slice(0, 10))}</span>
           <span className="ficha__eventoTexto">{evento.descricao}</span>
           <span className="ficha__eventoAutor">{evento.autor}</span>
