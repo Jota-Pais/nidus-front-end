@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { CampoDeData } from '.'
 
@@ -19,5 +19,17 @@ describe('CampoDeData', () => {
     fireEvent.keyDown(campo, { key: 'Enter', code: 'Enter' })
 
     expect(mudou).toHaveBeenLastCalledWith('2027-02-01')
+  })
+
+  it('com o máximo, o calendário apaga os dias depois dele', async () => {
+    // com o valor, o calendário abre em novembro de 2026, qualquer que seja o dia de hoje
+    render(<CampoDeData value="2026-11-08" max="2026-11-08" />)
+
+    fireEvent.click(screen.getByPlaceholderText('dd/mm/aaaa'))
+
+    const dia = (data: string) => document.querySelector(`td[title="${data}"]`)
+    await waitFor(() => expect(dia('2026-11-08')).not.toBeNull())
+    expect(dia('2026-11-08')?.className).not.toContain('ant-picker-cell-disabled')
+    expect(dia('2026-11-09')?.className).toContain('ant-picker-cell-disabled')
   })
 })
