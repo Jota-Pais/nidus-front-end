@@ -334,9 +334,12 @@ export interface ResultadoDaBusca {
   casaisAFormar: number
   acasalamentoNovo: {
     dataMinimaDeEntrega: DataISO
-    /** até quando formar os casais para a entrega pedida; viavel é esta data não ter passado */
-    acasalarAte: DataISO
     viavel: boolean
+    /**
+     * quando formar os casais para a entrega: antes, os filhotes passam da idade; depois, ficam
+     * novos demais ou sem desmamar. Nula quando nenhuma idade aceita chega desmamada
+     */
+    formarCasais: { de: DataISO; ate: DataISO } | null
   }
 }
 

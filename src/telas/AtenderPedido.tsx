@@ -4,9 +4,15 @@ import { Aviso, Botao, Texto } from '@/componentes'
 import { useAlocar, useAtendimento } from '@/dominio/consultas'
 import { conferirReserva, descreverAnimais, descreverIdade } from '@/dominio/solicitacao'
 import type { ConferenciaDaReserva } from '@/dominio/solicitacao'
-import type { CaixaCandidata, PorSexo, ResultadoDaBusca, Solicitacao } from '@/dominio/tipos'
+import type {
+  CaixaCandidata,
+  DataISO,
+  PorSexo,
+  ResultadoDaBusca,
+  Solicitacao,
+} from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
-import { formatarData } from '@/lib/data'
+import { formatarData, hoje } from '@/lib/data'
 import './AtenderPedido.css'
 
 /** Quanto se reserva de cada ninhada, pelo id do parto */
@@ -255,17 +261,35 @@ function faltam(falta: Quantidades): string {
 }
 
 /**
- * "é necessário formar cerca de 2 casais até 17/11/2026": quantos casais novos, pelo esperado de
- * cada um, e até quando formá-los para a entrega. Com a data já passada, no condicional
+ * Quando formar, dentro da janela que ainda não passou: "em 16/11/2026" no dia único, "entre
+ * 10/11/2026 e 16/11/2026", ou "entre hoje e 16/11/2026" com a janela já aberta
  */
-function casaisNecessarios(busca: ResultadoDaBusca): string {
+function quandoFormar(janela: { de: DataISO; ate: DataISO }, hojeEm: DataISO): string {
+  const comecou = janela.de <= hojeEm
+  if (comecou && janela.ate === hojeEm) return 'hoje'
+  if (janela.de === janela.ate) return `em ${formatarData(janela.ate)}`
+
+  const inicio = comecou ? 'hoje' : formatarData(janela.de)
+  return `entre ${inicio} e ${formatarData(janela.ate)}`
+}
+
+/**
+ * "é necessário formar cerca de 2 casais entre 10/11/2026 e 16/11/2026": quantos casais novos,
+ * pelo esperado de cada um, e quando formá-los para que os filhotes cheguem à entrega na idade
+ * pedida e desmamados. Com a janela já passada, no condicional
+ */
+function casaisNecessarios(busca: ResultadoDaBusca, hojeEm: DataISO = hoje()): string {
   const n = busca.casaisAFormar
   const casais = `cerca de ${n} ${n === 1 ? 'casal' : 'casais'}`
-  const ate = formatarData(busca.acasalamentoNovo.acasalarAte)
+  const janela = busca.acasalamentoNovo.formarCasais
 
-  return busca.acasalamentoNovo.viavel
-    ? `é necessário formar ${casais} até ${ate}`
-    : `seria necessário formar ${casais} até ${ate}, e essa data já passou`
+  if (!janela) {
+    return 'não há quando formar casais novos: na idade pedida, os filhotes ainda não estariam desmamados'
+  }
+  if (janela.ate < hojeEm) {
+    return `seria necessário formar ${casais} até ${formatarData(janela.ate)}, e essa data já passou`
+  }
+  return `é necessário formar ${casais} ${quandoFormar(janela, hojeEm)}`
 }
 
 /** O total reservado contra o pedido; sem animais no plantel, o que resta fazer */

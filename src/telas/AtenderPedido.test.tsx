@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react'
+import dayjs from 'dayjs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CaixaCandidata, ResultadoDaBusca, Solicitacao } from '@/dominio/tipos'
 import { consulta, renderizar } from '@/testes/renderizar'
@@ -60,9 +61,34 @@ const resultado = (candidatas: CaixaCandidata[], falta = { m: 0, f: 0, qualquer:
   candidatas,
   deficit: falta,
   casaisAFormar: 1,
-  // entrega em 01/12 com 28 dias: o casal teria de ser formado até 01/12 - 23 - 28 dias
-  acasalamentoNovo: { dataMinimaDeEntrega: '2027-01-10', acasalarAte: '2026-10-11', viavel: false },
+  // entrega em 01/12, com 25 a 31 dias: os casais se formariam de 01/12 - 23 - 31 até 01/12 - 23 - 25
+  acasalamentoNovo: {
+    dataMinimaDeEntrega: '2027-01-10',
+    viavel: false,
+    formarCasais: { de: '2026-10-08', ate: '2026-10-14' },
+  },
 })
+
+/** daqui a tantos dias, na API e na tela: a janela de formar os casais conta a partir de hoje */
+const daqui = (dias: number) => dayjs().add(dias, 'day').format('YYYY-MM-DD')
+const naTela = (dias: number) => dayjs().add(dias, 'day').format('DD/MM/YYYY')
+
+/** a janela sem nenhuma caixa que sirva, com 12 de qualquer sexo e 2 casais a formar */
+const semNenhuma = (formarCasais: ResultadoDaBusca['acasalamentoNovo']['formarCasais']) => ({
+  ...resultado([], { m: 0, f: 0, qualquer: 12 }),
+  casaisAFormar: 2,
+  acasalamentoNovo: { dataMinimaDeEntrega: daqui(44), viavel: true, formarCasais },
+})
+
+const renderizarSemNenhuma = () =>
+  renderizar(
+    <AtenderPedido
+      solicitacao={{ ...pedido, machos: 0, femeas: 0, qualquer: 12 }}
+      aoFechar={() => {}}
+      aoConcluir={() => {}}
+      aoRecusar={() => {}}
+    />,
+  )
 
 const reservar = () => screen.getByRole('button', { name: 'Reservar' })
 
@@ -176,7 +202,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     expect(screen.getByText('Falta 1 fêmea.')).toBeTruthy()
     expect(
       screen.getByText(
-        'As caixas não têm animais para o pedido inteiro. Para o que falta, seria necessário formar cerca de 1 casal até 11/10/2026, e essa data já passou.',
+        'As caixas não têm animais para o pedido inteiro. Para o que falta, seria necessário formar cerca de 1 casal até 14/10/2026, e essa data já passou.',
       ),
     ).toBeTruthy()
 
@@ -184,32 +210,47 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     expect(recusar).toHaveBeenCalled()
   })
 
-  it('sem nenhuma caixa, diz só que não há animais e quantos casais formar, até quando', () => {
-    estado.busca = {
-      ...resultado([], { m: 0, f: 0, qualquer: 12 }),
-      casaisAFormar: 2,
-      acasalamentoNovo: {
-        dataMinimaDeEntrega: '2026-11-20',
-        acasalarAte: '2026-11-17',
-        viavel: true,
-      },
-    }
-    renderizar(
-      <AtenderPedido
-        solicitacao={{ ...pedido, machos: 0, femeas: 0, qualquer: 12 }}
-        aoFechar={() => {}}
-        aoConcluir={() => {}}
-        aoRecusar={() => {}}
-      />,
-    )
+  it('sem nenhuma caixa, diz só que não há animais, quantos casais formar e quando', () => {
+    estado.busca = semNenhuma({ de: daqui(5), ate: daqui(10) })
+    renderizarSemNenhuma()
 
     expect(screen.getByText('Não há animais para esta entrega com a idade pedida.')).toBeTruthy()
     expect(
-      screen.getByText('Para isso, é necessário formar cerca de 2 casais até 17/11/2026.'),
+      screen.getByText(
+        `Para isso, é necessário formar cerca de 2 casais entre ${naTela(5)} e ${naTela(10)}.`,
+      ),
     ).toBeTruthy()
     // e mais nada: nem o resumo do pedido, nem a falta
     expect(screen.queryByText(/de idade · entrega em/)).toBeNull()
     expect(screen.queryByText(/^Ana ·/)).toBeNull()
     expect(screen.queryByText(/Faltam/)).toBeNull()
+  })
+
+  it('a janela de um dia só diz o dia; a que já começou vai de hoje até o fim', () => {
+    estado.busca = semNenhuma({ de: daqui(7), ate: daqui(7) })
+    const umDia = renderizarSemNenhuma()
+    expect(
+      screen.getByText(`Para isso, é necessário formar cerca de 2 casais em ${naTela(7)}.`),
+    ).toBeTruthy()
+    umDia.unmount()
+
+    estado.busca = semNenhuma({ de: daqui(-3), ate: daqui(4) })
+    renderizarSemNenhuma()
+    expect(
+      screen.getByText(
+        `Para isso, é necessário formar cerca de 2 casais entre hoje e ${naTela(4)}.`,
+      ),
+    ).toBeTruthy()
+  })
+
+  it('sem idade aceita que chegue desmamada, diz que não há quando formar', () => {
+    estado.busca = semNenhuma(null)
+    renderizarSemNenhuma()
+
+    expect(
+      screen.getByText(
+        'Para isso, não há quando formar casais novos: na idade pedida, os filhotes ainda não estariam desmamados.',
+      ),
+    ).toBeTruthy()
   })
 })
