@@ -296,6 +296,8 @@ export interface Solicitacao {
   idadeMin: number
   idadeMax: number
   dataEntrega: DataISO
+  /** o dia em que a entrega foi registrada; só no pedido entregue */
+  dataEntregue?: DataISO | null
   observacoes: string | null
   status: StatusSolicitacao
   motivoRecusa: string | null
