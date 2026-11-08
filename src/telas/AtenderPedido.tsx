@@ -81,6 +81,9 @@ export function AtenderPedido({
     setEditada({ ...reserva, [caixa.idParto]: { ...atual, [sexo]: valor ?? 0 } })
   }
 
+  // nenhuma caixa serve: a janela fica só com o que é preciso para a entrega
+  const semNenhuma = atendimento.data?.candidatas.length === 0
+
   function reservar() {
     const itens = Object.entries(reserva)
       .filter(([, r]) => r.m + r.f > 0)
@@ -123,48 +126,49 @@ export function AtenderPedido({
         </div>
       }
     >
-      <div className="atender__pedido">
-        <span>
-          {solicitacao.pesquisador} · {solicitacao.linhagem} · {descreverAnimais(solicitacao)}
-        </span>
-        <Texto tom="secundario">
-          {descreverIdade(solicitacao)} de idade · entrega em{' '}
-          {formatarData(solicitacao.dataEntrega)}
-        </Texto>
-      </div>
+      {!semNenhuma && (
+        <div className="atender__pedido">
+          <span>
+            {solicitacao.pesquisador} · {solicitacao.linhagem} · {descreverAnimais(solicitacao)}
+          </span>
+          <Texto tom="secundario">
+            {descreverIdade(solicitacao)} de idade · entrega em{' '}
+            {formatarData(solicitacao.dataEntrega)}
+          </Texto>
+        </div>
+      )}
 
       <EstadoDaConsulta consulta={atendimento} rotulo="Procurando as caixas…">
-        {atendimento.data && (
-          <>
-            {candidatas.length === 0 ? (
-              <Aviso tom="atencao" titulo="Nenhuma caixa tem animais para este pedido.">
-                Não há animais na idade pedida, já desmamados até{' '}
-                {formatarData(solicitacao.dataEntrega)}.
-              </Aviso>
-            ) : (
-              <>
-                <Texto tom="secundario">
-                  Idade aceita na entrega: {atendimento.data.faixa.min} a{' '}
-                  {atendimento.data.faixa.max} dias. Vem marcada a sugestão do sistema; dá para
-                  trocar de caixa e mudar quantos reservar de cada uma.
-                </Texto>
-                <ul className="atender__lista">
-                  {candidatas.map((caixa) => (
-                    <Caixa
-                      key={caixa.idParto}
-                      caixa={caixa}
-                      reserva={reserva[caixa.idParto]}
-                      aoMarcar={(marcada) => marcar(caixa, marcada)}
-                      aoMudar={(sexo, valor) => mudar(caixa, sexo, valor)}
-                    />
-                  ))}
-                </ul>
-              </>
-            )}
-
-            <Conferencia conferencia={conferencia} reservado={reservado} busca={atendimento.data} />
-          </>
-        )}
+        {atendimento.data &&
+          (semNenhuma ? (
+            <Aviso tom="atencao" titulo="Não há animais para esta entrega com a idade pedida.">
+              Para isso, {casaisNecessarios(atendimento.data)}.
+            </Aviso>
+          ) : (
+            <>
+              <Texto tom="secundario">
+                Idade aceita na entrega: {atendimento.data.faixa.min} a {atendimento.data.faixa.max}{' '}
+                dias. Vem marcada a sugestão do sistema; dá para trocar de caixa e mudar quantos
+                reservar de cada uma.
+              </Texto>
+              <ul className="atender__lista">
+                {candidatas.map((caixa) => (
+                  <Caixa
+                    key={caixa.idParto}
+                    caixa={caixa}
+                    reserva={reserva[caixa.idParto]}
+                    aoMarcar={(marcada) => marcar(caixa, marcada)}
+                    aoMudar={(sexo, valor) => mudar(caixa, sexo, valor)}
+                  />
+                ))}
+              </ul>
+              <Conferencia
+                conferencia={conferencia}
+                reservado={reservado}
+                busca={atendimento.data}
+              />
+            </>
+          ))}
       </EstadoDaConsulta>
     </Modal>
   )
@@ -250,6 +254,20 @@ function faltam(falta: Quantidades): string {
   return `${singular ? 'Falta' : 'Faltam'} ${porExtenso(falta)}.`
 }
 
+/**
+ * "é necessário formar cerca de 2 casais até 17/11/2026": quantos casais novos, pelo esperado de
+ * cada um, e até quando formá-los para a entrega. Com a data já passada, no condicional
+ */
+function casaisNecessarios(busca: ResultadoDaBusca): string {
+  const n = busca.casaisAFormar
+  const casais = `cerca de ${n} ${n === 1 ? 'casal' : 'casais'}`
+  const ate = formatarData(busca.acasalamentoNovo.acasalarAte)
+
+  return busca.acasalamentoNovo.viavel
+    ? `é necessário formar ${casais} até ${ate}`
+    : `seria necessário formar ${casais} até ${ate}, e essa data já passou`
+}
+
 /** O total reservado contra o pedido; sem animais no plantel, o que resta fazer */
 function Conferencia({
   conferencia,
@@ -285,12 +303,11 @@ function Conferencia({
 
   // o plantel todo não cobre: não adianta trocar de caixa
   const semAnimais = busca.deficit.m + busca.deficit.f + busca.deficit.qualquer > 0
-  const casais = busca.casaisAFormar
 
   return (
     <Aviso tom="atencao" titulo={titulo}>
       {semAnimais
-        ? `As caixas não têm animais para o pedido, então recuse com o motivo ou forme ${casais} ${casais === 1 ? 'casal novo: com ele' : 'casais novos: com eles'}, a entrega passa a ser possível a partir de ${formatarData(busca.acasalamentoNovo.dataMinimaDeEntrega)}.`
+        ? `As caixas não têm animais para o pedido inteiro. Para o que falta, ${casaisNecessarios(busca)}.`
         : 'Ajuste as caixas marcadas até cobrir o pedido.'}
     </Aviso>
   )

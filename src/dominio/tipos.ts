@@ -330,8 +330,14 @@ export interface ResultadoDaBusca {
   candidatas: CaixaCandidata[]
   /** o que o plantel não cobre; o "qualquer" sobra quando nem a sobra das caixas o cobre */
   deficit: PorSexo & { qualquer: number }
+  /** quantos casais novos cobririam o deficit, pelo esperado de cada um: é aproximado */
   casaisAFormar: number
-  acasalamentoNovo: { dataMinimaDeEntrega: DataISO; viavel: boolean }
+  acasalamentoNovo: {
+    dataMinimaDeEntrega: DataISO
+    /** até quando formar os casais para a entrega pedida; viavel é esta data não ter passado */
+    acasalarAte: DataISO
+    viavel: boolean
+  }
 }
 
 // GET /api/estoque?especie=
