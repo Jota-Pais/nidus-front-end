@@ -498,6 +498,7 @@ function situacaoParaQuemPediu(s: Solicitacao): string | null {
   if (s.status === 'recusada') {
     return s.motivoRecusa ? `Motivo: ${s.motivoRecusa}` : null
   }
+  if (s.dataEntregue) return `Entregue em ${formatarData(s.dataEntregue)}`
   if (s.dataAceite) {
     const decisao = s.status === 'em_atendimento' ? 'Aceito' : 'Aceita'
     return `${decisao} em ${formatarData(s.dataAceite)}`
@@ -524,7 +525,11 @@ function Situacao({
   const rotulo = (paraQuemPediu && situacao.paraQuemPediu) || situacao.rotulo
   // na lista da equipe, a entrega no lugar do prazo e da data da decisão; a reserva em falta fica
   const listaDaEquipe = naLista && !paraQuemPediu
-  const entrega = listaDaEquipe ? `Entrega em ${formatarData(s.dataEntrega)}` : null
+  const entrega = !listaDaEquipe
+    ? null
+    : s.dataEntregue
+      ? `Entregue em ${formatarData(s.dataEntregue)}`
+      : `Entrega em ${formatarData(s.dataEntrega)}`
   const embaixo = paraQuemPediu
     ? situacaoParaQuemPediu(s)
     : listaDaEquipe
