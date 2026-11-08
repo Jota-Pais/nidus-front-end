@@ -1,8 +1,9 @@
 import { App, Checkbox, InputNumber, Modal } from 'antd'
 import { useState } from 'react'
-import { Aviso, Botao, Texto } from '@/componentes'
+import { Aviso, Botao, Etiqueta, Texto } from '@/componentes'
+import { SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import { useAlocar, useAtendimento } from '@/dominio/consultas'
-import { conferirReserva, descreverAnimais, descreverIdade } from '@/dominio/solicitacao'
+import { conferirReserva, descreverIdade } from '@/dominio/solicitacao'
 import type { ConferenciaDaReserva } from '@/dominio/solicitacao'
 import type {
   CaixaCandidata,
@@ -36,9 +37,10 @@ function somar(reserva: Reserva): PorSexo {
 }
 
 /**
- * Reservar os animais de um pedido aprovado: as caixas com animais na idade pedida para a data,
- * com a sugestão do sistema já marcada. A equipe pode trocar de caixa e mudar quanto reserva de
- * cada uma; o pedido só é reservado inteiro. Sem animais para isso, espera ou recusa com o motivo
+ * Reservar os animais de um pedido aprovado: as ninhadas com animais na idade pedida para a data,
+ * com a sugestão do sistema já marcada e as caixas onde estão os livres. A equipe pode trocar de
+ * ninhada e mudar quanto reserva de cada uma; o pedido só é reservado inteiro. Sem animais para
+ * isso, espera ou recusa com o motivo
  */
 export function AtenderPedido({
   solicitacao,
@@ -132,18 +134,6 @@ export function AtenderPedido({
         </div>
       }
     >
-      {!semNenhuma && (
-        <div className="atender__pedido">
-          <span>
-            {solicitacao.pesquisador} · {solicitacao.linhagem} · {descreverAnimais(solicitacao)}
-          </span>
-          <Texto tom="secundario">
-            {descreverIdade(solicitacao)} de idade · entrega em{' '}
-            {formatarData(solicitacao.dataEntrega)}
-          </Texto>
-        </div>
-      )}
-
       <EstadoDaConsulta consulta={atendimento} rotulo="Procurando as caixas…">
         {atendimento.data &&
           (semNenhuma ? (
@@ -152,27 +142,23 @@ export function AtenderPedido({
             </Aviso>
           ) : (
             <>
-              <Texto tom="secundario">
-                Idade aceita na entrega: {atendimento.data.faixa.min} a {atendimento.data.faixa.max}{' '}
-                dias. Vem marcada a sugestão do sistema; dá para trocar de caixa e mudar quantos
-                reservar de cada uma.
-              </Texto>
+              <Placar
+                solicitacao={solicitacao}
+                conferencia={conferencia}
+                faixa={atendimento.data.faixa}
+              />
               <ul className="atender__lista">
-                {candidatas.map((caixa) => (
-                  <Caixa
-                    key={caixa.idParto}
-                    caixa={caixa}
-                    reserva={reserva[caixa.idParto]}
-                    aoMarcar={(marcada) => marcar(caixa, marcada)}
-                    aoMudar={(sexo, valor) => mudar(caixa, sexo, valor)}
+                {candidatas.map((ninhada) => (
+                  <Ninhada
+                    key={ninhada.idParto}
+                    ninhada={ninhada}
+                    reserva={reserva[ninhada.idParto]}
+                    aoMarcar={(marcada) => marcar(ninhada, marcada)}
+                    aoMudar={(sexo, valor) => mudar(ninhada, sexo, valor)}
                   />
                 ))}
               </ul>
-              <Conferencia
-                conferencia={conferencia}
-                reservado={reservado}
-                busca={atendimento.data}
-              />
+              <Avisos conferencia={conferencia} busca={atendimento.data} />
             </>
           ))}
       </EstadoDaConsulta>
@@ -180,60 +166,133 @@ export function AtenderPedido({
   )
 }
 
-function Caixa({
-  caixa,
+/** Os dois sexos da reserva, na ordem da tela */
+const SEXOS = [
+  { chave: 'm', simbolo: SIMBOLO_DO_SEXO.M, nome: 'Machos' },
+  { chave: 'f', simbolo: SIMBOLO_DO_SEXO.F, nome: 'Fêmeas' },
+] as const
+
+/**
+ * O pedido contra o que está marcado: quantos de cada sexo pedido já estão cobertos, em verde
+ * quando completos. Ao lado, a idade e a data da entrega, que decidem as ninhadas que servem
+ */
+function Placar({
+  solicitacao: s,
+  conferencia,
+  faixa,
+}: {
+  solicitacao: Solicitacao
+  conferencia: ConferenciaDaReserva
+  faixa: ResultadoDaBusca['faixa']
+}) {
+  const contas = [
+    { rotulo: 'Machos', pedido: s.machos, falta: conferencia.falta.machos },
+    { rotulo: 'Fêmeas', pedido: s.femeas, falta: conferencia.falta.femeas },
+    { rotulo: 'Qualquer sexo', pedido: s.qualquer, falta: conferencia.falta.qualquer },
+  ].filter((conta) => conta.pedido > 0)
+
+  return (
+    <dl className="atender__placar">
+      {contas.map(({ rotulo, pedido, falta }) => (
+        <div key={rotulo} className="atender__dado">
+          <dt>
+            <Texto tom="rotulo">{rotulo}</Texto>
+          </dt>
+          <dd
+            className={falta === 0 ? 'atender__conta atender__conta--completa' : 'atender__conta'}
+          >
+            <span className="atender__numero">{pedido - falta}</span> de {pedido}
+          </dd>
+        </div>
+      ))}
+      <div className="atender__dado">
+        <dt>
+          <Texto tom="rotulo">Idade na entrega</Texto>
+        </dt>
+        <dd className="atender__idade">
+          {descreverIdade(s)}
+          <Texto tom="secundario" className="atender__nota">
+            aceita de {faixa.min} a {faixa.max}
+          </Texto>
+        </dd>
+      </div>
+      <div className="atender__dado">
+        <dt>
+          <Texto tom="rotulo">Entrega</Texto>
+        </dt>
+        <dd>{formatarData(s.dataEntrega)}</dd>
+      </div>
+    </dl>
+  )
+}
+
+/**
+ * Uma ninhada que serve ao pedido: de que casal e parto, a idade na entrega e em que caixas estão
+ * os animais livres dela. Marcada, quantos reservar de cada sexo
+ */
+function Ninhada({
+  ninhada: n,
   reserva,
   aoMarcar,
   aoMudar,
 }: {
-  caixa: CaixaCandidata
+  ninhada: CaixaCandidata
   reserva: PorSexo | undefined
   aoMarcar: (marcada: boolean) => void
   aoMudar: (sexo: keyof PorSexo, valor: number | null) => void
 }) {
-  const marcada = reserva !== undefined
+  const nome = `${n.parto}º parto do casal ${n.casal}`
+  const sexos = SEXOS.filter(({ chave }) => n.disponivel[chave] > 0)
 
   return (
-    <li className={marcada ? 'atender__caixa atender__caixa--marcada' : 'atender__caixa'}>
-      <Checkbox checked={marcada} onChange={(evento) => aoMarcar(evento.target.checked)}>
-        <span className="atender__codigo">{caixa.codigo}</span>{' '}
-        <Texto tom="secundario">{caixa.numeroVisivel}</Texto>
-      </Checkbox>
-
-      <div className="atender__ninhada">
-        <span>
-          {caixa.parto}º parto do casal {caixa.casal} · {caixa.idadeNaEntrega} dias na entrega
-        </span>
-        <Texto tom="secundario">
-          {caixa.origem === 'de_fato' ? 'Já desmamados' : 'Desmamam até a entrega'} · livres:{' '}
-          {caixa.disponivel.m} M · {caixa.disponivel.f} F
-        </Texto>
+    <li className={reserva ? 'atender__ninhada atender__ninhada--marcada' : 'atender__ninhada'}>
+      <div className="atender__sobre">
+        <div className="atender__titulo">
+          <Checkbox
+            checked={reserva !== undefined}
+            onChange={(evento) => aoMarcar(evento.target.checked)}
+          >
+            <strong>
+              Casal {n.casal} · {n.parto}º parto
+            </strong>
+          </Checkbox>
+          <Etiqueta>{n.idadeNaEntrega} dias na entrega</Etiqueta>
+          {n.origem === 'previsao' && <Etiqueta tom="atencao">Desmama até a entrega</Etiqueta>}
+        </div>
+        <ul className="atender__lugares" aria-label={`Onde estão os livres do ${nome}`}>
+          {n.onde.map((lugar) => (
+            <li key={`${lugar.numeroVisivel}-${lugar.codigo}`} className="atender__lugar">
+              <span className="atender__codigo">{lugar.codigo}</span>
+              {lugar.tipo === 'casal' && <Texto tom="secundario">do casal</Texto>}
+              {lugar.m > 0 && <span>{`${SIMBOLO_DO_SEXO.M} ${lugar.m}`}</span>}
+              {lugar.f > 0 && <span>{`${SIMBOLO_DO_SEXO.F} ${lugar.f}`}</span>}
+              <Texto tom="secundario">{lugar.numeroVisivel}</Texto>
+            </li>
+          ))}
+        </ul>
       </div>
 
-      {reserva && (
-        <div className="atender__quantos">
-          <label>
-            <Texto tom="secundario">M</Texto>
-            <InputNumber
-              {...QUANTOS}
-              max={caixa.disponivel.m}
-              value={reserva.m}
-              aria-label={`Machos a reservar da caixa ${caixa.codigo}`}
-              onChange={(valor) => aoMudar('m', valor)}
-            />
-          </label>
-          <label>
-            <Texto tom="secundario">F</Texto>
-            <InputNumber
-              {...QUANTOS}
-              max={caixa.disponivel.f}
-              value={reserva.f}
-              aria-label={`Fêmeas a reservar da caixa ${caixa.codigo}`}
-              onChange={(valor) => aoMudar('f', valor)}
-            />
-          </label>
-        </div>
-      )}
+      <div className="atender__quantos">
+        {sexos.map(({ chave, simbolo, nome: sexo }) =>
+          reserva ? (
+            <label key={chave}>
+              <span className="atender__simbolo">{simbolo}</span>
+              <InputNumber
+                {...QUANTOS}
+                max={n.disponivel[chave]}
+                value={reserva[chave]}
+                aria-label={`${sexo} a reservar do ${nome}`}
+                onChange={(valor) => aoMudar(chave, valor)}
+              />
+              <Texto tom="secundario">de {n.disponivel[chave]}</Texto>
+            </label>
+          ) : (
+            <span key={chave} className="atender__livres">
+              <span className="atender__simbolo">{simbolo}</span> {n.disponivel[chave]} livres
+            </span>
+          ),
+        )}
+      </div>
     </li>
   )
 }
@@ -251,13 +310,6 @@ function porExtenso({ machos, femeas, qualquer }: Quantidades): string {
   return partes.length > 1
     ? `${partes.slice(0, -1).join(', ')} e ${partes.at(-1)}`
     : (partes[0] ?? '')
-}
-
-/** "Falta 1 macho", mas "Faltam 2 machos" e "Faltam 1 macho e 1 fêmea" */
-function faltam(falta: Quantidades): string {
-  const quantidades = [falta.machos, falta.femeas, falta.qualquer].filter((n) => n > 0)
-  const singular = quantidades.length === 1 && quantidades[0] === 1
-  return `${singular ? 'Falta' : 'Faltam'} ${porExtenso(falta)}.`
 }
 
 /**
@@ -298,47 +350,35 @@ function acasalamentosNecessarios(busca: ResultadoDaBusca, hojeEm: DataISO = hoj
   return `${sao} ${quantos} ${quandoFormar(janela, hojeEm)}`
 }
 
-/** O total reservado contra o pedido; sem animais no plantel, o que resta fazer */
-function Conferencia({
+/**
+ * O que o placar não diz: o que passou do pedido nas ninhadas marcadas, e o que o plantel inteiro
+ * não tem, com os acasalamentos que faltam para isso
+ */
+function Avisos({
   conferencia,
-  reservado,
   busca,
 }: {
   conferencia: ConferenciaDaReserva
-  reservado: PorSexo
   busca: ResultadoDaBusca
 }) {
-  if (conferencia.cobre) {
-    return (
-      <Aviso
-        tom="sucesso"
-        titulo={`Pedido coberto: ${porExtenso({ machos: reservado.m, femeas: reservado.f, qualquer: 0 })}.`}
-      />
-    )
-  }
-
-  const { falta, aMais } = conferencia
+  const { aMais } = conferencia
   const sobra =
     aMais.machos + aMais.femeas > 0
       ? porExtenso({ machos: aMais.machos, femeas: aMais.femeas, qualquer: 0 })
       : aMais.total > 0
         ? `${aMais.total} ${aMais.total === 1 ? 'animal' : 'animais'}`
         : null
-  const titulo = [
-    falta.machos + falta.femeas + falta.qualquer > 0 ? faltam(falta) : null,
-    sobra ? `Há ${sobra} a mais.` : null,
-  ]
-    .filter((frase) => frase !== null)
-    .join(' ')
-
-  // o plantel todo não cobre: não adianta trocar de caixa
+  // o plantel todo não cobre: não adianta trocar de ninhada
   const semAnimais = busca.deficit.m + busca.deficit.f + busca.deficit.qualquer > 0
 
   return (
-    <Aviso tom="atencao" titulo={titulo}>
-      {semAnimais
-        ? `As caixas não têm animais para o pedido inteiro. Para o que falta, ${acasalamentosNecessarios(busca)}.`
-        : 'Ajuste as caixas marcadas até cobrir o pedido.'}
-    </Aviso>
+    <>
+      {sobra && <Aviso tom="atencao" titulo={`Há ${sobra} a mais nas ninhadas marcadas.`} />}
+      {semAnimais && (
+        <Aviso tom="atencao" titulo="As caixas não têm animais para o pedido inteiro.">
+          Para o que falta, {acasalamentosNecessarios(busca)}.
+        </Aviso>
+      )}
+    </>
   )
 }

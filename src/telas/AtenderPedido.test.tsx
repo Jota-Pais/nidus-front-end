@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import dayjs from 'dayjs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CaixaCandidata, ResultadoDaBusca, Solicitacao } from '@/dominio/tipos'
@@ -43,8 +43,16 @@ const caixa = (dados: Partial<CaixaCandidata>): CaixaCandidata => ({
   disponivel: { m: 2, f: 2 },
   alocar: { m: 0, f: 0 },
   sugerida: false,
+  onde: [{ codigo: 'F1A', numeroVisivel: 'E-01', tipo: 'casal', m: 2, f: 2 }],
   ...dados,
 })
+
+/** o "3 de 4" do placar no rótulo dado, com a classe que diz se está completo */
+const placar = (rotulo: string) => {
+  const conta = screen.getByText(rotulo).closest('.atender__dado')?.querySelector('dd')
+  if (!conta) throw new Error(`sem ${rotulo} no placar`)
+  return conta
+}
 
 const estado = vi.hoisted(() => ({
   busca: null as ResultadoDaBusca | null,
@@ -101,7 +109,14 @@ beforeEach(() => {
   // F1A é a sugestão e cobre o pedido; C2B fica de alternativa
   estado.busca = resultado([
     caixa({ sugerida: true, alocar: { m: 2, f: 2 } }),
-    caixa({ idCaixa: 5, idParto: 11, codigo: 'C2B', parto: 1, disponivel: { m: 1, f: 3 } }),
+    caixa({
+      idCaixa: 5,
+      idParto: 11,
+      codigo: 'C2B',
+      parto: 1,
+      disponivel: { m: 1, f: 3 },
+      onde: [{ codigo: 'C2B', numeroVisivel: 'E-01', tipo: 'casal', m: 1, f: 3 }],
+    }),
   ])
 })
 
@@ -116,7 +131,14 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
       />,
     )
 
-    expect(screen.getByText('Pedido coberto: 2 machos e 2 fêmeas.')).toBeTruthy()
+    // o placar diz que o pedido está coberto, sem frase
+    expect(placar('Machos').textContent).toBe('2 de 2')
+    expect(placar('Machos').className).toContain('completa')
+    expect(placar('Fêmeas').textContent).toBe('2 de 2')
+    expect(screen.getByText('aceita de 25 a 31')).toBeTruthy()
+    expect(screen.queryByText(/Pedido coberto/)).toBeNull()
+    // as duas ninhadas ainda mamam: desmamam até a entrega
+    expect(screen.getAllByText('Desmama até a entrega')).toHaveLength(2)
     fireEvent.click(reservar())
 
     expect(estado.mutate).toHaveBeenCalledWith(
@@ -150,7 +172,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     expect(fechar).not.toHaveBeenCalled()
   })
 
-  it('a equipe ajusta a sugestão e completa com outra caixa', async () => {
+  it('a equipe ajusta a sugestão e completa com outra ninhada', async () => {
     renderizar(
       <AtenderPedido
         solicitacao={pedido}
@@ -160,14 +182,15 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
       />,
     )
 
-    fireEvent.change(screen.getByLabelText('Machos a reservar da caixa F1A'), {
+    fireEvent.change(screen.getByLabelText('Machos a reservar do 2º parto do casal AB'), {
       target: { value: '1' },
     })
-    await waitFor(() => expect(screen.getByText('Falta 1 macho.')).toBeTruthy())
+    await waitFor(() => expect(placar('Machos').textContent).toBe('1 de 2'))
+    expect(placar('Machos').className).not.toContain('completa')
     expect(reservar()).toHaveProperty('disabled', true)
 
-    // marcada, a outra caixa entra com o que falta
-    fireEvent.click(screen.getByRole('checkbox', { name: /C2B/ }))
+    // marcada, a outra ninhada entra com o que falta
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Casal AB · 1º parto' }))
     await waitFor(() => expect(reservar()).toHaveProperty('disabled', false))
     fireEvent.click(reservar())
 
@@ -203,15 +226,51 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     )
 
     expect(reservar()).toHaveProperty('disabled', true)
-    expect(screen.getByText('Falta 1 fêmea.')).toBeTruthy()
+    expect(placar('Fêmeas').textContent).toBe('1 de 2')
+    expect(screen.getByText('As caixas não têm animais para o pedido inteiro.')).toBeTruthy()
     expect(
       screen.getByText(
-        'As caixas não têm animais para o pedido inteiro. Para o que falta, seria necessário cerca de 1 acasalamento até 14/10/2026, e essa data já passou.',
+        'Para o que falta, seria necessário cerca de 1 acasalamento até 14/10/2026, e essa data já passou.',
       ),
     ).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Recusar' }))
     expect(recusar).toHaveBeenCalled()
+  })
+
+  it('mostra em que caixas estão os livres: no estoque, e não na caixa do casal', () => {
+    estado.busca = resultado([
+      caixa({
+        sugerida: true,
+        origem: 'de_fato',
+        disponivel: { m: 5, f: 5 },
+        alocar: { m: 2, f: 2 },
+        onde: [
+          { codigo: 'F3B', numeroVisivel: 'E-01', tipo: 'estoque', m: 5, f: 0 },
+          { codigo: 'F3C', numeroVisivel: 'E-01', tipo: 'estoque', m: 0, f: 5 },
+        ],
+      }),
+    ])
+    renderizar(
+      <AtenderPedido
+        solicitacao={pedido}
+        aoFechar={() => {}}
+        aoConcluir={() => {}}
+        aoRecusar={() => {}}
+      />,
+    )
+
+    const lugares = screen.getByRole('list', {
+      name: 'Onde estão os livres do 2º parto do casal AB',
+    })
+    expect(within(lugares).getByText('F3B')).toBeTruthy()
+    expect(within(lugares).getByText('♂ 5')).toBeTruthy()
+    expect(within(lugares).getByText('F3C')).toBeTruthy()
+    expect(within(lugares).getByText('♀ 5')).toBeTruthy()
+    expect(screen.queryByText('F1A')).toBeNull()
+    expect(screen.queryByText('Desmama até a entrega')).toBeNull()
+    // marcada, cada sexo diz de quantos livres
+    expect(screen.getAllByText('de 5')).toHaveLength(2)
   })
 
   it('sem nenhuma caixa, diz só que não há animais, quantos casais formar e quando', () => {

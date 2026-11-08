@@ -323,6 +323,17 @@ export interface CaixaCandidata {
   /** quanto o motor sugere tirar desta caixa */
   alocar: PorSexo
   sugerida: boolean
+  /** em que caixas estão os animais livres da ninhada, na ordem em que saem na entrega */
+  onde: LugarDosLivres[]
+}
+
+/** Uma caixa com animais livres da ninhada: a do casal, ou uma de estoque */
+export interface LugarDosLivres {
+  codigo: string
+  numeroVisivel: string
+  tipo: 'casal' | 'estoque'
+  m: number
+  f: number
 }
 
 export interface ResultadoDaBusca {
