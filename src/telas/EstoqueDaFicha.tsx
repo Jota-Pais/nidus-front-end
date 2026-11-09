@@ -10,12 +10,13 @@ import {
   COLUNA,
   contarDoSexo,
   descreverLiberacao,
+  idDaLinhagem,
   reservasNoGrupo,
   ROTULO_DO_SEXO,
   SIMBOLO_DO_SEXO,
 } from '@/dominio/caixa'
 import type { ReservaNaCaixa } from '@/dominio/caixa'
-import { useVirarCaixaDeEstoque } from '@/dominio/consultas'
+import { useCatalogo, useVirarCaixaDeEstoque } from '@/dominio/consultas'
 import type { CasalComPartos, FichaDeEstoque, Parto, Sexo } from '@/dominio/tipos'
 import { descreverDias, formatarData, idadeEmDias } from '@/lib/data'
 import { BaixaNaCaixa, EventosDaFicha, MudarAnimais } from './AnimaisDaFicha'
@@ -40,12 +41,20 @@ const doSexoDaCaixa = (sexo: Sexo, qtd: number) =>
   sexo === 'M' ? { m: qtd, f: 0 } : { m: 0, f: qtd }
 
 export function FichaDoEstoque({ ficha }: { ficha: FichaDeEstoque }) {
+  const catalogo = useCatalogo()
   const { caixa } = ficha
   const daAcao: CaixaDaAcao = {
     id: caixa.id,
     endereco: caixa.endereco,
     idLinhagem: caixa.idLinhagem,
   }
+  // a baixa pode ser de quando a caixa era de casal, da ninhada de um casal de outra linhagem
+  const linhagens = [
+    caixa.idLinhagem,
+    ...ficha.casaisAnteriores.map(({ casal }) =>
+      idDaLinhagem(catalogo.data, caixa.especie, casal.linhagem),
+    ),
+  ]
 
   return (
     <Tabs
@@ -58,7 +67,7 @@ export function FichaDoEstoque({ ficha }: { ficha: FichaDeEstoque }) {
         {
           key: 'eventos',
           label: 'Eventos',
-          children: <EventosDaFicha eventos={ficha.eventos} caixa={daAcao} />,
+          children: <EventosDaFicha eventos={ficha.eventos} caixa={daAcao} linhagens={linhagens} />,
         },
         ...(ficha.casaisAnteriores.length > 0
           ? [

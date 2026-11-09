@@ -5,7 +5,9 @@ import {
   aba,
   botao,
   casal,
+  catalogo,
   celula,
+  erroDaApi,
   desmamado,
   estanteE01,
   fichaDeEstoque,
@@ -27,6 +29,7 @@ vi.mock('@/dominio/consultas', () => ({
   useMudanca: () => mutacaoComResposta(api.mudanca),
   useAnularBaixa: () => mutacaoComResposta(api.anulacao),
   useVirarCaixaDeEstoque: () => mutacaoComResposta(vi.fn()),
+  useCatalogo: () => consulta(catalogo),
   useEstantes: () => consulta([estanteE01]),
   useGrade: () => consulta(gradeE01),
 }))
@@ -34,6 +37,7 @@ vi.mock('@/dominio/consultas', () => ({
 beforeEach(() => {
   api.baixa.mockReset().mockResolvedValue({ baixas: { m: 1, f: 0 }, liberada: false, faltas: [] })
   api.mudanca.mockReset().mockResolvedValue({ caixas: [], liberada: false })
+  api.anulacao.mockReset()
 })
 
 const DEMORA = { timeout: 10_000 }
@@ -203,5 +207,56 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
 
     expect(await screen.findByText('Baixa de 1 macho nesta caixa.')).toBeTruthy()
     expect(botao('Anular')).toBeTruthy()
+  })
+
+  it('a baixa de quando a caixa era de casal pode voltar para o estoque da linhagem daquele casal', async () => {
+    api.anulacao.mockRejectedValueOnce(
+      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
+        idCaixaMachos: 'A caixa F1C e de outra linhagem: diga para qual caixa voltam 2 machos.',
+      }),
+    )
+    renderizar(
+      <FichaDoEstoque
+        ficha={fichaDeEstoque({
+          // o CD, Wistar, deixou os machos com que a caixa virou de estoque; antes dele, o AB era Swiss
+          casaisAnteriores: [
+            { casal: casal(2, 'CD', false), partos: [desmamado()] },
+            {
+              casal: { ...casal(1, 'AB', false), linhagem: 'Swiss' },
+              partos: [desmamado({ vivos: { m: 0, f: 0 }, onde: [] })],
+            },
+          ],
+          eventos: [
+            {
+              dataHora: '2026-10-01T00:00:00.000Z',
+              tipo: 'baixa',
+              descricao: 'Baixa de 2 machos nesta caixa.',
+              autor: 'Ana Souza',
+              idOcorrencia: 51,
+              anulavel: true,
+            },
+          ],
+        })}
+      />,
+    )
+    fireEvent.click(aba('Eventos'))
+    const linha = (await screen.findByText('Baixa de 2 machos nesta caixa.')).closest(
+      'li',
+    ) as HTMLElement
+
+    fireEvent.click(botao('Anular', linha))
+    fireEvent.change(within(linha).getByLabelText('Por que a baixa foi um engano'), {
+      target: { value: 'contada duas vezes' },
+    })
+    fireEvent.click(botao('Anular baixa', linha))
+    await within(linha).findByText(
+      'A caixa F1C e de outra linhagem: diga para qual caixa voltam 2 machos.',
+      {},
+      DEMORA,
+    )
+
+    // a própria F1C não recebe a si mesma; a F1F, de machos Swiss como o casal AB, recebe
+    expect(celula(/^F1C: a caixa de onde/, linha)).toHaveProperty('disabled', true)
+    expect(celula(/^F1F: caixa de estoque com 2 machos/, linha)).toHaveProperty('disabled', false)
   })
 })
