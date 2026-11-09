@@ -51,7 +51,12 @@ export function Kanban() {
 
       <Secao>
         <Linha distribuicao="space-between" estilo={{ flexWrap: 'wrap', rowGap: 12 }}>
-          <Segmented<CodigoEspecie> value={especie} onChange={setEspecie} options={ESPECIES} size="large" />
+          <Segmented<CodigoEspecie>
+            value={especie}
+            onChange={setEspecie}
+            options={ESPECIES}
+            size="large"
+          />
           <LegendaDosPartos />
         </Linha>
       </Secao>
@@ -118,7 +123,15 @@ function situacaoDoCasal(casal: CasalNoCard, estado: EstadoCaixa): string[] {
     : [COLUNA[estado].legenda]
 }
 
-function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCaixa; aoAbrir: () => void }) {
+function Card({
+  card,
+  estado,
+  aoAbrir,
+}: {
+  card: CardDoKanban
+  estado: EstadoCaixa
+  aoAbrir: () => void
+}) {
   const { casal, estoque } = card
   // a caixa enviada já está vazia: o card só lembra para onde ela foi
   const comAnimais = estoque !== null && estado !== 'enviado'
@@ -134,7 +147,9 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
     >
       <div className="kanban__topo">
         {/* a caixa enviada já não ocupa a posição: o endereço vai entre parênteses */}
-        <span className="kanban__codigo">{estado === 'enviado' ? `(${card.codigo})` : card.codigo}</span>
+        <span className="kanban__codigo">
+          {estado === 'enviado' ? `(${card.codigo})` : card.codigo}
+        </span>
         <span className="kanban__estante">{card.numeroVisivel}</span>
         {casal && (
           <span className="parto kanban__parto" title={`Parto em curso: ${casal.partoAtual}º`}>

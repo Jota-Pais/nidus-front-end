@@ -211,7 +211,7 @@ describe('caixa de estoque na grade', { timeout: 20_000 }, () => {
     expect(celula.textContent).toContain('♀ 4')
     expect(celula.className).toContain('posicao--reserva')
     expect(celula.getAttribute('title')).toContain(
-      'caixa de estoque, 4 fêmeas, todos reservados (30 e 50 dias)',
+      'caixa de estoque, 4 fêmeas, todos reservados (50 e 30 dias)',
     )
   })
 })

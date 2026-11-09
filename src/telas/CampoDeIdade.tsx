@@ -59,7 +59,9 @@ export function CampoDeIdade({
           linhagem, no pedido) cresce no vão e os campos mudam de lugar a cada troca. Inerte e
           invisível, ela sai do Tab e do leitor de tela, e sem regra não barra o envio */}
       <div
-        className={exata ? 'solicitacao__campo--dias solicitacao__guardado' : 'solicitacao__campo--dias'}
+        className={
+          exata ? 'solicitacao__campo--dias solicitacao__guardado' : 'solicitacao__campo--dias'
+        }
         inert={exata}
       >
         <Formulario.Campo
@@ -72,7 +74,11 @@ export function CampoDeIdade({
               : [
                   ({ getFieldValue }) => ({
                     validator: (_, valor: number | null | undefined) => {
-                      const erro = conferirIdadeMaxima(getFieldValue('idadeMin'), valor, idadeMinima)
+                      const erro = conferirIdadeMaxima(
+                        getFieldValue('idadeMin'),
+                        valor,
+                        idadeMinima,
+                      )
                       return erro ? Promise.reject(new Error(erro)) : Promise.resolve()
                     },
                   }),

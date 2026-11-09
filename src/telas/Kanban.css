@@ -181,10 +181,18 @@
 }
 
 /* cor por coluna */
-.kanban__coluna--livres { --faixa: var(--estado-livres-borda); }
-.kanban__coluna--estoque { --faixa: var(--estado-estoque-borda); }
-.kanban__coluna--reserva { --faixa: var(--estado-reserva-borda); }
-.kanban__coluna--enviado { --faixa: var(--estado-enviado-borda); }
+.kanban__coluna--livres {
+  --faixa: var(--estado-livres-borda);
+}
+.kanban__coluna--estoque {
+  --faixa: var(--estado-estoque-borda);
+}
+.kanban__coluna--reserva {
+  --faixa: var(--estado-reserva-borda);
+}
+.kanban__coluna--enviado {
+  --faixa: var(--estado-enviado-borda);
+}
 
 .kanban__card--livres {
   --fundo: var(--estado-livres-fundo);
