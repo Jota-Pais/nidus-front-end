@@ -6,7 +6,6 @@ import {
   corDoParto,
   descreverLiberacao,
   doSexo,
-  idDaLinhagem,
   MAX_PARTOS_POR_CASAL,
   partosDaCaixa,
   SIMBOLO_DO_SEXO,
@@ -204,7 +203,6 @@ function FichaDoCasal({
   escolha: Escolha
   aoEscolher: (escolha: Escolha) => void
 }) {
-  const catalogo = useCatalogo()
   const ordem = escolha.ordem
   // parto de um casal de antes: o casal e os partos são os dele, e o resto da ficha é da caixa
   const anterior = ficha.anteriores.find((a) => a.casal.id === escolha.idCasal)
@@ -270,17 +268,7 @@ function FichaDoCasal({
           {
             key: 'eventos',
             label: 'Eventos',
-            children: (
-              <EventosDaFicha
-                eventos={ficha.eventos}
-                caixa={ficha.caixa}
-                // a baixa pode ser da ninhada de um casal de antes, de outra linhagem
-                linhagens={[
-                  ficha.caixa.linhagem,
-                  ...ficha.anteriores.map((deAntes) => deAntes.casal.linhagem),
-                ].map((nome) => idDaLinhagem(catalogo.data, ficha.caixa.especie, nome))}
-              />
-            ),
+            children: <EventosDaFicha eventos={ficha.eventos} caixa={ficha.caixa} />,
           },
         ]}
       />
@@ -378,7 +366,7 @@ function AbaReproducao({
       ) : (
         <FormarCasal alvo={{ idCaixa: caixa.id }} especie={caixa.especie} />
       )}
-      {ficha.virarEstoque && (
+      {ficha.virarEstoque && caixa.ativa && (
         <VirarCaixaDeEstoque idCaixa={caixa.id} sexo={ficha.virarEstoque} total={quantosViram} />
       )}
 

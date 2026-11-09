@@ -1,9 +1,10 @@
 import { Input, InputNumber, Select, Table } from 'antd'
 import { useState } from 'react'
-import { CabecalhoDaTela, Linha, Pilha, Secao } from '@/componentes'
+import { Botao, CabecalhoDaTela, Linha, Pilha, Secao } from '@/componentes'
 import { useHistorico } from '@/dominio/consultas'
 import type { RegistroDoHistorico } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
+import { FichaDaCaixa } from './FichaDaCaixa'
 
 const ENTIDADES = [
   { value: 'caixa', label: 'Caixa' },
@@ -23,15 +24,22 @@ function dataEHora(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
 
+/** "Caixa #4", "Pedido #3": a entidade da linha e o número dela */
+const ondeFoi = (r: RegistroDoHistorico) =>
+  `${ROTULO_ENTIDADE[r.entidade] ?? r.entidade} #${r.idEntidade}`
+
 /**
  * Quem fez cada operação, quando e o que mudou: o histórico das operações junto com a trilha dos
- * animais, do registro mais novo para o mais velho. Só leitura: nada aqui se apaga
+ * animais, do registro mais novo para o mais velho. Só leitura: nada aqui se apaga. A linha de uma
+ * caixa abre a ficha dela, também a da caixa liberada, que já saiu do kanban e das estantes: é por
+ * ali que se anula a baixa que a esvaziou
  */
 export function Historico() {
   const [entidade, setEntidade] = useState<string | null>(null)
   const [idEntidade, setIdEntidade] = useState<number | null>(null)
   const [busca, setBusca] = useState('')
   const historico = useHistorico({ entidade, idEntidade, busca })
+  const [idFicha, setIdFicha] = useState<number | null>(null)
 
   return (
     <Pilha>
@@ -84,13 +92,27 @@ export function Historico() {
               {
                 title: 'Onde',
                 width: 130,
-                render: (_, r) => `${ROTULO_ENTIDADE[r.entidade] ?? r.entidade} #${r.idEntidade}`,
+                render: (_, r) =>
+                  r.entidade === 'caixa' ? (
+                    <Botao
+                      variante="fantasma"
+                      size="small"
+                      title="Abrir a ficha da caixa"
+                      onClick={() => setIdFicha(r.idEntidade)}
+                    >
+                      {ondeFoi(r)}
+                    </Botao>
+                  ) : (
+                    ondeFoi(r)
+                  ),
               },
               { title: 'O quê', dataIndex: 'descricao' },
             ]}
           />
         </EstadoDaConsulta>
       </Secao>
+
+      <FichaDaCaixa idCaixa={idFicha} aoFechar={() => setIdFicha(null)} />
     </Pilha>
   )
 }

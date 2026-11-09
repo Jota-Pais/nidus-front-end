@@ -5,8 +5,6 @@ import { COR_DO_PARTO } from '@/app/tokens'
 import { formatarData } from '@/lib/data'
 import { descreverQuantos } from './pedido'
 import type {
-  Catalogo,
-  CodigoEspecie,
   DataISO,
   Destino,
   EstadoCaixa,
@@ -73,31 +71,6 @@ export function aMaisNaCorrecao(atual: PorSexo, nova: PorSexo): PorSexo {
   return { m: Math.max(m - troca, 0), f: Math.max(f - troca, 0) }
 }
 
-/** O que um pedido tem reservado, por sexo */
-export interface ReservaNaCaixa extends PorSexo {
-  idPedido: number
-}
-
-/**
- * O que cada pedido tem reservado num grupo da caixa (os vivos de uma idade). A API conta os
- * reservados de cada pedido no parto todo, ou na caixa toda, e no grupo só quantos são: cada pedido
- * fica com o que tem, sem passar dos reservados do grupo nem dos vivos de cada sexo nele. Sem
- * reservado no grupo, nenhum pedido; com todos os reservados no grupo, o número é o exato; com os
- * reservados repartidos entre caixas ou idades, é o teto, e a API confere o resto
- */
-export function reservasNoGrupo(
-  reservas: ReservaNaCaixa[],
-  grupo: PorSexo & { reservados: number },
-): ReservaNaCaixa[] {
-  return reservas
-    .map((reserva) => ({
-      idPedido: reserva.idPedido,
-      m: Math.min(reserva.m, grupo.m, grupo.reservados),
-      f: Math.min(reserva.f, grupo.f, grupo.reservados),
-    }))
-    .filter((reserva) => reserva.m + reserva.f > 0)
-}
-
 /** Os vivos do parto que estão na caixa; nenhum, undefined */
 export function vivosNaCaixa(parto: Pick<Parto, 'onde'>, idCaixa: number): OndeEstao | undefined {
   return parto.onde.find((lugar) => lugar.idCaixa === idCaixa && lugar.m + lugar.f > 0)
@@ -124,20 +97,6 @@ export function destinoDoLugar(lugar: LugarNaEstante): Destino {
 
   const { idEstante, face, linha, coluna } = lugar
   return { posicao: { idEstante, face, linha, coluna } }
-}
-
-/**
- * O id da linhagem pelo nome, dentro da espécie: o nome não se repete numa espécie. A escolha da
- * caixa de estoque filtra pelo id que a grade traz, e o casal, nas duas fichas, ainda traz só o
- * nome da linhagem; quando a API mandar o id no casal, este caminho pelo catálogo sai
- */
-export function idDaLinhagem(
-  catalogo: Catalogo | undefined,
-  especie: CodigoEspecie,
-  nome: string | null | undefined,
-): number | null {
-  const linhagens = catalogo?.especies.find((e) => e.codigo === especie)?.linhagens ?? []
-  return linhagens.find((linhagem) => linhagem.nome === nome)?.id ?? null
 }
 
 const POR_QUE_LIBEROU: Record<MotivoDaLiberacao, string> = {

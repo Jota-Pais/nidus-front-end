@@ -1,15 +1,18 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { GrupoDoEstoque } from '@/dominio/tipos'
 import { hoje } from '@/lib/data'
 import {
   aba,
+  APAGADO,
   botao,
-  casal,
   catalogo,
   celula,
-  erroDaApi,
+  casal,
   desmamado,
+  diaNoCalendario,
   estanteE01,
+  eventoDeBaixa,
   fichaDeEstoque,
   gradeE01,
   grupo,
@@ -65,9 +68,19 @@ const comDuasIdades = fichaDeEstoque({
           qtd: 3,
         },
       ],
+      pedidos: [],
+      dtChegada: '2026-10-20',
     },
   ],
 })
+
+/** Hoje é o dia dado: só o relógio, para o calendário abrir no mês dele */
+function fingirHoje(data: string) {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(`${data}T12:00:00`))
+}
+
+afterEach(() => vi.useRealTimers())
 
 describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
   it('mostra os vivos por idade, de onde vieram e o que cada pedido tem reservado nela', () => {
@@ -185,19 +198,88 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     expect(within(grupo('Machos')).getByLabelText('Quantos machos')).toHaveProperty('value', '3')
   })
 
+  it('"só os do pedido" oferece só os pedidos com reservado na idade escolhida', async () => {
+    // o #12 tem 2 machos de 24/09 e o #15, 1 de 02/10
+    const [velhos, novos] = comDuasIdades.grupos as [GrupoDoEstoque, GrupoDoEstoque]
+    renderizar(
+      <FichaDoEstoque
+        ficha={{
+          ...comDuasIdades,
+          reservado: 3,
+          pedidos: [
+            { idPedido: 12, qtd: 2 },
+            { idPedido: 15, qtd: 1 },
+          ],
+          grupos: [
+            velhos,
+            { ...novos, reservados: 1, livres: 2, pedidos: [{ idPedido: 15, qtd: 1 }] },
+          ],
+        }}
+      />,
+    )
+
+    fireEvent.click(botao('Mudar animais'))
+    fireEvent.mouseDown(selecao('Quais machos'))
+    expect(await screen.findByTitle('Só os reservados do pedido #12')).toBeTruthy()
+    expect(screen.queryByTitle('Só os reservados do pedido #15')).toBeNull()
+
+    fireEvent.click(screen.getByLabelText(/^nascidos em 02\/10\/2026/))
+    fireEvent.mouseDown(selecao('Quais machos'))
+    fireEvent.click(await screen.findByTitle('Só os reservados do pedido #15'))
+    await waitFor(() =>
+      expect(within(grupo('Machos')).getByLabelText('Quantos machos')).toHaveProperty('value', '1'),
+    )
+    expect(screen.queryByTitle('Só os reservados do pedido #12')).toBeNull()
+  })
+
+  it('a baixa não fica antes da chegada dos animais da idade na caixa', async () => {
+    fingirHoje('2026-10-25')
+    renderizar(<FichaDoEstoque ficha={comDuasIdades} />)
+
+    fireEvent.click(botao('Baixa'))
+    // os de 24/09 chegaram em 16/10
+    fireEvent.click(screen.getByLabelText('Data'))
+    await waitFor(() => expect(diaNoCalendario('2026-10-16')).not.toBe('(sem dia)'))
+    expect(diaNoCalendario('2026-10-15')).toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-16')).not.toContain(APAGADO)
+
+    // os de 02/10 chegaram em 20/10
+    fireEvent.click(screen.getByLabelText(/^nascidos em 02\/10\/2026/))
+    await waitFor(() => expect(diaNoCalendario('2026-10-19')).toContain(APAGADO))
+    expect(diaNoCalendario('2026-10-20')).not.toContain(APAGADO)
+  })
+
+  it('a mudança não fica antes da chegada; sem chegada, vale o nascimento', async () => {
+    fingirHoje('2026-10-25')
+    const [velhos, novos] = comDuasIdades.grupos as [GrupoDoEstoque, GrupoDoEstoque]
+    renderizar(
+      <FichaDoEstoque
+        ficha={{ ...comDuasIdades, grupos: [velhos, { ...novos, dtChegada: null }] }}
+      />,
+    )
+
+    fireEvent.click(botao('Mudar animais'))
+    fireEvent.click(screen.getByLabelText('Data da mudança'))
+    await waitFor(() => expect(diaNoCalendario('2026-10-16')).not.toBe('(sem dia)'))
+    expect(diaNoCalendario('2026-10-15')).toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-16')).not.toContain(APAGADO)
+
+    fireEvent.click(screen.getByLabelText(/^nascidos em 02\/10\/2026/))
+    await waitFor(() => expect(diaNoCalendario('2026-10-15')).not.toContain(APAGADO))
+    expect(diaNoCalendario('2026-10-01')).toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-02')).not.toContain(APAGADO)
+  })
+
   it('os eventos da caixa ficam na aba deles, com o Anular na baixa', async () => {
     renderizar(
       <FichaDoEstoque
         ficha={fichaDeEstoque({
           eventos: [
-            {
-              dataHora: '2026-10-20T00:00:00.000Z',
-              tipo: 'baixa',
-              descricao: 'Baixa de 1 macho nesta caixa.',
-              autor: 'Ana Souza',
-              idOcorrencia: 50,
-              anulavel: true,
-            },
+            eventoDeBaixa(50, 'Baixa de 1 macho nesta caixa.', {
+              sexos: { m: 1, f: 0 },
+              idLinhagem: 1,
+              voltaNaOrigem: true,
+            }),
           ],
         })}
       />,
@@ -209,32 +291,28 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     expect(botao('Anular')).toBeTruthy()
   })
 
-  it('a baixa de quando a caixa era de casal pode voltar para o estoque da linhagem daquele casal', async () => {
-    api.anulacao.mockRejectedValueOnce(
-      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
-        idCaixaMachos: 'A caixa F1C e de outra linhagem: diga para qual caixa voltam 2 machos.',
-      }),
-    )
+  it('a baixa de quando a caixa era de casal volta para o estoque da linhagem que o evento diz', async () => {
+    api.anulacao.mockResolvedValueOnce({
+      voltaram: [{ sexo: 'M', qtd: 2, idCaixa: 32, codigo: 'F1F' }],
+      soltos: { m: 0, f: 0 },
+    })
     renderizar(
       <FichaDoEstoque
         ficha={fichaDeEstoque({
-          // o CD, Wistar, deixou os machos com que a caixa virou de estoque; antes dele, o AB era Swiss
+          // o AB, Swiss, teve a ninhada aqui antes de a caixa virar estoque de machos Wistar
           casaisAnteriores: [
-            { casal: casal(2, 'CD', false), partos: [desmamado()] },
             {
-              casal: { ...casal(1, 'AB', false), linhagem: 'Swiss' },
-              partos: [desmamado({ vivos: { m: 0, f: 0 }, onde: [] })],
+              casal: { ...casal(1, 'AB', false), linhagem: 'Swiss', idLinhagem: 2 },
+              partos: [desmamado()],
             },
           ],
           eventos: [
-            {
-              dataHora: '2026-10-01T00:00:00.000Z',
-              tipo: 'baixa',
-              descricao: 'Baixa de 2 machos nesta caixa.',
-              autor: 'Ana Souza',
-              idOcorrencia: 51,
-              anulavel: true,
-            },
+            eventoDeBaixa(
+              51,
+              'Baixa de 2 machos nesta caixa.',
+              { sexos: { m: 2, f: 0 }, idLinhagem: 2, voltaNaOrigem: false },
+              '2026-10-01T00:00:00.000Z',
+            ),
           ],
         })}
       />,
@@ -248,15 +326,59 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     fireEvent.change(within(linha).getByLabelText('Por que a baixa foi um engano'), {
       target: { value: 'contada duas vezes' },
     })
-    fireEvent.click(botao('Anular baixa', linha))
-    await within(linha).findByText(
-      'A caixa F1C e de outra linhagem: diga para qual caixa voltam 2 machos.',
-      {},
-      DEMORA,
-    )
 
-    // a própria F1C não recebe a si mesma; a F1F, de machos Swiss como o casal AB, recebe
+    // a própria F1C não recebe a si mesma; a F1F, de machos Swiss como a baixa, recebe
+    expect(within(linha).queryByText(/voltam as fêmeas/)).toBeNull()
     expect(celula(/^F1C: a caixa de onde/, linha)).toHaveProperty('disabled', true)
     expect(celula(/^F1F: caixa de estoque com 2 machos/, linha)).toHaveProperty('disabled', false)
+    fireEvent.click(celula(/^F1F: caixa de estoque/, linha))
+    fireEvent.click(botao('Anular baixa', linha))
+
+    await waitFor(() => expect(api.anulacao).toHaveBeenCalled(), DEMORA)
+    expect(api.anulacao).toHaveBeenCalledWith({
+      idOcorrencia: 51,
+      motivo: 'contada duas vezes',
+      idCaixaMachos: 32,
+    })
+  })
+
+  it('a caixa liberada por uma baixa mostra o evento com o Anular, e mais nenhuma ação', async () => {
+    const liberada = fichaDeEstoque({
+      total: 0,
+      reservado: 0,
+      livre: 0,
+      grupos: [],
+      pedidos: [],
+      eventos: [
+        eventoDeBaixa(52, 'Baixa de 6 machos nesta caixa.', {
+          sexos: { m: 6, f: 0 },
+          idLinhagem: 1,
+          voltaNaOrigem: false,
+        }),
+      ],
+    })
+    renderizar(
+      <FichaDoEstoque
+        ficha={{
+          ...liberada,
+          caixa: {
+            ...liberada.caixa,
+            ativa: false,
+            estado: null,
+            dtLiberacao: '2026-10-20',
+            motivoLiberacao: 'baixa',
+          },
+        }}
+      />,
+    )
+
+    expect(
+      screen.getByText(/^Caixa liberada em 20\/10\/2026: a baixa dos últimos animais/),
+    ).toBeTruthy()
+    expect(talvezBotao('Baixa')).toBeNull()
+    expect(talvezBotao('Mudar animais')).toBeNull()
+    fireEvent.click(aba('Eventos'))
+    expect(await screen.findByText('Baixa de 6 machos nesta caixa.')).toBeTruthy()
+    expect(botao('Anular')).toBeTruthy()
   })
 })

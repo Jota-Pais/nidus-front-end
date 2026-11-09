@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import dayjs from 'dayjs'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { FichaDeCasal } from '@/dominio/tipos'
 import { FORMATO_DA_API, hoje } from '@/lib/data'
 import {
   aba,
@@ -17,9 +18,11 @@ import {
   diaNoCalendario,
   erroDaApi,
   estanteE01,
+  eventoDeBaixa,
   fichaDeCasal,
   gradeE01,
   grupo,
+  lugar,
   mutacaoComResposta,
   nomesDasAbas,
   parto,
@@ -354,6 +357,47 @@ describe('as datas da ninhada seguem a ordem dos eventos', { timeout: 40_000 }, 
     expect(diaNoCalendario('2026-09-24')).not.toContain(APAGADO)
   })
 
+  it('o parto corrigido não passa do primeiro fato dos animais', async () => {
+    api.ficha = fichaDeCasal({
+      partos: [desmamado({ dtDesmameReal: '2026-09-28', dtPrimeiroFato: '2026-09-26' })],
+    })
+    await abrirCalendario('Parto', 'Data do parto')
+
+    expect(diaNoCalendario('2026-09-26')).not.toContain(APAGADO)
+    expect(diaNoCalendario('2026-09-27')).toContain(APAGADO)
+  })
+
+  it('o desmame corrigido fica entre a última seleção e a primeira saída dos animais', async () => {
+    api.ficha = fichaDeCasal({
+      partos: [
+        desmamado({
+          dtDesmameReal: '2026-09-28',
+          dtUltimaSelecao: '2026-09-26',
+          dtPrimeiraSaida: '2026-09-30',
+        }),
+      ],
+    })
+    await abrirCalendario('Desmame', 'Data do desmame')
+
+    expect(diaNoCalendario('2026-09-25')).toContain(APAGADO)
+    expect(diaNoCalendario('2026-09-26')).not.toContain(APAGADO)
+    expect(diaNoCalendario('2026-09-30')).not.toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-01')).toContain(APAGADO)
+  })
+
+  it('o desmame registrado não fica antes da última seleção', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-10T12:00:00'))
+    api.ficha = fichaDeCasal({ partos: [parto({ dtUltimaSelecao: '2026-10-03' })] })
+    await abrirNinhada()
+
+    fireEvent.click(screen.getByLabelText('Data do desmame'))
+    await waitFor(() => expect(diaNoCalendario('2026-10-03')).not.toBe('(sem dia)'))
+    expect(diaNoCalendario('2026-10-02')).toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-03')).not.toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-10')).not.toContain(APAGADO)
+  })
+
   it('o acasalamento corrigido fica entre a formação e o parto', async () => {
     await abrirCalendario('Acasalamento', 'Data do acasalamento')
 
@@ -402,36 +446,22 @@ describe('correções do parto', { timeout: 40_000 }, () => {
     })
   })
 
-  it('com a caixa do casal liberada, os a mais vão para a caixa de estoque clicada', async () => {
-    const liberada = fichaDeCasal({
-      casal: casal(1, 'AB', false),
+  it('com a caixa do casal ocupada por outra ninhada, os a mais vão para a caixa de estoque clicada', async () => {
+    api.ficha = fichaDeCasal({
       partos: [
-        desmamado({
-          onde: [
-            {
-              idCaixa: 30,
-              codigo: 'F1C',
-              numeroVisivel: 'E-01',
-              tipo: 'estoque',
-              m: 4,
-              f: 0,
-              reservados: 0,
-            },
-          ],
+        desmamado({ onde: [lugar({ idCaixa: 30, codigo: 'F1C', tipo: 'estoque', m: 4 })] }),
+        parto({
+          id: 11,
+          ordem: 2,
+          dtAcasalamento: '2026-10-20',
+          dtPartoReal: '2026-11-05',
+          baixasAntesDoDesmame: { m: 0, f: 0 },
         }),
       ],
     })
-    api.ficha = {
-      ...liberada,
-      caixa: {
-        ...liberada.caixa,
-        ativa: false,
-        estado: null,
-        dtLiberacao: '2026-10-20',
-        motivoLiberacao: 'mudanca',
-      },
-    }
-    await abrirNinhada()
+    abrirFicha()
+    fireEvent.click(await acharBotao('1º'))
+    fireEvent.click(aba('Ninhada'))
 
     corrigir('Parto')
     fireEvent.change(screen.getByLabelText('Machos nascidos'), { target: { value: '6' } })
@@ -461,13 +491,22 @@ describe('correções do parto', { timeout: 40_000 }, () => {
     })
   })
 
-  it('a troca de sexo não cria animal: com a caixa liberada, não pede caixa de estoque', async () => {
-    const liberada = fichaDeCasal({
-      casal: casal(1, 'AB', false),
-      partos: [desmamado({ onde: [] })],
+  it('a troca de sexo não cria animal: com a caixa ocupada, não pede caixa de estoque', async () => {
+    api.ficha = fichaDeCasal({
+      partos: [
+        desmamado({ onde: [lugar({ idCaixa: 30, codigo: 'F1C', tipo: 'estoque', m: 4 })] }),
+        parto({
+          id: 11,
+          ordem: 2,
+          dtAcasalamento: '2026-10-20',
+          dtPartoReal: '2026-11-05',
+          baixasAntesDoDesmame: { m: 0, f: 0 },
+        }),
+      ],
     })
-    api.ficha = { ...liberada, caixa: { ...liberada.caixa, ativa: false, estado: null } }
-    await abrirNinhada()
+    abrirFicha()
+    fireEvent.click(await acharBotao('1º'))
+    fireEvent.click(aba('Ninhada'))
 
     corrigir('Parto')
     // um macho a mais sozinho é animal novo, e pede a caixa
@@ -621,6 +660,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
               m: 2,
               f: 4,
               reservados: 0,
+              pedidos: [],
             },
             {
               idCaixa: 30,
@@ -630,6 +670,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
               m: 2,
               f: 0,
               reservados: 2,
+              pedidos: [{ idPedido: 12, m: 2, f: 0 }],
             },
           ],
           reservados: [{ idPedido: 12, m: 2, f: 0 }],
@@ -659,6 +700,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
               m: 2,
               f: 4,
               reservados: 0,
+              pedidos: [],
             },
             {
               idCaixa: 30,
@@ -668,6 +710,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
               m: 2,
               f: 0,
               reservados: 2,
+              pedidos: [{ idPedido: 12, m: 2, f: 0 }],
             },
           ],
           reservados: [{ idPedido: 12, m: 2, f: 0 }],
@@ -695,6 +738,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
               m: 4,
               f: 4,
               reservados: 2,
+              pedidos: [{ idPedido: 12, m: 2, f: 0 }],
             },
           ],
           reservados: [{ idPedido: 12, m: 2, f: 0 }],
@@ -712,6 +756,44 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
     )
     // as fêmeas não têm reservado
     expect(screen.queryByLabelText('Quais fêmeas')).toBeNull()
+  })
+
+  it('"só os do pedido" oferece só os pedidos com reservado nesta caixa, sem teto chutado', async () => {
+    // o #12 tem 2 machos aqui; o #15 tem 2 machos do mesmo parto, mas na F1C
+    api.ficha = fichaDeCasal({
+      partos: [
+        desmamado({
+          onde: [
+            lugar({
+              idCaixa: 7,
+              m: 4,
+              f: 4,
+              reservados: 2,
+              pedidos: [{ idPedido: 12, m: 2, f: 0 }],
+            }),
+            lugar({
+              idCaixa: 30,
+              codigo: 'F1C',
+              tipo: 'estoque',
+              m: 2,
+              reservados: 2,
+              pedidos: [{ idPedido: 15, m: 2, f: 0 }],
+            }),
+          ],
+          reservados: [
+            { idPedido: 12, m: 2, f: 0 },
+            { idPedido: 15, m: 2, f: 0 },
+          ],
+        }),
+      ],
+    })
+    await abrirNinhada()
+
+    fireEvent.click(botao('Passar para o estoque'))
+    fireEvent.mouseDown(selecao('Quais machos'))
+
+    expect(await screen.findByTitle('Só os reservados do pedido #12')).toBeTruthy()
+    expect(screen.queryByTitle('Só os reservados do pedido #15')).toBeNull()
   })
 
   it('passa para o estoque os desmamados desta caixa, na data do desmame em diante', async () => {
@@ -765,6 +847,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
               m: 4,
               f: 0,
               reservados: 0,
+              pedidos: [],
             },
             {
               idCaixa: 21,
@@ -774,6 +857,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
               m: 0,
               f: 4,
               reservados: 0,
+              pedidos: [],
             },
           ],
         }),
@@ -801,14 +885,12 @@ describe('abas da ficha do casal', { timeout: 20_000 }, () => {
   it('os eventos têm o Anular na baixa que ainda pode ser anulada', async () => {
     api.ficha = fichaDeCasal({
       eventos: [
-        {
-          dataHora: '2026-09-24T00:00:00.000Z',
-          tipo: 'baixa',
-          descricao: 'Eutanasia de selecao do 1o parto do casal AB: 1 macho e 1 femea.',
-          autor: 'Ana Souza',
-          idOcorrencia: 40,
-          anulavel: true,
-        },
+        eventoDeBaixa(
+          40,
+          'Eutanasia de selecao do 1o parto do casal AB: 1 macho e 1 femea.',
+          { sexos: { m: 1, f: 1 }, idLinhagem: 1, voltaNaOrigem: true },
+          '2026-09-24T00:00:00.000Z',
+        ),
       ],
     })
     abrirFicha()
@@ -818,39 +900,29 @@ describe('abas da ficha do casal', { timeout: 20_000 }, () => {
     expect(botao('Anular')).toBeTruthy()
   })
 
-  it('a baixa pode ser da ninhada de um casal de antes: a estante da anulação oferece a linhagem dele também', async () => {
+  it('a baixa da ninhada de um casal de antes volta para o estoque da linhagem dele, que o evento diz', async () => {
     api.ficha = fichaDeCasal({
       casal: { ...casal(2, 'CD', true), dtFormacao: '2026-11-01' },
       partos: [],
       anteriores: [
         // a ninhada dele saiu da caixa antes de o casal CD ser formado
         {
-          casal: { ...casal(1, 'AB', false), linhagem: 'Swiss' },
+          casal: { ...casal(1, 'AB', false), linhagem: 'Swiss', idLinhagem: 2 },
           partos: [desmamado({ vivos: { m: 0, f: 0 }, onde: [] })],
         },
       ],
       eventos: [
-        {
-          dataHora: '2026-10-20T00:00:00.000Z',
-          tipo: 'baixa',
-          descricao: 'Baixa de 2 machos nesta caixa.',
-          autor: 'Ana Souza',
-          idOcorrencia: 41,
-          anulavel: true,
-        },
+        eventoDeBaixa(41, 'Baixa de 2 machos nesta caixa.', {
+          sexos: { m: 2, f: 0 },
+          idLinhagem: 2,
+          voltaNaOrigem: false,
+        }),
       ],
     })
-    api.anulacao.mockReset()
-    api.anulacao
-      .mockRejectedValueOnce(
-        erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
-          idCaixaMachos: 'A caixa F1A tem outro casal: diga para qual caixa voltam 2 machos.',
-        }),
-      )
-      .mockResolvedValueOnce({
-        voltaram: [{ sexo: 'M', qtd: 2, idCaixa: 32, codigo: 'F1F' }],
-        soltos: { m: 0, f: 0 },
-      })
+    api.anulacao.mockReset().mockResolvedValueOnce({
+      voltaram: [{ sexo: 'M', qtd: 2, idCaixa: 32, codigo: 'F1F' }],
+      soltos: { m: 0, f: 0 },
+    })
     abrirFicha()
     fireEvent.click(aba('Eventos'))
     const linha = (await screen.findByText('Baixa de 2 machos nesta caixa.')).closest(
@@ -861,26 +933,116 @@ describe('abas da ficha do casal', { timeout: 20_000 }, () => {
     fireEvent.change(within(linha).getByLabelText('Por que a baixa foi um engano'), {
       target: { value: 'contada duas vezes' },
     })
-    fireEvent.click(botao('Anular baixa', linha))
-    await within(linha).findByText(
-      'A caixa F1A tem outro casal: diga para qual caixa voltam 2 machos.',
-      {},
-      DEMORA,
-    )
 
-    // F1C é de machos Wistar, a linhagem do casal de agora, e F1F de machos Swiss, a do de antes
-    expect(celula(/^F1C: caixa de estoque com 6 machos/, linha)).toHaveProperty('disabled', false)
+    // F1F é de machos Swiss, a linhagem da baixa; F1C, de machos Wistar, a do casal de agora
     expect(celula(/^F1F: caixa de estoque com 2 machos/, linha)).toHaveProperty('disabled', false)
-    expect(celula('F1E: ocupada', linha)).toHaveProperty('disabled', true)
+    expect(celula('F1C: ocupada', linha)).toHaveProperty('disabled', true)
     fireEvent.click(celula(/^F1F: caixa de estoque/, linha))
     fireEvent.click(botao('Anular baixa', linha))
 
-    await waitFor(() => expect(api.anulacao).toHaveBeenCalledTimes(2), DEMORA)
-    expect(api.anulacao).toHaveBeenLastCalledWith({
+    await waitFor(() => expect(api.anulacao).toHaveBeenCalled(), DEMORA)
+    expect(api.anulacao).toHaveBeenCalledWith({
       idOcorrencia: 41,
       motivo: 'contada duas vezes',
       idCaixaMachos: 32,
     })
+  })
+})
+
+describe('caixa liberada', { timeout: 40_000 }, () => {
+  /** a F1A liberada pela baixa dos últimos 4 M e 4 F, que mamavam; o casal já estava encerrado */
+  const liberada = (): FichaDeCasal => {
+    const ficha = fichaDeCasal({
+      casal: casal(1, 'AB', false),
+      partos: [parto({ vivos: { m: 0, f: 0 }, onde: [], baixasAntesDoDesmame: { m: 5, f: 5 } })],
+      eventos: [
+        eventoDeBaixa(60, 'Baixa de 4 machos e 4 femeas nesta caixa.', {
+          sexos: { m: 4, f: 4 },
+          idLinhagem: 1,
+          voltaNaOrigem: false,
+        }),
+      ],
+    })
+    return {
+      ...ficha,
+      caixa: {
+        ...ficha.caixa,
+        ativa: false,
+        estado: null,
+        dtLiberacao: '2026-10-20',
+        motivoLiberacao: 'baixa',
+      },
+    }
+  }
+
+  it('a ficha é só leitura: nada de corrigir, registrar ou formar casal', async () => {
+    api.ficha = liberada()
+    abrirFicha()
+
+    expect(await screen.findByText('Liberada')).toBeTruthy()
+    expect(
+      screen.getByText(/^Caixa liberada em 20\/10\/2026: a baixa dos últimos animais/),
+    ).toBeTruthy()
+    expect(talvezBotao('Formar casal')).toBeNull()
+
+    fireEvent.click(aba('Ninhada'))
+    const ninhada = await abaAberta()
+    expect(within(ninhada).getByText('Data do acasalamento')).toBeTruthy()
+    expect(talvezBotao('Corrigir', ninhada)).toBeNull()
+    expect(talvezBotao('Registrar eutanásia', ninhada)).toBeNull()
+    expect(talvezBotao('Registrar desmame', ninhada)).toBeNull()
+    expect(talvezBotao('Baixa', ninhada)).toBeNull()
+    expect(within(ninhada).getByText('A ninhada não chegou ao desmame.')).toBeTruthy()
+  })
+
+  it('o Anular da baixa que a esvaziou continua nos Eventos', async () => {
+    api.ficha = liberada()
+    abrirFicha()
+
+    fireEvent.click(aba('Eventos'))
+    const linha = (await screen.findByText('Baixa de 4 machos e 4 femeas nesta caixa.')).closest(
+      'li',
+    ) as HTMLElement
+    fireEvent.click(botao('Anular', linha))
+
+    // a caixa liberada não recebe ninguém de volta: uma estante por sexo
+    expect(within(linha).getByText(/voltam os machos/)).toBeTruthy()
+    expect(within(linha).getByText(/voltam as fêmeas/)).toBeTruthy()
+  })
+
+  it('depois da baixa que libera a caixa, a ficha continua aberta, agora liberada, com o Anular', async () => {
+    api.baixa.mockResolvedValueOnce({ baixas: { m: 4, f: 4 }, liberada: true, faltas: [] })
+    // a ficha desenhada de novo com o que a API devolver, sem desmontar: como depois de recarregar
+    function FichaQueRecarrega() {
+      const [, setVezes] = useState(0)
+      return (
+        <>
+          <button type="button" onClick={() => setVezes((vezes) => vezes + 1)}>
+            recarregar
+          </button>
+          <FichaDaCaixa idCaixa={7} aoFechar={() => {}} />
+        </>
+      )
+    }
+    renderizar(<FichaQueRecarrega />)
+    fireEvent.click(aba('Ninhada'))
+    await abaAberta()
+
+    fireEvent.click(botao('Baixa'))
+    const baixa = botao('Registrar baixa').closest('form') as HTMLElement
+    fireEvent.change(within(baixa).getByLabelText('Machos'), { target: { value: '4' } })
+    fireEvent.change(within(baixa).getByLabelText('Fêmeas'), { target: { value: '4' } })
+    fireEvent.click(botao('Registrar baixa', baixa))
+    expect(await screen.findByText(/A caixa ficou vazia e foi liberada\./, {}, DEMORA)).toBeTruthy()
+
+    // a API devolve a caixa liberada (ativa: false), e a mesma ficha a mostra
+    api.ficha = liberada()
+    fireEvent.click(screen.getByText('recarregar'))
+
+    expect(await screen.findByText('Liberada')).toBeTruthy()
+    fireEvent.click(aba('Eventos'))
+    expect(await screen.findByText('Baixa de 4 machos e 4 femeas nesta caixa.')).toBeTruthy()
+    expect(botao('Anular')).toBeTruthy()
   })
 })
 
@@ -1053,6 +1215,7 @@ describe('casal novo na caixa', { timeout: 20_000 }, () => {
               m: 0,
               f: 4,
               reservados: 0,
+              pedidos: [],
             },
           ],
         }),
