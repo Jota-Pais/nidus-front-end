@@ -34,3 +34,14 @@ export const chaves = {
 export function invalidarColonia(cliente: QueryClient): Promise<void> {
   return cliente.invalidateQueries({ queryKey: chaves.colonia })
 }
+
+/**
+ * Criar e aprovar um pedido não mexem nos animais, mas a API grava os dois no histórico: recarrega
+ * a lista de pedidos e o histórico, e mais nada
+ */
+export async function invalidarPedidos(cliente: QueryClient): Promise<void> {
+  await Promise.all([
+    cliente.invalidateQueries({ queryKey: chaves.pedidos }),
+    cliente.invalidateQueries({ queryKey: chaves.historico }),
+  ])
+}

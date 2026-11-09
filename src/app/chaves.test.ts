@@ -1,6 +1,9 @@
 import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
-import { chaves, invalidarColonia } from './chaves'
+import { chaves, invalidarColonia, invalidarPedidos } from './chaves'
+
+/** O histórico aberto, com o filtro vazio */
+const HISTORICO = [...chaves.historico, { entidade: null, idEntidade: null, busca: '' }]
 
 /** Uma consulta de cada tela, como estariam no cache com a colônia aberta */
 const DA_COLONIA = [
@@ -13,7 +16,7 @@ const DA_COLONIA = [
   chaves.pedidos,
   chaves.atendimento(7),
   chaves.retirada(7),
-  [...chaves.historico, { entidade: null, idEntidade: null, busca: '' }],
+  HISTORICO,
 ]
 
 const FORA_DA_COLONIA = [
@@ -62,5 +65,18 @@ describe('invalidarColonia', () => {
     for (const chave of FORA_DA_COLONIA) {
       expect(cliente.getQueryState(chave)?.isInvalidated, JSON.stringify(chave)).toBe(false)
     }
+  })
+})
+
+describe('invalidarPedidos', () => {
+  it('recarrega só a lista de pedidos e o histórico', async () => {
+    const cliente = cacheCheio()
+
+    await invalidarPedidos(cliente)
+
+    const invalidadas = [...DA_COLONIA, ...FORA_DA_COLONIA].filter(
+      (chave) => cliente.getQueryState(chave)?.isInvalidated,
+    )
+    expect(invalidadas).toEqual([chaves.pedidos, HISTORICO])
   })
 })

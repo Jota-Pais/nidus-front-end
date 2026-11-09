@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { renderHook } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { chaves } from '@/app/chaves'
@@ -7,6 +7,7 @@ import {
   useAlocar,
   useAnularBaixa,
   useAprovarPedido,
+  useAtendimento,
   useBaixa,
   useCorrigirAcasalamento,
   useCorrigirEvento,
@@ -20,6 +21,7 @@ import {
   useSemNinhada,
   useVirarCaixaDeEstoque,
 } from './consultas'
+import type { Pedido } from './tipos'
 
 const chamadas = vi.hoisted(() => [] as { caminho: string; opcoes: unknown }[])
 
@@ -34,6 +36,9 @@ beforeEach(() => {
   chamadas.length = 0
 })
 
+/** O histórico aberto, com o filtro vazio */
+const HISTORICO = [...chaves.historico, { entidade: null, idEntidade: null, busca: '' }]
+
 /** Tudo o que mostra animais, como estaria no cache com as telas abertas */
 const QUE_MOSTRAM_ANIMAIS = [
   chaves.quadro('rato'),
@@ -44,6 +49,7 @@ const QUE_MOSTRAM_ANIMAIS = [
   chaves.atendimento(7),
   chaves.pedidos,
   chaves.retirada(7),
+  HISTORICO,
 ]
 
 function montar<T>(usar: () => T) {
@@ -113,7 +119,7 @@ describe('as ações da colônia recarregam tudo o que mostra animais', () => {
 })
 
 describe('as ações do pedido que não mexem nos animais', () => {
-  it('criar e aprovar recarregam só a lista de pedidos', async () => {
+  it('criar e aprovar recarregam só a lista de pedidos e o histórico, onde a API grava os dois', async () => {
     for (const [usar, variaveis] of [
       [useAprovarPedido, 7],
       [
@@ -137,7 +143,7 @@ describe('as ações do pedido que não mexem nos animais', () => {
 
       await mutacao.mutateAsync(variaveis as never)
 
-      expect(invalidadas(cliente)).toEqual([chaves.pedidos])
+      expect(invalidadas(cliente)).toEqual([chaves.pedidos, HISTORICO])
     }
   })
 })
@@ -198,5 +204,71 @@ describe('os caminhos da API do pedido', () => {
         },
       },
     })
+  })
+})
+
+describe('a busca do atendimento', () => {
+  const pedido: Pedido = {
+    id: 7,
+    dataPedido: '2026-11-01',
+    prazoResposta: null,
+    dataAceite: '2026-11-02',
+    dataRecusa: null,
+    protocoloCeua: '1234567890',
+    pesquisador: 'Ana',
+    email: 'ana@ufsc.br',
+    especie: 'rato',
+    idLinhagem: 2,
+    linhagem: 'Wistar',
+    machos: 4,
+    femeas: 3,
+    qualquer: 2,
+    idadeMin: 21,
+    idadeMax: 30,
+    dataEntrega: '2026-12-01',
+    dataEntregue: null,
+    observacoes: null,
+    status: 'aprovado',
+    motivoRecusa: null,
+    reservaEmFalta: null,
+  }
+
+  async function buscar(doPedido: Pedido): Promise<URLSearchParams> {
+    const cliente = new QueryClient()
+    const envolver = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={cliente}>{children}</QueryClientProvider>
+    )
+    renderHook(() => useAtendimento(doPedido), { wrapper: envolver })
+    await waitFor(() => expect(chamadas).toHaveLength(1))
+
+    const [caminho, consulta] = (chamadas[0]?.caminho ?? '').split('?')
+    expect(caminho).toBe('/api/busca')
+    return new URLSearchParams(consulta)
+  }
+
+  it('no aprovado, pede o pedido inteiro', async () => {
+    const parametros = await buscar(pedido)
+
+    expect([
+      parametros.get('machos'),
+      parametros.get('femeas'),
+      parametros.get('qualquer'),
+    ]).toEqual(['4', '3', '2'])
+  })
+
+  it('no reservado em falta, pede só o que falta, para completar sem passar do pedido', async () => {
+    const parametros = await buscar({
+      ...pedido,
+      status: 'reservado',
+      reservaEmFalta: { m: 1, f: 0, qualquer: 1 },
+    })
+
+    expect([
+      parametros.get('machos'),
+      parametros.get('femeas'),
+      parametros.get('qualquer'),
+    ]).toEqual(['1', '0', '1'])
+    expect(parametros.get('idadeMin')).toBe('21')
+    expect(parametros.get('dataEntrega')).toBe('2026-12-01')
   })
 })

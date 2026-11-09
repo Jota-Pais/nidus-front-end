@@ -1,7 +1,8 @@
 // Tudo o que as telas leem e gravam na API
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { chaves, invalidarColonia } from '@/app/chaves'
+import { chaves, invalidarColonia, invalidarPedidos } from '@/app/chaves'
 import { api } from '@/lib/api'
+import { alvoDaReserva } from './pedido'
 import type {
   Casal,
   Catalogo,
@@ -22,6 +23,7 @@ import type {
   Projeto,
   RegistroDoHistorico,
   RespostaDaAlocacao,
+  RespostaDaAnulacao,
   RespostaDaBaixa,
   RespostaDaDevolucao,
   RespostaDaEntrega,
@@ -357,14 +359,17 @@ export interface Anulacao {
 
 /**
  * A baixa lançada por engano: os animais voltam vivos para a caixa dela ou, se ela não serve
- * mais, para a caixa de estoque de cada sexo. A tela não depende da resposta: tudo recarrega
+ * mais, para a caixa de estoque de cada sexo. A resposta diz para onde voltou cada sexo
  */
 export function useAnularBaixa() {
   const cliente = useQueryClient()
 
   return useMutation({
     mutationFn: ({ idOcorrencia, ...corpo }: Anulacao) =>
-      api<unknown>(`/api/ocorrencias/${idOcorrencia}/anulacao`, { metodo: 'POST', corpo }),
+      api<RespostaDaAnulacao>(`/api/ocorrencias/${idOcorrencia}/anulacao`, {
+        metodo: 'POST',
+        corpo,
+      }),
     onSuccess: () => invalidarColonia(cliente),
   })
 }
@@ -401,7 +406,7 @@ export function useCriarPedido() {
   return useMutation({
     mutationFn: (pedido: NovoPedido) =>
       api<{ id: number }>('/api/pedidos', { metodo: 'POST', corpo: pedido }),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.pedidos }),
+    onSuccess: () => invalidarPedidos(cliente),
   })
 }
 
@@ -422,7 +427,7 @@ export function useAprovarPedido() {
       api<{ idPedido: number; status: 'aprovado' }>(`/api/pedidos/${idPedido}/aprovacao`, {
         metodo: 'POST',
       }),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.pedidos }),
+    onSuccess: () => invalidarPedidos(cliente),
   })
 }
 
@@ -442,18 +447,22 @@ export function useRecusarPedido() {
 
 /**
  * As caixas que atendem o pedido, já com a sugestão do sistema, para a equipe conferir ou
- * ajustar antes de reservar. Não grava nada
+ * ajustar antes de reservar. Não grava nada. No reservado em falta, a busca pede só o que falta:
+ * a sugestão, o déficit e os casais a formar saem para completar, não para o pedido inteiro
  */
 export function useAtendimento(pedido: Pedido) {
+  const alvo = alvoDaReserva(pedido)
+
   return useQuery({
-    queryKey: chaves.atendimento(pedido.id),
+    // o alvo entra na chave: a falta muda depois de uma baixa, e a busca muda com ela
+    queryKey: [...chaves.atendimento(pedido.id), alvo],
     queryFn: () => {
       const parametros = new URLSearchParams({
         especie: pedido.especie,
         idLinhagem: String(pedido.idLinhagem),
-        machos: String(pedido.machos),
-        femeas: String(pedido.femeas),
-        qualquer: String(pedido.qualquer),
+        machos: String(alvo.machos),
+        femeas: String(alvo.femeas),
+        qualquer: String(alvo.qualquer),
         idadeMin: String(pedido.idadeMin),
         idadeMax: String(pedido.idadeMax),
         dataEntrega: pedido.dataEntrega,
