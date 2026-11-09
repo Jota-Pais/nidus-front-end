@@ -1,4 +1,4 @@
-import { DownOutlined, LoadingOutlined, LogoutOutlined } from '@ant-design/icons'
+import { DownOutlined, LoadingOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
 import { Dropdown, Layout, Menu } from 'antd'
 import type { DropdownProps, MenuProps } from 'antd'
 import { Suspense, useState } from 'react'
@@ -21,6 +21,9 @@ export function AppLayout() {
   const navegar = useNavigate()
   const { pathname } = useLocation()
   const [contaAberta, setContaAberta] = useState(false)
+  // Abaixo de 992px a barra lateral some, e o botão do cabeçalho abre o menu por cima da tela
+  const [estreita, setEstreita] = useState(false)
+  const [menuAberto, setMenuAberto] = useState(false)
 
   if (!perfil || !usuario) return null
 
@@ -71,11 +74,30 @@ export function AppLayout() {
     navegar(key)
   }
 
+  const comMenu = mostraBarraLateral(perfil)
+
+  function irPara(caminho: string) {
+    navegar(caminho)
+    setMenuAberto(false)
+  }
+
   return (
     <Layout className="casca">
       <Header className="casca__topo">
         {/* A marca não encolhe: no celular, quem cede espaço é o nome de quem entrou */}
         <Linha espaco={12} estilo={{ flexShrink: 0 }}>
+          {comMenu && estreita && (
+            <Botao
+              variante="fantasma"
+              className="casca__abrirMenu"
+              aria-label={menuAberto ? 'Fechar o menu' : 'Abrir o menu'}
+              aria-expanded={menuAberto}
+              aria-controls="casca-menu"
+              onClick={() => setMenuAberto((aberto) => !aberto)}
+            >
+              <MenuOutlined aria-hidden="true" />
+            </Botao>
+          )}
           {/* A marca leva as duas cores principais: o símbolo em Verde
               Bandeira, o nome em branco sobre o azul institucional. */}
           <span className="casca__marca" aria-hidden="true" />
@@ -110,20 +132,29 @@ export function AppLayout() {
         </Dropdown>
       </Header>
 
-      <Layout>
-        {mostraBarraLateral(perfil) && (
+      <Layout className="casca__corpo">
+        {comMenu && (
+          // O antd põe um gatilho flutuante na barra fechada, que cobria o começo da tela: o
+          // gatilho é o botão do cabeçalho
           <Sider
+            id="casca-menu"
             width={248}
             breakpoint="lg"
             collapsedWidth={0}
+            collapsed={estreita && !menuAberto}
+            trigger={null}
+            onBreakpoint={(quebrou) => {
+              setEstreita(quebrou)
+              setMenuAberto(false)
+            }}
             theme="light"
-            className="casca__lado"
+            className={estreita ? 'casca__lado casca__lado--sobre' : 'casca__lado'}
           >
             <Menu
               mode="inline"
               items={itens}
               {...(selecionado ? { selectedKeys: [selecionado] } : {})}
-              onClick={({ key }) => navegar(key)}
+              onClick={({ key }) => irPara(key)}
               className="casca__menu"
             />
           </Sider>

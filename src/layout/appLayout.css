@@ -67,8 +67,40 @@
   font-size: 10px;
 }
 
+/* O botão do menu, no cabeçalho, só abaixo de 992px: no lugar do gatilho flutuante do antd, que
+   ficava em cima do começo da tela */
+.casca__abrirMenu.botao--fantasma:not(:disabled) {
+  color: var(--cor-marca-frente);
+}
+
+.casca__abrirMenu.botao--fantasma:not(:disabled):hover,
+.casca__abrirMenu.botao--fantasma:not(:disabled)[aria-expanded='true'] {
+  background: var(--cor-marca-hover);
+}
+
+.casca__corpo {
+  position: relative;
+}
+
 .casca__lado {
   border-inline-end: 1px solid var(--cor-borda);
+}
+
+/* Fechada, a barra tem largura zero: sem a borda, que ficava como um risco na beira da tela */
+.casca__lado.ant-layout-sider-collapsed {
+  border-inline-end: 0;
+}
+
+/* No celular, o menu aberto fica por cima da tela, sem espremer o conteúdo */
+.casca__lado--sobre {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 20;
+}
+
+.casca__lado--sobre:not(.ant-layout-sider-collapsed) {
+  box-shadow: var(--sombra-lg);
 }
 
 .casca__menu {

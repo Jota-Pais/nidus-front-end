@@ -8,6 +8,7 @@ import {
   corDoParto,
   descreverEstoque,
   MAX_PARTOS_POR_CASAL,
+  ROTULO_DO_SEXO,
   SIMBOLO_DO_SEXO,
 } from '@/dominio/caixa'
 import { useKanban } from '@/dominio/consultas'
@@ -160,9 +161,18 @@ function Card({
             {casal.partoAtual}º
           </span>
         )}
+        {/* na enviada fica só o sexo: o "0" diria que a caixa perdeu os animais */}
         {estoque && (
-          <span className="kanban__parto" title={contarDoSexo(estoque.total, estoque.sexo)}>
-            {SIMBOLO_DO_SEXO[estoque.sexo]} {estoque.total}
+          <span
+            className="kanban__parto"
+            title={
+              comAnimais
+                ? contarDoSexo(estoque.total, estoque.sexo)
+                : `Caixa de estoque de ${ROTULO_DO_SEXO[estoque.sexo].toLowerCase()}`
+            }
+          >
+            {SIMBOLO_DO_SEXO[estoque.sexo]}
+            {comAnimais && ` ${estoque.total}`}
           </span>
         )}
       </div>
