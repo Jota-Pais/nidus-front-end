@@ -280,6 +280,18 @@ describe('eutanásia de seleção', { timeout: 40_000 }, () => {
       caminho: '/api/partos/10/selecao',
       corpo: { dtSelecao: hoje(), eutanasiadoM: 4, eutanasiadoF: 0, idPedido: 9 },
     })
+
+    // a rodada seguinte começa sem o pedido: os livres podem bastar, e a API pede de novo se não
+    await waitFor(() => expect(screen.getByLabelText('Machos')).toHaveProperty('value', '0'))
+    expect(screen.queryAllByLabelText(/de qual pedido saem os animais reservados/)).toHaveLength(0)
+    fireEvent.change(screen.getByLabelText('Fêmeas'), { target: { value: '1' } })
+    fireEvent.click(botao('Registrar eutanásia'))
+
+    await waitFor(() => expect(api.registrar).toHaveBeenCalledTimes(3), DEMORA)
+    expect(api.registrar).toHaveBeenLastCalledWith({
+      caminho: '/api/partos/10/selecao',
+      corpo: { dtSelecao: hoje(), eutanasiadoM: 0, eutanasiadoF: 1 },
+    })
   })
 })
 
@@ -775,6 +787,71 @@ describe('abas da ficha do casal', { timeout: 20_000 }, () => {
 
     expect(await screen.findByText(/Eutanasia de selecao do 1o parto/)).toBeTruthy()
     expect(botao('Anular')).toBeTruthy()
+  })
+
+  it('a baixa pode ser da ninhada de um casal de antes: a estante da anulação oferece a linhagem dele também', async () => {
+    api.ficha = fichaDeCasal({
+      casal: { ...casal(2, 'CD', true), dtFormacao: '2026-11-01' },
+      partos: [],
+      anteriores: [
+        // a ninhada dele saiu da caixa antes de o casal CD ser formado
+        {
+          casal: { ...casal(1, 'AB', false), linhagem: 'Swiss' },
+          partos: [desmamado({ vivos: { m: 0, f: 0 }, onde: [] })],
+        },
+      ],
+      eventos: [
+        {
+          dataHora: '2026-10-20T00:00:00.000Z',
+          tipo: 'baixa',
+          descricao: 'Baixa de 2 machos nesta caixa.',
+          autor: 'Ana Souza',
+          idOcorrencia: 41,
+          anulavel: true,
+        },
+      ],
+    })
+    api.anulacao.mockReset()
+    api.anulacao
+      .mockRejectedValueOnce(
+        erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
+          idCaixaMachos: 'A caixa F1A tem outro casal: diga para qual caixa voltam 2 machos.',
+        }),
+      )
+      .mockResolvedValueOnce({
+        voltaram: [{ sexo: 'M', qtd: 2, idCaixa: 32, codigo: 'F1F' }],
+        soltos: { m: 0, f: 0 },
+      })
+    abrirFicha()
+    fireEvent.click(aba('Eventos'))
+    const linha = (await screen.findByText('Baixa de 2 machos nesta caixa.')).closest(
+      'li',
+    ) as HTMLElement
+
+    fireEvent.click(botao('Anular', linha))
+    fireEvent.change(within(linha).getByLabelText('Por que a baixa foi um engano'), {
+      target: { value: 'contada duas vezes' },
+    })
+    fireEvent.click(botao('Anular baixa', linha))
+    await within(linha).findByText(
+      'A caixa F1A tem outro casal: diga para qual caixa voltam 2 machos.',
+      {},
+      DEMORA,
+    )
+
+    // F1C é de machos Wistar, a linhagem do casal de agora, e F1F de machos Swiss, a do de antes
+    expect(celula(/^F1C: caixa de estoque com 6 machos/, linha)).toHaveProperty('disabled', false)
+    expect(celula(/^F1F: caixa de estoque com 2 machos/, linha)).toHaveProperty('disabled', false)
+    expect(celula('F1E: ocupada', linha)).toHaveProperty('disabled', true)
+    fireEvent.click(celula(/^F1F: caixa de estoque/, linha))
+    fireEvent.click(botao('Anular baixa', linha))
+
+    await waitFor(() => expect(api.anulacao).toHaveBeenCalledTimes(2), DEMORA)
+    expect(api.anulacao).toHaveBeenLastCalledWith({
+      idOcorrencia: 41,
+      motivo: 'contada duas vezes',
+      idCaixaMachos: 32,
+    })
   })
 })
 

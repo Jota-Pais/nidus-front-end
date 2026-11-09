@@ -92,7 +92,7 @@ function CamposDoEvento({ campos }: { campos: CampoDoEvento[] }) {
  * Formulário de um registro do parto ou do casal: acasalamento, nascimento, eutanásia de seleção
  * ou desmame. Quando o registro tira animais reservados e há mais de um pedido, a API pede de qual
  * deles, e o campo aparece com os pedidos do parto. A seleção se repete: depois de registrar, o
- * formulário volta ao começo
+ * formulário volta ao começo, sem o pedido da rodada anterior
  */
 function RegistrarEvento({
   nome,
@@ -131,7 +131,10 @@ function RegistrarEvento({
         void message.success('Registrado.')
         const falta = descreverFalta(faltas ?? [])
         if (falta) modal.warning({ title: 'Reserva em falta', content: falta })
-        if (repetir) form.resetFields()
+        if (repetir) {
+          form.resetFields()
+          falha.recomecar()
+        }
       },
       (erro: Error) => falha.mostrar(erro),
     )
@@ -415,7 +418,7 @@ function FormularioDoNascimento({
             sala={caixa.endereco.sala}
             numeroVisivel={caixa.endereco.numeroVisivel}
             sexo={sexoDaCaixa}
-            idLinhagem={caixa.idLinhagem}
+            linhagens={[caixa.idLinhagem]}
             aceitaVazia={false}
             idOrigem={caixa.id}
           />

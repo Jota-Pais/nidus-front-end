@@ -273,15 +273,12 @@ function FichaDoCasal({
             children: (
               <EventosDaFicha
                 eventos={ficha.eventos}
-                caixa={{
-                  id: ficha.caixa.id,
-                  endereco: ficha.caixa.endereco,
-                  idLinhagem: idDaLinhagem(
-                    catalogo.data,
-                    ficha.caixa.especie,
-                    ficha.caixa.linhagem,
-                  ),
-                }}
+                caixa={ficha.caixa}
+                // a baixa pode ser da ninhada de um casal de antes, de outra linhagem
+                linhagens={[
+                  ficha.caixa.linhagem,
+                  ...ficha.anteriores.map((deAntes) => deAntes.casal.linhagem),
+                ].map((nome) => idDaLinhagem(catalogo.data, ficha.caixa.especie, nome))}
               />
             ),
           },

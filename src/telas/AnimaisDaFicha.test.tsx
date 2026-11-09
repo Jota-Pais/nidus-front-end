@@ -409,15 +409,16 @@ describe('eventos e anulação da baixa', { timeout: 30_000 }, () => {
     baixa(41, true),
   ]
 
-  function anularA(descricao: RegExp) {
-    renderizar(<EventosDaFicha eventos={eventos} caixa={caixaDoCasal} />)
+  /** a caixa F1A só teve casais Wistar, a não ser que o teste diga outras linhagens */
+  function anularA(descricao: RegExp, linhagens: number[] = [1]) {
+    renderizar(<EventosDaFicha eventos={eventos} caixa={caixaDoCasal} linhagens={linhagens} />)
     const linha = screen.getByText(descricao).closest('li') as HTMLElement
     fireEvent.click(botao('Anular', linha))
     return linha
   }
 
   it('só a baixa que ainda pode ser anulada tem o Anular', () => {
-    renderizar(<EventosDaFicha eventos={eventos} caixa={caixaDoCasal} />)
+    renderizar(<EventosDaFicha eventos={eventos} caixa={caixaDoCasal} linhagens={[1]} />)
 
     expect(botoes('Anular')).toHaveLength(1)
     const anulada = screen.getByText(/\(anulada\)/).closest('li') as HTMLElement
@@ -470,6 +471,29 @@ describe('eventos e anulação da baixa', { timeout: 30_000 }, () => {
       motivo: 'contada duas vezes',
       idCaixaMachos: 30,
     })
+  })
+
+  it('com casais de duas linhagens na caixa, a estante oferece as caixas de estoque das duas', async () => {
+    api.anulacao.mockRejectedValueOnce(
+      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
+        idCaixaMachos: 'A caixa F1A tem outro casal: diga para qual caixa voltam 2 machos.',
+      }),
+    )
+    const linha = anularA(/^Baixa de 2 machos nesta caixa\.$/, [1, 2])
+
+    digitar('Por que a baixa foi um engano', 'contada duas vezes', linha)
+    fireEvent.click(botao('Anular baixa', linha))
+    await within(linha).findByText(
+      'A caixa F1A tem outro casal: diga para qual caixa voltam 2 machos.',
+      {},
+      DEMORA,
+    )
+
+    // o evento não diz de qual casal era a baixa: machos Wistar (F1C) e Swiss (F1F) recebem
+    expect(celula(/^F1C: caixa de estoque com 6 machos/, linha)).toHaveProperty('disabled', false)
+    expect(celula(/^F1F: caixa de estoque com 2 machos/, linha)).toHaveProperty('disabled', false)
+    expect(celula('F1E: ocupada', linha)).toHaveProperty('disabled', true)
+    expect(celula('F1B: posição vazia', linha)).toHaveProperty('disabled', true)
   })
 
   it('com os dois sexos fora da caixa, a API pede a caixa das fêmeas depois da dos machos', async () => {

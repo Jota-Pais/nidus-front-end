@@ -128,8 +128,8 @@ export function destinoDoLugar(lugar: LugarNaEstante): Destino {
 
 /**
  * O id da linhagem pelo nome, dentro da espécie: o nome não se repete numa espécie. A escolha da
- * caixa de estoque filtra pelo id que a grade traz, e a ficha de casal ainda traz só o nome da
- * linhagem; quando a API mandar o id na ficha do casal, este caminho pelo catálogo sai
+ * caixa de estoque filtra pelo id que a grade traz, e o casal, nas duas fichas, ainda traz só o
+ * nome da linhagem; quando a API mandar o id no casal, este caminho pelo catálogo sai
  */
 export function idDaLinhagem(
   catalogo: Catalogo | undefined,

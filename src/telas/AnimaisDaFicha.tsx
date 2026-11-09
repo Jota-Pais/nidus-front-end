@@ -33,7 +33,7 @@ import './AnimaisDaFicha.css'
 export interface CaixaDaAcao {
   id: number
   endereco: { sala: string; numeroVisivel: string; codigo: string }
-  /** a linhagem dos animais dela: a caixa de estoque que os recebe tem de ser a mesma */
+  /** a linhagem dos vivos dela: a caixa de estoque que os recebe tem de ser a mesma */
   idLinhagem: number | null
 }
 
@@ -490,7 +490,7 @@ export function MudarAnimais({
                   sala={caixa.endereco.sala}
                   numeroVisivel={caixa.endereco.numeroVisivel}
                   sexo={sexo}
-                  idLinhagem={caixa.idLinhagem}
+                  linhagens={[caixa.idLinhagem]}
                   aceitaVazia
                   idOrigem={caixa.id}
                   doOutroSexo={(outro?.qtd ?? 0) > 0 ? (outro?.destino ?? null) : null}
@@ -528,6 +528,12 @@ export function MudarAnimais({
 
 // ------------------------------------------------------------ eventos e anulação
 
+/**
+ * A caixa dos eventos: onde a estante da anulação abre e qual caixa não recebe a si mesma. A
+ * linhagem não vai junto: a baixa pode ser de animais que já não estão nela
+ */
+type CaixaDosEventos = Pick<CaixaDaAcao, 'id' | 'endereco'>
+
 /** A chave do evento: a ocorrência quando há; o que vem do histórico, pela posição e pelo dia */
 const chaveDoEvento = (evento: EventoDaFicha, indice: number) =>
   evento.idOcorrencia === null
@@ -538,9 +544,16 @@ const chaveDoEvento = (evento: EventoDaFicha, indice: number) =>
 export function EventosDaFicha({
   eventos,
   caixa,
+  linhagens,
 }: {
   eventos: EventoDaFicha[]
-  caixa: CaixaDaAcao
+  caixa: CaixaDosEventos
+  /**
+   * as linhagens dos animais que passaram pela caixa: a de cada casal dela e, na de estoque, a
+   * dela. O evento da baixa não diz de qual casal eram os animais, e a estante da anulação oferece
+   * as caixas de estoque de qualquer uma delas; a API confere a da baixa
+   */
+  linhagens: (number | null)[]
 }) {
   const [anulando, setAnulando] = useState<number | null>(null)
 
@@ -572,6 +585,7 @@ export function EventosDaFicha({
               <AnularBaixa
                 idOcorrencia={anulavel}
                 caixa={caixa}
+                linhagens={linhagens}
                 aoTerminar={() => setAnulando(null)}
               />
             )}
@@ -604,15 +618,18 @@ function descreverVolta(voltaram: { sexo: Sexo; qtd: number; codigo: string }[])
 /**
  * A baixa lançada por engano: os animais voltam a viver na caixa dela. Quando ela não serve mais
  * para um sexo (foi liberada, tem outra ninhada, virou estoque de outro sexo), a API pede a caixa
- * de estoque desse sexo, e a estante aparece para clicar nela, só com as que aceitam os animais
+ * de estoque desse sexo, e a estante aparece para clicar nela, só com as do sexo e das linhagens
+ * que os animais podem ter
  */
 function AnularBaixa({
   idOcorrencia,
   caixa,
+  linhagens,
   aoTerminar,
 }: {
   idOcorrencia: number
-  caixa: CaixaDaAcao
+  caixa: CaixaDosEventos
+  linhagens: (number | null)[]
   aoTerminar: () => void
 }) {
   const { message } = App.useApp()
@@ -675,7 +692,7 @@ function AnularBaixa({
             sala={caixa.endereco.sala}
             numeroVisivel={caixa.endereco.numeroVisivel}
             sexo={sexo}
-            idLinhagem={caixa.idLinhagem}
+            linhagens={linhagens}
             aceitaVazia={false}
             idOrigem={caixa.id}
           />

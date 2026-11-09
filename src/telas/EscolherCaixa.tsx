@@ -13,8 +13,13 @@ import './EscolherCaixa.css'
 /** Quem a caixa de estoque tem de aceitar, e onde mais dá para clicar */
 interface Filtro {
   sexo: Sexo
-  /** a linhagem dos animais: a caixa de estoque que recebe tem de ser a mesma */
-  idLinhagem: number | null
+  /**
+   * as linhagens que os animais podem ter: a caixa de estoque que recebe é de uma delas. Quase
+   * sempre uma só; na anulação, a de cada casal que passou pela caixa, porque o evento da baixa
+   * não diz de qual eram os animais. A que ainda não se sabe (null, o catálogo não chegou) não
+   * casa com nenhuma caixa
+   */
+  linhagens: readonly (number | null)[]
   /** a posição vazia vira caixa nova (a mudança); sem ela, só a caixa que já existe recebe */
   aceitaVazia: boolean
   /** a caixa de onde os animais saem não recebe a si mesma */
@@ -28,10 +33,12 @@ const OUTRO_SEXO: Record<Sexo, Sexo> = { M: 'F', F: 'M' }
 
 /** A caixa de estoque do sexo e da linhagem dos animais, que não é a de onde eles saem */
 function recebe(caixa: CaixaNaGrade, filtro: Filtro): boolean {
+  const estoque = caixa.estoque
   return (
-    caixa.estoque !== null &&
-    caixa.estoque.sexo === filtro.sexo &&
-    caixa.estoque.idLinhagem === filtro.idLinhagem &&
+    estoque !== null &&
+    estoque.sexo === filtro.sexo &&
+    estoque.idLinhagem !== null &&
+    filtro.linhagens.includes(estoque.idLinhagem) &&
     caixa.id !== filtro.idOrigem
   )
 }
@@ -40,7 +47,7 @@ export function EscolherCaixa({
   sala,
   numeroVisivel,
   sexo,
-  idLinhagem,
+  linhagens,
   aceitaVazia,
   idOrigem,
   doOutroSexo = null,
@@ -52,7 +59,7 @@ export function EscolherCaixa({
   sala: string
   numeroVisivel: string
   sexo: Sexo
-  idLinhagem: number | null
+  linhagens: readonly (number | null)[]
   aceitaVazia: boolean
   idOrigem: number
   doOutroSexo?: LugarNaEstante | null | undefined
@@ -88,7 +95,7 @@ export function EscolherCaixa({
       )}
       <MiniGrade
         estante={aberta}
-        filtro={{ sexo, idLinhagem, aceitaVazia, idOrigem, doOutroSexo }}
+        filtro={{ sexo, linhagens, aceitaVazia, idOrigem, doOutroSexo }}
         escolhida={value}
         aoEscolher={(lugar) => onChange?.(lugar)}
       />

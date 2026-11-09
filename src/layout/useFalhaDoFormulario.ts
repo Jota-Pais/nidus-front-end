@@ -111,5 +111,13 @@ export function useFalhaDoFormulario(form: FormInstance, campos: string[], inici
     limpar: () => setErro(null),
     /** a API já apontou este campo: o formulário mostra o que só aparece quando ela pede */
     pediu: (campo: string) => pedidos.has(campo),
+    /**
+     * o formulário voltou ao começo depois de dar certo (a seleção, que se repete): o que a API
+     * pediu era daquele envio, e o campo dela sai até ela pedir de novo
+     */
+    recomecar: () => {
+      setErro(null)
+      setPedidos(new Set())
+    },
   }
 }
