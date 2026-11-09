@@ -12,7 +12,7 @@ const ESPECIES: { value: CodigoEspecie; label: string }[] = [
 
 const sexos = ({ m, f }: { m: number; f: number }) => `${m} M · ${f} F`
 
-/** O que a colônia tem livre hoje, por linhagem: só animal que já nasceu */
+/** O que a colônia tem livre hoje, por linhagem: os vivos que ninguém reservou */
 export function Estoque() {
   const [especie, setEspecie] = useState<CodigoEspecie>('rato')
   const estoque = useEstoque(especie)
@@ -22,7 +22,7 @@ export function Estoque() {
       <CabecalhoDaTela
         rotulo="Colônia"
         titulo="Estoque"
-        descricao="Animais que já nasceram e estão livres, por linhagem, já sem o que está comprometido com solicitações. Desmamados são certos; nascidos ainda podem mudar no desmame. Parto que ainda não aconteceu não conta."
+        descricao="Os animais vivos e livres de cada linhagem, contados um a um: quem está reservado para um pedido ou saiu por baixa já não conta. Os desmamados já podem ser entregues; os que mamam ainda ficam com a mãe. Parto que ainda não aconteceu não conta."
       />
 
       <Secao>
@@ -45,7 +45,7 @@ export function Estoque() {
             columns={[
               { title: 'Linhagem', dataIndex: 'linhagem' },
               { title: 'Desmamados', render: (_, l) => sexos(l.confirmado) },
-              { title: 'Nascidos', render: (_, l) => sexos(l.previsto) },
+              { title: 'Mamando', render: (_, l) => sexos(l.previsto) },
               { title: 'Total livre', render: (_, l) => <strong>{sexos(l.total)}</strong> },
             ]}
           />

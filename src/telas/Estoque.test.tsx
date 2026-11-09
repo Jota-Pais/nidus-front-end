@@ -20,11 +20,18 @@ const estoque: DadosDoEstoque = {
 vi.mock('@/dominio/consultas', () => ({ useEstoque: () => consulta(estoque) }))
 
 describe('tela de estoque', () => {
-  it('mostra desmamados, nascidos e o total livre, sem parto previsto', () => {
+  it('mostra os livres desmamados, os que ainda mamam e o total, sem parto previsto', () => {
     renderizar(<Estoque />)
 
+    expect(screen.getAllByRole('columnheader').map((c) => c.textContent)).toEqual([
+      'Linhagem',
+      'Desmamados',
+      'Mamando',
+      'Total livre',
+    ])
     expect(screen.getByText('Wistar')).toBeTruthy()
     expect(screen.getByText('3 M · 3 F')).toBeTruthy()
+    expect(screen.getByText('5 M · 2 F')).toBeTruthy()
     expect(screen.getByText('8 M · 5 F')).toBeTruthy()
     expect(screen.queryByText('Partos previstos')).toBeNull()
     expect(screen.queryByText('Próximo parto')).toBeNull()

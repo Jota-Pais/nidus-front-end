@@ -11,9 +11,9 @@ import {
   SIMBOLO_DO_SEXO,
 } from '@/dominio/caixa'
 import { useKanban } from '@/dominio/consultas'
-import type { CardDoKanban, CodigoEspecie, EstadoCaixa } from '@/dominio/tipos'
+import type { CardDoKanban, CasalNoCard, CodigoEspecie, EstadoCaixa } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
-import { descreverDias, idadeEmDias } from '@/lib/data'
+import { descreverDias, formatarDataCurta } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import { LegendaDosPartos } from './LegendaDosPartos'
 import './Kanban.css'
@@ -90,8 +90,7 @@ export function Kanban() {
   )
 }
 
-
-function statusDoCard(casal: CardDoKanban['casal'], estado: EstadoCaixa): string[] {
+function statusDoCard(casal: CasalNoCard | null, estado: EstadoCaixa): string[] {
   if (!casal) return [estado === 'livres' ? 'Sem casal ativo' : COLUNA[estado].legenda]
 
   const partes = situacaoDoCasal(casal, estado)
@@ -100,7 +99,7 @@ function statusDoCard(casal: CardDoKanban['casal'], estado: EstadoCaixa): string
   return [...partes, `${casal.reservado} ${casal.reservado === 1 ? 'reservado' : 'reservados'}`]
 }
 
-function situacaoDoCasal(casal: NonNullable<CardDoKanban['casal']>, estado: EstadoCaixa): string[] {
+function situacaoDoCasal(casal: CasalNoCard, estado: EstadoCaixa): string[] {
   const aguardando = casal.aguardandoDesmame ? 'Aguardando desmame' : null
 
   if (casal.encerrado && estado === 'livres') {
@@ -118,19 +117,11 @@ function situacaoDoCasal(casal: NonNullable<CardDoKanban['casal']>, estado: Esta
     ? [COLUNA[estado].legenda, 'Último parto']
     : [COLUNA[estado].legenda]
 }
-/** A idade dos animais da caixa de estoque hoje: "28 dias", ou "25 a 31 dias" com idades diferentes */
-function idadeDoEstoque(estoque: NonNullable<CardDoKanban['estoque']>): string | null {
-  if (!estoque.nascimentoDe || !estoque.nascimentoAte) return null
-
-  const maisVelho = idadeEmDias(estoque.nascimentoDe)
-  const maisNovo = idadeEmDias(estoque.nascimentoAte)
-
-  return maisVelho === maisNovo ? descreverDias(maisVelho) : `${maisNovo} a ${descreverDias(maisVelho)}`
-}
 
 function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCaixa; aoAbrir: () => void }) {
   const { casal, estoque } = card
-  const idade = estoque ? idadeDoEstoque(estoque) : null
+  // a caixa enviada já está vazia: o card só lembra para onde ela foi
+  const comAnimais = estoque !== null && estado !== 'enviado'
 
   return (
     <div
@@ -142,11 +133,11 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
       title="Clique para abrir a ficha"
     >
       <div className="kanban__topo">
-        {/* a caixa enviada ja nao ocupa a posicao: o endereco vai entre parenteses */}
+        {/* a caixa enviada já não ocupa a posição: o endereço vai entre parênteses */}
         <span className="kanban__codigo">{estado === 'enviado' ? `(${card.codigo})` : card.codigo}</span>
         <span className="kanban__estante">{card.numeroVisivel}</span>
         {casal && (
-          <span className="parto kanban__parto" title={`Parto atual: ${casal.partoAtual}º`}>
+          <span className="parto kanban__parto" title={`Parto em curso: ${casal.partoAtual}º`}>
             <span
               className="bolinhaDeParto"
               style={{ backgroundColor: corDoParto(casal.partoAtual).cor }}
@@ -163,16 +154,31 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
 
       {card.linhagem && <p className="kanban__linhagem">{card.linhagem}</p>}
 
-      {estoque && estado !== 'enviado' && (
-        <p className="kanban__linhagem">
-          {descreverEstoque(estoque)}
-          {idade && ` · ${idade}`}
-        </p>
+      {comAnimais && <p className="kanban__linhagem">{descreverEstoque(estoque)}</p>}
+
+      {comAnimais && estoque.grupos.length > 0 && (
+        // dentro da caixa só a idade separa os animais: um grupo por data de nascimento
+        <ul className="kanban__ninhadas kanban__idades" aria-label="Idades na caixa">
+          {estoque.grupos.map((grupo) => (
+            <li key={grupo.dtNascimento}>
+              <span>{descreverDias(grupo.idadeDias)}</span>
+              <span>
+                {grupo.total}
+                {grupo.reservados > 0 && ` · ${grupo.reservados} res.`}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
 
       {casal && (
         <div className="kanban__casal">
           <span>{casal.identificacao}</span>
+          {casal.partoPrevisto && (
+            <span title={`Previsão do ${casal.partoAtual}º parto`}>
+              P: {formatarDataCurta(casal.partoPrevisto)}
+            </span>
+          )}
         </div>
       )}
 
@@ -188,7 +194,10 @@ function Card({ card, estado, aoAbrir }: { card: CardDoKanban; estado: EstadoCai
               <span>
                 {ninhada.m} M · {ninhada.f} F
               </span>
-              <span>{descreverDias(ninhada.idadeDias)}</span>
+              <span>
+                {descreverDias(ninhada.idadeDias)}
+                {ninhada.mamando && ' · mamando'}
+              </span>
             </li>
           ))}
         </ul>
