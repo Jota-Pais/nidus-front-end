@@ -70,8 +70,15 @@ function montar<T>(usar: () => T) {
   return { cliente, mutacao: result.current }
 }
 
+/**
+ * As consultas derrubadas: invalidadas ou, sem ninguém na tela olhando para elas (o caso daqui),
+ * tiradas do cache
+ */
 const invalidadas = (cliente: QueryClient) =>
-  QUE_MOSTRAM_ANIMAIS.filter((chave) => cliente.getQueryState(chave)?.isInvalidated)
+  QUE_MOSTRAM_ANIMAIS.filter((chave) => {
+    const estado = cliente.getQueryState(chave)
+    return estado === undefined || estado.isInvalidated
+  })
 
 /** Cada ação que mexe nos animais, com um corpo válido */
 const ACOES_DA_COLONIA: [string, () => { mutateAsync: (v: never) => Promise<unknown> }, unknown][] =

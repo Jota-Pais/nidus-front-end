@@ -29,9 +29,12 @@ export const chaves = {
 
 /**
  * Depois de qualquer mudança nos animais (nascimento, seleção, desmame, baixa, mudança, anulação,
- * correção, reserva, entrega), tudo o que os mostra recarrega junto
+ * correção, reserva, entrega), tudo o que os mostra recarrega junto. O que não está na tela sai do
+ * cache: aberto depois (a retirada da entrega, a janela de reservar, outra ficha, o kanban), carrega
+ * do zero, sem mostrar por um instante as caixas e os números de antes da ação
  */
 export function invalidarColonia(cliente: QueryClient): Promise<void> {
+  cliente.removeQueries({ queryKey: chaves.colonia, type: 'inactive' })
   return cliente.invalidateQueries({ queryKey: chaves.colonia })
 }
 

@@ -401,7 +401,12 @@ function AbaReproducao({
           </Campo>
         </LadoALado>
       ) : (
-        <ProximoAcasalamento casal={casalDeAntes ?? casal} partos={partos} ordem={ordem} />
+        <ProximoAcasalamento
+          nome="acasalamento"
+          casal={casalDeAntes ?? casal}
+          partos={partos}
+          ordem={ordem}
+        />
       )}
     </div>
   )

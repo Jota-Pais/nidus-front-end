@@ -162,18 +162,32 @@ export function contarDoSexo(qtd: number, sexo: Sexo): string {
   return `${qtd} ${qtd === 1 ? 'fêmea' : 'fêmeas'}`
 }
 
-/** ", 2 reservados", ", todos reservados" ou nada, depois de quantos animais há */
-function quantosReservados(reservados: number, total: number): string {
-  if (reservados === 0) return ''
-  if (reservados === total) return ', todos reservados'
-  return `, ${reservados} ${reservados === 1 ? 'reservado' : 'reservados'}`
+/** "reservado", "reservadas": concorda com o sexo e com quantos são */
+function reservadoDoSexo(qtd: number, sexo: Sexo): string {
+  return `${sexo === 'F' ? 'reservada' : 'reservado'}${qtd === 1 ? '' : 's'}`
 }
 
-/** O que a caixa de estoque tem, numa linha: "6 machos, 2 reservados" */
+/** "2 reservados", "1 reservada", "0 reservadas": os reservados de uma caixa de um sexo só */
+export function reservadosDoSexo(qtd: number, sexo: Sexo): string {
+  return `${qtd} ${reservadoDoSexo(qtd, sexo)}`
+}
+
+/** ", 2 reservados", ", todas reservadas" ou nada, depois de quantos animais há */
+function quantosReservados(reservados: number, total: number, sexo: Sexo): string {
+  if (reservados === 0) return ''
+  if (reservados === total) {
+    return total === 1
+      ? `, ${reservadoDoSexo(1, sexo)}`
+      : `, ${sexo === 'F' ? 'todas' : 'todos'} ${reservadoDoSexo(total, sexo)}`
+  }
+  return `, ${reservadosDoSexo(reservados, sexo)}`
+}
+
+/** O que a caixa de estoque tem, numa linha: "6 machos, 2 reservados", "3 fêmeas, todas reservadas" */
 export function descreverEstoque(
   estoque: Pick<EstoqueNoCard, 'sexo' | 'total' | 'reservado'>,
 ): string {
-  return `${contarDoSexo(estoque.total, estoque.sexo)}${quantosReservados(estoque.reservado, estoque.total)}`
+  return `${contarDoSexo(estoque.total, estoque.sexo)}${quantosReservados(estoque.reservado, estoque.total, estoque.sexo)}`
 }
 
 /**

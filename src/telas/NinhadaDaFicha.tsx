@@ -24,7 +24,7 @@ import {
   useRegistrarNaFicha,
   useSemNinhada,
 } from '@/dominio/consultas'
-import { descreverQuantos } from '@/dominio/pedido'
+import { descreverQuantos, descreverReservados } from '@/dominio/pedido'
 import type { Casal, DataISO, FichaDeCasal, OndeEstao, Parto, PorSexo } from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { ateHoje, descreverDias, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
@@ -507,12 +507,18 @@ function FecharSemNinhada({ parto, casal }: { parto: Parto; casal: Casal }) {
   )
 }
 
-/** O acasalamento seguinte do casal, que abre o parto que ainda não existe */
+/**
+ * O acasalamento seguinte do casal, que abre o parto que ainda não existe. Aparece nas abas
+ * Reprodução e Ninhada, que ficam montadas juntas: cada uma dá o nome do seu formulário, e os
+ * campos das duas não dividem o id
+ */
 export function ProximoAcasalamento({
+  nome,
   casal,
   partos,
   ordem,
 }: {
+  nome: string
   casal: Casal | null
   partos: Parto[]
   ordem: number
@@ -538,7 +544,7 @@ export function ProximoAcasalamento({
 
   return (
     <RegistrarEvento
-      nome="acasalamento"
+      nome={nome}
       caminho={`/api/casais/${casal.id}/acasalamento`}
       campos={[
         {
@@ -650,7 +656,7 @@ function OndeEstaoOsVivos({
         <ul className="ficha__lista">
           {reservas.map((reserva) => (
             <li key={reserva.idPedido}>
-              <strong>Pedido #{reserva.idPedido}</strong> {quantos(reserva)} reservados
+              <strong>Pedido #{reserva.idPedido}</strong> {descreverReservados(reserva)}
             </li>
           ))}
         </ul>
@@ -704,7 +710,12 @@ export function AbaNinhada({
   if (!parto) {
     return (
       <div className="ficha__aba">
-        <ProximoAcasalamento casal={casal} partos={partos} ordem={ordem} />
+        <ProximoAcasalamento
+          nome="acasalamento-ninhada"
+          casal={casal}
+          partos={partos}
+          ordem={ordem}
+        />
       </div>
     )
   }
@@ -852,6 +863,9 @@ export function AbaNinhada({
             </>
           ) : (
             <RegistrarEvento
+              // a sugestão são os vivos: uma rodada da seleção ou uma baixa muda os vivos, e o
+              // formulário volta com a sugestão nova
+              key={`${parto.vivos.m}-${parto.vivos.f}`}
               nome="desmame"
               caminho={`/api/partos/${parto.id}/desmame`}
               campos={[

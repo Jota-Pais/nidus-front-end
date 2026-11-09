@@ -11,6 +11,8 @@ import {
   descreverIdade,
   descreverQuantidadeEEspecie,
   descreverQuantos,
+  descreverQueFalta,
+  descreverReservados,
   descreverSexos,
   entraNoFiltro,
   faixaDeIdade,
@@ -94,6 +96,23 @@ describe('descreverQuantos', () => {
 
   it('sem nada, diz que não há animal', () => {
     expect(descreverQuantos({ m: 0, f: 0, qualquer: 0 })).toBe('nenhum animal')
+  })
+})
+
+describe('descreverQueFalta', () => {
+  it('o verbo concorda com quantos faltam', () => {
+    expect(descreverQueFalta({ m: 0, f: 1, qualquer: 0 })).toBe('falta 1 fêmea')
+    expect(descreverQueFalta({ m: 1, f: 1, qualquer: 0 })).toBe('faltam 1 macho e 1 fêmea')
+    expect(descreverQueFalta({ m: 0, f: 0, qualquer: 2 })).toBe('faltam 2 de qualquer sexo')
+  })
+})
+
+describe('descreverReservados', () => {
+  it('o particípio concorda com os animais: feminino só quando são todas fêmeas', () => {
+    expect(descreverReservados({ m: 1, f: 0 })).toBe('1 macho reservado')
+    expect(descreverReservados({ m: 0, f: 1 })).toBe('1 fêmea reservada')
+    expect(descreverReservados({ m: 0, f: 2 })).toBe('2 fêmeas reservadas')
+    expect(descreverReservados({ m: 2, f: 1 })).toBe('2 machos e 1 fêmea reservados')
   })
 })
 
