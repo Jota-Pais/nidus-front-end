@@ -222,9 +222,9 @@ function Face({
   )
 }
 
-/** " (30 e 50 dias)": as idades da caixa de estoque, do mais novo ao mais velho */
+/** " (50 e 30 dias)": as idades da caixa de estoque, do mais velho ao mais novo, como no kanban */
 function idadesDoEstoque(estoque: EstoqueNoCard): string {
-  const idades = estoque.grupos.map((grupo) => grupo.idadeDias).reverse()
+  const idades = estoque.grupos.map((grupo) => grupo.idadeDias)
   if (idades.length === 0) return ''
 
   const ultima = idades.pop()!

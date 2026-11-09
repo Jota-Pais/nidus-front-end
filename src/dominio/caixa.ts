@@ -19,10 +19,9 @@ export const COLUNAS: Coluna[] = [
   { estado: 'enviado', rotulo: 'Enviado', legenda: 'Enviado' },
 ]
 
-export const COLUNA = Object.fromEntries(COLUNAS.map((coluna) => [coluna.estado, coluna])) as Record<
-  EstadoCaixa,
-  Coluna
->
+export const COLUNA = Object.fromEntries(
+  COLUNAS.map((coluna) => [coluna.estado, coluna]),
+) as Record<EstadoCaixa, Coluna>
 
 export const MAX_PARTOS_POR_CASAL = 5
 
@@ -47,7 +46,9 @@ function quantosReservados(reservados: number, total: number): string {
 }
 
 /** O que a caixa de estoque tem, numa linha: "6 machos, 2 reservados" */
-export function descreverEstoque(estoque: Pick<EstoqueNoCard, 'sexo' | 'total' | 'reservado'>): string {
+export function descreverEstoque(
+  estoque: Pick<EstoqueNoCard, 'sexo' | 'total' | 'reservado'>,
+): string {
   return `${contarDoSexo(estoque.total, estoque.sexo)}${quantosReservados(estoque.reservado, estoque.total)}`
 }
 
