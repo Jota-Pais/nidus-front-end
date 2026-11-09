@@ -2,8 +2,24 @@
 // dos tokens: a de cada coluna é --estado-<coluna>-fundo/borda/texto, e a grade de estantes pinta
 // a caixa com a mesma; a de cada parto é COR_DO_PARTO
 import { COR_DO_PARTO } from '@/app/tokens'
+import { formatarData } from '@/lib/data'
 import { descreverQuantos } from './pedido'
-import type { EstadoCaixa, EstoqueNoCard, FaltaDoPedido, Sexo } from './tipos'
+import type {
+  Catalogo,
+  CodigoEspecie,
+  DataISO,
+  Destino,
+  EstadoCaixa,
+  EstoqueNoCard,
+  Face,
+  FaltaDoPedido,
+  FichaDeCasal,
+  MotivoDaLiberacao,
+  OndeEstao,
+  Parto,
+  PorSexo,
+  Sexo,
+} from './tipos'
 
 interface Coluna {
   estado: EstadoCaixa
@@ -31,6 +47,88 @@ export function corDoParto(parto: number): (typeof COR_DO_PARTO)[number] {
 }
 
 export const SIMBOLO_DO_SEXO: Record<Sexo, string> = { M: '♂', F: '♀' }
+
+export const SEXOS: readonly Sexo[] = ['M', 'F']
+
+export const ROTULO_DO_SEXO: Record<Sexo, string> = { M: 'Machos', F: 'Fêmeas' }
+
+/** O grupo de cada sexo no corpo da mudança, e o nome dele nos formulários */
+export const CAMPO_DO_SEXO: Record<Sexo, 'machos' | 'femeas'> = { M: 'machos', F: 'femeas' }
+
+/** Quantos são do sexo: o 'm' ou o 'f' */
+export function doSexo(quantos: PorSexo, sexo: Sexo): number {
+  return sexo === 'M' ? quantos.m : quantos.f
+}
+
+/**
+ * Quantos animais a mais a correção do nascimento cria, por sexo. Um sexo que sobe enquanto o
+ * outro desce é troca de sexo (eram machos registrados como fêmeas), e não animal novo: é a mesma
+ * conta da API. Só o que sobra da troca precisa de lugar
+ */
+export function aMaisNaCorrecao(atual: PorSexo, nova: PorSexo): PorSexo {
+  const m = nova.m - atual.m
+  const f = nova.f - atual.f
+  const troca = m > 0 && f < 0 ? Math.min(m, -f) : f > 0 && m < 0 ? Math.min(f, -m) : 0
+
+  return { m: Math.max(m - troca, 0), f: Math.max(f - troca, 0) }
+}
+
+/** Os vivos do parto que estão na caixa; nenhum, undefined */
+export function vivosNaCaixa(parto: Pick<Parto, 'onde'>, idCaixa: number): OndeEstao | undefined {
+  return parto.onde.find((lugar) => lugar.idCaixa === idCaixa && lugar.m + lugar.f > 0)
+}
+
+/** Todos os partos que passaram pela caixa de casal: os do casal dela e os dos casais de antes */
+export function partosDaCaixa(ficha: Pick<FichaDeCasal, 'partos' | 'anteriores'>): Parto[] {
+  return [...ficha.partos, ...ficha.anteriores.flatMap((anterior) => anterior.partos)]
+}
+
+/** Um lugar clicado na estante: uma caixa que já existe (idCaixa) ou uma posição vazia */
+export interface LugarNaEstante {
+  idEstante: number
+  codigo: string
+  face: Face
+  linha: number
+  coluna: number
+  idCaixa: number | null
+}
+
+/** O destino que a API espera: a caixa clicada, ou a posição vazia onde nasce uma caixa nova */
+export function destinoDoLugar(lugar: LugarNaEstante): Destino {
+  if (lugar.idCaixa !== null) return { idCaixa: lugar.idCaixa }
+
+  const { idEstante, face, linha, coluna } = lugar
+  return { posicao: { idEstante, face, linha, coluna } }
+}
+
+/**
+ * O id da linhagem pelo nome, dentro da espécie: o nome não se repete numa espécie. A ficha de
+ * casal traz só o nome, e a escolha da caixa de estoque filtra pelo id que a grade traz
+ */
+export function idDaLinhagem(
+  catalogo: Catalogo | undefined,
+  especie: CodigoEspecie,
+  nome: string | null | undefined,
+): number | null {
+  const linhagens = catalogo?.especies.find((e) => e.codigo === especie)?.linhagens ?? []
+  return linhagens.find((linhagem) => linhagem.nome === nome)?.id ?? null
+}
+
+const POR_QUE_LIBEROU: Record<MotivoDaLiberacao, string> = {
+  entrega: 'a entrega levou os últimos animais',
+  baixa: 'a baixa dos últimos animais a esvaziou',
+  mudanca: 'os últimos animais mudaram de caixa',
+  casal_encerrado: 'o casal encerrou sem animais nela',
+}
+
+/** "Caixa liberada em 08/11/2026: a entrega levou os últimos animais. ..." */
+export function descreverLiberacao(
+  dtLiberacao: DataISO | null,
+  motivo: MotivoDaLiberacao | null,
+): string {
+  const porque = motivo === null ? '' : `: ${POR_QUE_LIBEROU[motivo]}`
+  return `Caixa liberada em ${formatarData(dtLiberacao)}${porque}. A posição recebe caixa nova.`
+}
 
 /** "6 machos" / "1 fêmea" */
 export function contarDoSexo(qtd: number, sexo: Sexo): string {

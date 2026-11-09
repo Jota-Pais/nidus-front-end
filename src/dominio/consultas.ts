@@ -253,8 +253,6 @@ export type CorrecaoDoParto =
   | { idParto: number; evento: 'nascimento'; corpo: CorrecaoDoNascimento }
   | { idParto: number; evento: 'desmame'; corpo: CorrecaoDoDesmame }
 
-export type EventoCorrigivel = CorrecaoDoParto['evento']
-
 /** A correção de um evento já registrado do parto: sempre com motivo */
 export function useCorrigirEvento() {
   const cliente = useQueryClient()

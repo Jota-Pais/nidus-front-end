@@ -1,0 +1,22 @@
+/*
+ * As ações sobre os animais da caixa (baixa, mudança e anulação), dentro da ficha. O formulário é
+ * o da ficha (ficha__formulario); aqui fica o que é só delas
+ */
+
+/* com mais de uma idade na caixa: uma idade por linha, para ler a data, os dias e quantos */
+.animais__idades {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* a mudança: para cada sexo, quantos, quais e a estante onde se clica no destino */
+.mudanca__sexo {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 12px 0;
+  margin-bottom: 12px;
+  background: var(--cor-cartao);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+}

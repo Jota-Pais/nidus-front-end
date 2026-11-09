@@ -46,3 +46,19 @@ export function descreverDias(dias: number): string {
 export function hoje(): DataISO {
   return dayjs().format(FORMATO_DA_API)
 }
+
+const existentes = (datas: (DataISO | null | undefined)[]) =>
+  datas.filter((data): data is DataISO => Boolean(data))
+
+/**
+ * O primeiro dia que a data de um fato pode ter: o mais tarde dos fatos que vêm antes dele (o
+ * mesmo dia vale). Sem nenhum, não há limite
+ */
+export function maisTarde(...datas: (DataISO | null | undefined)[]): DataISO | undefined {
+  return existentes(datas).sort().at(-1)
+}
+
+/** O último dia que a data de um fato pode ter: hoje, ou antes, o primeiro dos fatos que vêm depois */
+export function ateHoje(...datas: (DataISO | null | undefined)[]): DataISO {
+  return [hoje(), ...existentes(datas)].sort()[0] ?? hoje()
+}
