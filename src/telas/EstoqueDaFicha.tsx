@@ -11,6 +11,7 @@ import {
   contarDoSexo,
   descreverLiberacao,
   idDaLinhagem,
+  reservadosDoSexo,
   reservasNoGrupo,
   ROTULO_DO_SEXO,
   SIMBOLO_DO_SEXO,
@@ -157,8 +158,8 @@ function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDa
                 Nascidos em {formatarData(grupo.dtNascimento)}, {descreverDias(grupo.idadeDias)}
               </strong>
               <span>
-                {contarDoSexo(grupo.total, sexo)}: {grupo.reservados} reservados e {grupo.livres}{' '}
-                livres
+                {contarDoSexo(grupo.total, sexo)}: {reservadosDoSexo(grupo.reservados, sexo)} e{' '}
+                {grupo.livres} {grupo.livres === 1 ? 'livre' : 'livres'}
               </span>
               <ul className="fichaDoEstoque__origens">
                 {grupo.origens.map((origem) => (

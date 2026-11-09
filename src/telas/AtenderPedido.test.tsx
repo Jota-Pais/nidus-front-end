@@ -249,6 +249,23 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     expect(reservar()).toHaveProperty('disabled', true)
   })
 
+  it('o zero fica no placeholder: apagado o número, o campo não volta como "0"', () => {
+    abrir()
+
+    fireEvent.click(screen.getByLabelText('Reservar da caixa F2B, nascimento em 01/11/2026'))
+    const machos = screen.getByLabelText<HTMLInputElement>(
+      'Machos a reservar da caixa F2B, nascimento em 01/11/2026',
+    )
+    // o pedido já estava coberto: o lugar entra com 0, que aparece só no placeholder
+    expect(machos.value).toBe('')
+    expect(machos.placeholder).toBe('0')
+
+    fireEvent.change(machos, { target: { value: '1' } })
+    expect(machos.value).toBe('1')
+    fireEvent.change(machos, { target: { value: '' } })
+    expect(machos.value).toBe('')
+  })
+
   it('sem animais para o pedido inteiro, não aceita e diz o que seria preciso para a entrega', () => {
     estado.busca = resultado(
       [lugar({ sugerida: true, livres: { m: 2, f: 1 }, alocar: { m: 2, f: 1 } })],
@@ -406,7 +423,7 @@ describe('completar a reserva em falta', { timeout: 30_000 }, () => {
       expect.anything(),
     )
     expect(
-      await screen.findByText('Reserva do pedido #12 completada em parte: ainda faltam 1 fêmea.'),
+      await screen.findByText('Reserva do pedido #12 completada em parte: ainda falta 1 fêmea.'),
     ).toBeTruthy()
   })
 

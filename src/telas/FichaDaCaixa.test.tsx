@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import dayjs from 'dayjs'
+import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FORMATO_DA_API, hoje } from '@/lib/data'
 import {
@@ -180,6 +181,34 @@ describe('desmame', { timeout: 40_000 }, () => {
       caminho: '/api/partos/10/desmame',
       corpo: { dtDesmameReal: hoje(), desmamadoM: 4, desmamadoF: 4 },
     })
+  })
+
+  it('depois de uma rodada da seleção, a sugestão acompanha os vivos de agora', async () => {
+    // a ficha desenhada de novo com o que a API devolver, sem desmontar: como depois de recarregar
+    function FichaQueRecarrega() {
+      const [, setVezes] = useState(0)
+      return (
+        <>
+          <button type="button" onClick={() => setVezes((vezes) => vezes + 1)}>
+            recarregar
+          </button>
+          <FichaDaCaixa idCaixa={7} aoFechar={() => {}} />
+        </>
+      )
+    }
+    renderizar(<FichaQueRecarrega />)
+    fireEvent.click(aba('Ninhada'))
+    await abaAberta()
+    expect(screen.getByLabelText<HTMLInputElement>('Machos desmamados').value).toBe('4')
+
+    // a seleção tirou 1 macho: a ficha recarrega com 3 vivos
+    api.ficha = fichaDeCasal({ partos: [parto({ vivos: { m: 3, f: 4 } })] })
+    fireEvent.click(screen.getByText('recarregar'))
+
+    await waitFor(() =>
+      expect(screen.getByLabelText<HTMLInputElement>('Machos desmamados').value).toBe('3'),
+    )
+    expect(screen.getByLabelText<HTMLInputElement>('Fêmeas desmamadas').value).toBe('4')
   })
 
   it('avisa que os desmamados a menos que os vivos viram baixa', async () => {
@@ -869,6 +898,24 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
     // AB é o macho A e a fêmea B, que já aparecem nos campos
     expect(texto).not.toContain('AB')
     expect(within(aba).getByText('1/5')).toBeTruthy()
+  })
+
+  it('o acasalamento seguinte aparece nas duas abas sem repetir o id do campo', async () => {
+    abrirFicha()
+    await abaAberta()
+
+    // o 2º parto ainda não existe: as abas Reprodução e Ninhada, montadas juntas, oferecem o acasalamento
+    fireEvent.click(screen.getByText('2º', { selector: 'button' }))
+    fireEvent.click(aba('Ninhada'))
+    await abaAberta()
+    fireEvent.click(aba('Reprodução'))
+    await abaAberta()
+
+    const ids = [...document.querySelectorAll('input[id$="_dtAcasalamento"]')].map(
+      (campo) => campo.id,
+    )
+    expect(ids).toHaveLength(2)
+    expect(new Set(ids).size).toBe(2)
   })
 
   it('mostra o parto e o desmame previstos do parto escolhido', async () => {

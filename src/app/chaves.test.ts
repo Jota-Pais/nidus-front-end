@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query'
+import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 import { chaves, invalidarColonia, invalidarPedidos } from './chaves'
 
@@ -46,15 +46,44 @@ describe('chaves', () => {
   })
 })
 
+/** As consultas na tela: cada uma com quem a observa, como um componente montado, e a API responde */
+function naTela(cliente: QueryClient, consultas: readonly (readonly unknown[])[]): () => void {
+  const saidas = consultas.map((chave) =>
+    new QueryObserver(cliente, {
+      queryKey: chave,
+      queryFn: () => Promise.resolve({ recarregada: true }),
+      staleTime: Infinity,
+    }).subscribe(() => {}),
+  )
+  return () => saidas.forEach((sair) => sair())
+}
+
 describe('invalidarColonia', () => {
-  it('derruba de uma vez kanban, grades, fichas, estoque, busca, pedidos, retirada e histórico', async () => {
+  it('recarrega de uma vez kanban, grades, fichas, estoque, busca, pedidos, retirada e histórico', async () => {
     const cliente = cacheCheio()
+    const sair = naTela(cliente, DA_COLONIA)
 
     await invalidarColonia(cliente)
 
     for (const chave of DA_COLONIA) {
-      expect(cliente.getQueryState(chave)?.isInvalidated, JSON.stringify(chave)).toBe(true)
+      expect(cliente.getQueryData(chave), JSON.stringify(chave)).toEqual({ recarregada: true })
     }
+    sair()
+  })
+
+  it('tira do cache o que não está na tela: aberto depois, não mostra as caixas de antes', async () => {
+    const cliente = cacheCheio()
+    // a ficha aberta na estante; a retirada, a janela de reservar e o kanban, fechados
+    const sair = naTela(cliente, [chaves.grade(1), chaves.caixa(812)])
+
+    await invalidarColonia(cliente)
+
+    expect(cliente.getQueryData(chaves.retirada(7))).toBeUndefined()
+    expect(cliente.getQueryData(chaves.atendimento(7))).toBeUndefined()
+    expect(cliente.getQueryData(chaves.quadro('rato'))).toBeUndefined()
+    expect(cliente.getQueryData(chaves.grade(1))).toEqual({ recarregada: true })
+    expect(cliente.getQueryData(chaves.caixa(812))).toEqual({ recarregada: true })
+    sair()
   })
 
   it('não mexe no que não depende dos animais: sessão, catálogo, salas, estantes, contas', async () => {
@@ -63,6 +92,7 @@ describe('invalidarColonia', () => {
     await invalidarColonia(cliente)
 
     for (const chave of FORA_DA_COLONIA) {
+      expect(cliente.getQueryData(chave), JSON.stringify(chave)).toEqual({})
       expect(cliente.getQueryState(chave)?.isInvalidated, JSON.stringify(chave)).toBe(false)
     }
   })

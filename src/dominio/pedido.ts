@@ -64,6 +64,22 @@ export function descreverQuantos({ m, f, qualquer }: PorSexo & { qualquer: numbe
   return partes.length > 0 ? `${partes.join(', ')} e ${ultima}` : ultima
 }
 
+/** "falta 1 fêmea", "faltam 2 machos e 1 fêmea": o verbo concorda com quantos animais são */
+export function descreverQueFalta(falta: PorSexo & { qualquer: number }): string {
+  const total = falta.m + falta.f + falta.qualquer
+  return `${total === 1 ? 'falta' : 'faltam'} ${descreverQuantos(falta)}`
+}
+
+/**
+ * "1 macho reservado", "2 fêmeas reservadas", "2 machos e 1 fêmea reservados": o particípio
+ * concorda com os animais, no feminino só quando são todas fêmeas
+ */
+export function descreverReservados(reservados: PorSexo): string {
+  const total = reservados.m + reservados.f
+  const genero = reservados.m === 0 && reservados.f > 0 ? 'reservada' : 'reservado'
+  return `${descreverQuantos({ ...reservados, qualquer: 0 })} ${genero}${total === 1 ? '' : 's'}`
+}
+
 /**
  * Depois de desfazer a reserva ou recusar o pedido reservado: "2 machos e 1 fêmea voltaram a ficar
  * livres". Sem nenhum vivo reservado (todos morreram), null

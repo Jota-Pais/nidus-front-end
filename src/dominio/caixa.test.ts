@@ -7,6 +7,7 @@ import {
   destinoDoLugar,
   idDaLinhagem,
   pintaNaGrade,
+  reservadosDoSexo,
   reservasNoGrupo,
 } from './caixa'
 import type { Catalogo } from './tipos'
@@ -14,10 +15,28 @@ import type { Catalogo } from './tipos'
 describe('descreverEstoque', () => {
   it('diz quantos animais e quantos reservados', () => {
     expect(descreverEstoque({ sexo: 'M', total: 6, reservado: 2 })).toBe('6 machos, 2 reservados')
-    expect(descreverEstoque({ sexo: 'F', total: 1, reservado: 1 })).toBe(
-      '1 fêmea, todos reservados',
-    )
     expect(descreverEstoque({ sexo: 'F', total: 4, reservado: 0 })).toBe('4 fêmeas')
+  })
+
+  it('o reservado concorda com o sexo e com quantos são', () => {
+    expect(descreverEstoque({ sexo: 'F', total: 5, reservado: 1 })).toBe('5 fêmeas, 1 reservada')
+    expect(descreverEstoque({ sexo: 'F', total: 3, reservado: 3 })).toBe(
+      '3 fêmeas, todas reservadas',
+    )
+    expect(descreverEstoque({ sexo: 'M', total: 2, reservado: 2 })).toBe(
+      '2 machos, todos reservados',
+    )
+    expect(descreverEstoque({ sexo: 'F', total: 1, reservado: 1 })).toBe('1 fêmea, reservada')
+    expect(descreverEstoque({ sexo: 'M', total: 3, reservado: 1 })).toBe('3 machos, 1 reservado')
+  })
+})
+
+describe('reservadosDoSexo', () => {
+  it('conta os reservados de uma caixa de um sexo só, no gênero dele', () => {
+    expect(reservadosDoSexo(0, 'F')).toBe('0 reservadas')
+    expect(reservadosDoSexo(1, 'F')).toBe('1 reservada')
+    expect(reservadosDoSexo(1, 'M')).toBe('1 reservado')
+    expect(reservadosDoSexo(4, 'M')).toBe('4 reservados')
   })
 })
 

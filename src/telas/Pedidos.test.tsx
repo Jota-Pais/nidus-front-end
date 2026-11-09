@@ -596,7 +596,7 @@ describe('registrar a entrega', { timeout: 40_000 }, () => {
       erro: erroDaApi(
         409,
         'IDADE_FORA_DA_FAIXA',
-        'A idade de 2 machos da caixa F2A (nascimento em 01/10/2026) em 08/11/2026 e de 38 dias, fora da idade aceita no pedido (25 a 31 dias). Desfaca a reserva e reserve animais na idade.',
+        'Na entrega em 08/11/2026, 2 machos da caixa F2A (nascimento em 01/10/2026) teriam 38 dias, fora da idade aceita no pedido (25 a 31 dias). Desfaca a reserva e reserve animais na idade.',
       ),
     })
     const entrega = await abrirEntrega()

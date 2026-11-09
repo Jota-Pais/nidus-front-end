@@ -8,7 +8,7 @@ import {
   alvoDaReserva,
   conferirReserva,
   descreverIdade,
-  descreverQuantos,
+  descreverQueFalta,
   reservaPodeIr,
 } from '@/dominio/pedido'
 import type { ConferenciaDaReserva } from '@/dominio/pedido'
@@ -126,7 +126,7 @@ export function AtenderPedido({
             !completar
               ? `Animais reservados para o pedido #${pedido.id}.`
               : falta
-                ? `Reserva do pedido #${pedido.id} completada em parte: ainda faltam ${descreverQuantos(falta)}.`
+                ? `Reserva do pedido #${pedido.id} completada em parte: ainda ${descreverQueFalta(falta)}.`
                 : `Reserva do pedido #${pedido.id} completa.`,
           )
           aoConcluir()
@@ -179,9 +179,8 @@ export function AtenderPedido({
           <div className="atender">
             {completar && pedido.reservaEmFalta && (
               <Texto>
-                A reserva deste pedido perdeu animais: faltam{' '}
-                {descreverQuantos(pedido.reservaEmFalta)}. Os que continuam reservados ficam; marque
-                de onde completar.
+                A reserva deste pedido perdeu animais: {descreverQueFalta(pedido.reservaEmFalta)}.
+                Os que continuam reservados ficam; marque de onde completar.
               </Texto>
             )}
             {falha && <Aviso tom="erro" titulo={falha} />}
@@ -337,7 +336,10 @@ function Lugar({
               <InputNumber
                 {...QUANTOS}
                 max={l.livres[chave]}
-                value={reserva[chave]}
+                // o zero fica no placeholder: apagado o número, o campo não vira "0" e o que se
+                // digita depois não sai "02"
+                value={reserva[chave] || null}
+                placeholder="0"
                 aria-label={`${sexo} a reservar da ${nome}`}
                 onChange={(valor) => aoMudar(chave, valor)}
               />

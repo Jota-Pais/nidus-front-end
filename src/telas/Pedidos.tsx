@@ -38,6 +38,7 @@ import {
   descreverIdade,
   descreverQuantidadeEEspecie,
   descreverQuantos,
+  descreverQueFalta,
   descreverSexos,
   entraNoFiltro,
   podeRecusar,
@@ -929,19 +930,16 @@ function RegistrarEntrega({
       <RetiradaDaEntrega idPedido={pedido.id} />
       {falha.erro && (
         <div className="pedidos__aviso">
-          <Aviso
-            tom="erro"
-            titulo={falha.erro}
-            {...(foraDaIdade
-              ? {
-                  action: (
-                    <Botao variante="secundario" onClick={aoDesfazer}>
-                      Desfazer reserva
-                    </Botao>
-                  ),
-                }
-              : {})}
-          />
+          {/* o botão vai embaixo da mensagem: ao lado, ele a espremia numa coluna estreita */}
+          {foraDaIdade ? (
+            <Aviso tom="erro" titulo={falha.erro}>
+              <Botao variante="secundario" onClick={aoDesfazer}>
+                Desfazer reserva
+              </Botao>
+            </Aviso>
+          ) : (
+            <Aviso tom="erro" titulo={falha.erro} />
+          )}
         </div>
       )}
       <Form
@@ -1093,9 +1091,7 @@ function DesfazerReserva({
       confirmLoading={desfazer.isPending}
     >
       <Pilha>
-        {falta && (
-          <Texto>A reserva deste pedido está em falta: faltam {descreverQuantos(falta)}.</Texto>
-        )}
+        {falta && <Texto>A reserva deste pedido está em falta: {descreverQueFalta(falta)}.</Texto>}
         <Texto>
           Os animais reservados voltam a ficar livres, nas caixas onde estão, e o pedido volta para
           Aguardando animais; depois, é só reservar de novo. Quem pediu não é avisado.
