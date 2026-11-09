@@ -1,110 +1,17 @@
-/*
- * A passagem para o estoque: para cada sexo, quantos animais e a estante em miniatura, onde se
- * clica na caixa de destino. Clicável é a posição vazia (borda tracejada) e a caixa de estoque do
- * mesmo sexo e linhagem (na cor do estoque); o resto fica apagado
- */
-.passagem {
-  display: flex;
+/* A ficha da caixa de estoque: os vivos por idade, cada idade com as origens */
+
+.fichaDoEstoque__grupo {
   flex-direction: column;
-  gap: 16px;
-  padding-bottom: 12px;
 }
 
-.passagem__sexo {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.passagem__quantos {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.passagem__rotulo {
-  min-width: 84px;
-  font-weight: 600;
-}
-
-.passagem__de {
+.fichaDoEstoque__origens {
+  margin: 0;
+  padding-left: 18px;
   color: var(--cor-suave-frente);
 }
 
-.passagem__estante {
+.fichaDoEstoque__casal {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 8px;
-}
-
-.miniGrade {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  width: 100%;
-}
-
-.miniGrade__face {
-  flex: 1 1 240px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.miniGrade__rotulo {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cor-suave-frente);
-}
-
-.miniGrade__celulas {
-  display: grid;
-  gap: 3px;
-}
-
-.miniGrade__celula {
-  height: 28px;
-  min-width: 0;
-  padding: 0;
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio-sm);
-  background: var(--cor-suave);
-  color: var(--cor-suave-frente);
-  font-family: var(--fonte-mono);
-  font-size: 10px;
-  overflow: hidden;
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.miniGrade__celula:enabled {
-  cursor: pointer;
-  opacity: 1;
-}
-
-.miniGrade__celula--vazia {
-  background: var(--cor-cartao);
-  border-style: dashed;
-}
-
-.miniGrade__celula--estoque {
-  background: var(--estado-estoque-fundo);
-  border-color: var(--estado-estoque-borda);
-  color: var(--cor-frente);
-  font-weight: 700;
-}
-
-.miniGrade__celula:enabled:hover {
-  border-color: var(--cor-acao);
-}
-
-.miniGrade__celula--marcada,
-.miniGrade__celula--marcada:enabled:hover {
-  border: 2px solid var(--cor-acao);
-  background: var(--cor-acao-fundo);
-  color: var(--cor-acao);
-  font-weight: 700;
 }

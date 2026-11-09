@@ -1,21 +1,23 @@
-// A caixa de estoque na ficha. Depois do desmame os filhotes saem da caixa do casal para caixas de
-// estoque, cada uma com um sexo e uma linhagem; qualquer posição vazia vira uma. Aqui ficam a
-// ficha da caixa de estoque, os desmamados do parto com o "Passar para o estoque", e a caixa do
+// A ficha da caixa de estoque: os vivos dela por data de nascimento (dentro da caixa, só a idade
+// os separa), de onde vieram, o que cada pedido tem reservado nela, o que aconteceu com eles e os
+// casais da caixa, se ela foi de casal antes de virar de estoque. As ações são as de qualquer
+// caixa: baixa, mudar animais de caixa e, nos eventos, anular a baixa. Aqui fica também a caixa do
 // casal encerrado que vira de estoque no lugar
-import { App, InputNumber, Segmented } from 'antd'
+import { App, Tabs } from 'antd'
 import { useState } from 'react'
-import { Aviso, Botao, Texto } from '@/componentes'
-import { COLUNA, contarDoSexo, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
+import { Aviso, Botao } from '@/componentes'
 import {
-  useEstantes,
-  useGrade,
-  usePassarParaOEstoque,
-  useVirarCaixaDeEstoque,
-} from '@/dominio/consultas'
-import type { DestinoDoEstoque, PassagemParaOEstoque } from '@/dominio/consultas'
-import type { Estante, Face, FichaDeEstoque, Parto, PorSexo, Sexo } from '@/dominio/tipos'
-import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
+  COLUNA,
+  contarDoSexo,
+  descreverLiberacao,
+  ROTULO_DO_SEXO,
+  SIMBOLO_DO_SEXO,
+} from '@/dominio/caixa'
+import { useVirarCaixaDeEstoque } from '@/dominio/consultas'
+import type { CasalComPartos, FichaDeEstoque, Parto, Sexo } from '@/dominio/tipos'
 import { descreverDias, formatarData, idadeEmDias } from '@/lib/data'
+import { BaixaNaCaixa, EventosDaFicha, MudarAnimais } from './AnimaisDaFicha'
+import type { CaixaDaAcao, GrupoDaCaixa, ReservaNaCaixa } from './AnimaisDaFicha'
 import { Campo, LadoALado } from './CamposDaFicha'
 import './EstoqueDaFicha.css'
 
@@ -31,27 +33,70 @@ function idadeDe(nascimentoDe: string | null, nascimentoAte: string | null): str
     : `${maisNovo} a ${descreverDias(maisVelho)}`
 }
 
-const ROTULO_DO_SEXO: Record<Sexo, string> = { M: 'Machos', F: 'Fêmeas' }
-
-// ------------------------------------------------------------ a ficha da caixa de estoque
+/** Os animais de um sexo só, na forma que as ações por sexo esperam */
+const doSexoDaCaixa = (sexo: Sexo, qtd: number) =>
+  sexo === 'M' ? { m: qtd, f: 0 } : { m: 0, f: qtd }
 
 export function FichaDoEstoque({ ficha }: { ficha: FichaDeEstoque }) {
   const { caixa } = ficha
-  const enviada = caixa.estado === 'enviado'
+  const daAcao: CaixaDaAcao = {
+    id: caixa.id,
+    endereco: caixa.endereco,
+    idLinhagem: caixa.idLinhagem,
+  }
+
+  return (
+    <Tabs
+      items={[
+        {
+          key: 'animais',
+          label: 'Animais',
+          children: <AbaDosAnimais ficha={ficha} caixa={daAcao} />,
+        },
+        {
+          key: 'eventos',
+          label: 'Eventos',
+          children: <EventosDaFicha eventos={ficha.eventos} caixa={daAcao} />,
+        },
+        ...(ficha.casaisAnteriores.length > 0
+          ? [
+              {
+                key: 'casais',
+                label: 'Casais anteriores',
+                children: <CasaisAnteriores casais={ficha.casaisAnteriores} />,
+              },
+            ]
+          : []),
+      ]}
+    />
+  )
+}
+
+function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDaAcao }) {
+  const [acao, setAcao] = useState<'baixa' | 'mudanca' | null>(null)
+  const { sexo, estado, ativa } = ficha.caixa
+  const grupos: GrupoDaCaixa[] = ficha.grupos.map((grupo) => ({
+    dtNascimento: grupo.dtNascimento,
+    vivos: doSexoDaCaixa(sexo, grupo.total),
+  }))
+  const reservas: ReservaNaCaixa[] = ficha.pedidos.map((pedido) => ({
+    idPedido: pedido.idPedido,
+    ...doSexoDaCaixa(sexo, pedido.qtd),
+  }))
 
   return (
     <div className="ficha__aba">
       <div className="ficha__casal">
-        {enviada
-          ? 'Caixa de estoque enviada: a entrega levou os últimos animais e a posição ficou livre.'
-          : `Caixa de estoque · ${COLUNA[caixa.estado].legenda}. Os animais saem dela na entrega; quando ela esvaziar, a posição fica livre.`}
+        {ativa
+          ? `Caixa de estoque${estado ? ` · ${COLUNA[estado].legenda}` : ''}. Os animais saem dela pela entrega, pela baixa ou mudando de caixa; quando ela esvaziar, a posição fica livre.`
+          : descreverLiberacao(ficha.caixa.dtLiberacao, ficha.caixa.motivoLiberacao)}
       </div>
 
       <LadoALado>
         <Campo rotulo="Sexo">
-          {SIMBOLO_DO_SEXO[caixa.sexo]} {ROTULO_DO_SEXO[caixa.sexo]}
+          {SIMBOLO_DO_SEXO[sexo]} {ROTULO_DO_SEXO[sexo]}
         </Campo>
-        <Campo rotulo="Linhagem">{caixa.linhagem ?? '—'}</Campo>
+        <Campo rotulo="Linhagem">{ficha.caixa.linhagem ?? '—'}</Campo>
         <Campo rotulo="Idade hoje">{idadeDe(ficha.nascimentoDe, ficha.nascimentoAte)}</Campo>
       </LadoALado>
 
@@ -63,23 +108,56 @@ export function FichaDoEstoque({ ficha }: { ficha: FichaDeEstoque }) {
         <Campo rotulo="Livres">{ficha.livre}</Campo>
       </LadoALado>
 
-      <h3>De onde vieram</h3>
-      {ficha.lotes.length === 0 ? (
+      {acao === 'baixa' && (
+        <BaixaNaCaixa
+          caixa={caixa}
+          grupos={grupos}
+          reservas={reservas}
+          aoTerminar={() => setAcao(null)}
+        />
+      )}
+      {acao === 'mudanca' && (
+        <MudarAnimais
+          caixa={caixa}
+          grupos={grupos}
+          reservas={reservas}
+          botao="Mudar animais"
+          aoTerminar={() => setAcao(null)}
+        />
+      )}
+      {acao === null && ativa && ficha.total > 0 && (
+        <div className="ficha__botoes">
+          <Botao variante="primario" onClick={() => setAcao('mudanca')}>
+            Mudar animais
+          </Botao>
+          <Botao variante="perigo" onClick={() => setAcao('baixa')}>
+            Baixa
+          </Botao>
+        </div>
+      )}
+
+      <h3>Por idade</h3>
+      {ficha.grupos.length === 0 ? (
         <p className="ficha__vazio">Nenhum animal na caixa.</p>
       ) : (
-        <ul className="ficha__lotes">
-          {ficha.lotes.map((lote) => (
-            <li key={lote.idParto}>
-              <strong>{contarDoSexo(lote.qtd, caixa.sexo)}</strong>
+        <ul className="ficha__lista">
+          {ficha.grupos.map((grupo) => (
+            <li key={grupo.dtNascimento} className="fichaDoEstoque__grupo">
+              <strong>
+                Nascidos em {formatarData(grupo.dtNascimento)}, {descreverDias(grupo.idadeDias)}
+              </strong>
               <span>
-                {lote.ordem}º parto do casal {lote.casal}, caixa {lote.origem.codigo} (
-                {lote.origem.numeroVisivel})
+                {contarDoSexo(grupo.total, sexo)}: {grupo.reservados} reservados e {grupo.livres}{' '}
+                livres
               </span>
-              <span>
-                {lote.dtNascimento
-                  ? `nascidos em ${formatarData(lote.dtNascimento)}, ${descreverDias(lote.idadeDias ?? 0)}`
-                  : '—'}
-              </span>
+              <ul className="fichaDoEstoque__origens">
+                {grupo.origens.map((origem) => (
+                  <li key={origem.idParto}>
+                    {origem.qtd} do {origem.ordem}º parto do casal {origem.casal}, caixa{' '}
+                    {origem.codigoOrigem} ({origem.numeroVisivelOrigem})
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
         </ul>
@@ -89,11 +167,10 @@ export function FichaDoEstoque({ ficha }: { ficha: FichaDeEstoque }) {
       {ficha.pedidos.length === 0 ? (
         <p className="ficha__vazio">Nenhum animal desta caixa está reservado.</p>
       ) : (
-        <ul className="ficha__lotes">
+        <ul className="ficha__lista">
           {ficha.pedidos.map((pedido) => (
-            <li key={pedido.idSolicitacao}>
-              <strong>Pedido #{pedido.idSolicitacao}</strong>
-              <span>{contarDoSexo(pedido.qtd, caixa.sexo)}</span>
+            <li key={pedido.idPedido}>
+              <strong>Pedido #{pedido.idPedido}</strong> {contarDoSexo(pedido.qtd, sexo)}
             </li>
           ))}
         </ul>
@@ -102,351 +179,39 @@ export function FichaDoEstoque({ ficha }: { ficha: FichaDeEstoque }) {
   )
 }
 
-// ------------------------------------------------------------ os desmamados do parto
+/** "1º parto: nasceu em 24/09/2026, 5 M e 5 F; desmame em 16/10/2026, 4 M e 4 F" */
+function descreverParto(parto: Parto): string {
+  const ciclo = parto.dtPartoReal
+    ? `nasceu em ${formatarData(parto.dtPartoReal)}, ${parto.nascidoM ?? 0} M e ${parto.nascidoF ?? 0} F`
+    : parto.dtSemNinhada
+      ? `fechado sem ninhada em ${formatarData(parto.dtSemNinhada)}`
+      : `acasalado em ${formatarData(parto.dtAcasalamento)}`
+  const desmame = parto.dtDesmameReal
+    ? `; desmame em ${formatarData(parto.dtDesmameReal)}, ${parto.desmamadoM ?? 0} M e ${parto.desmamadoF ?? 0} F`
+    : ''
 
-/** A caixa do casal de onde saem os desmamados: o endereço, para abrir a estante dela */
-interface CaixaDoCasal {
-  endereco: { numeroVisivel: string; sala: string }
+  return `${parto.ordem}º parto: ${ciclo}${desmame}`
 }
 
-const deSexo = (porSexo: PorSexo, sexo: Sexo) => (sexo === 'M' ? porSexo.m : porSexo.f)
-
-/** Onde estão os desmamados do parto, e a passagem da caixa do casal para o estoque */
-export function DesmamadosDoParto({
-  idCaixa,
-  caixa,
-  linhagem,
-  parto,
-}: {
-  idCaixa: number
-  caixa: CaixaDoCasal
-  /** a linhagem do casal que teve o parto: a caixa de estoque que recebe tem de ser a mesma */
-  linhagem: string | null
-  parto: Parto
-}) {
-  const [aberto, setAberto] = useState(false)
-  const { naCaixa, noEstoque } = parto
-  const sobrou = naCaixa.m + naCaixa.f > 0
-
+/** Os casais que a caixa teve antes de virar de estoque: só a história, sem ações */
+function CasaisAnteriores({ casais }: { casais: CasalComPartos[] }) {
   return (
-    <>
-      <h3>Para onde foram</h3>
-      <LadoALado>
-        <Campo rotulo="Na caixa do casal" destaque={sobrou}>
-          {naCaixa.m} M · {naCaixa.f} F
-        </Campo>
-        <Campo rotulo="No estoque">
-          {noEstoque.length === 0
-            ? '—'
-            : noEstoque
-                .map(
-                  (caixa) =>
-                    `${SIMBOLO_DO_SEXO[caixa.sexo]} ${caixa.qtd} em ${caixa.codigo} (${caixa.numeroVisivel})`,
-                )
-                .join(' · ')}
-        </Campo>
-      </LadoALado>
-
-      {sobrou &&
-        (aberto ? (
-          <PassarParaOEstoque
-            idCaixa={idCaixa}
-            caixa={caixa}
-            linhagem={linhagem}
-            parto={parto}
-            aoTerminar={() => setAberto(false)}
-          />
-        ) : (
-          <div>
-            <Botao variante="primario" onClick={() => setAberto(true)}>
-              Passar para o estoque
-            </Botao>
-          </div>
-        ))}
-    </>
-  )
-}
-
-/** A caixa clicada na estante: uma de estoque que já existe (idCaixa) ou uma posição vazia */
-interface Escolha {
-  idEstante: number
-  codigo: string
-  face: Face
-  linha: number
-  coluna: number
-  idCaixa: number | null
-}
-
-const OUTRO_SEXO: Record<Sexo, Sexo> = { M: 'F', F: 'M' }
-
-/** "para os machos" / "para as fêmeas" */
-const OS_DO_SEXO: Record<Sexo, string> = { M: 'os machos', F: 'as fêmeas' }
-
-/**
- * Para cada sexo, quantos animais e um clique na caixa onde vão: uma posição vazia vira caixa de
- * estoque nova, e uma caixa de estoque do mesmo sexo e linhagem recebe mais animais
- */
-function PassarParaOEstoque({
-  idCaixa,
-  caixa,
-  linhagem,
-  parto,
-  aoTerminar,
-}: {
-  idCaixa: number
-  caixa: CaixaDoCasal
-  linhagem: string | null
-  parto: Parto
-  aoTerminar: () => void
-}) {
-  const { message } = App.useApp()
-  const passar = usePassarParaOEstoque(idCaixa)
-  const [erro, setErro] = useState<string | null>(null)
-  const [qtd, setQtd] = useState<Record<Sexo, number>>({ M: parto.naCaixa.m, F: parto.naCaixa.f })
-  const [escolha, setEscolha] = useState<Partial<Record<Sexo, Escolha>>>({})
-  const sexos = (['M', 'F'] as const).filter((sexo) => deSexo(parto.naCaixa, sexo) > 0)
-
-  const semCaixa = sexos.some((sexo) => qtd[sexo] > 0 && !escolha[sexo])
-  const nenhum = sexos.every((sexo) => qtd[sexo] === 0)
-
-  function passarAgora() {
-    setErro(null)
-    const pedido: PassagemParaOEstoque = { idParto: parto.id }
-
-    for (const sexo of sexos) {
-      const onde = escolha[sexo]
-      if (qtd[sexo] === 0 || !onde) continue
-
-      const destino: DestinoDoEstoque =
-        onde.idCaixa !== null
-          ? { idCaixa: onde.idCaixa }
-          : {
-              posicao: {
-                idEstante: onde.idEstante,
-                face: onde.face,
-                linha: onde.linha,
-                coluna: onde.coluna,
-              },
-            }
-      pedido[sexo === 'M' ? 'machos' : 'femeas'] = { qtd: qtd[sexo], destino }
-    }
-
-    // mutateAsync, e não o retorno do mutate: quando todos saem da caixa do casal, a ficha
-    // recarregada já não mostra esta passagem, e o React Query não chama o retorno do mutate de
-    // quem saiu da tela
-    passar.mutateAsync(pedido).then(
-      ({ caixas }) => {
-        const feitas = caixas.map(
-          (feita) => `${contarDoSexo(feita.qtd, feita.sexo)} para a ${feita.codigo}`,
-        )
-        void message.success(`${feitas.join(' e ')}.`)
-        aoTerminar()
-      },
-      (falha: Error) => setErro(motivoDaFalha(falha)),
-    )
-  }
-
-  return (
-    <div className="ficha__formulario passagem">
-      {erro && <Aviso tom="erro" titulo={erro} />}
-      {sexos.map((sexo) => {
-        const maximo = deSexo(parto.naCaixa, sexo)
-
-        return (
-          <div key={sexo} className="passagem__sexo" role="group" aria-label={ROTULO_DO_SEXO[sexo]}>
-            <div className="passagem__quantos">
-              <span className="passagem__rotulo">
-                {SIMBOLO_DO_SEXO[sexo]} {ROTULO_DO_SEXO[sexo]}
-              </span>
-              <InputNumber
-                aria-label={`Quantos ${ROTULO_DO_SEXO[sexo].toLowerCase()}`}
-                min={0}
-                max={maximo}
-                precision={0}
-                value={qtd[sexo]}
-                onChange={(valor) => setQtd({ ...qtd, [sexo]: valor ?? 0 })}
-              />
-              <span className="passagem__de">de {maximo}</span>
-            </div>
-            {qtd[sexo] > 0 && (
-              <EscolherCaixa
-                sexo={sexo}
-                caixa={caixa}
-                linhagem={linhagem}
-                escolhida={escolha[sexo] ?? null}
-                doOutroSexo={escolha[OUTRO_SEXO[sexo]] ?? null}
-                aoEscolher={(onde) => setEscolha({ ...escolha, [sexo]: onde })}
-              />
-            )}
-          </div>
-        )
-      })}
-      <div className="ficha__botoes">
-        <Botao
-          variante="primario"
-          onClick={passarAgora}
-          loading={passar.isPending}
-          disabled={semCaixa || nenhum}
-        >
-          Passar para o estoque
-        </Botao>
-        <Botao variante="fantasma" onClick={aoTerminar}>
-          Cancelar
-        </Botao>
-      </div>
-    </div>
-  )
-}
-
-/** As estantes da sala da caixa do casal, abrindo na dela, para clicar na caixa de destino */
-function EscolherCaixa({
-  sexo,
-  caixa,
-  linhagem,
-  escolhida,
-  doOutroSexo,
-  aoEscolher,
-}: {
-  sexo: Sexo
-  caixa: CaixaDoCasal
-  linhagem: string | null
-  escolhida: Escolha | null
-  doOutroSexo: Escolha | null
-  aoEscolher: (onde: Escolha) => void
-}) {
-  const estantes = useEstantes()
-  const [idEstante, setIdEstante] = useState<number | null>(null)
-  const daSala = (estantes.data ?? []).filter((estante) => estante.sala === caixa.endereco.sala)
-  const aberta =
-    daSala.find((estante) => estante.id === idEstante) ??
-    daSala.find((estante) => estante.numeroVisivel === caixa.endereco.numeroVisivel) ??
-    daSala[0]
-
-  if (!aberta) {
-    return (
-      <Texto tom="secundario">
-        {estantes.isPending ? 'Carregando as estantes…' : 'Nenhuma estante na sala.'}
-      </Texto>
-    )
-  }
-
-  return (
-    <div className="passagem__estante">
-      {daSala.length > 1 && (
-        <Segmented<number>
-          size="small"
-          value={aberta.id}
-          onChange={setIdEstante}
-          options={daSala.map((estante) => ({ value: estante.id, label: estante.numeroVisivel }))}
-        />
-      )}
-      <MiniGrade
-        estante={aberta}
-        sexo={sexo}
-        linhagem={linhagem}
-        escolhida={escolhida}
-        doOutroSexo={doOutroSexo}
-        aoEscolher={aoEscolher}
-      />
-    </div>
-  )
-}
-
-/**
- * A estante em miniatura. Dá para clicar na posição vazia e na caixa de estoque do mesmo sexo e
- * linhagem; o resto fica apagado. A posição vazia que o outro sexo já pegou mostra o símbolo dele
- */
-function MiniGrade({
-  estante,
-  sexo,
-  linhagem,
-  escolhida,
-  doOutroSexo,
-  aoEscolher,
-}: {
-  estante: Estante
-  sexo: Sexo
-  linhagem: string | null
-  escolhida: Escolha | null
-  doOutroSexo: Escolha | null
-  aoEscolher: (onde: Escolha) => void
-}) {
-  const grade = useGrade(estante.id)
-
-  if (grade.isPending) return <Texto tom="secundario">Carregando a estante…</Texto>
-
-  const naPosicao = (onde: Escolha | null, codigo: string) =>
-    onde !== null && onde.idEstante === estante.id && onde.codigo === codigo
-
-  return (
-    <div className="miniGrade">
-      {(grade.data?.faces ?? []).map((face) => (
-        <div key={face.face} className="miniGrade__face">
-          <span className="miniGrade__rotulo">
-            {face.face === 'frontal' ? 'Frontal' : 'Traseira'}
-          </span>
-          <div
-            className="miniGrade__celulas"
-            style={{ gridTemplateColumns: `repeat(${estante.colunas}, minmax(0, 1fr))` }}
-          >
-            {[...face.posicoes]
-              .sort((a, b) => a.linha - b.linha || a.coluna - b.coluna)
-              .map((posicao) => {
-                const ocupante = posicao.caixa
-                const vazia = ocupante === null
-                const estoque =
-                  ocupante?.estoque &&
-                  ocupante.estoque.sexo === sexo &&
-                  ocupante.linhagem === linhagem
-                    ? ocupante.estoque
-                    : null
-                const doOutro = vazia && naPosicao(doOutroSexo, posicao.codigo)
-                const marcada = naPosicao(escolhida, posicao.codigo)
-                const titulo = estoque
-                  ? `${posicao.codigo}: caixa de estoque com ${contarDoSexo(estoque.total, sexo)}`
-                  : doOutro
-                    ? `${posicao.codigo}: já escolhida para ${OS_DO_SEXO[OUTRO_SEXO[sexo]]}`
-                    : vazia
-                      ? `${posicao.codigo}: posição vazia, vira caixa de estoque nova`
-                      : `${posicao.codigo}: ocupada`
-
-                return (
-                  <button
-                    key={posicao.codigo}
-                    type="button"
-                    className={[
-                      'miniGrade__celula',
-                      vazia && !doOutro ? 'miniGrade__celula--vazia' : '',
-                      estoque ? 'miniGrade__celula--estoque' : '',
-                      marcada ? 'miniGrade__celula--marcada' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    title={titulo}
-                    aria-label={titulo}
-                    aria-pressed={marcada}
-                    disabled={!(estoque || (vazia && !doOutro))}
-                    onClick={() =>
-                      aoEscolher({
-                        idEstante: estante.id,
-                        codigo: posicao.codigo,
-                        face: face.face,
-                        linha: posicao.linha,
-                        coluna: posicao.coluna,
-                        idCaixa: estoque && ocupante ? ocupante.id : null,
-                      })
-                    }
-                  >
-                    {estoque
-                      ? `${SIMBOLO_DO_SEXO[sexo]}${estoque.total}`
-                      : doOutro
-                        ? SIMBOLO_DO_SEXO[OUTRO_SEXO[sexo]]
-                        : posicao.codigo}
-                  </button>
-                )
-              })}
-          </div>
-        </div>
+    <div className="ficha__aba">
+      {casais.map(({ casal, partos }) => (
+        <section key={casal.id} className="fichaDoEstoque__casal">
+          <h3>
+            Casal {casal.identificacao} · {casal.linhagem}
+          </h3>
+          <p className="ficha__dica">
+            Formado em {formatarData(casal.dtFormacao)}
+            {casal.dtEncerramento ? `, encerrado em ${formatarData(casal.dtEncerramento)}` : ''}.
+          </p>
+          <ul className="ficha__lista">
+            {partos.map((parto) => (
+              <li key={parto.id}>{descreverParto(parto)}</li>
+            ))}
+          </ul>
+        </section>
       ))}
     </div>
   )
