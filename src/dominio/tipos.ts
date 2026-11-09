@@ -336,6 +336,14 @@ export interface RespostaDaMudanca {
   liberada: boolean
 }
 
+/** POST /api/ocorrencias/:id/anulacao */
+export interface RespostaDaAnulacao {
+  /** para onde voltou cada sexo da baixa: a caixa dela ou a caixa de estoque indicada */
+  voltaram: { sexo: Sexo; qtd: number; idCaixa: number; codigo: string }[]
+  /** os que voltaram livres porque o pedido deles não comporta mais a reserva */
+  soltos: PorSexo
+}
+
 // ------------------------------------------------------------ pedidos
 
 // GET /api/catalogo
