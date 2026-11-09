@@ -33,4 +33,12 @@ describe('motivoDaFalha', () => {
       'Confira os campos destacados.',
     )
   })
+
+  it('o campo que a API chama de outro jeito conta como do formulário pelo nome que tem nele', () => {
+    const falha = falhaNosCampos({ 'itens.1.idPedido': 'Escolha um dos pedidos: #7, #9.' })
+    const nome = (chave: string) => chave.replace('itens.1', 'femeas')
+
+    expect(motivoDaFalha(falha, ['femeas.idPedido'], nome)).toBe('Confira os campos destacados.')
+    expect(motivoDaFalha(falha, ['femeas.idPedido'])).toBe('Escolha um dos pedidos: #7, #9.')
+  })
 })

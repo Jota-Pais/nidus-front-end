@@ -1,0 +1,82 @@
+/*
+ * A estante em miniatura, para clicar no lugar dos animais. Clicável é a caixa de estoque do sexo
+ * e da linhagem deles (na cor do estoque) e, quando a ação cria caixa, a posição vazia (borda
+ * tracejada); o resto fica apagado
+ */
+.escolherCaixa {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.miniGrade {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.miniGrade__face {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.miniGrade__rotulo {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cor-suave-frente);
+}
+
+.miniGrade__celulas {
+  display: grid;
+  gap: 3px;
+}
+
+.miniGrade__celula {
+  height: 28px;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+  background: var(--cor-suave);
+  color: var(--cor-suave-frente);
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  overflow: hidden;
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.miniGrade__celula:enabled {
+  cursor: pointer;
+  opacity: 1;
+}
+
+.miniGrade__celula--vazia {
+  background: var(--cor-cartao);
+  border-style: dashed;
+}
+
+.miniGrade__celula--estoque {
+  background: var(--estado-estoque-fundo);
+  border-color: var(--estado-estoque-borda);
+  color: var(--cor-frente);
+  font-weight: 700;
+}
+
+.miniGrade__celula:enabled:hover {
+  border-color: var(--cor-acao);
+}
+
+.miniGrade__celula--marcada,
+.miniGrade__celula--marcada:enabled:hover {
+  border: 2px solid var(--cor-acao);
+  background: var(--cor-acao-fundo);
+  color: var(--cor-acao);
+  font-weight: 700;
+}

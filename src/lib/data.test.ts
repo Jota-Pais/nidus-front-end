@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { descreverDias, diasAte, formatarData, formatarDataCurta, hoje, idadeEmDias } from './data'
+import {
+  ateHoje,
+  descreverDias,
+  diasAte,
+  formatarData,
+  formatarDataCurta,
+  hoje,
+  idadeEmDias,
+  maisTarde,
+} from './data'
 
 describe('formatarData', () => {
   it('exibe em dd/mm/aaaa', () => {
@@ -24,6 +33,19 @@ describe('formatarDataCurta', () => {
 describe('hoje', () => {
   it('sai no formato da API', () => {
     expect(hoje()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+})
+
+describe('maisTarde e ateHoje: os limites da data de um fato', () => {
+  it('o primeiro dia é o mais tarde dos fatos de antes; sem nenhum, não há limite', () => {
+    expect(maisTarde('2026-09-01', null, '2026-09-24', undefined)).toBe('2026-09-24')
+    expect(maisTarde(null, undefined)).toBeUndefined()
+  })
+
+  it('o último dia é hoje, ou o primeiro dos fatos de depois que vier antes de hoje', () => {
+    expect(ateHoje('2026-09-28', null, '2026-09-30')).toBe('2026-09-28')
+    expect(ateHoje(null)).toBe(hoje())
+    expect(ateHoje('2999-01-01')).toBe(hoje())
   })
 })
 
