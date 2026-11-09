@@ -180,9 +180,15 @@ export interface Casal {
   grupoMacho: string
   grupoFemea: string
   linhagem: string
+  idLinhagem: number
   dtFormacao: DataISO
   ativo: boolean
   dtEncerramento: DataISO | null
+}
+
+/** O que um pedido tem reservado, por sexo */
+export interface ReservaDoPedido extends PorSexo {
+  idPedido: number
 }
 
 /** Uma caixa onde estão vivos do parto */
@@ -192,6 +198,8 @@ export interface OndeEstao extends PorSexo {
   numeroVisivel: string
   tipo: TipoDeCaixa
   reservados: number
+  /** o que cada pedido tem reservado dos vivos do parto nesta caixa */
+  pedidos: ReservaDoPedido[]
 }
 
 /** O parto, todo contado nos animais. É também o que as rotas do parto devolvem */
@@ -220,9 +228,18 @@ export interface Parto {
   vivos: PorSexo
   /** onde estão os vivos do parto agora */
   onde: OndeEstao[]
-  /** os vivos reservados, por pedido */
-  reservados: (PorSexo & { idPedido: number })[]
+  /** os vivos reservados, por pedido, no parto todo */
+  reservados: ReservaDoPedido[]
   entregues: PorSexo
+  /** a última baixa de seleção não anulada: o desmame não fica antes dela */
+  dtUltimaSelecao: DataISO | null
+  /**
+   * a primeira mudança ou entrega dos animais do parto, ou a primeira chegada deles numa caixa de
+   * estoque: a correção do desmame não passa dela
+   */
+  dtPrimeiraSaida: DataISO | null
+  /** a primeira baixa, mudança ou entrega não anulada dos animais do parto: a correção do nascimento não passa dela */
+  dtPrimeiroFato: DataISO | null
 }
 
 export type TipoDeEvento =
@@ -251,6 +268,19 @@ export interface EventoDaFicha {
   idOcorrencia: number | null
   /** a baixa que ainda pode ser anulada */
   anulavel: boolean
+  /** só na baixa anulável: quantos de cada sexo, de qual linhagem e se voltam para a caixa dela */
+  baixa: BaixaAnulavel | null
+}
+
+/** A baixa que ainda pode ser anulada, como o evento dela conta */
+export interface BaixaAnulavel {
+  sexos: PorSexo
+  idLinhagem: number
+  /**
+   * a caixa da baixa ainda recebe os animais de volta. Senão, cada sexo da baixa volta para uma
+   * caixa de estoque dele e da linhagem dela, clicada na estante
+   */
+  voltaNaOrigem: boolean
 }
 
 export interface CasalComPartos {
@@ -266,7 +296,7 @@ export interface FichaDeCasal {
    * pendente e só desmamados de um sexo e uma linhagem nela. null quando não pode
    */
   virarEstoque: Sexo | null
-  caixa: DadosDaCaixa & { linhagem: string | null }
+  caixa: DadosDaCaixa & { linhagem: string | null; idLinhagem: number | null }
   /** o ativo, ou o mais recente */
   casal: Casal | null
   /** do 1º ao último registrado: no máximo 5 */
@@ -296,6 +326,10 @@ export interface GrupoDoEstoque {
   reservados: number
   livres: number
   origens: OrigemDoGrupo[]
+  /** o que cada pedido tem reservado neste grupo */
+  pedidos: { idPedido: number; qtd: number }[]
+  /** a chegada mais recente dos vivos do grupo na caixa: a baixa e a mudança não ficam antes dela */
+  dtChegada: DataISO | null
 }
 
 /** A ficha da caixa de estoque: o que tem, de onde veio, para quem está reservado e o que aconteceu */

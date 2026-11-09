@@ -6,9 +6,11 @@ import type {
   Casal,
   Catalogo,
   Estante,
+  EventoDaFicha,
   FichaDeCasal,
   FichaDeEstoque,
   Grade,
+  OndeEstao,
   Parto,
 } from '@/dominio/tipos'
 import { ErroDeApi } from '@/lib/api'
@@ -30,12 +32,41 @@ export const parto = (parcial: Partial<Parto> = {}): Parto => ({
   desmamadoM: null,
   desmamadoF: null,
   vivos: { m: 4, f: 4 },
-  onde: [
-    { idCaixa: 7, codigo: 'F1A', numeroVisivel: 'E-01', tipo: 'casal', m: 4, f: 4, reservados: 0 },
-  ],
+  onde: [lugar({ idCaixa: 7, codigo: 'F1A', tipo: 'casal', m: 4, f: 4 })],
   reservados: [],
   entregues: { m: 0, f: 0 },
+  dtUltimaSelecao: null,
+  dtPrimeiraSaida: null,
+  dtPrimeiroFato: null,
   ...parcial,
+})
+
+/** Uma caixa onde estão vivos do parto: sem reservado, a não ser que o teste diga */
+export const lugar = (parcial: Partial<OndeEstao> & Pick<OndeEstao, 'idCaixa'>): OndeEstao => ({
+  codigo: 'F1A',
+  numeroVisivel: 'E-01',
+  tipo: 'casal',
+  m: 0,
+  f: 0,
+  reservados: 0,
+  pedidos: [],
+  ...parcial,
+})
+
+/** Uma baixa anulável nos eventos da caixa */
+export const eventoDeBaixa = (
+  idOcorrencia: number,
+  descricao: string,
+  baixa: EventoDaFicha['baixa'],
+  dataHora = '2026-10-20T00:00:00.000Z',
+): EventoDaFicha => ({
+  dataHora,
+  tipo: 'baixa',
+  descricao,
+  autor: 'Ana Souza',
+  idOcorrencia,
+  anulavel: baixa !== null,
+  baixa,
 })
 
 /** O mesmo parto já desmamado em 16/10, com os 4 M e 4 F ainda na caixa do casal */
@@ -48,6 +79,7 @@ export const casal = (id: number, identificacao: string, ativo: boolean): Casal 
   grupoMacho: identificacao.charAt(0),
   grupoFemea: identificacao.charAt(1),
   linhagem: 'Wistar',
+  idLinhagem: 1,
   dtFormacao: '2026-09-01',
   ativo,
   dtEncerramento: ativo ? null : '2026-10-27',
@@ -62,6 +94,7 @@ export const fichaDeCasal = (parcial: Partial<FichaDeCasal> = {}): FichaDeCasal 
     endereco: { numeroVisivel: 'E-01', sala: 'Sala 1', codigo: 'F1A' },
     especie: 'rato',
     linhagem: 'Wistar',
+    idLinhagem: 1,
     estado: 'livres',
     ativa: true,
     dtLiberacao: null,
@@ -111,6 +144,8 @@ export const fichaDeEstoque = (parcial: Partial<FichaDeEstoque> = {}): FichaDeEs
           qtd: 6,
         },
       ],
+      pedidos: [{ idPedido: 12, qtd: 2 }],
+      dtChegada: '2026-10-16',
     },
   ],
   pedidos: [{ idPedido: 12, qtd: 2 }],

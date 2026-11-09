@@ -14,12 +14,10 @@ import './EscolherCaixa.css'
 interface Filtro {
   sexo: Sexo
   /**
-   * as linhagens que os animais podem ter: a caixa de estoque que recebe é de uma delas. Quase
-   * sempre uma só; na anulação, a de cada casal que passou pela caixa, porque o evento da baixa
-   * não diz de qual eram os animais. A que ainda não se sabe (null, o catálogo não chegou) não
-   * casa com nenhuma caixa
+   * a linhagem dos animais: a caixa de estoque que recebe é dela. Na anulação, a que o evento da
+   * baixa diz. Sem linhagem (null), nenhuma caixa de estoque casa
    */
-  linhagens: readonly (number | null)[]
+  idLinhagem: number | null
   /** a posição vazia vira caixa nova (a mudança); sem ela, só a caixa que já existe recebe */
   aceitaVazia: boolean
   /** a caixa de onde os animais saem não recebe a si mesma */
@@ -38,7 +36,7 @@ function recebe(caixa: CaixaNaGrade, filtro: Filtro): boolean {
     estoque !== null &&
     estoque.sexo === filtro.sexo &&
     estoque.idLinhagem !== null &&
-    filtro.linhagens.includes(estoque.idLinhagem) &&
+    estoque.idLinhagem === filtro.idLinhagem &&
     caixa.id !== filtro.idOrigem
   )
 }
@@ -47,7 +45,7 @@ export function EscolherCaixa({
   sala,
   numeroVisivel,
   sexo,
-  linhagens,
+  idLinhagem,
   aceitaVazia,
   idOrigem,
   doOutroSexo = null,
@@ -59,7 +57,7 @@ export function EscolherCaixa({
   sala: string
   numeroVisivel: string
   sexo: Sexo
-  linhagens: readonly (number | null)[]
+  idLinhagem: number | null
   aceitaVazia: boolean
   idOrigem: number
   doOutroSexo?: LugarNaEstante | null | undefined
@@ -95,7 +93,7 @@ export function EscolherCaixa({
       )}
       <MiniGrade
         estante={aberta}
-        filtro={{ sexo, linhagens, aceitaVazia, idOrigem, doOutroSexo }}
+        filtro={{ sexo, idLinhagem, aceitaVazia, idOrigem, doOutroSexo }}
         escolhida={value}
         aoEscolher={(lugar) => onChange?.(lugar)}
       />

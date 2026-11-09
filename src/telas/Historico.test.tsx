@@ -40,6 +40,12 @@ vi.mock('@/dominio/consultas', () => ({
   },
 }))
 
+// a ficha de verdade lê a caixa da API: aqui basta saber qual caixa ela abriu
+vi.mock('./FichaDaCaixa', () => ({
+  FichaDaCaixa: ({ idCaixa }: { idCaixa: number | null }) =>
+    idCaixa === null ? null : <div>ficha da caixa {idCaixa}</div>,
+}))
+
 beforeEach(() => {
   filtros.length = 0
 })
@@ -54,6 +60,19 @@ describe('tela Histórico', { timeout: 20_000 }, () => {
     expect(within(linhas[0]!).getByText('Em 2026-11-08: baixa de 1 M na F1B (morte).')).toBeTruthy()
     expect(within(linhas[0]!).getByText('Caixa #4')).toBeTruthy()
     expect(within(linhas[1]!).getByText('Pedido #3')).toBeTruthy()
+  })
+
+  it('a linha de uma caixa abre a ficha dela, liberada ou não; a de outra entidade não abre nada', () => {
+    const { container } = renderizar(<Historico />, 'gestor')
+    const [daCaixa, doPedido] = [
+      ...container.querySelectorAll<HTMLElement>('tbody tr.ant-table-row'),
+    ]
+
+    expect(screen.queryByText(/^ficha da caixa/)).toBeNull()
+    expect(within(doPedido!).queryByRole('button')).toBeNull()
+    fireEvent.click(within(daCaixa!).getByText('Caixa #4'))
+
+    expect(screen.getByText('ficha da caixa 4')).toBeTruthy()
   })
 
   it('filtra por pedido, e não mais por solicitação', () => {

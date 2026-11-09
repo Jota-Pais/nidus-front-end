@@ -17,11 +17,18 @@ import {
   SEXOS,
   SIMBOLO_DO_SEXO,
 } from '@/dominio/caixa'
-import type { LugarNaEstante, ReservaNaCaixa } from '@/dominio/caixa'
+import type { LugarNaEstante } from '@/dominio/caixa'
 import { useAnularBaixa, useBaixa, useMudanca } from '@/dominio/consultas'
 import type { GrupoQueMuda, ItemDaBaixa } from '@/dominio/consultas'
 import { descreverQuantos } from '@/dominio/pedido'
-import type { DataISO, EventoDaFicha, PorSexo, Sexo } from '@/dominio/tipos'
+import type {
+  BaixaAnulavel,
+  DataISO,
+  EventoDaFicha,
+  PorSexo,
+  ReservaDoPedido,
+  Sexo,
+} from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import type { NomeNoFormulario } from '@/layout/useFalhaDoFormulario'
 import { ateHoje, descreverDias, formatarData, idadeEmDias, maisTarde } from '@/lib/data'
@@ -41,8 +48,13 @@ export interface CaixaDaAcao {
 export interface GrupoDaCaixa {
   dtNascimento: DataISO
   vivos: PorSexo
-  /** o que cada pedido tem reservado neste grupo (reservasNoGrupo) */
-  reservas: ReservaNaCaixa[]
+  /** o que cada pedido tem reservado neste grupo, como a API conta */
+  reservas: ReservaDoPedido[]
+  /**
+   * a chegada mais recente dos vivos do grupo na caixa: a baixa e a mudança não ficam antes dela.
+   * Na caixa do casal a ninhada nasceu ali, e basta o nascimento (null)
+   */
+  dtChegada: DataISO | null
 }
 
 const OS_DO_SEXO: Record<Sexo, string> = { M: 'os machos', F: 'as fêmeas' }
@@ -55,7 +67,7 @@ const OS_RESERVADOS_DO_SEXO: Record<Sexo, string> = {
 const QUANTOS_DO_SEXO: Record<Sexo, string> = { M: 'Quantos machos', F: 'Quantas fêmeas' }
 
 /** Os pedidos com reservados do sexo no grupo: as opções de "de qual pedido" */
-const pedidosDoSexo = (reservas: ReservaNaCaixa[], sexo: Sexo) =>
+const pedidosDoSexo = (reservas: ReservaDoPedido[], sexo: Sexo) =>
   reservas.filter((reserva) => doSexo(reserva, sexo) > 0).map((reserva) => reserva.idPedido)
 
 /**
@@ -265,7 +277,7 @@ export function BaixaNaCaixa({
         ))}
       <LadoALado>
         <Form.Item name="dtFato" label="Data" rules={[{ required: true, message: 'Data' }]}>
-          <CampoDeData min={grupo.dtNascimento} max={ateHoje()} />
+          <CampoDeData min={maisTarde(grupo.dtNascimento, grupo.dtChegada)} max={ateHoje()} />
         </Form.Item>
         <Form.Item name="motivo" label="Motivo (opcional)">
           <Input maxLength={200} placeholder="ex: morte, eutanásia por doença" />
@@ -490,7 +502,7 @@ export function MudarAnimais({
                   sala={caixa.endereco.sala}
                   numeroVisivel={caixa.endereco.numeroVisivel}
                   sexo={sexo}
-                  linhagens={[caixa.idLinhagem]}
+                  idLinhagem={caixa.idLinhagem}
                   aceitaVazia
                   idOrigem={caixa.id}
                   doOutroSexo={(outro?.qtd ?? 0) > 0 ? (outro?.destino ?? null) : null}
@@ -512,7 +524,7 @@ export function MudarAnimais({
         label="Data da mudança"
         rules={[{ required: true, message: 'Data' }]}
       >
-        <CampoDeData min={maisTarde(desde, grupo.dtNascimento)} max={ateHoje()} />
+        <CampoDeData min={maisTarde(desde, grupo.dtNascimento, grupo.dtChegada)} max={ateHoje()} />
       </Form.Item>
       <div className="ficha__botoes">
         <Botao variante="primario" htmlType="submit" loading={mudar.isPending} disabled={nenhum}>
@@ -530,7 +542,7 @@ export function MudarAnimais({
 
 /**
  * A caixa dos eventos: onde a estante da anulação abre e qual caixa não recebe a si mesma. A
- * linhagem não vai junto: a baixa pode ser de animais que já não estão nela
+ * linhagem não vai junto: a da baixa vem no evento, e pode ser de animais que já não estão nela
  */
 type CaixaDosEventos = Pick<CaixaDaAcao, 'id' | 'endereco'>
 
@@ -540,20 +552,16 @@ const chaveDoEvento = (evento: EventoDaFicha, indice: number) =>
     ? `h${indice}-${evento.tipo}-${evento.dataHora}`
     : `o${evento.idOcorrencia}`
 
-/** Os eventos da caixa, do mais antigo para o mais novo. A baixa que ainda pode ser anulada tem o Anular */
+/**
+ * Os eventos da caixa, do mais antigo para o mais novo. A baixa que ainda pode ser anulada tem o
+ * Anular, também na caixa liberada: é a única ação que a ficha dela oferece
+ */
 export function EventosDaFicha({
   eventos,
   caixa,
-  linhagens,
 }: {
   eventos: EventoDaFicha[]
   caixa: CaixaDosEventos
-  /**
-   * as linhagens dos animais que passaram pela caixa: a de cada casal dela e, na de estoque, a
-   * dela. O evento da baixa não diz de qual casal eram os animais, e a estante da anulação oferece
-   * as caixas de estoque de qualquer uma delas; a API confere a da baixa
-   */
-  linhagens: (number | null)[]
 }) {
   const [anulando, setAnulando] = useState<number | null>(null)
 
@@ -566,6 +574,7 @@ export function EventosDaFicha({
       {eventos.map((evento, indice) => {
         // a baixa que ainda pode ser anulada; o Anular abre o formulário embaixo dela
         const anulavel = evento.anulavel ? evento.idOcorrencia : null
+        const { baixa } = evento
 
         return (
           <li key={chaveDoEvento(evento, indice)} className="ficha__evento">
@@ -575,17 +584,17 @@ export function EventosDaFicha({
               </span>
               <span className="ficha__eventoTexto">{evento.descricao}</span>
               <span className="ficha__eventoAutor">{evento.autor}</span>
-              {anulavel !== null && anulando !== anulavel && (
+              {anulavel !== null && baixa !== null && anulando !== anulavel && (
                 <Botao variante="fantasma" size="small" onClick={() => setAnulando(anulavel)}>
                   Anular
                 </Botao>
               )}
             </div>
-            {anulavel !== null && anulando === anulavel && (
+            {anulavel !== null && baixa !== null && anulando === anulavel && (
               <AnularBaixa
                 idOcorrencia={anulavel}
+                baixa={baixa}
                 caixa={caixa}
-                linhagens={linhagens}
                 aoTerminar={() => setAnulando(null)}
               />
             )}
@@ -616,26 +625,31 @@ function descreverVolta(voltaram: { sexo: Sexo; qtd: number; codigo: string }[])
 }
 
 /**
- * A baixa lançada por engano: os animais voltam a viver na caixa dela. Quando ela não serve mais
- * para um sexo (foi liberada, tem outra ninhada, virou estoque de outro sexo), a API pede a caixa
- * de estoque desse sexo, e a estante aparece para clicar nela, só com as do sexo e das linhagens
- * que os animais podem ter
+ * A baixa lançada por engano: os animais voltam a viver na caixa dela, e aí basta o motivo. Quando
+ * ela não serve mais (foi liberada, tem outra ninhada, virou estoque de outro sexo), cada sexo da
+ * baixa volta para uma caixa de estoque, clicada na estante: só as do sexo e da linhagem da baixa
+ * podem ser clicadas. Se a caixa deixou de servir depois de a ficha carregar, a API pede a estante
  */
 function AnularBaixa({
   idOcorrencia,
+  baixa,
   caixa,
-  linhagens,
   aoTerminar,
 }: {
   idOcorrencia: number
+  baixa: BaixaAnulavel
   caixa: CaixaDosEventos
-  linhagens: (number | null)[]
   aoTerminar: () => void
 }) {
   const { message } = App.useApp()
   const anular = useAnularBaixa()
   const [form] = Form.useForm<CamposDaAnulacao>()
   const falha = useFalhaDoFormulario(form, ['motivo', ...SEXOS.map((sexo) => CAMPO_DA_VOLTA[sexo])])
+  // a estante de cada sexo que está na baixa, quando a caixa dela não recebe os animais de volta
+  const voltaEm = SEXOS.filter(
+    (sexo) =>
+      doSexo(baixa.sexos, sexo) > 0 && (!baixa.voltaNaOrigem || falha.pediu(CAMPO_DA_VOLTA[sexo])),
+  )
 
   function anularAgora(campos: CamposDaAnulacao) {
     falha.limpar()
@@ -681,7 +695,7 @@ function AnularBaixa({
       >
         <Input maxLength={200} placeholder="ex: animal contado duas vezes" />
       </Form.Item>
-      {SEXOS.filter((sexo) => falha.pediu(CAMPO_DA_VOLTA[sexo])).map((sexo) => (
+      {voltaEm.map((sexo) => (
         <Form.Item
           key={sexo}
           name={CAMPO_DA_VOLTA[sexo]}
@@ -692,7 +706,7 @@ function AnularBaixa({
             sala={caixa.endereco.sala}
             numeroVisivel={caixa.endereco.numeroVisivel}
             sexo={sexo}
-            linhagens={linhagens}
+            idLinhagem={baixa.idLinhagem}
             aceitaVazia={false}
             idOrigem={caixa.id}
           />

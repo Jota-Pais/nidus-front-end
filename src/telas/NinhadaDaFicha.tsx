@@ -10,15 +10,12 @@ import {
   aMaisNaCorrecao,
   descreverFalta,
   doSexo,
-  idDaLinhagem,
   partosDaCaixa,
-  reservasNoGrupo,
   SEXOS,
   vivosNaCaixa,
 } from '@/dominio/caixa'
 import type { LugarNaEstante } from '@/dominio/caixa'
 import {
-  useCatalogo,
   useCorrigirAcasalamento,
   useCorrigirEvento,
   useRegistrarNaFicha,
@@ -285,9 +282,9 @@ interface CamposDaCorrecaoDoNascimento {
 
 /**
  * A correção do nascimento: a data muda a idade de todos os animais do parto, e a contagem troca o
- * sexo, anula registros ou põe animais a mais onde a ninhada está. Se a caixa do casal não serve
- * mais (foi liberada ou já tem outra ninhada), os a mais vão para uma caixa de estoque do sexo
- * deles, clicada na estante, um sexo por vez
+ * sexo, anula registros ou põe animais a mais onde a ninhada está. Se a caixa do casal já tem outra
+ * ninhada, os a mais vão para uma caixa de estoque do sexo deles, clicada na estante, um sexo por
+ * vez. Na caixa liberada a ficha é só leitura, e a correção nem aparece
  */
 function CorrigirNascimento(props: {
   ficha: FichaDeCasal
@@ -336,13 +333,13 @@ function FormularioDoNascimento({
     { m: nascidoM ?? 0, f: nascidoF ?? 0 },
   )
   const aMais = SEXOS.filter((sexo) => doSexo(novos, sexo) > 0)
-  // a caixa do casal recebe os a mais se ainda está ativa e sem outra ninhada
+  // a caixa do casal recebe os a mais se está sem outra ninhada
   const outraNinhada = partosDaCaixa(ficha).some(
     (outro) => outro.id !== parto.id && vivosNaCaixa(outro, ficha.caixa.id) !== undefined,
   )
   // a API também diz quando ela não serve e a ficha não sabia: algo mudou na caixa depois de a
   // ficha carregar
-  const caixaNaoServe = !ficha.caixa.ativa || outraNinhada || falha.pediu('idCaixa')
+  const caixaNaoServe = outraNinhada || falha.pediu('idCaixa')
   // a caixa de estoque é de um sexo só: com a mais dos dois, a API recusa, e o envio fica preso
   const umSexoPorVez = caixaNaoServe && aMais.length > 1
   const sexoDaCaixa = aMais[0] ?? 'M'
@@ -394,9 +391,8 @@ function FormularioDoNascimento({
             rotulo: 'Data do parto',
             tipo: 'data',
             desde: [parto.dtAcasalamento],
-            // a API confere também o primeiro fato dos animais (baixa, mudança ou entrega), que
-            // a ficha não traz
-            ate: [parto.dtDesmameReal, seguinte?.dtAcasalamento],
+            // nem depois do primeiro fato dos animais: a primeira baixa, mudança ou entrega
+            ate: [parto.dtDesmameReal, seguinte?.dtAcasalamento, parto.dtPrimeiroFato],
           },
           { nome: 'nascidoM', rotulo: 'Machos nascidos', tipo: 'numero' },
           { nome: 'nascidoF', rotulo: 'Fêmeas nascidas', tipo: 'numero' },
@@ -418,7 +414,7 @@ function FormularioDoNascimento({
             sala={caixa.endereco.sala}
             numeroVisivel={caixa.endereco.numeroVisivel}
             sexo={sexoDaCaixa}
-            linhagens={[caixa.idLinhagem]}
+            idLinhagem={caixa.idLinhagem}
             aceitaVazia={false}
             idOrigem={caixa.id}
           />
@@ -611,9 +607,8 @@ function descreverLugar(lugar: OndeEstao, idCaixa: number): string {
 
 /**
  * Onde estão os vivos do parto, de fato, e quantos estão reservados para cada pedido. Os que ainda
- * estão nesta caixa podem sair por baixa e, depois do desmame, passar para o estoque. Das reservas
- * do parto, a ação só oferece as que podem estar nesta caixa (reservasNoGrupo): a API conta os
- * reservados de cada pedido no parto todo, e em cada caixa só quantos são
+ * estão nesta caixa podem sair por baixa e, depois do desmame, passar para o estoque. A ação
+ * oferece só os pedidos com reservados nesta caixa, como a API conta em cada uma
  */
 function OndeEstaoOsVivos({
   parto,
@@ -632,7 +627,9 @@ function OndeEstaoOsVivos({
           {
             dtNascimento: parto.dtPartoReal,
             vivos: { m: aqui.m, f: aqui.f },
-            reservas: reservasNoGrupo(parto.reservados, aqui),
+            reservas: aqui.pedidos,
+            // a ninhada nasceu na caixa do casal: basta o nascimento
+            dtChegada: null,
           },
         ]
       : []
@@ -704,7 +701,6 @@ export function AbaNinhada({
   partos: Parto[]
   ordem: number
 }) {
-  const catalogo = useCatalogo()
   const parto = partos.find((p) => p.ordem === ordem)
 
   if (!parto) {
@@ -728,22 +724,26 @@ export function AbaNinhada({
   const caixa: CaixaDaAcao = {
     id: ficha.caixa.id,
     endereco: ficha.caixa.endereco,
-    idLinhagem: idDaLinhagem(catalogo.data, ficha.caixa.especie, casal?.linhagem),
+    idLinhagem: casal?.idLinhagem ?? ficha.caixa.idLinhagem,
   }
   const pedidos = pedidosDoParto(parto)
+  // a caixa liberada é só leitura: o que ainda dá para desfazer é a baixa, nos Eventos
+  const soLeitura = !ficha.caixa.ativa
 
   return (
     <div className="ficha__aba">
       <h3>Acasalamento</h3>
       <Campo rotulo="Data do acasalamento">{formatarData(parto.dtAcasalamento)}</Campo>
-      <CorrigirData
-        idParto={parto.id}
-        evento="acasalamento"
-        rotulo="Data do acasalamento"
-        atual={parto.dtAcasalamento}
-        desde={[casal?.dtFormacao, anterior?.dtPartoReal]}
-        ate={[parto.dtPartoReal, parto.dtSemNinhada, casal?.dtEncerramento]}
-      />
+      {!soLeitura && (
+        <CorrigirData
+          idParto={parto.id}
+          evento="acasalamento"
+          rotulo="Data do acasalamento"
+          atual={parto.dtAcasalamento}
+          desde={[casal?.dtFormacao, anterior?.dtPartoReal]}
+          ate={[parto.dtPartoReal, parto.dtSemNinhada, casal?.dtEncerramento]}
+        />
+      )}
 
       <h3>Parto</h3>
       {nasceu ? (
@@ -761,12 +761,16 @@ export function AbaNinhada({
           <Total>
             Total nascidos: <strong>{(parto.nascidoM ?? 0) + (parto.nascidoF ?? 0)}</strong>
           </Total>
-          <CorrigirNascimento ficha={ficha} parto={parto} caixa={caixa} seguinte={seguinte} />
+          {!soLeitura && (
+            <CorrigirNascimento ficha={ficha} parto={parto} caixa={caixa} seguinte={seguinte} />
+          )}
         </>
       ) : parto.dtSemNinhada ? (
         <p className="ficha__vazio">
           Fechado sem ninhada em {formatarData(parto.dtSemNinhada)}: {parto.motivoSemNinhada}
         </p>
+      ) : soLeitura ? (
+        <p className="ficha__vazio">O parto não foi registrado.</p>
       ) : (
         <>
           {casal && !casal.ativo && (
@@ -804,7 +808,7 @@ export function AbaNinhada({
             </Campo>
             {!desmamou && <Campo rotulo="Vivos">{porSexo(parto.vivos)}</Campo>}
           </LadoALado>
-          {desmamou ? (
+          {desmamou || soLeitura ? (
             <Texto tom="secundario">
               Seleção registrada errada se corrige anulando a baixa nos Eventos.
             </Texto>
@@ -844,23 +848,24 @@ export function AbaNinhada({
                 <Campo rotulo="Machos desmamados">{parto.desmamadoM ?? '—'}</Campo>
                 <Campo rotulo="Fêmeas desmamadas">{parto.desmamadoF ?? '—'}</Campo>
               </LadoALado>
-              {/*
-               * a API confere também a última rodada da seleção e a primeira saída dos animais da
-               * caixa do casal, que a ficha não traz
-               */}
-              <CorrigirData
-                idParto={parto.id}
-                evento="desmame"
-                rotulo="Data do desmame"
-                atual={parto.dtDesmameReal ?? hoje()}
-                desde={[parto.dtPartoReal]}
-                ate={[]}
-              />
+              {/* nem antes da última rodada da seleção, nem depois da primeira saída dos animais */}
+              {!soLeitura && (
+                <CorrigirData
+                  idParto={parto.id}
+                  evento="desmame"
+                  rotulo="Data do desmame"
+                  atual={parto.dtDesmameReal ?? hoje()}
+                  desde={[parto.dtPartoReal, parto.dtUltimaSelecao]}
+                  ate={[parto.dtPrimeiraSaida]}
+                />
+              )}
               <p className="ficha__dica">
                 A contagem do desmame se corrige nos Eventos: anulando a baixa &quot;não chegou ao
                 desmame&quot; ou lançando outra baixa.
               </p>
             </>
+          ) : soLeitura ? (
+            <p className="ficha__vazio">A ninhada não chegou ao desmame.</p>
           ) : (
             <RegistrarEvento
               // a sugestão são os vivos: uma rodada da seleção ou uma baixa muda os vivos, e o
@@ -873,8 +878,8 @@ export function AbaNinhada({
                   nome: 'dtDesmameReal',
                   rotulo: 'Data do desmame',
                   tipo: 'data',
-                  // a API confere também a última rodada da seleção, que a ficha não traz
-                  desde: [parto.dtPartoReal],
+                  // nem antes da última rodada da seleção
+                  desde: [parto.dtPartoReal, parto.dtUltimaSelecao],
                 },
                 { nome: 'desmamadoM', rotulo: 'Machos desmamados', tipo: 'numero' },
                 { nome: 'desmamadoF', rotulo: 'Fêmeas desmamadas', tipo: 'numero' },
