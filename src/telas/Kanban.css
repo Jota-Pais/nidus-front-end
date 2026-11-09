@@ -156,16 +156,32 @@
   color: var(--cor-suave-frente);
 }
 
-/* a primeira coluna cabe o parto com o casal de antes: "AB 5º" */
+/*
+ * O parto, quantos de cada sexo e, à direita, a idade. Cada pedaço fica inteiro: quando a idade
+ * com "mamando" não cabe na linha, ela desce, ainda à direita, em vez de quebrar "4 M · 4 F" ao meio
+ */
 .kanban__ninhadas li {
-  display: grid;
-  grid-template-columns: 3em 1fr auto;
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 8px;
+}
+
+.kanban__ninhadas li > span {
+  white-space: nowrap;
+}
+
+/* a primeira coluna cabe o parto com o casal de antes: "AB 5º" */
+.kanban__ninhadas li > span:first-child {
+  width: 3em;
+}
+
+.kanban__ninhadas li > span:last-child {
+  margin-inline-start: auto;
 }
 
 /* as idades da caixa de estoque: a idade e, à direita, quantos e os reservados */
-.kanban__idades li {
-  grid-template-columns: 1fr auto;
+.kanban__idades li > span:first-child {
+  width: auto;
 }
 
 .kanban__status {

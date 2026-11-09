@@ -198,6 +198,9 @@ describe('card da caixa de estoque', () => {
 
     expect(screen.getByText('(F2D)')).toBeTruthy()
     expect(cardDe('(F2D)')?.textContent).not.toContain('fêmeas')
+    // o sexo da caixa fica, sem o "0" de quem já saiu
+    expect(cardDe('(F2D)')?.textContent).toContain('♀')
+    expect(cardDe('(F2D)')?.textContent).not.toMatch(/♀\s*0/)
   })
 
   it('nenhum card se arrasta: o kanban é só de leitura', () => {

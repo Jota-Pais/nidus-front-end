@@ -27,6 +27,48 @@ function abrirCasca(perfil: Perfil, { sair = () => {}, saindo = false } = {}) {
 
 const gatilho = () => screen.getByRole('button', { name: NOME_DO_MENU })
 
+describe('menu das telas no celular', () => {
+  /** A tela abaixo de 992px: o antd fecha a barra lateral */
+  function telaEstreita() {
+    const original = window.matchMedia
+    window.matchMedia = (consulta: string) =>
+      ({
+        ...original(consulta),
+        matches: consulta.includes('max-width'),
+      }) as MediaQueryList
+    return () => {
+      window.matchMedia = original
+    }
+  }
+
+  it('abre pelo botão do cabeçalho, sem gatilho em cima da tela, e fecha ao escolher a tela', async () => {
+    const voltar = telaEstreita()
+    abrirCasca('tecnico')
+
+    expect(document.querySelector('.ant-layout-sider-zero-width-trigger')).toBeNull()
+    const abrir = await screen.findByRole('button', { name: 'Abrir o menu' })
+    expect(document.querySelector('.ant-layout-sider-collapsed')).toBeTruthy()
+
+    fireEvent.click(abrir)
+    expect(
+      screen.getByRole('button', { name: 'Fechar o menu' }).getAttribute('aria-expanded'),
+    ).toBe('true')
+    expect(document.querySelector('.ant-layout-sider-collapsed')).toBeNull()
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Estantes' }))
+    expect(screen.getByRole('button', { name: 'Abrir o menu' })).toBeTruthy()
+    expect(document.querySelector('.ant-layout-sider-collapsed')).toBeTruthy()
+    voltar()
+  })
+
+  it('na tela larga, a barra fica aberta e não há botão de menu', () => {
+    abrirCasca('tecnico')
+
+    expect(screen.queryByRole('button', { name: 'Abrir o menu' })).toBeNull()
+    expect(document.querySelector('.ant-layout-sider-collapsed')).toBeNull()
+  })
+})
+
 describe('menu da conta', () => {
   it('no cabeçalho fica só o nome; Configurações e Sair abrem num menu', async () => {
     abrirCasca('gestor')

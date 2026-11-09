@@ -31,14 +31,21 @@
   font-size: 18px;
 }
 
+/* dois ou três campos lado a lado; no celular, o que não cabe com a data inteira desce de linha */
 .ficha__linha {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
 .ficha__linha > * {
-  flex: 1;
+  flex: 1 1 130px;
   min-width: 0;
+}
+
+/* no formulário, o campo já traz o espaço de baixo */
+.ficha__formulario .ficha__linha {
+  row-gap: 0;
 }
 
 .ficha__campo {
@@ -127,6 +134,11 @@
   margin-bottom: 12px;
 }
 
+/* rótulo comprido que quebra em duas linhas (no celular): o asterisco fica na primeira, não no meio */
+.ficha__formulario .ant-form-item-label > label {
+  align-items: baseline;
+}
+
 /* o motivo da recusa da API, em cima dos campos */
 .ficha__formulario > .ant-alert {
   margin-bottom: 12px;
@@ -177,4 +189,24 @@
 .ficha__eventoAutor {
   font-size: 12px;
   color: var(--cor-suave-frente);
+}
+
+/* No celular, a data, o autor e o Anular ficam em cima, e o texto do evento ganha a largura toda:
+   numa linha só, ele ficava espremido numa coluna de uma palavra */
+@media (max-width: 600px) {
+  .ficha__eventoLinha {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 4px 12px;
+  }
+
+  .ficha__eventoData {
+    min-width: 0;
+  }
+
+  .ficha__eventoTexto {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
 }
