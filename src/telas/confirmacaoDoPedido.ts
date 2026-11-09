@@ -24,7 +24,7 @@ export function confirmacaoDoPedido(viabilidade: Viabilidade | null): Confirmaca
       tom: 'atencao',
       titulo: 'Não deu para conferir agora se o CPMR consegue atender esse pedido.',
       detalhe: 'Você pode enviar assim mesmo: a equipe técnica confere ao analisar.',
-      enviar: 'Enviar solicitação',
+      enviar: 'Enviar pedido',
       voltar: 'Voltar',
     }
   }
@@ -34,7 +34,7 @@ export function confirmacaoDoPedido(viabilidade: Viabilidade | null): Confirmaca
       tom: 'sucesso',
       titulo: 'Esse pedido é possível.',
       detalhe: 'A equipe do CPMR vai avaliar e, estando tudo certo, segue com o seu pedido.',
-      enviar: 'Enviar solicitação',
+      enviar: 'Enviar pedido',
       voltar: 'Voltar',
     }
   }

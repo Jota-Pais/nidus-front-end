@@ -1,8 +1,8 @@
 import { Form, InputNumber, Segmented } from 'antd'
 import { Formulario } from '@/componentes'
 import type { ModoDeIdade } from '@/dominio/pedido'
-import { IDADE, conferirIdadeMaxima, validadorDeIdade } from './solicitacao.schema'
-import './Solicitacao.css'
+import { IDADE, conferirIdadeMaxima, validadorDeIdade } from './pedido.schema'
+import './CampoDeIdade.css'
 
 const MODOS: { value: ModoDeIdade; label: string }[] = [
   { value: 'faixa', label: 'Faixa' },
@@ -11,7 +11,7 @@ const MODOS: { value: ModoDeIdade; label: string }[] = [
 
 /** Dias inteiros, digitados: sem setas e com teclado numérico. A unidade vai no rótulo */
 const DIAS = {
-  className: 'solicitacao__numero',
+  className: 'campoDeIdade__numero',
   controls: false,
   precision: 0,
   inputMode: 'numeric',
@@ -41,7 +41,7 @@ export function CampoDeIdade({
   const exata = Form.useWatch('modoIdade', form) === 'exata'
 
   return (
-    <div className={['solicitacao__idade', className].filter(Boolean).join(' ')}>
+    <div className={['campoDeIdade', className].filter(Boolean).join(' ')}>
       <Formulario.Campo rotulo="Idade" name="modoIdade">
         <Segmented<ModoDeIdade> options={MODOS} aria-label="Idade em faixa ou exata" />
       </Formulario.Campo>
@@ -49,7 +49,7 @@ export function CampoDeIdade({
       <Formulario.Campo
         name="idadeMin"
         rotulo={exata ? 'Idade (dias)' : 'Idade mínima (dias)'}
-        className="solicitacao__campo--dias"
+        className="campoDeIdade__dias"
         rules={[{ validator: validadorDeIdade(idadeMinima) }]}
       >
         <InputNumber {...DIAS} />
@@ -59,9 +59,7 @@ export function CampoDeIdade({
           linhagem, no pedido) cresce no vão e os campos mudam de lugar a cada troca. Inerte e
           invisível, ela sai do Tab e do leitor de tela, e sem regra não barra o envio */}
       <div
-        className={
-          exata ? 'solicitacao__campo--dias solicitacao__guardado' : 'solicitacao__campo--dias'
-        }
+        className={exata ? 'campoDeIdade__dias campoDeIdade__guardado' : 'campoDeIdade__dias'}
         inert={exata}
       >
         <Formulario.Campo

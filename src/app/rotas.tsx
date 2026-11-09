@@ -15,9 +15,7 @@ const Estantes = lazy(() => import('@/telas/Estantes').then((m) => ({ default: m
 const Estoque = lazy(() => import('@/telas/Estoque').then((m) => ({ default: m.Estoque })))
 const Historico = lazy(() => import('@/telas/Historico').then((m) => ({ default: m.Historico })))
 const Kanban = lazy(() => import('@/telas/Kanban').then((m) => ({ default: m.Kanban })))
-const SolicitarAnimais = lazy(() =>
-  import('@/telas/SolicitarAnimais').then((m) => ({ default: m.SolicitarAnimais })),
-)
+const Pedidos = lazy(() => import('@/telas/Pedidos').then((m) => ({ default: m.Pedidos })))
 const Usuarios = lazy(() => import('@/telas/Usuarios').then((m) => ({ default: m.Usuarios })))
 
 const COLONIA = ['tecnico', 'gestor'] as const
@@ -59,7 +57,8 @@ export const rotas = createBrowserRouter([
           </RotaProtegida>
         ),
       },
-      { path: 'solicitar', element: <SolicitarAnimais /> },
+      // o caminho fica: os e-mails da API mandam quem pediu para cá
+      { path: 'solicitar', element: <Pedidos /> },
       {
         path: 'estoque',
         element: (

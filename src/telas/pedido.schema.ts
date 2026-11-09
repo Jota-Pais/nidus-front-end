@@ -1,6 +1,6 @@
 // regras dos campos do pedido de animais, separadas da tela para serem testáveis
 import { z } from 'zod'
-import type { NovaSolicitacao } from '@/dominio/consultas'
+import type { NovoPedido } from '@/dominio/consultas'
 import { formatarProtocolo } from '@/dominio/protocolo'
 import type { CodigoEspecie } from '@/dominio/tipos'
 import { faixaDeIdade, totalDeAnimais } from '@/dominio/pedido'
@@ -29,7 +29,7 @@ export function validadorDeIdade(minima: number = IDADE.minima) {
   return validadorDoZod(regraDeIdade(minima))
 }
 
-export const solicitacao = z.object({
+export const regrasDoPedido = z.object({
   nomePesquisador: z
     .string()
     .trim()
@@ -53,8 +53,8 @@ export const solicitacao = z.object({
 })
 
 /** O validador do 'rules' do Ant Design para um campo do pedido */
-export function validadorDoPedido(campo: keyof typeof solicitacao.shape) {
-  return validadorDoZod(solicitacao.shape[campo])
+export function validadorDoPedido(campo: keyof typeof regrasDoPedido.shape) {
+  return validadorDoZod(regrasDoPedido.shape[campo])
 }
 
 /**
@@ -96,7 +96,7 @@ export function temAnimal(campos: Pick<CamposDoPedido, 'machos' | 'femeas' | 'qu
 }
 
 /** Do formulário para o corpo do POST */
-export function montarPedido(campos: CamposDoPedido): NovaSolicitacao {
+export function montarPedido(campos: CamposDoPedido): NovoPedido {
   const observacoes = campos.observacoes?.trim()
 
   return {

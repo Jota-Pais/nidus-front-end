@@ -1,7 +1,8 @@
 // Tudo o que as telas leem e gravam na API
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query'
 import { chaves, invalidarColonia, invalidarPedidos } from '@/app/chaves'
-import { api } from '@/lib/api'
+import { api, ErroDeApi } from '@/lib/api'
 import { alvoDaReserva } from './pedido'
 import type {
   Casal,
@@ -374,6 +375,19 @@ export function useAnularBaixa() {
 
 // ------------------------------------------------------------ pedidos
 
+/**
+ * A ação do pedido recusada por regra (409) quase sempre quer dizer que o pedido ou os animais
+ * mudaram depois que a tela leu: outra pessoa aprovou, reservou, entregou ou deu baixa. A tela
+ * recarrega o que a ação recarregaria, e mostra como ficou
+ */
+function recarregarSeMudou(
+  cliente: QueryClient,
+  recarregar: (cliente: QueryClient) => Promise<void>,
+) {
+  return (erro: Error) =>
+    erro instanceof ErroDeApi && erro.ehRegraDeNegocio ? recarregar(cliente) : undefined
+}
+
 /** O pesquisador recebe só os dele; técnico e gestor, todos */
 export function usePedidos() {
   return useQuery({
@@ -426,6 +440,7 @@ export function useAprovarPedido() {
         metodo: 'POST',
       }),
     onSuccess: () => invalidarPedidos(cliente),
+    onError: recarregarSeMudou(cliente, invalidarPedidos),
   })
 }
 
@@ -440,6 +455,7 @@ export function useRecusarPedido() {
         corpo: { motivo },
       }),
     onSuccess: () => invalidarColonia(cliente),
+    onError: recarregarSeMudou(cliente, invalidarColonia),
   })
 }
 
@@ -492,6 +508,7 @@ export function useAlocar() {
         corpo: { itens },
       }),
     onSuccess: () => invalidarColonia(cliente),
+    onError: recarregarSeMudou(cliente, invalidarColonia),
   })
 }
 
@@ -503,6 +520,7 @@ export function useDesfazerReserva() {
     mutationFn: (idPedido: number) =>
       api<RespostaDaDevolucao>(`/api/pedidos/${idPedido}/devolucao`, { metodo: 'POST' }),
     onSuccess: () => invalidarColonia(cliente),
+    onError: recarregarSeMudou(cliente, invalidarColonia),
   })
 }
 
@@ -527,6 +545,7 @@ export function useRegistrarEntrega() {
         corpo: { dtEntrega },
       }),
     onSuccess: () => invalidarColonia(cliente),
+    onError: recarregarSeMudou(cliente, invalidarColonia),
   })
 }
 

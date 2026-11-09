@@ -3,6 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { chaves } from '@/app/chaves'
+import { ErroDeApi } from '@/lib/api'
 import {
   useAlocar,
   useAnularBaixa,
@@ -25,15 +26,21 @@ import type { Pedido } from './tipos'
 
 const chamadas = vi.hoisted(() => [] as { caminho: string; opcoes: unknown }[])
 
-vi.mock('@/lib/api', () => ({
+/** a recusa que a próxima chamada leva, quando o teste quer uma */
+const recusa = vi.hoisted(() => ({ erro: null as Error | null }))
+
+vi.mock('@/lib/api', async (original) => ({
+  ...(await original<typeof import('@/lib/api')>()),
   api: async (caminho: string, opcoes: unknown) => {
     chamadas.push({ caminho, opcoes })
+    if (recusa.erro) throw recusa.erro
     return {}
   },
 }))
 
 beforeEach(() => {
   chamadas.length = 0
+  recusa.erro = null
 })
 
 /** O histórico aberto, com o filtro vazio */
@@ -145,6 +152,46 @@ describe('as ações do pedido que não mexem nos animais', () => {
 
       expect(invalidadas(cliente)).toEqual([chaves.pedidos, HISTORICO])
     }
+  })
+})
+
+describe('a ação do pedido recusada por regra', () => {
+  const regra = () => new ErroDeApi(409, { erro: { codigo: 'PEDIDO_JA_RESERVADO', mensagem: 'x' } })
+
+  it('recarrega o que mostra animais: outra pessoa mexeu no pedido antes', async () => {
+    for (const [, usar, variaveis] of ACOES_DA_COLONIA.filter(([nome]) =>
+      ['reservar', 'desfazer reserva', 'recusar', 'entregar'].includes(nome),
+    )) {
+      recusa.erro = regra()
+      const { cliente, mutacao } = montar(usar)
+
+      await expect(mutacao.mutateAsync(variaveis as never)).rejects.toBe(recusa.erro)
+
+      expect(invalidadas(cliente)).toEqual(QUE_MOSTRAM_ANIMAIS)
+    }
+  })
+
+  it('a aprovação recarrega a lista de pedidos e o histórico', async () => {
+    recusa.erro = regra()
+    const { cliente, mutacao } = montar(useAprovarPedido)
+
+    await expect(mutacao.mutateAsync(7)).rejects.toBe(recusa.erro)
+
+    expect(invalidadas(cliente)).toEqual([chaves.pedidos, HISTORICO])
+  })
+
+  it('sem resposta da API (rede, servidor), não recarrega nada', async () => {
+    recusa.erro = new ErroDeApi(500, { erro: { codigo: 'ERRO_INTERNO', mensagem: 'x' } })
+    const { cliente, mutacao } = montar(useAlocar)
+
+    await expect(
+      mutacao.mutateAsync({
+        idPedido: 7,
+        itens: [{ idCaixa: 3, dtNascimento: '2026-10-01', machos: 1, femeas: 0 }],
+      }),
+    ).rejects.toBe(recusa.erro)
+
+    expect(invalidadas(cliente)).toEqual([])
   })
 })
 

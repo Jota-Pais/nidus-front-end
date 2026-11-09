@@ -7,7 +7,7 @@ import {
   compararDataDeEntrega,
   compararDataDoPedido,
   conferirReserva,
-  descreverAnimais,
+  descreverCaixasLiberadas,
   descreverIdade,
   descreverQuantidadeEEspecie,
   descreverQuantos,
@@ -17,8 +17,10 @@ import {
   FILTROS_DE_PEDIDO,
   podeRecusar,
   recebeReserva,
+  reservaPodeIr,
   SITUACAO_DO_PEDIDO,
   totalDeAnimais,
+  voltaramAFicarLivres,
 } from './pedido'
 
 const STATUS: StatusDoPedido[] = ['enviado', 'aprovado', 'reservado', 'entregue', 'recusado']
@@ -36,24 +38,6 @@ describe('faixaDeIdade', () => {
       idadeMin: 28,
       idadeMax: 28,
     })
-  })
-})
-
-describe('descreverAnimais', () => {
-  it('mostra só as partes que existem', () => {
-    expect(descreverAnimais({ machos: 5, femeas: 0, qualquer: 10 })).toBe('5 M · 10 qualquer sexo')
-    expect(descreverAnimais({ machos: 0, femeas: 8, qualquer: 0 })).toBe('8 F')
-  })
-
-  it('junta as três quando o pedido mistura', () => {
-    expect(descreverAnimais({ machos: 4, femeas: 4, qualquer: 2 })).toBe(
-      '4 M · 4 F · 2 qualquer sexo',
-    )
-  })
-
-  it('mostra travessão quando não há animal, e não uma frase vazia', () => {
-    expect(descreverAnimais({ machos: 0, femeas: 0, qualquer: 0 })).toBe('—')
-    expect(descreverAnimais({})).toBe('—')
   })
 })
 
@@ -110,6 +94,30 @@ describe('descreverQuantos', () => {
 
   it('sem nada, diz que não há animal', () => {
     expect(descreverQuantos({ m: 0, f: 0, qualquer: 0 })).toBe('nenhum animal')
+  })
+})
+
+describe('voltaramAFicarLivres', () => {
+  it('conta os que a reserva soltou, com o verbo no número deles', () => {
+    expect(voltaramAFicarLivres({ m: 2, f: 1 })).toBe('2 machos e 1 fêmea voltaram a ficar livres.')
+    expect(voltaramAFicarLivres({ m: 0, f: 1 })).toBe('1 fêmea voltou a ficar livre.')
+  })
+
+  it('sem vivo reservado para soltar, não diz nada', () => {
+    expect(voltaramAFicarLivres({ m: 0, f: 0 })).toBeNull()
+  })
+})
+
+describe('descreverCaixasLiberadas', () => {
+  it('diz as caixas que a entrega esvaziou, uma ou várias', () => {
+    expect(descreverCaixasLiberadas(['F2A'])).toBe('A caixa F2A ficou vazia e foi liberada.')
+    expect(descreverCaixasLiberadas(['F2A', 'F3B', 'T1A'])).toBe(
+      'As caixas F2A, F3B e T1A ficaram vazias e foram liberadas.',
+    )
+  })
+
+  it('sem caixa liberada, não diz nada', () => {
+    expect(descreverCaixasLiberadas([])).toBeNull()
   })
 })
 
@@ -252,6 +260,24 @@ describe('conferirReserva', () => {
 
     expect(conferirReserva(falta, { m: 1, f: 0 }).cobre).toBe(true)
     expect(conferirReserva(falta, { m: 1, f: 1 }).aMais.total).toBe(1)
+  })
+})
+
+describe('reservaPodeIr', () => {
+  const pedido = { machos: 2, femeas: 2, qualquer: 0 }
+  const pode = (reservado: { m: number; f: number }, inteira: boolean) =>
+    reservaPodeIr(conferirReserva(pedido, reservado), reservado, inteira)
+
+  it('o pedido aprovado só vai inteiro', () => {
+    expect(pode({ m: 2, f: 2 }, true)).toBe(true)
+    expect(pode({ m: 1, f: 2 }, true)).toBe(false)
+  })
+
+  it('a falta do reservado se completa aos poucos, sem passar do que falta', () => {
+    expect(pode({ m: 1, f: 0 }, false)).toBe(true)
+    expect(pode({ m: 2, f: 2 }, false)).toBe(true)
+    expect(pode({ m: 3, f: 0 }, false)).toBe(false)
+    expect(pode({ m: 0, f: 0 }, false)).toBe(false)
   })
 })
 
