@@ -1,0 +1,33 @@
+/* A idade na entrega: a escolha Faixa|Exata e os números na mesma linha; se não couber, o número
+   desce inteiro. As larguras são dos campos */
+.campoDeIdade {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+}
+
+/* Cada número tem a largura do rótulo "Idade mínima (dias)" inteiro, numa linha só, para as
+   caixas ficarem na mesma altura. A mensagem de erro quebra embaixo do seu campo, sem alargá-lo
+   e sem invadir o vizinho */
+.campoDeIdade__dias {
+  flex: 0 0 164px;
+}
+
+.campoDeIdade__dias label {
+  white-space: nowrap;
+}
+
+/* O número ocupa o campo inteiro; a unidade vai no rótulo, em cima */
+.campoDeIdade__numero {
+  width: 100%;
+}
+
+/*
+ * A idade máxima na idade exata: some, mas guarda a largura, para o campo ao lado não crescer. A
+ * altura não: na tela estreita ela desce para uma linha só dela, e ali o lugar guardado seria uma
+ * linha em branco. O conteúdo invisível e inerte transborda sem ocupar espaço
+ */
+.campoDeIdade__guardado {
+  visibility: hidden;
+  max-height: 0;
+}

@@ -1,13 +1,14 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import dayjs from 'dayjs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CaixaCandidata, ResultadoDaBusca, Solicitacao } from '@/dominio/tipos'
+import type { LugarCandidato, Pedido, ResultadoDaBusca } from '@/dominio/tipos'
+import { botao, erroDaApi } from '@/testes/ficha'
 import { consulta, renderizar } from '@/testes/renderizar'
 import { AtenderPedido } from './AtenderPedido'
 
-const pedido: Solicitacao = {
+const aprovado: Pedido = {
   id: 12,
-  dataSolicitacao: '2026-11-02',
+  dataPedido: '2026-11-02',
   prazoResposta: null,
   dataAceite: '2026-11-05',
   dataRecusa: null,
@@ -23,27 +24,32 @@ const pedido: Solicitacao = {
   idadeMin: 28,
   idadeMax: 28,
   dataEntrega: '2026-12-01',
+  dataEntregue: null,
   observacoes: null,
-  status: 'em_atendimento',
+  status: 'aprovado',
   motivoRecusa: null,
   reservaEmFalta: null,
 }
 
-const caixa = (dados: Partial<CaixaCandidata>): CaixaCandidata => ({
+/** O reservado que perdeu 1 macho e 1 fêmea numa baixa: a janela completa só isso */
+const emFalta: Pedido = {
+  ...aprovado,
+  status: 'reservado',
+  reservaEmFalta: { m: 1, f: 1, qualquer: 0 },
+}
+
+const lugar = (dados: Partial<LugarCandidato>): LugarCandidato => ({
   idCaixa: 4,
-  idParto: 10,
   codigo: 'F1A',
   numeroVisivel: 'E-01',
-  estado: 'livres',
-  casal: 'AB',
-  parto: 2,
-  origem: 'previsao',
-  nascimento: '2026-11-03',
+  tipo: 'casal',
+  dtNascimento: '2026-11-03',
   idadeNaEntrega: 28,
-  disponivel: { m: 2, f: 2 },
+  origem: 'previsao',
+  livres: { m: 2, f: 2 },
+  partos: [{ ordem: 2, casal: 'AB' }],
   alocar: { m: 0, f: 0 },
   sugerida: false,
-  onde: [{ codigo: 'F1A', numeroVisivel: 'E-01', tipo: 'casal', m: 2, f: 2 }],
   ...dados,
 })
 
@@ -64,7 +70,7 @@ vi.mock('@/dominio/consultas', () => ({
   useAlocar: () => ({ mutate: estado.mutate, isPending: false }),
 }))
 
-const resultado = (candidatas: CaixaCandidata[], falta = { m: 0, f: 0, qualquer: 0 }) => ({
+const resultado = (candidatas: LugarCandidato[], falta = { m: 0, f: 0, qualquer: 0 }) => ({
   faixa: { min: 25, max: 31 },
   candidatas,
   deficit: falta,
@@ -82,8 +88,8 @@ const resultado = (candidatas: CaixaCandidata[], falta = { m: 0, f: 0, qualquer:
 const daqui = (dias: number) => dayjs().add(dias, 'day').format('YYYY-MM-DD')
 const naTela = (dias: number) => dayjs().add(dias, 'day').format('DD/MM/YYYY')
 
-/** a janela sem nenhuma caixa que sirva, com 12 de qualquer sexo: de 2 a 4 acasalamentos */
-const semNenhuma = (
+/** a janela sem nenhum lugar que sirva, com 12 de qualquer sexo: de 2 a 4 acasalamentos */
+const semNenhum = (
   formarCasais: ResultadoDaBusca['acasalamentoNovo']['formarCasais'],
   acasalamentos = { min: 2, max: 4 },
 ) => ({
@@ -92,78 +98,107 @@ const semNenhuma = (
   acasalamentoNovo: { dataMinimaDeEntrega: daqui(44), viavel: true, formarCasais, acasalamentos },
 })
 
-const renderizarSemNenhuma = () =>
-  renderizar(
+function abrir(
+  pedido: Pedido = aprovado,
+  acoes: Partial<Record<'aoFechar' | 'aoConcluir' | 'aoRecusar', () => void>> = {},
+) {
+  return renderizar(
     <AtenderPedido
-      solicitacao={{ ...pedido, machos: 0, femeas: 0, qualquer: 12 }}
-      aoFechar={() => {}}
-      aoConcluir={() => {}}
-      aoRecusar={() => {}}
+      pedido={pedido}
+      aoFechar={acoes.aoFechar ?? (() => {})}
+      aoConcluir={acoes.aoConcluir ?? (() => {})}
+      aoRecusar={acoes.aoRecusar ?? (() => {})}
     />,
   )
+}
 
-const reservar = () => screen.getByRole('button', { name: 'Reservar' })
+const abrirSemNenhum = () => abrir({ ...aprovado, machos: 0, femeas: 0, qualquer: 12 })
+
+const reservar = () => botao('Reservar')
+
+/** a mutação responde como a API: o sucesso com a resposta dada, ou a recusa */
+function responder(resposta: { sucesso: unknown } | { erro: Error }) {
+  estado.mutate.mockImplementation(
+    (_dados: unknown, opcoes: { onSuccess: (r: unknown) => void; onError: (e: Error) => void }) =>
+      'erro' in resposta ? opcoes.onError(resposta.erro) : opcoes.onSuccess(resposta.sucesso),
+  )
+}
 
 beforeEach(() => {
   estado.mutate.mockReset()
-  // F1A é a sugestão e cobre o pedido; C2B fica de alternativa
+  // F1A é a sugestão e cobre o pedido; F2B, a mesma caixa de estoque com duas idades, fica de
+  // alternativa
   estado.busca = resultado([
-    caixa({ sugerida: true, alocar: { m: 2, f: 2 } }),
-    caixa({
+    lugar({ sugerida: true, alocar: { m: 2, f: 2 } }),
+    lugar({
       idCaixa: 5,
-      idParto: 11,
-      codigo: 'C2B',
-      parto: 1,
-      disponivel: { m: 1, f: 3 },
-      onde: [{ codigo: 'C2B', numeroVisivel: 'E-01', tipo: 'casal', m: 1, f: 3 }],
+      codigo: 'F2B',
+      tipo: 'estoque',
+      dtNascimento: '2026-11-01',
+      idadeNaEntrega: 30,
+      origem: 'de_fato',
+      livres: { m: 1, f: 0 },
+      partos: [{ ordem: 1, casal: 'CD' }],
+    }),
+    lugar({
+      idCaixa: 5,
+      codigo: 'F2B',
+      tipo: 'estoque',
+      dtNascimento: '2026-11-04',
+      idadeNaEntrega: 27,
+      origem: 'de_fato',
+      livres: { m: 3, f: 0 },
+      partos: [{ ordem: 1, casal: 'EF' }],
     }),
   ])
 })
 
 describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
-  it('com a sugestão cobrindo o pedido, reserva o que está marcado', () => {
-    renderizar(
-      <AtenderPedido
-        solicitacao={pedido}
-        aoFechar={() => {}}
-        aoConcluir={() => {}}
-        aoRecusar={() => {}}
-      />,
-    )
+  it('com a sugestão cobrindo o pedido, reserva o lugar marcado: a caixa e a data de nascimento', () => {
+    abrir()
 
     // o placar diz que o pedido está coberto, sem frase
     expect(placar('Machos').textContent).toBe('2 de 2')
     expect(placar('Machos').className).toContain('completa')
     expect(placar('Fêmeas').textContent).toBe('2 de 2')
     expect(screen.getByText('aceita de 25 a 31')).toBeTruthy()
-    expect(screen.queryByText(/Pedido coberto/)).toBeNull()
-    // as duas ninhadas ainda mamam: desmamam até a entrega
-    expect(screen.getAllByText('Desmama até a entrega')).toHaveLength(2)
+    // só o lugar da caixa do casal ainda mama
+    expect(screen.getAllByText('Desmama até a entrega')).toHaveLength(1)
     fireEvent.click(reservar())
 
     expect(estado.mutate).toHaveBeenCalledWith(
-      { idSolicitacao: 12, itens: [{ idParto: 10, machos: 2, femeas: 2 }] },
+      {
+        idPedido: 12,
+        itens: [{ idCaixa: 4, dtNascimento: '2026-11-03', machos: 2, femeas: 2 }],
+      },
       expect.anything(),
     )
   })
 
+  it('cada lugar diz a caixa, quando os animais nasceram e de que parto vieram', () => {
+    abrir()
+
+    expect(screen.getAllByText('F2B')).toHaveLength(2)
+    expect(screen.getByText('Nascimento em 01/11/2026 · 1º parto do casal CD')).toBeTruthy()
+    expect(screen.getByText('Nascimento em 04/11/2026 · 1º parto do casal EF')).toBeTruthy()
+    expect(screen.getAllByText('caixa de estoque · E-01')).toHaveLength(2)
+    expect(screen.getByText('caixa do casal · E-01')).toBeTruthy()
+    // marcado, cada sexo diz de quantos livres; desmarcado, só quantos livres tem
+    const lugares = document.querySelector<HTMLElement>('.atender__lista')!
+    expect(within(lugares).getAllByText('de 2')).toHaveLength(2)
+    expect(screen.getByText('1 livre')).toBeTruthy()
+    expect(screen.getByText('3 livres')).toBeTruthy()
+  })
+
   it('a janela é a de reservar os animais, e diz quando ficaram reservados', async () => {
-    estado.mutate.mockImplementation((_dados: unknown, opcoes: { onSuccess: () => void }) =>
-      opcoes.onSuccess(),
-    )
+    responder({
+      sucesso: { idPedido: 12, status: 'reservado', reservados: { m: 2, f: 2 }, falta: null },
+    })
     const fechar = vi.fn()
     const concluir = vi.fn()
-    renderizar(
-      <AtenderPedido
-        solicitacao={pedido}
-        aoFechar={fechar}
-        aoConcluir={concluir}
-        aoRecusar={() => {}}
-      />,
-    )
+    abrir(aprovado, { aoFechar: fechar, aoConcluir: concluir })
 
     expect(screen.getByText('Reservar animais do pedido #12')).toBeTruthy()
-    expect(screen.queryByText(/Atender/)).toBeNull()
     fireEvent.click(reservar())
 
     expect(await screen.findByText('Animais reservados para o pedido #12.')).toBeTruthy()
@@ -172,43 +207,51 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     expect(fechar).not.toHaveBeenCalled()
   })
 
-  it('a equipe ajusta a sugestão e completa com outra ninhada', async () => {
-    renderizar(
-      <AtenderPedido
-        solicitacao={pedido}
-        aoFechar={() => {}}
-        aoConcluir={() => {}}
-        aoRecusar={() => {}}
-      />,
-    )
+  it('a equipe ajusta a sugestão e completa com outro lugar da mesma caixa', async () => {
+    abrir()
 
-    fireEvent.change(screen.getByLabelText('Machos a reservar do 2º parto do casal AB'), {
-      target: { value: '1' },
-    })
+    fireEvent.change(
+      screen.getByLabelText('Machos a reservar da caixa F1A, nascimento em 03/11/2026'),
+      { target: { value: '1' } },
+    )
     await waitFor(() => expect(placar('Machos').textContent).toBe('1 de 2'))
     expect(placar('Machos').className).not.toContain('completa')
     expect(reservar()).toHaveProperty('disabled', true)
 
-    // marcada, a outra ninhada entra com o que falta
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Casal AB · 1º parto' }))
+    // marcado, o outro lugar entra com o que falta
+    fireEvent.click(screen.getByLabelText('Reservar da caixa F2B, nascimento em 04/11/2026'))
     await waitFor(() => expect(reservar()).toHaveProperty('disabled', false))
     fireEvent.click(reservar())
 
     expect(estado.mutate).toHaveBeenCalledWith(
       {
-        idSolicitacao: 12,
+        idPedido: 12,
         itens: [
-          { idParto: 10, machos: 1, femeas: 2 },
-          { idParto: 11, machos: 1, femeas: 0 },
+          { idCaixa: 4, dtNascimento: '2026-11-03', machos: 1, femeas: 2 },
+          { idCaixa: 5, dtNascimento: '2026-11-04', machos: 1, femeas: 0 },
         ],
       },
       expect.anything(),
     )
   })
 
+  it('o que passa do pedido não vai, e o aviso diz quanto sobra', async () => {
+    abrir()
+
+    fireEvent.click(screen.getByLabelText('Reservar da caixa F2B, nascimento em 01/11/2026'))
+    // o pedido já estava coberto: o lugar entra vazio, e a equipe põe 1 macho a mais
+    fireEvent.change(
+      screen.getByLabelText('Machos a reservar da caixa F2B, nascimento em 01/11/2026'),
+      { target: { value: '1' } },
+    )
+
+    expect(await screen.findByText('Há 1 macho a mais nos lugares marcados.')).toBeTruthy()
+    expect(reservar()).toHaveProperty('disabled', true)
+  })
+
   it('sem animais para o pedido inteiro, não aceita e diz o que seria preciso para a entrega', () => {
     estado.busca = resultado(
-      [caixa({ sugerida: true, disponivel: { m: 2, f: 1 }, alocar: { m: 2, f: 1 } })],
+      [lugar({ sugerida: true, livres: { m: 2, f: 1 }, alocar: { m: 2, f: 1 } })],
       {
         m: 0,
         f: 1,
@@ -216,14 +259,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
       },
     )
     const recusar = vi.fn()
-    renderizar(
-      <AtenderPedido
-        solicitacao={pedido}
-        aoFechar={() => {}}
-        aoConcluir={() => {}}
-        aoRecusar={recusar}
-      />,
-    )
+    abrir(aprovado, { aoRecusar: recusar })
 
     expect(reservar()).toHaveProperty('disabled', true)
     expect(placar('Fêmeas').textContent).toBe('1 de 2')
@@ -234,48 +270,13 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
       ),
     ).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Recusar' }))
+    fireEvent.click(botao('Recusar'))
     expect(recusar).toHaveBeenCalled()
   })
 
-  it('mostra em que caixas estão os livres: no estoque, e não na caixa do casal', () => {
-    estado.busca = resultado([
-      caixa({
-        sugerida: true,
-        origem: 'de_fato',
-        disponivel: { m: 5, f: 5 },
-        alocar: { m: 2, f: 2 },
-        onde: [
-          { codigo: 'F3B', numeroVisivel: 'E-01', tipo: 'estoque', m: 5, f: 0 },
-          { codigo: 'F3C', numeroVisivel: 'E-01', tipo: 'estoque', m: 0, f: 5 },
-        ],
-      }),
-    ])
-    renderizar(
-      <AtenderPedido
-        solicitacao={pedido}
-        aoFechar={() => {}}
-        aoConcluir={() => {}}
-        aoRecusar={() => {}}
-      />,
-    )
-
-    const lugares = screen.getByRole('list', {
-      name: 'Onde estão os livres do 2º parto do casal AB',
-    })
-    expect(within(lugares).getByText('F3B')).toBeTruthy()
-    expect(within(lugares).getByText('♂ 5')).toBeTruthy()
-    expect(within(lugares).getByText('F3C')).toBeTruthy()
-    expect(within(lugares).getByText('♀ 5')).toBeTruthy()
-    expect(screen.queryByText('F1A')).toBeNull()
-    expect(screen.queryByText('Desmama até a entrega')).toBeNull()
-    // marcada, cada sexo diz de quantos livres
-    expect(screen.getAllByText('de 5')).toHaveLength(2)
-  })
-
-  it('sem nenhuma caixa, diz só que não há animais, quantos casais formar e quando', () => {
-    estado.busca = semNenhuma({ de: daqui(5), ate: daqui(10) })
-    renderizarSemNenhuma()
+  it('sem nenhum lugar, diz só que não há animais, quantos casais formar e quando', () => {
+    estado.busca = semNenhum({ de: daqui(5), ate: daqui(10) })
+    abrirSemNenhum()
 
     expect(screen.getByText('Não há animais para esta entrega com a idade pedida.')).toBeTruthy()
     expect(
@@ -283,16 +284,14 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
         `Para atender este pedido, são necessários cerca de 2 a 4 acasalamentos entre ${naTela(5)} e ${naTela(10)}.`,
       ),
     ).toBeTruthy()
-    // e mais nada: nem o resumo do pedido, nem a falta
-    expect(screen.queryByText(/de idade · entrega em/)).toBeNull()
-    expect(screen.queryByText(/^Ana ·/)).toBeNull()
-    expect(screen.queryByText(/Faltam/)).toBeNull()
+    // e mais nada: nem o placar, nem os lugares
+    expect(screen.queryByText('Idade na entrega')).toBeNull()
   })
 
   it('a janela de um dia só diz o dia; a que já começou vai de hoje até o fim', () => {
     // e as duas contas dando o mesmo, um número só
-    estado.busca = semNenhuma({ de: daqui(7), ate: daqui(7) }, { min: 2, max: 2 })
-    const umDia = renderizarSemNenhuma()
+    estado.busca = semNenhum({ de: daqui(7), ate: daqui(7) }, { min: 2, max: 2 })
+    const umDia = abrirSemNenhum()
     expect(
       screen.getByText(
         `Para atender este pedido, são necessários cerca de 2 acasalamentos em ${naTela(7)}.`,
@@ -300,8 +299,8 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     ).toBeTruthy()
     umDia.unmount()
 
-    estado.busca = semNenhuma({ de: daqui(-3), ate: daqui(4) })
-    renderizarSemNenhuma()
+    estado.busca = semNenhum({ de: daqui(-3), ate: daqui(4) })
+    abrirSemNenhum()
     expect(
       screen.getByText(
         `Para atender este pedido, são necessários cerca de 2 a 4 acasalamentos entre hoje e ${naTela(4)}.`,
@@ -310,13 +309,137 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
   })
 
   it('sem idade aceita que chegue desmamada, diz que não há quando formar', () => {
-    estado.busca = semNenhuma(null)
-    renderizarSemNenhuma()
+    estado.busca = semNenhum(null)
+    abrirSemNenhum()
 
     expect(
       screen.getByText(
         'Para atender este pedido, não há quando acasalar: na idade pedida, os filhotes ainda não estariam desmamados.',
       ),
     ).toBeTruthy()
+  })
+})
+
+describe('a recusa da reserva', { timeout: 30_000 }, () => {
+  it('reservado por outra pessoa antes: avisa e fecha, e a lista mostra o pedido reservado', async () => {
+    responder({
+      erro: erroDaApi(409, 'PEDIDO_JA_RESERVADO', 'Os animais do pedido #12 ja estao reservados.'),
+    })
+    const concluir = vi.fn()
+    abrir(aprovado, { aoConcluir: concluir })
+
+    fireEvent.click(reservar())
+
+    expect(await screen.findByText('Os animais do pedido #12 ja estao reservados.')).toBeTruthy()
+    expect(concluir).toHaveBeenCalled()
+  })
+
+  it('a outra recusa fica na janela, para a equipe escolher outro lugar', async () => {
+    responder({
+      erro: erroDaApi(
+        409,
+        'SEM_ANIMAIS',
+        'A caixa F1A tem 1 macho livre do nascimento de 03/11/2026, e a reserva pediu 2.',
+      ),
+    })
+    const concluir = vi.fn()
+    abrir(aprovado, { aoConcluir: concluir })
+
+    fireEvent.click(reservar())
+
+    expect(
+      (await screen.findByText(/A caixa F1A tem 1 macho livre/)).closest('[role="alert"]'),
+    ).toBeTruthy()
+    expect(concluir).not.toHaveBeenCalled()
+  })
+})
+
+describe('completar a reserva em falta', { timeout: 30_000 }, () => {
+  beforeEach(() => {
+    // a busca procura só a falta: a sugestão completa 1 macho e 1 fêmea
+    estado.busca = resultado([
+      lugar({ sugerida: true, livres: { m: 2, f: 2 }, alocar: { m: 1, f: 1 } }),
+      lugar({
+        idCaixa: 5,
+        codigo: 'F2B',
+        tipo: 'estoque',
+        dtNascimento: '2026-11-01',
+        livres: { m: 3, f: 0 },
+      }),
+    ])
+  })
+
+  it('a janela diz o que falta e conta só a falta no placar', () => {
+    abrir(emFalta)
+
+    expect(screen.getByText('Completar a reserva do pedido #12')).toBeTruthy()
+    expect(
+      screen.getByText(
+        'A reserva deste pedido perdeu animais: faltam 1 macho e 1 fêmea. Os que continuam reservados ficam; marque de onde completar.',
+      ),
+    ).toBeTruthy()
+    expect(placar('Machos').textContent).toBe('1 de 1')
+    expect(placar('Fêmeas').textContent).toBe('1 de 1')
+  })
+
+  it('completa aos poucos: só o macho que há, e a resposta diz o que ainda falta', async () => {
+    responder({
+      sucesso: {
+        idPedido: 12,
+        status: 'reservado',
+        reservados: { m: 1, f: 0 },
+        falta: { m: 0, f: 1, qualquer: 0 },
+      },
+    })
+    abrir(emFalta)
+
+    fireEvent.change(
+      screen.getByLabelText('Fêmeas a reservar da caixa F1A, nascimento em 03/11/2026'),
+      { target: { value: '0' } },
+    )
+    await waitFor(() => expect(placar('Fêmeas').textContent).toBe('0 de 1'))
+    expect(botao('Completar')).toHaveProperty('disabled', false)
+    fireEvent.click(botao('Completar'))
+
+    expect(estado.mutate).toHaveBeenCalledWith(
+      { idPedido: 12, itens: [{ idCaixa: 4, dtNascimento: '2026-11-03', machos: 1, femeas: 0 }] },
+      expect.anything(),
+    )
+    expect(
+      await screen.findByText('Reserva do pedido #12 completada em parte: ainda faltam 1 fêmea.'),
+    ).toBeTruthy()
+  })
+
+  it('não passa do que falta', async () => {
+    abrir(emFalta)
+
+    fireEvent.change(
+      screen.getByLabelText('Machos a reservar da caixa F1A, nascimento em 03/11/2026'),
+      { target: { value: '2' } },
+    )
+
+    await waitFor(() => expect(botao('Completar')).toHaveProperty('disabled', true))
+    expect(screen.getByText('Há 1 macho a mais nos lugares marcados.')).toBeTruthy()
+  })
+
+  it('completo, diz que a reserva está completa', async () => {
+    responder({
+      sucesso: { idPedido: 12, status: 'reservado', reservados: { m: 1, f: 1 }, falta: null },
+    })
+    abrir(emFalta)
+
+    fireEvent.click(botao('Completar'))
+
+    expect(await screen.findByText('Reserva do pedido #12 completa.')).toBeTruthy()
+  })
+
+  it('sem lugar que sirva, diz que não há animais livres para completar', () => {
+    estado.busca = semNenhum({ de: daqui(5), ate: daqui(10) })
+    abrir(emFalta)
+
+    expect(
+      screen.getByText('Não há animais livres para completar a reserva com a idade pedida.'),
+    ).toBeTruthy()
+    expect(screen.getByText(/^Para completar, são necessários/)).toBeTruthy()
   })
 })

@@ -1,32 +1,51 @@
-// Na entrega, de qual caixa tirar cada animal do pedido: o que sobrou na caixa do casal primeiro,
-// depois as caixas de estoque. É a mesma conta que a API usa para descontar das caixas
-import { Texto } from '@/componentes'
+// Na entrega, de qual caixa tirar cada animal do pedido: onde os reservados estão de fato. Se a
+// equipe juntou os reservados numa caixa, é ela que aparece. Dentro da caixa só a idade distingue
+// os ratos, então cada linha diz também quando eles nasceram
+import { Aviso, Texto } from '@/componentes'
 import { contarDoSexo, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import { useRetirada } from '@/dominio/consultas'
+import type { LugarDaRetirada } from '@/dominio/tipos'
+import { descreverDias, formatarData, idadeEmDias } from '@/lib/data'
 import './RetiradaDaEntrega.css'
 
-export function RetiradaDaEntrega({ idSolicitacao }: { idSolicitacao: number }) {
-  const retirada = useRetirada(idSolicitacao)
+const TIPO: Record<LugarDaRetirada['tipo'], string> = {
+  estoque: 'caixa de estoque',
+  casal: 'caixa do casal',
+}
 
-  if (retirada.isPending)
+export function RetiradaDaEntrega({ idPedido }: { idPedido: number }) {
+  const retirada = useRetirada(idPedido)
+
+  if (retirada.isPending) {
     return <Texto tom="secundario">Vendo de quais caixas tirar os animais…</Texto>
-  if (!retirada.data || retirada.data.length === 0) return null
+  }
+  if (retirada.isError) {
+    return (
+      <div className="retirada">
+        <Aviso tom="atencao" titulo="Não deu para ver de quais caixas tirar os animais.">
+          {retirada.error.message}
+        </Aviso>
+      </div>
+    )
+  }
+  if (retirada.data.length === 0) return null
 
   return (
     <div className="retirada">
       <Texto tom="rotulo">Tirar das caixas</Texto>
       <ul className="retirada__lista">
-        {retirada.data.map((item) => (
-          <li key={`${item.numeroVisivel}-${item.codigo}-${item.sexo}`}>
+        {retirada.data.map((lugar) => (
+          <li key={`${lugar.numeroVisivel}-${lugar.codigo}-${lugar.sexo}-${lugar.dtNascimento}`}>
             <strong>
-              {SIMBOLO_DO_SEXO[item.sexo]} {contarDoSexo(item.qtd, item.sexo)}
+              {SIMBOLO_DO_SEXO[lugar.sexo]} {contarDoSexo(lugar.qtd, lugar.sexo)}
             </strong>
             <span>
-              da {item.tipo === 'estoque' ? 'caixa de estoque' : 'caixa do casal'} {item.codigo} (
-              {item.numeroVisivel})
+              da {TIPO[lugar.tipo]} <span className="retirada__codigo">{lugar.codigo}</span> (
+              {lugar.numeroVisivel})
             </span>
             <span className="retirada__origem">
-              {item.partos.map((p) => `${p.ordem}º parto do casal ${p.casal}`).join(', ')}
+              {`Nascimento em ${formatarData(lugar.dtNascimento)} (${descreverDias(idadeEmDias(lugar.dtNascimento))} hoje) · `}
+              {lugar.partos.map((p) => `${p.ordem}º parto do casal ${p.casal}`).join(', ')}
             </span>
           </li>
         ))}

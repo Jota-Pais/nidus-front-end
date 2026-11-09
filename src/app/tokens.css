@@ -95,8 +95,8 @@
   --sombra-md: 0 4px 6px rgba(0, 0, 0, 0.07);
   --sombra-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
 
-  /* Métrica: a altura de campos e botões, a mesma do tema do Ant Design. A solicitação
-     alinha a palavra ao lado do número ("machos") por ela */
+  /* Métrica: a altura de campos e botões, a mesma do tema do Ant Design. O pedido
+     alinha o total ao lado dos números ("= 5 animais") por ela */
   --altura-de-controle: 48px;
 
   /* Movimento */

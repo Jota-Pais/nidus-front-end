@@ -3,108 +3,144 @@ import { useState } from 'react'
 import { Aviso, Botao, Etiqueta, Texto } from '@/componentes'
 import { SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import { useAlocar, useAtendimento } from '@/dominio/consultas'
-import { conferirReserva, descreverIdade } from '@/dominio/solicitacao'
-import type { ConferenciaDaReserva } from '@/dominio/solicitacao'
-import type {
-  CaixaCandidata,
-  DataISO,
-  PorSexo,
-  ResultadoDaBusca,
-  Solicitacao,
-} from '@/dominio/tipos'
+import type { ItemDaReserva } from '@/dominio/consultas'
+import {
+  alvoDaReserva,
+  conferirReserva,
+  descreverIdade,
+  descreverQuantos,
+  reservaPodeIr,
+} from '@/dominio/pedido'
+import type { ConferenciaDaReserva } from '@/dominio/pedido'
+import type { DataISO, LugarCandidato, Pedido, PorSexo, ResultadoDaBusca } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
+import { ErroDeApi } from '@/lib/api'
 import { formatarData, hoje } from '@/lib/data'
 import './AtenderPedido.css'
 
-/** Quanto se reserva de cada ninhada, pelo id do parto */
-type Reserva = Record<number, PorSexo>
+/**
+ * Quanto se reserva de cada lugar. O lugar é a caixa e a data de nascimento: dentro da caixa, só a
+ * idade distingue os ratos
+ */
+type Reserva = Record<string, PorSexo>
+
+const chaveDoLugar = (lugar: Pick<LugarCandidato, 'idCaixa' | 'dtNascimento'>) =>
+  `${lugar.idCaixa}:${lugar.dtNascimento}`
 
 /** Quantos animais: só inteiros, sem setas, teclado numérico no celular */
 const QUANTOS = { controls: false, precision: 0, min: 0, inputMode: 'numeric' } as const
 
-/** A sugestão do sistema é a reserva inicial; a equipe desmarca, marca outra e ajusta */
-function reservaSugerida(candidatas: CaixaCandidata[]): Reserva {
+/** A sugestão do sistema é a reserva inicial; a equipe desmarca, marca outro lugar e ajusta */
+function reservaSugerida(candidatas: LugarCandidato[]): Reserva {
   return Object.fromEntries(
-    candidatas.filter((c) => c.sugerida).map((c) => [c.idParto, { ...c.alocar }]),
+    candidatas.filter((c) => c.sugerida).map((c) => [chaveDoLugar(c), { ...c.alocar }]),
   )
 }
 
-function somar(reserva: Reserva): PorSexo {
-  return Object.values(reserva).reduce((soma, r) => ({ m: soma.m + r.m, f: soma.f + r.f }), {
-    m: 0,
-    f: 0,
-  })
+function somar(quantos: PorSexo[]): PorSexo {
+  return quantos.reduce((soma, r) => ({ m: soma.m + r.m, f: soma.f + r.f }), { m: 0, f: 0 })
 }
 
 /**
- * Reservar os animais de um pedido aprovado: as ninhadas com animais na idade pedida para a data,
- * com a sugestão do sistema já marcada e as caixas onde estão os livres. A equipe pode trocar de
- * ninhada e mudar quanto reserva de cada uma; o pedido só é reservado inteiro. Sem animais para
- * isso, espera ou recusa com o motivo
+ * Reservar os animais do pedido: os lugares (caixa e data de nascimento) com animais livres na
+ * idade pedida para a data, com a sugestão do sistema já marcada. A equipe pode trocar de lugar e
+ * mudar quanto reserva de cada um. O pedido aprovado só se reserva inteiro; no reservado que perdeu
+ * animais, a mesma janela completa a falta, aos poucos se for preciso, sem passar do que falta.
+ * Sem animais para isso, espera ou recusa com o motivo
  */
 export function AtenderPedido({
-  solicitacao,
+  pedido,
   aoFechar,
   aoConcluir,
   aoRecusar,
 }: {
-  solicitacao: Solicitacao
+  pedido: Pedido
   aoFechar: () => void
   /** os animais reservados: fecha também o pedido aberto embaixo */
   aoConcluir: () => void
   aoRecusar: () => void
 }) {
   const { message } = App.useApp()
-  const atendimento = useAtendimento(solicitacao)
+  const atendimento = useAtendimento(pedido)
   const alocar = useAlocar()
   // até a primeira mudança, vale a sugestão que chegou da API
   const [editada, setEditada] = useState<Reserva | null>(null)
+  const [falha, setFalha] = useState<string | null>(null)
 
+  // o reservado em falta completa só o que falta; o aprovado reserva o pedido inteiro
+  const completar = pedido.status === 'reservado'
+  const alvo = alvoDaReserva(pedido)
   const candidatas = atendimento.data?.candidatas ?? []
   const reserva = editada ?? reservaSugerida(candidatas)
-  const reservado = somar(reserva)
-  const conferencia = conferirReserva(solicitacao, reservado)
+  // só os lugares da busca de agora: o que sumiu depois de recarregar sai da reserva
+  const marcadas = candidatas.flatMap((c) => {
+    const quantos = reserva[chaveDoLugar(c)]
+    return quantos ? [{ lugar: c, quantos }] : []
+  })
+  const reservado = somar(marcadas.map(({ quantos }) => quantos))
+  const conferencia = conferirReserva(alvo, reservado)
 
-  function marcar(caixa: CaixaCandidata, marcada: boolean) {
+  function marcar(lugar: LugarCandidato, marcado: boolean) {
     const proxima = { ...reserva }
 
-    if (marcada) {
-      // entra com o que ainda falta, até o que a ninhada tem livre: primeiro os sexos pedidos,
+    if (marcado) {
+      // entra com o que ainda falta, até o que o lugar tem livre: primeiro os sexos pedidos,
       // depois o "qualquer" com a sobra
       const { falta } = conferencia
-      const m = Math.min(caixa.disponivel.m, falta.machos)
-      const f = Math.min(caixa.disponivel.f, falta.femeas)
-      const qualquerM = Math.min(caixa.disponivel.m - m, falta.qualquer)
-      const qualquerF = Math.min(caixa.disponivel.f - f, falta.qualquer - qualquerM)
-      proxima[caixa.idParto] = { m: m + qualquerM, f: f + qualquerF }
+      const m = Math.min(lugar.livres.m, falta.machos)
+      const f = Math.min(lugar.livres.f, falta.femeas)
+      const qualquerM = Math.min(lugar.livres.m - m, falta.qualquer)
+      const qualquerF = Math.min(lugar.livres.f - f, falta.qualquer - qualquerM)
+      proxima[chaveDoLugar(lugar)] = { m: m + qualquerM, f: f + qualquerF }
     } else {
-      delete proxima[caixa.idParto]
+      delete proxima[chaveDoLugar(lugar)]
     }
 
     setEditada(proxima)
   }
 
-  function mudar(caixa: CaixaCandidata, sexo: keyof PorSexo, valor: number | null) {
-    const atual = reserva[caixa.idParto] ?? { m: 0, f: 0 }
-    setEditada({ ...reserva, [caixa.idParto]: { ...atual, [sexo]: valor ?? 0 } })
+  function mudar(lugar: LugarCandidato, sexo: keyof PorSexo, valor: number | null) {
+    const atual = reserva[chaveDoLugar(lugar)] ?? { m: 0, f: 0 }
+    setEditada({ ...reserva, [chaveDoLugar(lugar)]: { ...atual, [sexo]: valor ?? 0 } })
   }
 
-  // nenhuma caixa serve: a janela fica só com o que é preciso para a entrega
-  const semNenhuma = atendimento.data?.candidatas.length === 0
+  // nenhum lugar serve: a janela fica só com o que é preciso para a entrega
+  const semNenhum = atendimento.data?.candidatas.length === 0
 
   function reservar() {
-    const itens = Object.entries(reserva)
-      .filter(([, r]) => r.m + r.f > 0)
-      .map(([idParto, r]) => ({ idParto: Number(idParto), machos: r.m, femeas: r.f }))
+    const itens: ItemDaReserva[] = marcadas
+      .filter(({ quantos }) => quantos.m + quantos.f > 0)
+      .map(({ lugar, quantos }) => ({
+        idCaixa: lugar.idCaixa,
+        dtNascimento: lugar.dtNascimento,
+        machos: quantos.m,
+        femeas: quantos.f,
+      }))
 
+    setFalha(null)
     alocar.mutate(
-      { idSolicitacao: solicitacao.id, itens },
+      { idPedido: pedido.id, itens },
       {
-        onSuccess: () => {
-          void message.success(`Animais reservados para o pedido #${solicitacao.id}.`)
+        onSuccess: ({ falta }) => {
+          void message.success(
+            !completar
+              ? `Animais reservados para o pedido #${pedido.id}.`
+              : falta
+                ? `Reserva do pedido #${pedido.id} completada em parte: ainda faltam ${descreverQuantos(falta)}.`
+                : `Reserva do pedido #${pedido.id} completa.`,
+          )
           aoConcluir()
         },
-        onError: (erro) => void message.error(erro.message),
+        onError: (erro) => {
+          // outra pessoa reservou antes (ou o segundo clique): não há o que fazer aqui
+          if (erro instanceof ErroDeApi && erro.codigo === 'PEDIDO_JA_RESERVADO') {
+            void message.info(erro.message)
+            aoConcluir()
+            return
+          }
+          // a busca recarrega (consultas), e a janela mostra os lugares como ficaram
+          setFalha(erro.message)
+        },
       },
     )
   }
@@ -113,7 +149,11 @@ export function AtenderPedido({
     <Modal
       open
       width={760}
-      title={`Reservar animais do pedido #${solicitacao.id}`}
+      title={
+        completar
+          ? `Completar a reserva do pedido #${pedido.id}`
+          : `Reservar animais do pedido #${pedido.id}`
+      }
       onCancel={aoFechar}
       footer={
         <div className="atender__rodape">
@@ -125,42 +165,57 @@ export function AtenderPedido({
             <Botao
               variante="primario"
               loading={alocar.isPending}
-              disabled={!conferencia.cobre}
+              disabled={!reservaPodeIr(conferencia, reservado, !completar)}
               onClick={reservar}
             >
-              Reservar
+              {completar ? 'Completar' : 'Reservar'}
             </Botao>
           </div>
         </div>
       }
     >
-      <EstadoDaConsulta consulta={atendimento} rotulo="Procurando as caixas…">
-        {atendimento.data &&
-          (semNenhuma ? (
-            <Aviso tom="atencao" titulo="Não há animais para esta entrega com a idade pedida.">
-              Para atender este pedido, {acasalamentosNecessarios(atendimento.data)}.
-            </Aviso>
-          ) : (
-            <>
-              <Placar
-                solicitacao={solicitacao}
-                conferencia={conferencia}
-                faixa={atendimento.data.faixa}
-              />
-              <ul className="atender__lista">
-                {candidatas.map((ninhada) => (
-                  <Ninhada
-                    key={ninhada.idParto}
-                    ninhada={ninhada}
-                    reserva={reserva[ninhada.idParto]}
-                    aoMarcar={(marcada) => marcar(ninhada, marcada)}
-                    aoMudar={(sexo, valor) => mudar(ninhada, sexo, valor)}
-                  />
-                ))}
-              </ul>
-              <Avisos conferencia={conferencia} busca={atendimento.data} />
-            </>
-          ))}
+      <EstadoDaConsulta consulta={atendimento} rotulo="Procurando os animais…">
+        {atendimento.data && (
+          <div className="atender">
+            {completar && pedido.reservaEmFalta && (
+              <Texto>
+                A reserva deste pedido perdeu animais: faltam{' '}
+                {descreverQuantos(pedido.reservaEmFalta)}. Os que continuam reservados ficam; marque
+                de onde completar.
+              </Texto>
+            )}
+            {falha && <Aviso tom="erro" titulo={falha} />}
+            {semNenhum ? (
+              <Aviso
+                tom="atencao"
+                titulo={
+                  completar
+                    ? 'Não há animais livres para completar a reserva com a idade pedida.'
+                    : 'Não há animais para esta entrega com a idade pedida.'
+                }
+              >
+                {completar ? 'Para completar' : 'Para atender este pedido'},{' '}
+                {acasalamentosNecessarios(atendimento.data)}.
+              </Aviso>
+            ) : (
+              <>
+                <Placar pedido={pedido} conferencia={conferencia} faixa={atendimento.data.faixa} />
+                <ul className="atender__lista">
+                  {candidatas.map((lugar) => (
+                    <Lugar
+                      key={chaveDoLugar(lugar)}
+                      lugar={lugar}
+                      reserva={reserva[chaveDoLugar(lugar)]}
+                      aoMarcar={(marcado) => marcar(lugar, marcado)}
+                      aoMudar={(sexo, valor) => mudar(lugar, sexo, valor)}
+                    />
+                  ))}
+                </ul>
+                <Avisos conferencia={conferencia} busca={atendimento.data} completar={completar} />
+              </>
+            )}
+          </div>
+        )}
       </EstadoDaConsulta>
     </Modal>
   )
@@ -173,27 +228,29 @@ const SEXOS = [
 ] as const
 
 /**
- * O pedido contra o que está marcado: quantos de cada sexo pedido já estão cobertos, em verde
- * quando completos. Ao lado, a idade e a data da entrega, que decidem as ninhadas que servem
+ * O que a reserva tem de cobrir contra o que está marcado: quantos de cada sexo já estão cobertos,
+ * em verde quando completos. No reservado em falta, conta só a falta. Ao lado, a idade e a data da
+ * entrega, que decidem os lugares que servem
  */
 function Placar({
-  solicitacao: s,
+  pedido,
   conferencia,
   faixa,
 }: {
-  solicitacao: Solicitacao
+  pedido: Pedido
   conferencia: ConferenciaDaReserva
   faixa: ResultadoDaBusca['faixa']
 }) {
+  const alvo = alvoDaReserva(pedido)
   const contas = [
-    { rotulo: 'Machos', pedido: s.machos, falta: conferencia.falta.machos },
-    { rotulo: 'Fêmeas', pedido: s.femeas, falta: conferencia.falta.femeas },
-    { rotulo: 'Qualquer sexo', pedido: s.qualquer, falta: conferencia.falta.qualquer },
-  ].filter((conta) => conta.pedido > 0)
+    { rotulo: 'Machos', alvo: alvo.machos, falta: conferencia.falta.machos },
+    { rotulo: 'Fêmeas', alvo: alvo.femeas, falta: conferencia.falta.femeas },
+    { rotulo: 'Qualquer sexo', alvo: alvo.qualquer, falta: conferencia.falta.qualquer },
+  ].filter((conta) => conta.alvo > 0)
 
   return (
     <dl className="atender__placar">
-      {contas.map(({ rotulo, pedido, falta }) => (
+      {contas.map(({ rotulo, alvo: quantos, falta }) => (
         <div key={rotulo} className="atender__dado">
           <dt>
             <Texto tom="rotulo">{rotulo}</Texto>
@@ -201,7 +258,7 @@ function Placar({
           <dd
             className={falta === 0 ? 'atender__conta atender__conta--completa' : 'atender__conta'}
           >
-            <span className="atender__numero">{pedido - falta}</span> de {pedido}
+            <span className="atender__numero">{quantos - falta}</span> de {quantos}
           </dd>
         </div>
       ))}
@@ -210,7 +267,7 @@ function Placar({
           <Texto tom="rotulo">Idade na entrega</Texto>
         </dt>
         <dd className="atender__idade">
-          {descreverIdade(s)}
+          {descreverIdade(pedido)}
           <Texto tom="secundario" className="atender__nota">
             aceita de {faixa.min} a {faixa.max}
           </Texto>
@@ -220,56 +277,56 @@ function Placar({
         <dt>
           <Texto tom="rotulo">Entrega</Texto>
         </dt>
-        <dd>{formatarData(s.dataEntrega)}</dd>
+        <dd>{formatarData(pedido.dataEntrega)}</dd>
       </div>
     </dl>
   )
 }
 
+const TIPO: Record<LugarCandidato['tipo'], string> = {
+  estoque: 'caixa de estoque',
+  casal: 'caixa do casal',
+}
+
 /**
- * Uma ninhada que serve ao pedido: de que casal e parto, a idade na entrega e em que caixas estão
- * os animais livres dela. Marcada, quantos reservar de cada sexo
+ * Um lugar que serve ao pedido: a caixa, quando os animais nasceram, de que partos vieram e a
+ * idade na entrega. Marcado, quantos reservar de cada sexo
  */
-function Ninhada({
-  ninhada: n,
+function Lugar({
+  lugar: l,
   reserva,
   aoMarcar,
   aoMudar,
 }: {
-  ninhada: CaixaCandidata
+  lugar: LugarCandidato
   reserva: PorSexo | undefined
-  aoMarcar: (marcada: boolean) => void
+  aoMarcar: (marcado: boolean) => void
   aoMudar: (sexo: keyof PorSexo, valor: number | null) => void
 }) {
-  const nome = `${n.parto}º parto do casal ${n.casal}`
-  const sexos = SEXOS.filter(({ chave }) => n.disponivel[chave] > 0)
+  const nome = `caixa ${l.codigo}, nascimento em ${formatarData(l.dtNascimento)}`
+  const sexos = SEXOS.filter(({ chave }) => l.livres[chave] > 0)
+  const partos = l.partos.map((p) => `${p.ordem}º parto do casal ${p.casal}`).join(', ')
 
   return (
-    <li className={reserva ? 'atender__ninhada atender__ninhada--marcada' : 'atender__ninhada'}>
+    <li className={reserva ? 'atender__lugar atender__lugar--marcado' : 'atender__lugar'}>
       <div className="atender__sobre">
         <div className="atender__titulo">
           <Checkbox
             checked={reserva !== undefined}
+            aria-label={`Reservar da ${nome}`}
             onChange={(evento) => aoMarcar(evento.target.checked)}
           >
-            <strong>
-              Casal {n.casal} · {n.parto}º parto
-            </strong>
+            <span className="atender__codigo">{l.codigo}</span>{' '}
+            <Texto tom="secundario">
+              {TIPO[l.tipo]} · {l.numeroVisivel}
+            </Texto>
           </Checkbox>
-          <Etiqueta>{n.idadeNaEntrega} dias na entrega</Etiqueta>
-          {n.origem === 'previsao' && <Etiqueta tom="atencao">Desmama até a entrega</Etiqueta>}
+          <Etiqueta>{l.idadeNaEntrega} dias na entrega</Etiqueta>
+          {l.origem === 'previsao' && <Etiqueta tom="atencao">Desmama até a entrega</Etiqueta>}
         </div>
-        <ul className="atender__lugares" aria-label={`Onde estão os livres do ${nome}`}>
-          {n.onde.map((lugar) => (
-            <li key={`${lugar.numeroVisivel}-${lugar.codigo}`} className="atender__lugar">
-              <span className="atender__codigo">{lugar.codigo}</span>
-              {lugar.tipo === 'casal' && <Texto tom="secundario">do casal</Texto>}
-              {lugar.m > 0 && <span>{`${SIMBOLO_DO_SEXO.M} ${lugar.m}`}</span>}
-              {lugar.f > 0 && <span>{`${SIMBOLO_DO_SEXO.F} ${lugar.f}`}</span>}
-              <Texto tom="secundario">{lugar.numeroVisivel}</Texto>
-            </li>
-          ))}
-        </ul>
+        <Texto tom="secundario" className="atender__origem">
+          Nascimento em {formatarData(l.dtNascimento)} · {partos}
+        </Texto>
       </div>
 
       <div className="atender__quantos">
@@ -279,16 +336,17 @@ function Ninhada({
               <span className="atender__simbolo">{simbolo}</span>
               <InputNumber
                 {...QUANTOS}
-                max={n.disponivel[chave]}
+                max={l.livres[chave]}
                 value={reserva[chave]}
-                aria-label={`${sexo} a reservar do ${nome}`}
+                aria-label={`${sexo} a reservar da ${nome}`}
                 onChange={(valor) => aoMudar(chave, valor)}
               />
-              <Texto tom="secundario">de {n.disponivel[chave]}</Texto>
+              <Texto tom="secundario">de {l.livres[chave]}</Texto>
             </label>
           ) : (
             <span key={chave} className="atender__livres">
-              <span className="atender__simbolo">{simbolo}</span> {n.disponivel[chave]} livres
+              <span className="atender__simbolo">{simbolo}</span> {l.livres[chave]}{' '}
+              {l.livres[chave] === 1 ? 'livre' : 'livres'}
             </span>
           ),
         )}
@@ -351,15 +409,17 @@ function acasalamentosNecessarios(busca: ResultadoDaBusca, hojeEm: DataISO = hoj
 }
 
 /**
- * O que o placar não diz: o que passou do pedido nas ninhadas marcadas, e o que o plantel inteiro
- * não tem, com os acasalamentos que faltam para isso
+ * O que o placar não diz: o que passou do alvo nos lugares marcados, e o que o plantel inteiro não
+ * tem, com os acasalamentos que faltam para isso
  */
 function Avisos({
   conferencia,
   busca,
+  completar,
 }: {
   conferencia: ConferenciaDaReserva
   busca: ResultadoDaBusca
+  completar: boolean
 }) {
   const { aMais } = conferencia
   const sobra =
@@ -368,14 +428,21 @@ function Avisos({
       : aMais.total > 0
         ? `${aMais.total} ${aMais.total === 1 ? 'animal' : 'animais'}`
         : null
-  // o plantel todo não cobre: não adianta trocar de ninhada
+  // o plantel todo não cobre: não adianta trocar de lugar
   const semAnimais = busca.deficit.m + busca.deficit.f + busca.deficit.qualquer > 0
 
   return (
     <>
-      {sobra && <Aviso tom="atencao" titulo={`Há ${sobra} a mais nas ninhadas marcadas.`} />}
+      {sobra && <Aviso tom="atencao" titulo={`Há ${sobra} a mais nos lugares marcados.`} />}
       {semAnimais && (
-        <Aviso tom="atencao" titulo="As caixas não têm animais para o pedido inteiro.">
+        <Aviso
+          tom="atencao"
+          titulo={
+            completar
+              ? 'As caixas não têm animais para completar a reserva.'
+              : 'As caixas não têm animais para o pedido inteiro.'
+          }
+        >
           Para o que falta, {acasalamentosNecessarios(busca)}.
         </Aviso>
       )}

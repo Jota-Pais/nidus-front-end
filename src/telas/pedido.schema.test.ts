@@ -3,13 +3,13 @@ import { hoje } from '@/lib/data'
 import {
   conferirIdadeMaxima,
   montarPedido,
-  solicitacao,
+  regrasDoPedido,
   temAnimal,
   validadorDeIdade,
-} from './solicitacao.schema'
-import type { CamposDoPedido } from './solicitacao.schema'
+} from './pedido.schema'
+import type { CamposDoPedido } from './pedido.schema'
 
-const { quantidade, idade, dataEntrega, nomePesquisador } = solicitacao.shape
+const { quantidade, idade, dataEntrega, nomePesquisador } = regrasDoPedido.shape
 
 describe('regras dos campos', () => {
   it('quantidade em branco vale zero, e negativa não passa', () => {

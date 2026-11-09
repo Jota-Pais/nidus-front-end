@@ -24,6 +24,13 @@
   border-radius: var(--raio-sm);
 }
 
+/* O endereço da caixa é código, e código vai em mono */
+.retirada__codigo {
+  font-family: var(--fonte-mono);
+  font-weight: 600;
+}
+
+/* Quando nasceram e de que parto, embaixo: é a idade que separa os animais dentro da caixa */
 .retirada__origem {
   flex-basis: 100%;
   font-size: 12px;

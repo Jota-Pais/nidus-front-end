@@ -20,7 +20,7 @@ export function ConfirmarPedido({
   return (
     <Modal
       open
-      title="Enviar solicitação"
+      title="Enviar pedido"
       okText={enviar}
       okButtonProps={{ danger: tom === 'erro' }}
       cancelText={voltar}

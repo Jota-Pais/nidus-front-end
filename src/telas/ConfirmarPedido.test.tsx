@@ -15,7 +15,7 @@ describe('confirmacaoDoPedido', () => {
       tom: 'sucesso',
       titulo: 'Esse pedido é possível.',
       detalhe: 'A equipe do CPMR vai avaliar e, estando tudo certo, segue com o seu pedido.',
-      enviar: 'Enviar solicitação',
+      enviar: 'Enviar pedido',
       voltar: 'Voltar',
     })
     expect(confirmacao.titulo).not.toMatch(/\d/)
@@ -41,12 +41,12 @@ describe('confirmacaoDoPedido', () => {
 
     expect(confirmacao.tom).toBe('atencao')
     expect(confirmacao.titulo).toMatch(/Não deu para conferir/)
-    expect(confirmacao.enviar).toBe('Enviar solicitação')
+    expect(confirmacao.enviar).toBe('Enviar pedido')
   })
 })
 
 describe('ConfirmarPedido', { timeout: 20_000 }, () => {
-  it('quando dá, "Enviar solicitação" envia e "Voltar" fecha', () => {
+  it('quando dá, "Enviar pedido" envia e "Voltar" fecha', () => {
     const aoEnviar = vi.fn()
     const aoVoltar = vi.fn()
     renderizar(
@@ -59,7 +59,7 @@ describe('ConfirmarPedido', { timeout: 20_000 }, () => {
     )
 
     expect(screen.getByText('Esse pedido é possível.')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitação' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar pedido' }))
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }))
 
     expect(aoEnviar).toHaveBeenCalledOnce()

@@ -16,17 +16,6 @@ export function totalDeAnimais({ machos, femeas, qualquer }: Quantidades): numbe
   return (machos ?? 0) + (femeas ?? 0) + (qualquer ?? 0)
 }
 
-/** "5 M · 5 F · 10 qualquer sexo", só com as partes que existem */
-export function descreverAnimais({ machos, femeas, qualquer }: Quantidades): string {
-  const partes = [
-    machos ? `${machos} M` : null,
-    femeas ? `${femeas} F` : null,
-    qualquer ? `${qualquer} qualquer sexo` : null,
-  ].filter((parte) => parte !== null)
-
-  return partes.length > 0 ? partes.join(' · ') : '—'
-}
-
 /** A espécie no singular e no plural, para contar os animais */
 const ESPECIE: Record<CodigoEspecie, [string, string]> = {
   rato: ['rato', 'ratos'],
@@ -75,6 +64,27 @@ export function descreverQuantos({ m, f, qualquer }: PorSexo & { qualquer: numbe
   return partes.length > 0 ? `${partes.join(', ')} e ${ultima}` : ultima
 }
 
+/**
+ * Depois de desfazer a reserva ou recusar o pedido reservado: "2 machos e 1 fêmea voltaram a ficar
+ * livres". Sem nenhum vivo reservado (todos morreram), null
+ */
+export function voltaramAFicarLivres(soltos: PorSexo): string | null {
+  const total = soltos.m + soltos.f
+  if (total === 0) return null
+
+  const quantos = descreverQuantos({ ...soltos, qualquer: 0 })
+  return total === 1 ? `${quantos} voltou a ficar livre.` : `${quantos} voltaram a ficar livres.`
+}
+
+/** Depois da entrega: "A caixa F2A ficou vazia e foi liberada." Sem caixa liberada, null */
+export function descreverCaixasLiberadas(codigos: string[]): string | null {
+  if (codigos.length === 0) return null
+  if (codigos.length === 1) return `A caixa ${codigos[0]} ficou vazia e foi liberada.`
+
+  const ultima = codigos.at(-1)
+  return `As caixas ${codigos.slice(0, -1).join(', ')} e ${ultima} ficaram vazias e foram liberadas.`
+}
+
 /** Faixa ("de 20 a 40 dias") ou idade exata: a escolha do pedido e da busca */
 export type ModoDeIdade = 'faixa' | 'exata'
 
@@ -95,7 +105,7 @@ export function descreverIdade({ idadeMin, idadeMax }: { idadeMin: number; idade
   return idadeMin === idadeMax ? `${idadeMin} dias` : `${idadeMin} a ${idadeMax} dias`
 }
 
-/** O que a reserva cobre do alvo, com as quantidades no formato de descreverAnimais */
+/** O que a reserva cobre do alvo, com as quantidades no formato do pedido */
 export interface ConferenciaDaReserva {
   /** cobre o alvo inteiro, sem faltar nem passar: só assim a API aceita */
   cobre: boolean
@@ -126,6 +136,21 @@ export function conferirReserva(
       total: Math.max(0, -restante),
     },
   }
+}
+
+/**
+ * Se a reserva marcada pode ir para a API: a do pedido aprovado só inteira, cobrindo o alvo; a que
+ * completa a falta do reservado vai aos poucos, com qualquer quantidade que não passe do alvo
+ */
+export function reservaPodeIr(
+  conferencia: ConferenciaDaReserva,
+  reservado: PorSexo,
+  inteira: boolean,
+): boolean {
+  if (inteira) return conferencia.cobre
+
+  const { aMais } = conferencia
+  return reservado.m + reservado.f > 0 && aMais.machos + aMais.femeas + aMais.total === 0
 }
 
 // ------------------------------------------------------------ situações

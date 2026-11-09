@@ -1,4 +1,4 @@
-/* Solicitar animais e a lista de solicitações */
+/* Os pedidos de animais: o formulário de quem pede e a lista, com o pedido aberto e as ações */
 
 /*
  * O pedido é um cartão só, em duas colunas: à esquerda quem pede, que animal e quantos; à
@@ -6,13 +6,13 @@
  * mais longa e as duas dividem a sobra; sem largura para as duas lado a lado, a da direita
  * desce inteira, e o formulário vira uma coluna na mesma ordem de leitura.
  */
-.solicitacao__colunas {
+.pedidos__colunas {
   display: flex;
   flex-wrap: wrap;
   column-gap: 32px;
 }
 
-.solicitacao__coluna {
+.pedidos__coluna {
   display: flex;
   flex: 2 1 400px;
   flex-direction: column;
@@ -20,18 +20,18 @@
 }
 
 /* Espécie, linhagem e idade na mesma fileira */
-.solicitacao__coluna--pedido {
+.pedidos__coluna--pedido {
   flex: 3 1 760px;
 }
 
 /* O envio fica no pé da coluna, na altura do fim do pedido */
-.solicitacao__coluna > .solicitacao__acoes {
+.pedidos__coluna > .pedidos__acoes {
   margin-top: auto;
 }
 
 /* Dentro da coluna, fileiras que se leem como frase. Em tela estreita cada campo desce
    inteiro para a linha de baixo */
-.solicitacao__fileira {
+.pedidos__fileira {
   display: flex;
   flex-wrap: wrap;
   column-gap: 24px;
@@ -39,127 +39,102 @@
 
 /* O que tem formato fixo fica com a largura do que se digita nele, como o protocolo e a data
    de entrega; nome e linhagem ocupam o resto da fileira, para não sobrar vão do lado */
-.solicitacao__campo--nome {
+.pedidos__campo--nome {
   flex: 1 1 260px;
 }
 
-.solicitacao__campo--protocolo {
+.pedidos__campo--protocolo {
   flex: 0 1 260px;
 }
 
-.solicitacao__campo--linhagem {
+.pedidos__campo--linhagem {
   flex: 1 1 160px;
 }
 
-.solicitacao__campo--quando {
+.pedidos__campo--quando {
   flex: 0 1 200px;
 }
 
 /* Protocolo é código, e código vai em mono, como o endereço da caixa */
-.solicitacao__protocolo {
+.pedidos__protocolo {
   font-family: var(--fonte-mono);
 }
 
 /* O número ocupa o campo inteiro; o que ele conta vai no rótulo, em cima */
-.solicitacao__numero {
+.pedidos__numero {
   width: 100%;
 }
 
-/* Os campos de número têm a largura do que se digita: quatro dígitos para os animais, e o
-   rótulo "Idade mínima (dias)" inteiro para a idade. A mensagem de erro quebra embaixo do
-   seu campo, sem alargá-lo e sem invadir o vizinho */
-.solicitacao__campo--numero {
+/* Os campos dos animais têm a largura de quatro dígitos. O rótulo cabe numa linha só, para as
+   caixas da fileira ficarem na mesma altura, e a mensagem de erro quebra embaixo do seu campo,
+   sem alargá-lo e sem invadir o vizinho */
+.pedidos__campo--numero {
   flex: 0 0 140px;
 }
 
-.solicitacao__campo--dias {
-  flex: 0 0 164px;
-}
-
-/* O rótulo de um número cabe numa linha só, para as caixas da fileira ficarem na mesma altura */
-.solicitacao__campo--numero label,
-.solicitacao__campo--dias label {
+.pedidos__campo--numero label {
   white-space: nowrap;
 }
 
 /* Animais: três números e o total na linha das caixas. Sem largura, o que sobra desce */
-.solicitacao__fileira--animais {
+.pedidos__fileira--animais {
   column-gap: 12px;
-}
-
-/* Idade: a escolha Faixa|Exata e os números na mesma linha; se não couber, o número desce
-   inteiro. As larguras são dos campos */
-.solicitacao__idade {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 12px;
-}
-
-/*
- * A idade máxima na idade exata: some, mas guarda a largura (CampoDeIdade), para o campo ao
- * lado não crescer. A altura não: na tela estreita ela desce para uma linha só dela, e ali o
- * lugar guardado seria uma linha em branco. O conteúdo invisível e inerte transborda sem
- * ocupar espaço
- */
-.solicitacao__guardado {
-  visibility: hidden;
-  max-height: 0;
 }
 
 /* O texto solto ao lado dos números ("= 5 animais") tem a altura da caixa, e fica na linha
    do texto dela */
-.solicitacao__unidade {
+.pedidos__unidade {
   line-height: var(--altura-de-controle);
   white-space: nowrap;
 }
 
-.solicitacao__aviso {
+.pedidos__aviso {
   margin-bottom: 16px;
 }
 
 /* Célula com o dado em cima e o complemento embaixo: a situação e a entrega, os animais e a
    idade. Cada linha tem a largura do que mostra: a etiqueta da situação não estica */
-.solicitacao__duasLinhas {
+.pedidos__duasLinhas {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
-/* O aviso para a equipe do pedido aprovado sem reserva com a entrega perto: na cor de atenção,
-   como o "Último parto" do kanban */
-.solicitacao__duasLinhas > .solicitacao__alerta {
+/* O aviso para a equipe do pedido aprovado sem reserva com a entrega perto, e o da reserva em
+   falta: na cor de atenção, como o "Último parto" do kanban */
+.pedidos__duasLinhas > .pedidos__alerta {
   color: var(--cor-aviso);
   font-weight: 600;
 }
 
 /* Para quando é o pedido, logo embaixo da etiqueta, com folga para ela, numa linha só */
-.solicitacao__duasLinhas > .solicitacao__entrega {
+.pedidos__duasLinhas > .pedidos__entrega {
   margin-top: 4px;
   white-space: nowrap;
 }
 
 /* O que pediu, na lista: quantos e de que linhagem, maior que o resto da linha */
-.solicitacao__animais {
+.pedidos__animais {
   font-size: 16px;
   font-weight: 600;
 }
 
-.solicitacao__acoes {
+.pedidos__acoes {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
 }
 
-.solicitacao__filtro {
+.pedidos__filtro {
   max-width: 100%;
 }
 
-.solicitacao__filtro .ant-segmented-group {
+.pedidos__filtro .ant-segmented-group {
   flex-wrap: wrap;
 }
 
-.solicitacao__seta {
+.pedidos__seta {
   border: 0;
   background: none;
   padding: 4px;
@@ -167,15 +142,15 @@
   color: inherit;
 }
 
-.solicitacao__semQuebra {
+.pedidos__semQuebra {
   white-space: nowrap;
 }
 
-.solicitacao__pedido {
+.pedidos__oQuePediu {
   min-width: 0;
 }
 
-.solicitacao__pedido > * {
+.pedidos__oQuePediu > * {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -184,11 +159,11 @@
 
 /* Quantos de cada sexo, embaixo do total: o pedido que mistura os três quebra a linha, em vez
    de sumir nas reticências */
-.solicitacao__pedido > .solicitacao__sexos {
+.pedidos__oQuePediu > .pedidos__sexos {
   white-space: normal;
 }
 
-.solicitacao__compacta {
+.pedidos__compacta {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -196,7 +171,7 @@
 }
 
 /* A data e a situação lado a lado; no celular estreito, a situação desce para baixo da data */
-.solicitacao__compactaTopo {
+.pedidos__compactaTopo {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
@@ -206,7 +181,7 @@
 /* O resumo do pedido nas janelas da equipe: um cartão com quem pediu em cima e, embaixo, cada
    dado sob o seu rótulo. As quantidades vêm maiores, que são o que se confere primeiro; sem
    largura, o que não cabe desce */
-.solicitacao__resumo {
+.pedidos__resumo {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -215,7 +190,7 @@
   background: var(--cor-suave);
 }
 
-.solicitacao__resumoDados {
+.pedidos__resumoDados {
   display: flex;
   flex-wrap: wrap;
   gap: 12px 32px;
@@ -224,12 +199,12 @@
   border-top: 1px solid var(--cor-borda);
 }
 
-.solicitacao__resumoDados dd {
+.pedidos__resumoDados dd {
   font-weight: 600;
   line-height: 32px;
 }
 
-.solicitacao__resumoDados .solicitacao__numeroGrande {
+.pedidos__resumoDados .pedidos__numeroGrande {
   font-family: var(--fonte-titulo);
   font-size: 24px;
   font-weight: var(--peso-titulo);
@@ -237,43 +212,48 @@
 
 /* O que não cabe no resumo, embaixo dele: duas colunas que viram uma na tela estreita. O texto
    longo (observações, motivo) ocupa a linha inteira */
-.solicitacao__ficha {
+.pedidos__ficha {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px 24px;
   margin: 0;
 }
 
-.solicitacao__dado--largo {
+.pedidos__dado--largo {
   grid-column: 1 / -1;
 }
 
-.solicitacao__dado dd {
+.pedidos__dado dd {
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 /* No topo do resumo: quem pediu, ou o que pediu */
-.solicitacao__destaque {
+.pedidos__destaque {
   font-weight: 600;
 }
 
 /* A linha inteira abre o pedido */
-.solicitacao__lista .solicitacao__linha {
+.pedidos__lista .pedidos__linha {
   cursor: pointer;
 }
 
 /* No pedido aberto: recusar ou desfazer à esquerda, longe do que leva o pedido adiante; Fechar e
    a ação principal à direita. Sem largura, a direita desce */
-.solicitacao__rodape {
+.pedidos__rodape {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px;
 }
 
-.solicitacao__rodapeFim {
+.pedidos__rodapeInicio,
+.pedidos__rodapeFim {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.pedidos__rodapeFim {
   margin-left: auto;
 }
