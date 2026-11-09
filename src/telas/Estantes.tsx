@@ -10,9 +10,10 @@ import {
   SIMBOLO_DO_SEXO,
 } from '@/dominio/caixa'
 import { useEstantes, useGrade, useMudarDePosicao } from '@/dominio/consultas'
-import type { CaixaNaGrade, Estante, Grade, Posicao } from '@/dominio/tipos'
+import type { CaixaNaGrade, Estante, EstoqueNoCard, Grade, Posicao } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
+import { descreverDias } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import type { PosicaoVazia } from './FichaDaCaixa'
 import { LegendaDosPartos } from './LegendaDosPartos'
@@ -221,6 +222,15 @@ function Face({
   )
 }
 
+/** " (30 e 50 dias)": as idades da caixa de estoque, do mais novo ao mais velho */
+function idadesDoEstoque(estoque: EstoqueNoCard): string {
+  const idades = estoque.grupos.map((grupo) => grupo.idadeDias).reverse()
+  if (idades.length === 0) return ''
+
+  const ultima = idades.pop()!
+  return ` (${idades.length > 0 ? `${idades.join(', ')} e ` : ''}${descreverDias(ultima)})`
+}
+
 function Celula({
   posicao,
   vazia,
@@ -274,11 +284,11 @@ function Celula({
     )
   }
 
-  const pinta = pintaNaGrade(caixa.estado, caixa.casal !== null)
+  const coluna = pintaNaGrade(caixa.estado, caixa.casal !== null) ? caixa.estado : null
   const erguida = arraste.pega?.caixa.id === caixa.id
   const classes = [
     'posicao',
-    pinta ? `posicao--${caixa.estado}` : '',
+    coluna ? `posicao--${coluna}` : '',
     erguida ? 'posicao--erguida' : '',
     chegando ? 'posicao--movendo' : '',
   ].filter(Boolean)
@@ -292,9 +302,9 @@ function Celula({
       aria-busy={chegando !== null}
       title={`${posicao.codigo}: ${
         caixa.estoque
-          ? `caixa de estoque, ${descreverEstoque(caixa.estoque)}`
-          : pinta
-            ? COLUNA[caixa.estado].legenda
+          ? `caixa de estoque, ${descreverEstoque(caixa.estoque)}${idadesDoEstoque(caixa.estoque)}`
+          : coluna
+            ? COLUNA[coluna].legenda
             : 'sem casal'
       } - clique para abrir a ficha, arraste para mudar de lugar`}
       draggable={movimento === null}

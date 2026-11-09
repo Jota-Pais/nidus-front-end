@@ -163,6 +163,11 @@
   gap: 8px;
 }
 
+/* as idades da caixa de estoque: a idade e, à direita, quantos e os reservados */
+.kanban__idades li {
+  grid-template-columns: 1fr auto;
+}
+
 .kanban__status {
   padding-top: 8px;
   border-top: 1px solid var(--borda);

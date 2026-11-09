@@ -40,8 +40,45 @@ const grade: Grade = {
             estado: 'reserva',
             linhagem: 'Wistar',
             casal: null,
-            estoque: { sexo: 'F', total: 4, reservado: 4 },
+            estoque: {
+              sexo: 'F',
+              idLinhagem: 2,
+              total: 4,
+              reservado: 4,
+              nascimentoDe: '2026-09-20',
+              nascimentoAte: '2026-10-10',
+              grupos: [
+                { dtNascimento: '2026-09-20', idadeDias: 50, total: 1, reservados: 1 },
+                { dtNascimento: '2026-10-10', idadeDias: 30, total: 3, reservados: 3 },
+              ],
+            },
           },
+        },
+        {
+          linha: 1,
+          coluna: 4,
+          codigo: 'F1D',
+          caixa: {
+            id: 12,
+            estado: 'livres',
+            linhagem: 'Wistar',
+            casal: {
+              identificacao: 'AB',
+              partoAtual: 2,
+              partoPrevisto: '2026-11-20',
+              encerrado: false,
+              aguardandoDesmame: false,
+              ninhadas: [{ casal: 'AB', parto: 1, m: 3, f: 2, idadeDias: 30, mamando: false }],
+              reservado: 2,
+            },
+            estoque: null,
+          },
+        },
+        {
+          linha: 1,
+          coluna: 5,
+          codigo: 'F1E',
+          caixa: { id: 13, estado: null, linhagem: 'Wistar', casal: null, estoque: null },
         },
       ],
     },
@@ -173,6 +210,30 @@ describe('caixa de estoque na grade', { timeout: 20_000 }, () => {
 
     expect(celula.textContent).toContain('♀ 4')
     expect(celula.className).toContain('posicao--reserva')
-    expect(celula.getAttribute('title')).toContain('caixa de estoque, 4 fêmeas, todos reservados')
+    expect(celula.getAttribute('title')).toContain(
+      'caixa de estoque, 4 fêmeas, todos reservados (30 e 50 dias)',
+    )
+  })
+})
+
+describe('caixa de casal na grade', { timeout: 20_000 }, () => {
+  it('mostra o parto em curso, o casal e quantos reservados a caixa tem, na cor de Livres', () => {
+    renderizar(<Estantes />, 'tecnico')
+
+    const celula = screen.getByRole('button', { name: /^F1D/ })
+
+    expect(celula.textContent).toContain('2º')
+    expect(celula.textContent).toContain('AB')
+    expect(celula.textContent).toContain('2 res.')
+    expect(celula.className).toContain('posicao--livres')
+  })
+
+  it('a caixa sem casal e a que não aparece no kanban ficam neutras', () => {
+    renderizar(<Estantes />, 'tecnico')
+
+    for (const codigo of [/^F1A/, /^F1E/]) {
+      const celula = screen.getByRole('button', { name: codigo })
+      expect(celula.className).not.toMatch(/posicao--(livres|estoque|reserva|enviado)/)
+    }
   })
 })

@@ -9,7 +9,7 @@ const ENTIDADES = [
   { value: 'caixa', label: 'Caixa' },
   { value: 'casal', label: 'Casal' },
   { value: 'parto', label: 'Parto' },
-  { value: 'solicitacao', label: 'Solicitação' },
+  { value: 'pedido', label: 'Pedido' },
   { value: 'sala', label: 'Sala' },
   { value: 'estante', label: 'Estante' },
   { value: 'usuario', label: 'Conta' },
@@ -23,7 +23,10 @@ function dataEHora(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
 
-/** Quem fez cada operação, quando e o que mudou. Só leitura: nada aqui se apaga */
+/**
+ * Quem fez cada operação, quando e o que mudou: o histórico das operações junto com a trilha dos
+ * animais, do registro mais novo para o mais velho. Só leitura: nada aqui se apaga
+ */
 export function Historico() {
   const [entidade, setEntidade] = useState<string | null>(null)
   const [idEntidade, setIdEntidade] = useState<number | null>(null)
@@ -35,7 +38,7 @@ export function Historico() {
       <CabecalhoDaTela
         rotulo="Configurações"
         titulo="Histórico"
-        descricao="Quem fez cada alteração, quando e o quê. Mostra as 300 mais recentes do filtro escolhido."
+        descricao="Quem fez cada alteração e cada fato dos animais (nascimento, baixa, mudança, reserva, entrega), quando e o quê. Mostra os 300 registros mais recentes do filtro escolhido."
       />
 
       <Secao
@@ -69,7 +72,8 @@ export function Historico() {
       >
         <EstadoDaConsulta consulta={historico} rotulo="Carregando o histórico…">
           <Table<RegistroDoHistorico>
-            rowKey="id"
+            // o número só não se repete dentro da fonte: o histórico e a trilha contam cada um o seu
+            rowKey={(r) => `${r.fonte}-${r.id}`}
             dataSource={historico.data ?? []}
             pagination={{ pageSize: 50, showSizeChanger: false }}
             scroll={{ x: true }}
