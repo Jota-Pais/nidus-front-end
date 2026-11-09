@@ -5,9 +5,12 @@ import { MemoryRouter } from 'react-router-dom'
 import { PerfilContext } from '@/auth/contexto'
 import type { Perfil } from '@/dominio/tipos'
 
-/** A tela com uma sessão do perfil pedido; 'nome' é o nome da conta, que o pedido já preenche */
+/**
+ * A tela com uma sessão do perfil pedido; 'nome' é o nome da conta, que o pedido já preenche.
+ * 'redesenhar' desenha a mesma tela de novo, sem desmontar: como depois de a consulta recarregar
+ */
 export function renderizar(tela: ReactNode, perfil: Perfil = 'tecnico', nome = 'Teste') {
-  return render(
+  const comSessao = () => (
     <MemoryRouter>
       <PerfilContext.Provider
         value={{
@@ -19,8 +22,10 @@ export function renderizar(tela: ReactNode, perfil: Perfil = 'tecnico', nome = '
       >
         <App>{tela}</App>
       </PerfilContext.Provider>
-    </MemoryRouter>,
+    </MemoryRouter>
   )
+  const resultado = render(comSessao())
+  return { ...resultado, redesenhar: () => resultado.rerender(comSessao()) }
 }
 
 export const consulta = <T,>(data: T) => ({ data, isPending: false, error: null })

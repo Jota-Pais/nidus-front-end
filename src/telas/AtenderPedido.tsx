@@ -8,6 +8,7 @@ import {
   alvoDaReserva,
   conferirReserva,
   descreverIdade,
+  descreverQuantos,
   descreverQueFalta,
   reservaPodeIr,
 } from '@/dominio/pedido'
@@ -79,6 +80,12 @@ export function AtenderPedido({
   })
   const reservado = somar(marcadas.map(({ quantos }) => quantos))
   const conferencia = conferirReserva(alvo, reservado)
+  // depois de a busca recarregar (a reserva recusada, outra pessoa mexeu), um lugar marcado pode
+  // ter menos livres do que o marcado nele
+  const lugares = marcadas.map(({ lugar, quantos }) => ({ quantos, livres: lugar.livres }))
+  const passaram = marcadas.filter(
+    ({ lugar, quantos }) => quantos.m > lugar.livres.m || quantos.f > lugar.livres.f,
+  )
 
   function marcar(lugar: LugarCandidato, marcado: boolean) {
     const proxima = { ...reserva }
@@ -165,7 +172,7 @@ export function AtenderPedido({
             <Botao
               variante="primario"
               loading={alocar.isPending}
-              disabled={!reservaPodeIr(conferencia, reservado, !completar)}
+              disabled={!reservaPodeIr(conferencia, reservado, !completar, lugares)}
               onClick={reservar}
             >
               {completar ? 'Completar' : 'Reservar'}
@@ -184,6 +191,13 @@ export function AtenderPedido({
               </Texto>
             )}
             {falha && <Aviso tom="erro" titulo={falha} />}
+            {passaram.map(({ lugar }) => (
+              <Aviso
+                key={chaveDoLugar(lugar)}
+                tom="atencao"
+                titulo={`Livres agora na ${lugar.codigo}, desta idade: ${descreverQuantos({ ...lugar.livres, qualquer: 0 })}. Ajuste o que reservar dela.`}
+              />
+            ))}
             {semNenhum ? (
               <Aviso
                 tom="atencao"
@@ -303,7 +317,8 @@ function Lugar({
   aoMudar: (sexo: keyof PorSexo, valor: number | null) => void
 }) {
   const nome = `caixa ${l.codigo}, nascimento em ${formatarData(l.dtNascimento)}`
-  const sexos = SEXOS.filter(({ chave }) => l.livres[chave] > 0)
+  // o sexo que perdeu os livres depois de recarregar continua, para tirar o que passou
+  const sexos = SEXOS.filter(({ chave }) => l.livres[chave] > 0 || (reserva?.[chave] ?? 0) > 0)
   const partos = l.partos.map((p) => `${p.ordem}º parto do casal ${p.casal}`).join(', ')
 
   return (

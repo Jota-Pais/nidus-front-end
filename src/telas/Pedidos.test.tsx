@@ -514,6 +514,25 @@ describe('recusar e desfazer a reserva', { timeout: 40_000 }, () => {
     ).toBeTruthy()
   })
 
+  it('recusada porque o pedido mudou, a janela mostra o pedido como a lista voltou', async () => {
+    extras.lista = [pedido(5, 'reservado')]
+    const { redesenhar } = renderizar(<Pedidos />, 'tecnico')
+
+    fireEvent.click(botao('Desfazer reserva', await abrir('Abrir o pedido #5')))
+    const desfazer = await janelaDe('Desfazer a reserva do pedido #5')
+    expect(within(desfazer).queryByText(/em falta/)).toBeNull()
+
+    // uma baixa levou uma fêmea reservada: a API recusa, e a lista recarrega com a falta
+    responder(acoes.desfazer, { erro: erroDaApi(409, 'PEDIDO_MUDOU', 'O pedido mudou.') })
+    fireEvent.click(botao('Desfazer reserva', desfazer))
+    extras.lista = [pedido(5, 'reservado', null, { m: 0, f: 1, qualquer: 0 })]
+    redesenhar()
+
+    expect(
+      await within(desfazer).findByText('A reserva deste pedido está em falta: falta 1 fêmea.'),
+    ).toBeTruthy()
+  })
+
   it('desfazer a reserva em falta diz quanto falta', async () => {
     extras.lista = [pedido(4, 'reservado', null, { m: 2, f: 0, qualquer: 0 })]
     renderizar(<Pedidos />, 'tecnico')
