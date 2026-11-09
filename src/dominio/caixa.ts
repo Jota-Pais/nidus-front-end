@@ -73,6 +73,31 @@ export function aMaisNaCorrecao(atual: PorSexo, nova: PorSexo): PorSexo {
   return { m: Math.max(m - troca, 0), f: Math.max(f - troca, 0) }
 }
 
+/** O que um pedido tem reservado, por sexo */
+export interface ReservaNaCaixa extends PorSexo {
+  idPedido: number
+}
+
+/**
+ * O que cada pedido tem reservado num grupo da caixa (os vivos de uma idade). A API conta os
+ * reservados de cada pedido no parto todo, ou na caixa toda, e no grupo só quantos são: cada pedido
+ * fica com o que tem, sem passar dos reservados do grupo nem dos vivos de cada sexo nele. Sem
+ * reservado no grupo, nenhum pedido; com todos os reservados no grupo, o número é o exato; com os
+ * reservados repartidos entre caixas ou idades, é o teto, e a API confere o resto
+ */
+export function reservasNoGrupo(
+  reservas: ReservaNaCaixa[],
+  grupo: PorSexo & { reservados: number },
+): ReservaNaCaixa[] {
+  return reservas
+    .map((reserva) => ({
+      idPedido: reserva.idPedido,
+      m: Math.min(reserva.m, grupo.m, grupo.reservados),
+      f: Math.min(reserva.f, grupo.f, grupo.reservados),
+    }))
+    .filter((reserva) => reserva.m + reserva.f > 0)
+}
+
 /** Os vivos do parto que estão na caixa; nenhum, undefined */
 export function vivosNaCaixa(parto: Pick<Parto, 'onde'>, idCaixa: number): OndeEstao | undefined {
   return parto.onde.find((lugar) => lugar.idCaixa === idCaixa && lugar.m + lugar.f > 0)
@@ -102,8 +127,9 @@ export function destinoDoLugar(lugar: LugarNaEstante): Destino {
 }
 
 /**
- * O id da linhagem pelo nome, dentro da espécie: o nome não se repete numa espécie. A ficha de
- * casal traz só o nome, e a escolha da caixa de estoque filtra pelo id que a grade traz
+ * O id da linhagem pelo nome, dentro da espécie: o nome não se repete numa espécie. A escolha da
+ * caixa de estoque filtra pelo id que a grade traz, e a ficha de casal ainda traz só o nome da
+ * linhagem; quando a API mandar o id na ficha do casal, este caminho pelo catálogo sai
  */
 export function idDaLinhagem(
   catalogo: Catalogo | undefined,

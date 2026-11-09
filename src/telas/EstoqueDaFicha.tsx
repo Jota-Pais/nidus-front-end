@@ -10,14 +10,16 @@ import {
   COLUNA,
   contarDoSexo,
   descreverLiberacao,
+  reservasNoGrupo,
   ROTULO_DO_SEXO,
   SIMBOLO_DO_SEXO,
 } from '@/dominio/caixa'
+import type { ReservaNaCaixa } from '@/dominio/caixa'
 import { useVirarCaixaDeEstoque } from '@/dominio/consultas'
 import type { CasalComPartos, FichaDeEstoque, Parto, Sexo } from '@/dominio/tipos'
 import { descreverDias, formatarData, idadeEmDias } from '@/lib/data'
 import { BaixaNaCaixa, EventosDaFicha, MudarAnimais } from './AnimaisDaFicha'
-import type { CaixaDaAcao, GrupoDaCaixa, ReservaNaCaixa } from './AnimaisDaFicha'
+import type { CaixaDaAcao, GrupoDaCaixa } from './AnimaisDaFicha'
 import { Campo, LadoALado } from './CamposDaFicha'
 import './EstoqueDaFicha.css'
 
@@ -75,14 +77,19 @@ export function FichaDoEstoque({ ficha }: { ficha: FichaDeEstoque }) {
 function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDaAcao }) {
   const [acao, setAcao] = useState<'baixa' | 'mudanca' | null>(null)
   const { sexo, estado, ativa } = ficha.caixa
-  const grupos: GrupoDaCaixa[] = ficha.grupos.map((grupo) => ({
-    dtNascimento: grupo.dtNascimento,
-    vivos: doSexoDaCaixa(sexo, grupo.total),
-  }))
-  const reservas: ReservaNaCaixa[] = ficha.pedidos.map((pedido) => ({
+  // a API diz o que cada pedido tem na caixa e quantos reservados há em cada idade
+  const daCaixa: ReservaNaCaixa[] = ficha.pedidos.map((pedido) => ({
     idPedido: pedido.idPedido,
     ...doSexoDaCaixa(sexo, pedido.qtd),
   }))
+  const grupos: GrupoDaCaixa[] = ficha.grupos.map((grupo) => {
+    const vivos = doSexoDaCaixa(sexo, grupo.total)
+    return {
+      dtNascimento: grupo.dtNascimento,
+      vivos,
+      reservas: reservasNoGrupo(daCaixa, { ...vivos, reservados: grupo.reservados }),
+    }
+  })
 
   return (
     <div className="ficha__aba">
@@ -109,18 +116,12 @@ function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDa
       </LadoALado>
 
       {acao === 'baixa' && (
-        <BaixaNaCaixa
-          caixa={caixa}
-          grupos={grupos}
-          reservas={reservas}
-          aoTerminar={() => setAcao(null)}
-        />
+        <BaixaNaCaixa caixa={caixa} grupos={grupos} aoTerminar={() => setAcao(null)} />
       )}
       {acao === 'mudanca' && (
         <MudarAnimais
           caixa={caixa}
           grupos={grupos}
-          reservas={reservas}
           botao="Mudar animais"
           aoTerminar={() => setAcao(null)}
         />

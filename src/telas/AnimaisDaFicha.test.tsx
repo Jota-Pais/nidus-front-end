@@ -38,8 +38,12 @@ const caixaDoCasal: CaixaDaAcao = {
   idLinhagem: 1,
 }
 
-/** os 4 M e 4 F do 1º parto, nascidos em 24/09 */
-const ninhada: GrupoDaCaixa[] = [{ dtNascimento: '2026-09-24', vivos: { m: 4, f: 4 } }]
+/** os 4 M e 4 F do 1º parto, nascidos em 24/09, com o que cada pedido tem reservado neles */
+const ninhadaCom = (reservas: GrupoDaCaixa['reservas'] = []): GrupoDaCaixa[] => [
+  { dtNascimento: '2026-09-24', vivos: { m: 4, f: 4 }, reservas },
+]
+
+const ninhada = ninhadaCom()
 
 beforeEach(() => {
   api.baixa.mockReset().mockResolvedValue({ baixas: { m: 0, f: 0 }, liberada: false, faltas: [] })
@@ -70,9 +74,7 @@ async function escolher(rotulo: string | RegExp, opcao: string) {
 describe('baixa', { timeout: 30_000 }, () => {
   it('manda quantos de cada sexo, da idade da caixa, com a data e o motivo', async () => {
     const terminou = vi.fn()
-    renderizar(
-      <BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} reservas={[]} aoTerminar={terminou} />,
-    )
+    renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={terminou} />)
 
     digitar('Machos', '2')
     digitar('Fêmeas', '1')
@@ -93,9 +95,7 @@ describe('baixa', { timeout: 30_000 }, () => {
   })
 
   it('sem nenhum animal, não registra', () => {
-    renderizar(
-      <BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} reservas={[]} aoTerminar={() => {}} />,
-    )
+    renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} />)
 
     expect(botao('Registrar baixa')).toHaveProperty('disabled', true)
   })
@@ -103,12 +103,10 @@ describe('baixa', { timeout: 30_000 }, () => {
   it('com mais de uma idade, pergunta de qual, e a data não fica antes do nascimento dela', async () => {
     fingirHoje('2026-10-05')
     const grupos: GrupoDaCaixa[] = [
-      { dtNascimento: '2026-09-24', vivos: { m: 6, f: 0 } },
-      { dtNascimento: '2026-10-02', vivos: { m: 3, f: 0 } },
+      { dtNascimento: '2026-09-24', vivos: { m: 6, f: 0 }, reservas: [] },
+      { dtNascimento: '2026-10-02', vivos: { m: 3, f: 0 }, reservas: [] },
     ]
-    renderizar(
-      <BaixaNaCaixa caixa={caixaDoCasal} grupos={grupos} reservas={[]} aoTerminar={() => {}} />,
-    )
+    renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={grupos} aoTerminar={() => {}} />)
 
     fireEvent.click(screen.getByLabelText(/^nascidos em 02\/10\/2026/))
     // a caixa de estoque é de um sexo só: as fêmeas nem aparecem
@@ -137,11 +135,10 @@ describe('baixa', { timeout: 30_000 }, () => {
     renderizar(
       <BaixaNaCaixa
         caixa={caixaDoCasal}
-        grupos={ninhada}
-        reservas={[
+        grupos={ninhadaCom([
           { idPedido: 7, m: 0, f: 2 },
           { idPedido: 9, m: 0, f: 1 },
-        ]}
+        ])}
         aoTerminar={() => {}}
       />,
     )
@@ -151,7 +148,7 @@ describe('baixa', { timeout: 30_000 }, () => {
     fireEvent.click(botao('Registrar baixa'))
 
     expect(await screen.findByText('Escolha um dos pedidos: #7, #9.', {}, DEMORA)).toBeTruthy()
-    const campo = /de qual pedido saem as fêmeas reservados/
+    const campo = /de qual pedido saem as fêmeas reservadas$/
     expect(screen.queryByText('Os livres nao bastam.')).toBeNull()
 
     await escolher(campo, 'Pedido #9')
@@ -171,9 +168,7 @@ describe('baixa', { timeout: 30_000 }, () => {
         dtFato: 'A data e anterior a chegada dos animais na caixa.',
       }),
     )
-    renderizar(
-      <BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} reservas={[]} aoTerminar={() => {}} />,
-    )
+    renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} />)
 
     digitar('Machos', '1')
     fireEvent.click(botao('Registrar baixa'))
@@ -190,9 +185,7 @@ describe('baixa', { timeout: 30_000 }, () => {
       liberada: false,
       faltas: [{ idPedido: 12, m: 1, f: 0, qualquer: 0 }],
     })
-    renderizar(
-      <BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} reservas={[]} aoTerminar={() => {}} />,
-    )
+    renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} />)
 
     digitar('Machos', '1')
     fireEvent.click(botao('Registrar baixa'))
@@ -205,12 +198,11 @@ describe('baixa', { timeout: 30_000 }, () => {
 })
 
 /** Abre a mudança da caixa F1A, com os 4 M e 4 F do parto desmamado em 16/10 */
-function abrirPassagem(reservas = [] as { idPedido: number; m: number; f: number }[]) {
+function abrirPassagem(reservas: GrupoDaCaixa['reservas'] = []) {
   renderizar(
     <MudarAnimais
       caixa={caixaDoCasal}
-      grupos={ninhada}
-      reservas={reservas}
+      grupos={ninhadaCom(reservas)}
       desde="2026-10-16"
       botao="Passar para o estoque"
       aoTerminar={() => {}}
@@ -261,7 +253,7 @@ describe('mudança de caixa', { timeout: 30_000 }, () => {
     expect(celula(/^F1A: a caixa de onde/, machos)).toHaveProperty('disabled', true)
 
     fireEvent.click(celula(/^F1C: caixa de estoque/, machos))
-    digitar('Quantos fêmeas', '0', femeas)
+    digitar('Quantas fêmeas', '0', femeas)
     passar()
 
     await waitFor(() => expect(api.mudanca).toHaveBeenCalled(), DEMORA)
@@ -294,7 +286,7 @@ describe('mudança de caixa', { timeout: 30_000 }, () => {
     )
 
     fireEvent.click(celula(/^F1B: posição vazia/, machos))
-    digitar('Quantos fêmeas', '0', femeas)
+    digitar('Quantas fêmeas', '0', femeas)
     passar()
 
     await waitFor(() => expect(api.mudanca).toHaveBeenCalled(), DEMORA)
@@ -305,6 +297,52 @@ describe('mudança de caixa', { timeout: 30_000 }, () => {
           dtNascimento: '2026-09-24',
           idPedido: 12,
           soDoPedido: true,
+          destino: { posicao: { idEstante: 1, face: 'frontal', linha: 1, coluna: 2 } },
+        },
+      }),
+    )
+  })
+
+  it('o pedido de "só os reservados" é o da idade escolhida, e trocar a idade volta aos livres', async () => {
+    renderizar(
+      <MudarAnimais
+        caixa={caixaDoCasal}
+        grupos={[
+          { dtNascimento: '2026-09-24', vivos: { m: 6, f: 0 }, reservas: [] },
+          {
+            dtNascimento: '2026-10-02',
+            vivos: { m: 3, f: 0 },
+            reservas: [{ idPedido: 12, m: 1, f: 0 }],
+          },
+        ]}
+        botao="Mudar animais"
+        aoTerminar={() => {}}
+      />,
+    )
+
+    // a primeira idade não tem reservado: não há de qual pedido escolher
+    expect(screen.queryByLabelText('Quais machos')).toBeNull()
+
+    fireEvent.click(screen.getByLabelText(/^nascidos em 02\/10\/2026/))
+    await escolher('Quais machos', 'Só os reservados do pedido #12')
+    await waitFor(() =>
+      expect(screen.getByLabelText('Quantos machos')).toHaveProperty('value', '1'),
+    )
+
+    fireEvent.click(screen.getByLabelText(/^nascidos em 24\/09\/2026/))
+    await waitFor(() =>
+      expect(screen.getByLabelText('Quantos machos')).toHaveProperty('value', '6'),
+    )
+    expect(screen.queryByLabelText('Quais machos')).toBeNull()
+
+    fireEvent.click(celula(/^F1B: posição vazia/))
+    fireEvent.click(botao('Mudar animais'))
+    await waitFor(() => expect(api.mudanca).toHaveBeenCalled(), DEMORA)
+    expect(api.mudanca).toHaveBeenCalledWith(
+      expect.objectContaining({
+        machos: {
+          qtd: 6,
+          dtNascimento: '2026-09-24',
           destino: { posicao: { idEstante: 1, face: 'frontal', linha: 1, coluna: 2 } },
         },
       }),
@@ -432,5 +470,60 @@ describe('eventos e anulação da baixa', { timeout: 30_000 }, () => {
       motivo: 'contada duas vezes',
       idCaixaMachos: 30,
     })
+  })
+
+  it('com os dois sexos fora da caixa, a API pede a caixa das fêmeas depois da dos machos', async () => {
+    api.anulacao
+      .mockRejectedValueOnce(
+        erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
+          idCaixaMachos: 'A caixa F1A ja foi liberada: diga para qual caixa voltam 2 machos.',
+        }),
+      )
+      .mockRejectedValueOnce(
+        erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
+          idCaixaFemeas: 'A caixa F1A ja foi liberada: diga para qual caixa volta 1 femea.',
+        }),
+      )
+      .mockResolvedValueOnce({
+        voltaram: [
+          { sexo: 'M', qtd: 2, idCaixa: 30, codigo: 'F1C' },
+          { sexo: 'F', qtd: 1, idCaixa: 31, codigo: 'F1E' },
+        ],
+        soltos: { m: 0, f: 0 },
+      })
+    const linha = anularA(/^Baixa de 2 machos nesta caixa\.$/)
+
+    digitar('Por que a baixa foi um engano', 'contada duas vezes', linha)
+    fireEvent.click(botao('Anular baixa', linha))
+    await within(linha).findByText(
+      'A caixa F1A ja foi liberada: diga para qual caixa voltam 2 machos.',
+      {},
+      DEMORA,
+    )
+    fireEvent.click(celula(/^F1C: caixa de estoque com 6 machos/, linha))
+    fireEvent.click(botao('Anular baixa', linha))
+
+    // a caixa das fêmeas aparece embaixo da dos machos: só a de fêmeas Wistar recebe
+    const textoDasFemeas = await within(linha).findByText(
+      'A caixa F1A ja foi liberada: diga para qual caixa volta 1 femea.',
+      {},
+      DEMORA,
+    )
+    const femeas = textoDasFemeas.closest('.ant-form-item') as HTMLElement
+    expect(within(femeas).getByText(/voltam as fêmeas/)).toBeTruthy()
+    expect(celula('F1C: ocupada', femeas)).toHaveProperty('disabled', true)
+    fireEvent.click(celula(/^F1E: caixa de estoque com 3 fêmeas/, femeas))
+    fireEvent.click(botao('Anular baixa', linha))
+
+    await waitFor(() => expect(api.anulacao).toHaveBeenCalledTimes(3), DEMORA)
+    expect(api.anulacao).toHaveBeenLastCalledWith({
+      idOcorrencia: 41,
+      motivo: 'contada duas vezes',
+      idCaixaMachos: 30,
+      idCaixaFemeas: 31,
+    })
+    expect(
+      await screen.findByText('Baixa anulada: 2 machos para a F1C e 1 fêmea para a F1E.'),
+    ).toBeTruthy()
   })
 })
