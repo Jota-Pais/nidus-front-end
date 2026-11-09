@@ -38,6 +38,7 @@ const api = vi.hoisted(() => ({
   mudanca: vi.fn(),
   baixa: vi.fn(),
   anulacao: vi.fn(),
+  virar: vi.fn(),
 }))
 
 vi.mock('@/dominio/consultas', () => ({
@@ -51,7 +52,7 @@ vi.mock('@/dominio/consultas', () => ({
   useMudanca: () => mutacaoComResposta(api.mudanca),
   useBaixa: () => mutacaoComResposta(api.baixa),
   useAnularBaixa: () => mutacaoComResposta(api.anulacao),
-  useVirarCaixaDeEstoque: () => mutacaoComResposta(vi.fn()),
+  useVirarCaixaDeEstoque: () => mutacaoComResposta(api.virar),
   useEstantes: () => consulta([estanteE01]),
   useGrade: () => consulta(gradeE01),
 }))
@@ -64,6 +65,7 @@ beforeEach(() => {
   api.semNinhada.mockReset().mockResolvedValue(parto())
   api.mudanca.mockReset().mockResolvedValue({ caixas: [], liberada: false })
   api.baixa.mockReset().mockResolvedValue({ baixas: { m: 0, f: 0 }, liberada: false, faltas: [] })
+  api.virar.mockReset().mockResolvedValue({ idCaixa: 7, sexo: 'F' })
 })
 
 afterEach(() => vi.useRealTimers())
@@ -458,6 +460,41 @@ describe('correções do parto', { timeout: 40_000 }, () => {
     fireEvent.change(screen.getByLabelText('Fêmeas nascidas'), { target: { value: '6' } })
 
     expect(await screen.findByText(/Corrija um sexo de cada vez\./)).toBeTruthy()
+    // a API recusaria: o envio fica preso até sobrar um sexo só
+    expect(botao('Salvar correção')).toHaveProperty('disabled', true)
+  })
+
+  it('a caixa do casal que a API diz não servir pede a estante, um sexo por vez', async () => {
+    api.ficha = fichaDeCasal({ partos: [desmamado()] })
+    api.corrigir.mockRejectedValueOnce(
+      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
+        idCaixa: 'A caixa F1A do casal tem agora a ninhada do 2o parto: diga em qual caixa.',
+      }),
+    )
+    await abrirNinhada()
+
+    corrigir('Parto')
+    fireEvent.change(screen.getByLabelText('Machos nascidos'), { target: { value: '6' } })
+    fireEvent.change(screen.getByLabelText('Motivo da correção'), {
+      target: { value: 'contagem errada' },
+    })
+    fireEvent.click(botao('Salvar correção'))
+
+    // a recusa aparece no campo da caixa, que a ficha não sabia que precisava
+    expect(
+      await screen.findByText(
+        'A caixa F1A do casal tem agora a ninhada do 2o parto: diga em qual caixa.',
+        {},
+        DEMORA,
+      ),
+    ).toBeTruthy()
+    expect(screen.getByText(/em qual caixa de estoque entram os machos a mais/)).toBeTruthy()
+
+    // com a mais dos dois sexos, a estante sai, o aviso explica e o envio fica preso
+    fireEvent.change(screen.getByLabelText('Fêmeas nascidas'), { target: { value: '6' } })
+    expect(await screen.findByText(/Corrija um sexo de cada vez\./)).toBeTruthy()
+    expect(screen.queryByText(/em qual caixa de estoque entram/)).toBeNull()
+    expect(botao('Salvar correção')).toHaveProperty('disabled', true)
   })
 })
 
@@ -565,6 +602,75 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
     expect(screen.getByText(/2 machos reservados/)).toBeTruthy()
     expect(botao('Passar para o estoque')).toBeTruthy()
     expect(botao('Baixa')).toBeTruthy()
+  })
+
+  it('os reservados que já foram para o estoque não viram "só os do pedido" na caixa do casal', async () => {
+    // 2 machos do #12 estão na F1C; na caixa do casal, só livres
+    api.ficha = fichaDeCasal({
+      partos: [
+        desmamado({
+          onde: [
+            {
+              idCaixa: 7,
+              codigo: 'F1A',
+              numeroVisivel: 'E-01',
+              tipo: 'casal',
+              m: 2,
+              f: 4,
+              reservados: 0,
+            },
+            {
+              idCaixa: 30,
+              codigo: 'F1C',
+              numeroVisivel: 'E-01',
+              tipo: 'estoque',
+              m: 2,
+              f: 0,
+              reservados: 2,
+            },
+          ],
+          reservados: [{ idPedido: 12, m: 2, f: 0 }],
+        }),
+      ],
+    })
+    await abrirNinhada()
+
+    fireEvent.click(botao('Passar para o estoque'))
+
+    expect(within(grupo('Machos')).getByLabelText('Quantos machos')).toHaveProperty('value', '2')
+    expect(screen.queryByLabelText('Quais machos')).toBeNull()
+  })
+
+  it('com os reservados na caixa do casal, leva só os do pedido', async () => {
+    api.ficha = fichaDeCasal({
+      partos: [
+        desmamado({
+          onde: [
+            {
+              idCaixa: 7,
+              codigo: 'F1A',
+              numeroVisivel: 'E-01',
+              tipo: 'casal',
+              m: 4,
+              f: 4,
+              reservados: 2,
+            },
+          ],
+          reservados: [{ idPedido: 12, m: 2, f: 0 }],
+        }),
+      ],
+    })
+    await abrirNinhada()
+
+    fireEvent.click(botao('Passar para o estoque'))
+    const machos = grupo('Machos')
+    fireEvent.mouseDown(selecao('Quais machos'))
+    fireEvent.click(await screen.findByTitle('Só os reservados do pedido #12'))
+    await waitFor(() =>
+      expect(within(machos).getByLabelText('Quantos machos')).toHaveProperty('value', '2'),
+    )
+    // as fêmeas não têm reservado
+    expect(screen.queryByLabelText('Quais fêmeas')).toBeNull()
   })
 
   it('passa para o estoque os desmamados desta caixa, na data do desmame em diante', async () => {
@@ -707,6 +813,50 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
   })
 })
 
+describe('encerrar casal', { timeout: 40_000 }, () => {
+  it('encerra com a data e o motivo, do último acasalamento até hoje', async () => {
+    // só o relógio: o calendário abre em outubro, no dia de hoje
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-30T12:00:00'))
+    api.ficha = fichaDeCasal({
+      partos: [
+        desmamado({ onde: [] }),
+        parto({
+          id: 11,
+          ordem: 2,
+          dtAcasalamento: '2026-10-20',
+          dtPartoReal: null,
+          nascidoM: null,
+          nascidoF: null,
+          vivos: { m: 0, f: 0 },
+          baixasAntesDoDesmame: { m: 0, f: 0 },
+          onde: [],
+        }),
+      ],
+    })
+    abrirFicha()
+
+    fireEvent.click(await acharBotao('Encerrar casal'))
+    fireEvent.change(screen.getByLabelText('Motivo'), {
+      target: { value: 'queda de produtividade' },
+    })
+    fireEvent.click(botao('Encerrar'))
+
+    await waitFor(() => expect(api.registrar).toHaveBeenCalled(), DEMORA)
+    expect(api.registrar).toHaveBeenCalledWith({
+      caminho: '/api/casais/1/encerramento',
+      corpo: { dtEncerramento: '2026-10-30', motivo: 'queda de produtividade' },
+    })
+
+    fireEvent.click(screen.getByLabelText('Data'))
+    await waitFor(() => expect(diaNoCalendario('2026-10-20')).not.toBe('(sem dia)'))
+    expect(diaNoCalendario('2026-10-19')).toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-20')).not.toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-30')).not.toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-31')).toContain(APAGADO)
+  })
+})
+
 describe('casal novo na caixa', { timeout: 20_000 }, () => {
   it('a ficha mostra os partos do casal de antes e abre no que ainda tem animais na caixa', async () => {
     api.ficha = fichaDeCasal({
@@ -786,7 +936,16 @@ describe('casal novo na caixa', { timeout: 20_000 }, () => {
     })
     abrirFicha()
 
-    expect(await acharBotao('Virar caixa de estoque')).toBeTruthy()
+    fireEvent.click(await acharBotao('Virar caixa de estoque'))
     expect(screen.getByText('Sobraram na caixa só desmamados de um sexo: 4 fêmeas')).toBeTruthy()
+
+    // a confirmação diz o que muda, e o botão dela vira a caixa
+    expect(
+      await screen.findByText(/A caixa passa a ser a caixa de estoque destas 4 fêmeas/),
+    ).toBeTruthy()
+    fireEvent.click(botoes('Virar caixa de estoque').at(-1) as HTMLElement)
+
+    await waitFor(() => expect(api.virar).toHaveBeenCalledWith(7), DEMORA)
+    expect(await screen.findByText('A caixa virou caixa de estoque.')).toBeTruthy()
   })
 })

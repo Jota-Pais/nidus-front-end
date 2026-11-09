@@ -13,6 +13,7 @@ import {
   grupo,
   mutacaoComResposta,
   nomesDasAbas,
+  selecao,
   talvezBotao,
   talvezGrupo,
 } from '@/testes/ficha'
@@ -161,6 +162,23 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
         destino: { posicao: { idEstante: 1, face: 'frontal', linha: 1, coluna: 4 } },
       },
     })
+  })
+
+  it('levar só os reservados de um pedido vale na idade que os tem', async () => {
+    renderizar(<FichaDoEstoque ficha={comDuasIdades} />)
+
+    fireEvent.click(botao('Mudar animais'))
+    // os 2 reservados do #12 são de 24/09, a idade que a mudança abre
+    fireEvent.mouseDown(selecao('Quais machos'))
+    fireEvent.click(await screen.findByTitle('Só os reservados do pedido #12'))
+    await waitFor(() =>
+      expect(within(grupo('Machos')).getByLabelText('Quantos machos')).toHaveProperty('value', '2'),
+    )
+
+    // a de 02/10 não tem reservado: volta aos livres, todos dela, sem escolher pedido
+    fireEvent.click(screen.getByLabelText(/^nascidos em 02\/10\/2026/))
+    await waitFor(() => expect(screen.queryByLabelText('Quais machos')).toBeNull())
+    expect(within(grupo('Machos')).getByLabelText('Quantos machos')).toHaveProperty('value', '3')
   })
 
   it('os eventos da caixa ficam na aba deles, com o Anular na baixa', async () => {

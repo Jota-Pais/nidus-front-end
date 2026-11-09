@@ -7,6 +7,7 @@ import {
   destinoDoLugar,
   idDaLinhagem,
   pintaNaGrade,
+  reservasNoGrupo,
 } from './caixa'
 import type { Catalogo } from './tipos'
 
@@ -99,6 +100,28 @@ describe('descreverLiberacao', () => {
     expect(descreverLiberacao('2026-11-08', 'entrega')).toBe(
       'Caixa liberada em 08/11/2026: a entrega levou os últimos animais. A posição recebe caixa nova.',
     )
+  })
+})
+
+describe('reservasNoGrupo', () => {
+  // o parto tem 2 machos reservados para o #12 e 2 fêmeas para o #13
+  const doParto = [
+    { idPedido: 12, m: 2, f: 0 },
+    { idPedido: 13, m: 0, f: 2 },
+  ]
+
+  it('sem reservado no grupo, nenhum pedido: os do parto estão em outra caixa', () => {
+    expect(reservasNoGrupo(doParto, { m: 4, f: 0, reservados: 0 })).toEqual([])
+  })
+
+  it('com todos os reservados no grupo, cada pedido fica com o que tem', () => {
+    expect(reservasNoGrupo(doParto, { m: 4, f: 4, reservados: 4 })).toEqual(doParto)
+  })
+
+  it('com os reservados repartidos, nenhum pedido passa dos reservados nem dos vivos do grupo', () => {
+    expect(reservasNoGrupo(doParto, { m: 4, f: 0, reservados: 1 })).toEqual([
+      { idPedido: 12, m: 1, f: 0 },
+    ])
   })
 })
 

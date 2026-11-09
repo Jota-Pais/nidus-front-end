@@ -12,6 +12,7 @@ import {
   doSexo,
   idDaLinhagem,
   partosDaCaixa,
+  reservasNoGrupo,
   SEXOS,
   vivosNaCaixa,
 } from '@/dominio/caixa'
@@ -28,7 +29,7 @@ import type { Casal, DataISO, FichaDeCasal, OndeEstao, Parto, PorSexo } from '@/
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { ateHoje, descreverDias, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
 import { BaixaNaCaixa, CampoDoPedido, MudarAnimais } from './AnimaisDaFicha'
-import type { CaixaDaAcao } from './AnimaisDaFicha'
+import type { CaixaDaAcao, GrupoDaCaixa } from './AnimaisDaFicha'
 import { Campo, LadoALado, Total } from './CamposDaFicha'
 import { EscolherCaixa } from './EscolherCaixa'
 
@@ -37,7 +38,10 @@ const quantos = (porSexo: PorSexo) => descreverQuantos({ ...porSexo, qualquer: 0
 
 const porSexo = (porSexo: PorSexo) => `${porSexo.m} M · ${porSexo.f} F`
 
-/** Os pedidos com reservados do parto: as opções quando a API pede de qual pedido eles saem */
+/**
+ * Os pedidos com reservados do parto: as opções quando a API pede de qual pedido saem os animais
+ * da seleção, do desmame ou da correção, que tiram do parto todo
+ */
 const pedidosDoParto = (parto: Parto) => parto.reservados.map((reserva) => reserva.idPedido)
 
 // ------------------------------------------------------------ registrar e corrigir
@@ -90,7 +94,7 @@ function CamposDoEvento({ campos }: { campos: CampoDoEvento[] }) {
  * deles, e o campo aparece com os pedidos do parto. A seleção se repete: depois de registrar, o
  * formulário volta ao começo
  */
-export function RegistrarEvento({
+function RegistrarEvento({
   nome,
   caminho,
   campos,
@@ -145,7 +149,7 @@ export function RegistrarEvento({
       {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
       <CamposDoEvento campos={campos} />
       {falha.pediu('idPedido') && (
-        <CampoDoPedido nome={['idPedido']} quem="os animais" pedidos={pedidos} />
+        <CampoDoPedido nome={['idPedido']} quem="os animais reservados" pedidos={pedidos} />
       )}
       {children}
       <Botao variante="primario" htmlType="submit" loading={registrar.isPending}>
@@ -167,10 +171,19 @@ function CampoDoMotivo() {
   )
 }
 
-function BotoesDaCorrecao({ salvando, aoCancelar }: { salvando: boolean; aoCancelar: () => void }) {
+function BotoesDaCorrecao({
+  salvando,
+  desabilitado = false,
+  aoCancelar,
+}: {
+  salvando: boolean
+  /** a correção como está a API recusa: o aviso diz por quê */
+  desabilitado?: boolean
+  aoCancelar: () => void
+}) {
   return (
     <div className="ficha__botoes">
-      <Botao variante="primario" htmlType="submit" loading={salvando}>
+      <Botao variante="primario" htmlType="submit" loading={salvando} disabled={desabilitado}>
         Salvar correção
       </Botao>
       <Botao variante="fantasma" onClick={aoCancelar}>
@@ -324,10 +337,13 @@ function FormularioDoNascimento({
   const outraNinhada = partosDaCaixa(ficha).some(
     (outro) => outro.id !== parto.id && vivosNaCaixa(outro, ficha.caixa.id) !== undefined,
   )
-  const caixaNaoServe = !ficha.caixa.ativa || outraNinhada
+  // a API também diz quando ela não serve e a ficha não sabia: algo mudou na caixa depois de a
+  // ficha carregar
+  const caixaNaoServe = !ficha.caixa.ativa || outraNinhada || falha.pediu('idCaixa')
+  // a caixa de estoque é de um sexo só: com a mais dos dois, a API recusa, e o envio fica preso
   const umSexoPorVez = caixaNaoServe && aMais.length > 1
   const sexoDaCaixa = aMais[0] ?? 'M'
-  const pedeCaixa = (caixaNaoServe && aMais.length === 1) || falha.pediu('idCaixa')
+  const pedeCaixa = caixaNaoServe && aMais.length === 1
 
   function salvar({ idCaixa, idPedido, ...corpo }: CamposDaCorrecaoDoNascimento) {
     falha.limpar()
@@ -375,6 +391,8 @@ function FormularioDoNascimento({
             rotulo: 'Data do parto',
             tipo: 'data',
             desde: [parto.dtAcasalamento],
+            // a API confere também o primeiro fato dos animais (baixa, mudança ou entrega), que
+            // a ficha não traz
             ate: [parto.dtDesmameReal, seguinte?.dtAcasalamento],
           },
           { nome: 'nascidoM', rotulo: 'Machos nascidos', tipo: 'numero' },
@@ -404,10 +422,18 @@ function FormularioDoNascimento({
         </Form.Item>
       )}
       {falha.pediu('idPedido') && (
-        <CampoDoPedido nome={['idPedido']} quem="os animais" pedidos={pedidosDoParto(parto)} />
+        <CampoDoPedido
+          nome={['idPedido']}
+          quem="os animais reservados"
+          pedidos={pedidosDoParto(parto)}
+        />
       )}
       <CampoDoMotivo />
-      <BotoesDaCorrecao salvando={corrigir.isPending} aoCancelar={aoFechar} />
+      <BotoesDaCorrecao
+        salvando={corrigir.isPending}
+        desabilitado={umSexoPorVez}
+        aoCancelar={aoFechar}
+      />
     </Form>
   )
 }
@@ -576,7 +602,9 @@ function descreverLugar(lugar: OndeEstao, idCaixa: number): string {
 
 /**
  * Onde estão os vivos do parto, de fato, e quantos estão reservados para cada pedido. Os que ainda
- * estão nesta caixa podem sair por baixa e, depois do desmame, passar para o estoque
+ * estão nesta caixa podem sair por baixa e, depois do desmame, passar para o estoque. Das reservas
+ * do parto, a ação só oferece as que podem estar nesta caixa (reservasNoGrupo): a API conta os
+ * reservados de cada pedido no parto todo, e em cada caixa só quantos são
  */
 function OndeEstaoOsVivos({
   parto,
@@ -589,9 +617,15 @@ function OndeEstaoOsVivos({
 }) {
   const [acao, setAcao] = useState<'baixa' | 'passagem' | null>(null)
   const aqui = ativa ? vivosNaCaixa(parto, caixa.id) : undefined
-  const grupos =
+  const grupos: GrupoDaCaixa[] =
     aqui && parto.dtPartoReal
-      ? [{ dtNascimento: parto.dtPartoReal, vivos: { m: aqui.m, f: aqui.f } }]
+      ? [
+          {
+            dtNascimento: parto.dtPartoReal,
+            vivos: { m: aqui.m, f: aqui.f },
+            reservas: reservasNoGrupo(parto.reservados, aqui),
+          },
+        ]
       : []
   const reservas = parto.reservados
 
@@ -620,18 +654,12 @@ function OndeEstaoOsVivos({
       )}
 
       {acao === 'baixa' && (
-        <BaixaNaCaixa
-          caixa={caixa}
-          grupos={grupos}
-          reservas={reservas}
-          aoTerminar={() => setAcao(null)}
-        />
+        <BaixaNaCaixa caixa={caixa} grupos={grupos} aoTerminar={() => setAcao(null)} />
       )}
       {acao === 'passagem' && (
         <MudarAnimais
           caixa={caixa}
           grupos={grupos}
-          reservas={reservas}
           desde={parto.dtDesmameReal}
           botao="Passar para o estoque"
           aoTerminar={() => setAcao(null)}
@@ -802,6 +830,10 @@ export function AbaNinhada({
                 <Campo rotulo="Machos desmamados">{parto.desmamadoM ?? '—'}</Campo>
                 <Campo rotulo="Fêmeas desmamadas">{parto.desmamadoF ?? '—'}</Campo>
               </LadoALado>
+              {/*
+               * a API confere também a última rodada da seleção e a primeira saída dos animais da
+               * caixa do casal, que a ficha não traz
+               */}
               <CorrigirData
                 idParto={parto.id}
                 evento="desmame"
@@ -824,6 +856,7 @@ export function AbaNinhada({
                   nome: 'dtDesmameReal',
                   rotulo: 'Data do desmame',
                   tipo: 'data',
+                  // a API confere também a última rodada da seleção, que a ficha não traz
                   desde: [parto.dtPartoReal],
                 },
                 { nome: 'desmamadoM', rotulo: 'Machos desmamados', tipo: 'numero' },

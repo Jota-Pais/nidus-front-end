@@ -17,7 +17,7 @@ import {
   SEXOS,
   SIMBOLO_DO_SEXO,
 } from '@/dominio/caixa'
-import type { LugarNaEstante } from '@/dominio/caixa'
+import type { LugarNaEstante, ReservaNaCaixa } from '@/dominio/caixa'
 import { useAnularBaixa, useBaixa, useMudanca } from '@/dominio/consultas'
 import type { GrupoQueMuda, ItemDaBaixa } from '@/dominio/consultas'
 import { descreverQuantos } from '@/dominio/pedido'
@@ -41,16 +41,20 @@ export interface CaixaDaAcao {
 export interface GrupoDaCaixa {
   dtNascimento: DataISO
   vivos: PorSexo
-}
-
-/** O que um pedido tem reservado na caixa */
-export interface ReservaNaCaixa extends PorSexo {
-  idPedido: number
+  /** o que cada pedido tem reservado neste grupo (reservasNoGrupo) */
+  reservas: ReservaNaCaixa[]
 }
 
 const OS_DO_SEXO: Record<Sexo, string> = { M: 'os machos', F: 'as fêmeas' }
 
-/** Os pedidos com reservados do sexo: as opções de "de qual pedido" */
+const OS_RESERVADOS_DO_SEXO: Record<Sexo, string> = {
+  M: 'os machos reservados',
+  F: 'as fêmeas reservadas',
+}
+
+const QUANTOS_DO_SEXO: Record<Sexo, string> = { M: 'Quantos machos', F: 'Quantas fêmeas' }
+
+/** Os pedidos com reservados do sexo no grupo: as opções de "de qual pedido" */
 const pedidosDoSexo = (reservas: ReservaNaCaixa[], sexo: Sexo) =>
   reservas.filter((reserva) => doSexo(reserva, sexo) > 0).map((reserva) => reserva.idPedido)
 
@@ -64,14 +68,14 @@ export function CampoDoPedido({
   pedidos,
 }: {
   nome: (string | number)[]
-  /** "os machos", "os animais" */
+  /** "os machos reservados", "as fêmeas reservadas", "os animais reservados" */
   quem: string
   pedidos: number[]
 }) {
   return (
     <Form.Item
       name={nome}
-      label={`Os livres não bastam: de qual pedido saem ${quem} reservados`}
+      label={`Os livres não bastam: de qual pedido saem ${quem}`}
       rules={[{ required: true, message: 'Escolha o pedido' }]}
     >
       <Select
@@ -155,12 +159,10 @@ function nomeDoItem(itens: Pick<ItemDaBaixa, 'sexo'>[]): NomeNoFormulario {
 export function BaixaNaCaixa({
   caixa,
   grupos,
-  reservas,
   aoTerminar,
 }: {
   caixa: CaixaDaAcao
   grupos: GrupoDaCaixa[]
-  reservas: ReservaNaCaixa[]
   aoTerminar: () => void
 }) {
   const { message, modal } = App.useApp()
@@ -257,8 +259,8 @@ export function BaixaNaCaixa({
           <CampoDoPedido
             key={sexo}
             nome={[CAMPO_DO_SEXO[sexo], 'idPedido']}
-            quem={OS_DO_SEXO[sexo]}
-            pedidos={pedidosDoSexo(reservas, sexo)}
+            quem={OS_RESERVADOS_DO_SEXO[sexo]}
+            pedidos={pedidosDoSexo(grupo.reservas, sexo)}
           />
         ))}
       <LadoALado>
@@ -322,14 +324,12 @@ const CAMPOS_DA_MUDANCA = [
 export function MudarAnimais({
   caixa,
   grupos,
-  reservas,
   desde,
   botao,
   aoTerminar,
 }: {
   caixa: CaixaDaAcao
   grupos: GrupoDaCaixa[]
-  reservas: ReservaNaCaixa[]
   /** o primeiro dia da mudança: o desmame, quando os animais saem da caixa do casal */
   desde?: DataISO | null | undefined
   botao: string
@@ -349,7 +349,10 @@ export function MudarAnimais({
   const doSexoNoForm: Record<Sexo, SexoQueMuda | undefined> = { M: machos, F: femeas }
   const nenhum = sexos.every((sexo) => (doSexoNoForm[sexo]?.qtd ?? 0) === 0)
 
-  /** Trocar a idade ou o pedido refaz as quantidades: todos do grupo, ou os reservados do pedido */
+  /**
+   * Trocar a idade ou o pedido refaz as quantidades: todos do grupo, ou os reservados do pedido no
+   * grupo. A idade nova volta aos livres primeiro: os pedidos dela são outros
+   */
   function aoMudarValores(mudou: Partial<CamposDaMudanca>) {
     const novo = grupoEscolhido(grupos, form.getFieldValue('dtNascimento') as DataISO | undefined)
     if (!novo) return
@@ -359,10 +362,13 @@ export function MudarAnimais({
       const quais = mudou[campo]?.quais
       const vivos = doSexo(novo.vivos, sexo)
 
-      if (mudou.dtNascimento !== undefined) form.setFieldValue([campo, 'qtd'], vivos)
+      if (mudou.dtNascimento !== undefined) {
+        form.setFieldValue([campo, 'qtd'], vivos)
+        form.setFieldValue([campo, 'quais'], 'livres')
+      }
       if (quais === 'livres') form.setFieldValue([campo, 'qtd'], vivos)
       if (typeof quais === 'number') {
-        const reserva = reservas.find((r) => r.idPedido === quais)
+        const reserva = novo.reservas.find((r) => r.idPedido === quais)
         form.setFieldValue([campo, 'qtd'], Math.min(vivos, reserva ? doSexo(reserva, sexo) : 0))
       }
     }
@@ -425,7 +431,7 @@ export function MudarAnimais({
       name="mudanca"
       form={form}
       layout="vertical"
-      className="ficha__formulario mudanca"
+      className="ficha__formulario"
       initialValues={{
         dtFato: ateHoje(),
         dtNascimento: grupo.dtNascimento,
@@ -440,11 +446,11 @@ export function MudarAnimais({
       {sexos.map((sexo) => {
         const campo = CAMPO_DO_SEXO[sexo]
         const atual = doSexoNoForm[sexo]
-        const pedidos = pedidosDoSexo(reservas, sexo)
+        const pedidos = pedidosDoSexo(grupo.reservas, sexo)
         const outro = doSexoNoForm[sexo === 'M' ? 'F' : 'M']
 
         return (
-          <div key={sexo} className="mudanca__sexo" role="group" aria-label={ROTULO_DO_SEXO[sexo]}>
+          <div key={sexo} className="animais__sexo" role="group" aria-label={ROTULO_DO_SEXO[sexo]}>
             <LadoALado>
               <Form.Item
                 name={[campo, 'qtd']}
@@ -452,7 +458,7 @@ export function MudarAnimais({
                 extra={`de ${doSexo(grupo.vivos, sexo)}`}
               >
                 <InputNumber
-                  aria-label={`Quantos ${ROTULO_DO_SEXO[sexo].toLowerCase()}`}
+                  aria-label={QUANTOS_DO_SEXO[sexo]}
                   min={0}
                   max={doSexo(grupo.vivos, sexo)}
                   precision={0}
@@ -492,7 +498,11 @@ export function MudarAnimais({
               </Form.Item>
             )}
             {atual?.quais === 'livres' && falha.pediu(`${campo}.idPedido`) && (
-              <CampoDoPedido nome={[campo, 'idPedido']} quem={OS_DO_SEXO[sexo]} pedidos={pedidos} />
+              <CampoDoPedido
+                nome={[campo, 'idPedido']}
+                quem={OS_RESERVADOS_DO_SEXO[sexo]}
+                pedidos={pedidos}
+              />
             )}
           </div>
         )
