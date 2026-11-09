@@ -86,14 +86,14 @@ describe('api — erros no envelope da API', () => {
     fingirFetch(
       resposta(409, {
         erro: {
-          codigo: 'SOLICITACAO_JA_ALOCADA',
-          mensagem: 'A solicitação #12 já foi alocada.',
+          codigo: 'PEDIDO_JA_RESERVADO',
+          mensagem: 'Os animais do pedido #12 ja estao reservados.',
         },
       }),
     )
-    const erro = (await api('/api/solicitacoes/12/alocacao').catch((e: unknown) => e)) as ErroDeApi
+    const erro = (await api('/api/pedidos/12/alocacao').catch((e: unknown) => e)) as ErroDeApi
     expect(erro.ehRegraDeNegocio).toBe(true)
-    expect(erro.codigo).toBe('SOLICITACAO_JA_ALOCADA')
+    expect(erro.codigo).toBe('PEDIDO_JA_RESERVADO')
     expect(erro.message).toContain('#12')
   })
 

@@ -3,29 +3,39 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { chaves, invalidarColonia } from '@/app/chaves'
 import { api } from '@/lib/api'
 import type {
+  Casal,
   Catalogo,
   CodigoEspecie,
-  Face,
-  FichaDeEstoque,
-  RetiradaDaEntrega,
-  Sexo,
+  DataISO,
+  Destino,
   Estante,
-  FaltaNaReserva,
-  Ficha,
+  Estoque,
+  FaltaDoPedido,
+  FichaDaCaixa,
   Grade,
   Kanban,
-  Estoque,
+  LugarDaRetirada,
   Parto,
+  Pedido,
   Perfil,
+  PosicaoNaEstante,
   Projeto,
   RegistroDoHistorico,
+  RespostaDaAlocacao,
+  RespostaDaBaixa,
+  RespostaDaDevolucao,
+  RespostaDaEntrega,
+  RespostaDaMudanca,
+  RespostaDaRecusa,
   ResultadoDaBusca,
   Sala,
+  Sexo,
   SituacaoDoProjeto,
-  Solicitacao,
   Usuario,
   Viabilidade,
 } from './tipos'
+
+// ------------------------------------------------------------ estantes e caixas
 
 export function useKanban(especie: CodigoEspecie) {
   return useQuery({
@@ -35,27 +45,17 @@ export function useKanban(especie: CodigoEspecie) {
   })
 }
 
-export interface PosicaoNova {
-  idCaixa: number
-  idEstante: number
-  face: 'frontal' | 'traseira'
-  linha: number
-  coluna: number
-}
-
 export function useMudarDePosicao() {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ idCaixa, ...posicao }: PosicaoNova) =>
+    mutationFn: ({ idCaixa, ...posicao }: PosicaoNaEstante & { idCaixa: number }) =>
       api<{ idCaixa: number; idEstante: number; codigo: string }>(
         `/api/caixas/${idCaixa}/posicao`,
-        {
-          metodo: 'PATCH',
-          corpo: posicao,
-        },
+        { metodo: 'PATCH', corpo: posicao },
       ),
-    onSuccess: (_resposta, { idCaixa }) => invalidarColonia(cliente, idCaixa),
+    // os animais vão junto com a caixa: o endereço muda na grade, no kanban e nas fichas
+    onSuccess: () => invalidarColonia(cliente),
   })
 }
 
@@ -82,6 +82,15 @@ export function useSalas() {
   })
 }
 
+/** A sala dá nome às abas das estantes e à grade: salvar recarrega as três */
+function invalidarSalasEEstantes(cliente: ReturnType<typeof useQueryClient>) {
+  return Promise.all([
+    cliente.invalidateQueries({ queryKey: chaves.salas }),
+    cliente.invalidateQueries({ queryKey: chaves.estantes }),
+    invalidarColonia(cliente),
+  ])
+}
+
 /** Remover é a sala sair das listas: o back só aceita a sala sem estante */
 export function useSalvarSala() {
   const cliente = useQueryClient()
@@ -101,12 +110,7 @@ export function useSalvarSala() {
       }
       return api(`/api/salas/${pedido.id}`, { metodo: 'DELETE' })
     },
-    // a estante traz o nome da sala: renomear muda as abas da tela Estantes
-    onSuccess: () =>
-      Promise.all([
-        cliente.invalidateQueries({ queryKey: chaves.salas }),
-        invalidarColonia(cliente),
-      ]),
+    onSuccess: () => invalidarSalasEEstantes(cliente),
   })
 }
 
@@ -139,87 +143,16 @@ export function useSalvarEstante() {
       }
       return api(`/api/estantes/${pedido.id}`, { metodo: 'DELETE' })
     },
-    // a lista de salas conta as estantes de cada uma
-    onSuccess: () =>
-      Promise.all([
-        cliente.invalidateQueries({ queryKey: chaves.salas }),
-        invalidarColonia(cliente),
-      ]),
+    onSuccess: () => invalidarSalasEEstantes(cliente),
   })
 }
 
-/** null deixa a consulta desligada - é assim que a ficha fechada não busca nada */
+/** null deixa a consulta desligada: é assim que a ficha fechada não busca nada */
 export function useFicha(idCaixa: number | null) {
   return useQuery({
     queryKey: chaves.caixa(idCaixa ?? 0),
-    // a caixa de estoque tem a ficha dela, sem casal nem parto
-    queryFn: () => api<Ficha | FichaDeEstoque>(`/api/caixas/${idCaixa}`),
+    queryFn: () => api<FichaDaCaixa>(`/api/caixas/${idCaixa}`),
     enabled: idCaixa !== null,
-  })
-}
-
-export interface CasalNovo {
-  /** caixa que já existe, ou ... */
-  idCaixa?: number
-  /** ... posição vazia da estante, e a caixa nasce junto */
-  posicao?: { idEstante: number; face: 'frontal' | 'traseira'; linha: number; coluna: number }
-  idLinhagem: number
-  grupoMacho: string
-  grupoFemea: string
-  dtFormacao: string
-}
-
-export function useFormarCasal() {
-  const cliente = useQueryClient()
-
-  return useMutation({
-    mutationFn: (casal: CasalNovo) =>
-      api<{ idCaixa: number }>('/api/casais', { metodo: 'POST', corpo: casal }),
-    onSuccess: ({ idCaixa }) => invalidarColonia(cliente, idCaixa),
-  })
-}
-
-/** O registro de parto, seleção e desmame devolve o parto, que pode vir com a reserva em falta */
-export interface RespostaDoRegistro {
-  falta?: FaltaNaReserva | null
-}
-
-/**
- * Os registros feitos de dentro da ficha (parto, seleção, desmame, encerramento). Cada um é um
- * POST com o seu caminho; depois dele kanban, grade e a própria ficha recarregam
- */
-export function useRegistrarNaFicha(idCaixa: number) {
-  const cliente = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({ caminho, corpo }: { caminho: string; corpo: unknown }) =>
-      api<RespostaDoRegistro>(caminho, { metodo: 'POST', corpo }),
-    onSuccess: () => invalidarColonia(cliente, idCaixa),
-  })
-}
-
-/** Para onde vão os desmamados de um sexo: uma caixa de estoque, ou uma posição vazia */
-export type DestinoDoEstoque =
-  | { idCaixa: number }
-  | { posicao: { idEstante: number; face: Face; linha: number; coluna: number } }
-
-export interface PassagemParaOEstoque {
-  idParto: number
-  machos?: { qtd: number; destino: DestinoDoEstoque }
-  femeas?: { qtd: number; destino: DestinoDoEstoque }
-}
-
-/** Os desmamados saem da caixa do casal para caixas de estoque, machos numa e fêmeas noutra */
-export function usePassarParaOEstoque(idCaixa: number) {
-  const cliente = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({ idParto, ...dados }: PassagemParaOEstoque) =>
-      api<{ caixas: { idCaixa: number; codigo: string; sexo: Sexo; qtd: number }[] }>(
-        `/api/partos/${idParto}/estoque`,
-        { metodo: 'POST', corpo: dados },
-      ),
-    onSuccess: () => invalidarColonia(cliente, idCaixa),
   })
 }
 
@@ -230,97 +163,226 @@ export function useVirarCaixaDeEstoque() {
   return useMutation({
     mutationFn: (idCaixa: number) =>
       api<{ idCaixa: number; sexo: Sexo }>(`/api/caixas/${idCaixa}/estoque`, { metodo: 'POST' }),
-    onSuccess: (_resposta, idCaixa) => invalidarColonia(cliente, idCaixa),
+    onSuccess: () => invalidarColonia(cliente),
   })
 }
 
-/** De qual caixa tirar os animais do pedido na entrega */
-export function useRetirada(idSolicitacao: number | null) {
-  return useQuery({
-    queryKey: chaves.retirada(idSolicitacao ?? 0),
-    queryFn: async () =>
-      (await api<{ retirada: RetiradaDaEntrega[] }>(`/api/solicitacoes/${idSolicitacao}/retirada`))
-        .retirada,
-    enabled: idSolicitacao !== null,
-  })
+// ------------------------------------------------------------ casais e partos
+
+export interface CasalNovo {
+  /** caixa que já existe, ou ... */
+  idCaixa?: number
+  /** ... posição vazia da estante, e a caixa nasce junto */
+  posicao?: PosicaoNaEstante
+  idLinhagem: number
+  grupoMacho: string
+  grupoFemea: string
+  dtFormacao: DataISO
 }
 
-/** Só o gestor lista, nos Cadastros: quem pede digita o protocolo e não vê o dos outros */
-export function useProjetos() {
-  return useQuery({
-    queryKey: chaves.projetos,
-    queryFn: async () => (await api<{ projetos: Projeto[] }>('/api/projetos')).projetos,
-  })
-}
-
-/** O pesquisador recebe só as dele; técnico e gestor, todas */
-export function useSolicitacoes() {
-  return useQuery({
-    queryKey: chaves.solicitacoes,
-    queryFn: async () =>
-      (await api<{ solicitacoes: Solicitacao[] }>('/api/solicitacoes')).solicitacoes,
-  })
-}
-
-export function useRegistrarEntrega() {
+export function useFormarCasal() {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ idSolicitacao, dtEntrega }: { idSolicitacao: number; dtEntrega: string }) =>
-      api(`/api/solicitacoes/${idSolicitacao}/entrega`, { metodo: 'POST', corpo: { dtEntrega } }),
-    // o entregue sai da caixa, e a caixa que ficou vazia ou sem reserva muda de coluna
-    onSuccess: () =>
-      Promise.all([
-        cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
-        cliente.invalidateQueries({ queryKey: ['caixa'] }),
-        invalidarColonia(cliente),
-      ]),
+    mutationFn: (casal: CasalNovo) =>
+      api<{ idCaixa: number; casal: Casal }>('/api/casais', { metodo: 'POST', corpo: casal }),
+    onSuccess: () => invalidarColonia(cliente),
   })
 }
 
 /**
- * Desfaz a reserva em falta: as reservas do pedido são canceladas, e ele continua aprovado,
- * aguardando animais
+ * O que os registros da ficha devolvem: o parto ou o casal, e, na seleção e no desmame, os
+ * pedidos que ficaram em falta porque perderam animais reservados
  */
-export function useDesfazerReserva() {
+export interface RespostaDoRegistro {
+  faltas?: FaltaDoPedido[]
+}
+
+/**
+ * Os registros feitos de dentro da ficha: acasalamento e encerramento do casal; nascimento,
+ * seleção e desmame do parto. Cada um é um POST com o seu caminho
+ */
+export function useRegistrarNaFicha() {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: (idSolicitacao: number) =>
-      api(`/api/solicitacoes/${idSolicitacao}/devolucao`, { metodo: 'POST' }),
-    onSuccess: () =>
-      Promise.all([
-        cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
-        invalidarColonia(cliente),
-      ]),
+    mutationFn: ({ caminho, corpo }: { caminho: string; corpo: unknown }) =>
+      api<RespostaDoRegistro>(caminho, { metodo: 'POST', corpo }),
+    onSuccess: () => invalidarColonia(cliente),
   })
 }
 
-/** A equipe aceita fazer o pedido. Os animais são reservados depois, em useAlocar */
-export function useAprovarSolicitacao() {
+/** O parto pendente de casal encerrado que não vai nascer: fecha, e a caixa vazia é liberada */
+export function useSemNinhada() {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: (idSolicitacao: number) =>
-      api(`/api/solicitacoes/${idSolicitacao}/aprovacao`, { metodo: 'POST' }),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
+    mutationFn: ({
+      idParto,
+      ...corpo
+    }: {
+      idParto: number
+      dtSemNinhada: DataISO
+      motivo: string
+    }) => api<Parto>(`/api/partos/${idParto}/sem-ninhada`, { metodo: 'POST', corpo }),
+    onSuccess: () => invalidarColonia(cliente),
   })
 }
 
-export function useRecusarSolicitacao() {
+/** A correção do nascimento: data, contagem e, se a ninhada já saiu da caixa do casal, onde entram os a mais */
+export interface CorrecaoDoNascimento {
+  dtPartoReal: DataISO
+  nascidoM: number
+  nascidoF: number
+  motivo: string
+  /** a caixa de estoque que recebe os animais a mais quando a do casal não serve mais */
+  idCaixa?: number
+  /** de qual pedido saem os reservados quando os livres não bastam */
+  idPedido?: number
+}
+
+/** A correção do desmame é só a data: a contagem se corrige anulando a baixa ou lançando outra */
+export interface CorrecaoDoDesmame {
+  dtDesmameReal: DataISO
+  motivo: string
+}
+
+export type CorrecaoDoParto =
+  | { idParto: number; evento: 'nascimento'; corpo: CorrecaoDoNascimento }
+  | { idParto: number; evento: 'desmame'; corpo: CorrecaoDoDesmame }
+
+export type EventoCorrigivel = CorrecaoDoParto['evento']
+
+/** A correção de um evento já registrado do parto: sempre com motivo */
+export function useCorrigirEvento() {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ idSolicitacao, motivo }: { idSolicitacao: number; motivo: string }) =>
-      api(`/api/solicitacoes/${idSolicitacao}/recusa`, { metodo: 'POST', corpo: { motivo } }),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
+    mutationFn: ({ idParto, evento, corpo }: CorrecaoDoParto) =>
+      // o desmame devolve só o parto; o nascimento, também os pedidos que ficaram em falta
+      api<{ parto: Parto; faltas?: FaltaDoPedido[] }>(`/api/partos/${idParto}/${evento}`, {
+        metodo: 'PATCH',
+        corpo,
+      }),
+    onSuccess: () => invalidarColonia(cliente),
   })
 }
 
-/** O corpo do POST /api/solicitacoes. O e-mail não vai: o back pega o da sessão */
-export interface NovaSolicitacao {
+/** A data do acasalamento digitada errada, ou a nova monta que não gasta um dos 5 partos */
+export function useCorrigirAcasalamento() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      idParto,
+      ...corpo
+    }: {
+      idParto: number
+      dtAcasalamento: DataISO
+      motivo: string
+    }) => api<Parto>(`/api/partos/${idParto}/acasalamento`, { metodo: 'PATCH', corpo }),
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
+// ------------------------------------------------------------ animais
+
+/** Os animais de um sexo e de uma idade que a ação toca */
+export interface ItemDaBaixa {
+  sexo: Sexo
+  qtd: number
+  /** só quando a caixa tem vivos de mais de uma idade naquele sexo */
+  dtNascimento?: DataISO
+  /** de qual pedido saem os reservados quando os livres não bastam */
+  idPedido?: number
+}
+
+export interface Baixa {
+  idCaixa: number
+  dtFato: DataISO
+  motivo?: string
+  itens: ItemDaBaixa[]
+}
+
+/** Morte ou eutanásia em qualquer caixa: saem primeiro os livres, depois os reservados */
+export function useBaixa() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idCaixa, ...corpo }: Baixa) =>
+      api<RespostaDaBaixa>(`/api/caixas/${idCaixa}/baixa`, { metodo: 'POST', corpo }),
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
+/** Os animais de um sexo que mudam de caixa, e para onde */
+export interface GrupoQueMuda {
+  qtd: number
+  /** só quando a caixa tem vivos de mais de uma idade naquele sexo */
+  dtNascimento?: DataISO
+  /** de qual pedido saem os reservados quando os livres não bastam */
+  idPedido?: number
+  /** leva só os reservados de idPedido: juntar numa caixa os de um pedido */
+  soDoPedido?: boolean
+  destino: Destino
+}
+
+export interface Mudanca {
+  /** a caixa de onde os animais saem: a do casal (a passagem para o estoque) ou uma de estoque */
+  idCaixa: number
+  dtFato: DataISO
+  machos?: GrupoQueMuda
+  femeas?: GrupoQueMuda
+}
+
+/** Desmamados mudam para caixas de estoque, machos numa e fêmeas noutra; a reserva vai junto */
+export function useMudanca() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idCaixa, ...corpo }: Mudanca) =>
+      api<RespostaDaMudanca>(`/api/caixas/${idCaixa}/mudanca`, { metodo: 'POST', corpo }),
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
+export interface Anulacao {
+  /** o idOcorrencia do evento de baixa anulável */
+  idOcorrencia: number
+  motivo: string
+  /** só quando a caixa da baixa não serve mais: para onde voltam os machos e as fêmeas */
+  idCaixaMachos?: number
+  idCaixaFemeas?: number
+}
+
+/**
+ * A baixa lançada por engano: os animais voltam vivos para a caixa dela ou, se ela não serve
+ * mais, para a caixa de estoque de cada sexo. A tela não depende da resposta: tudo recarrega
+ */
+export function useAnularBaixa() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idOcorrencia, ...corpo }: Anulacao) =>
+      api<unknown>(`/api/ocorrencias/${idOcorrencia}/anulacao`, { metodo: 'POST', corpo }),
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
+// ------------------------------------------------------------ pedidos
+
+/** O pesquisador recebe só os dele; técnico e gestor, todos */
+export function usePedidos() {
+  return useQuery({
+    queryKey: chaves.pedidos,
+    queryFn: async () => (await api<{ pedidos: Pedido[] }>('/api/pedidos')).pedidos,
+  })
+}
+
+/** O corpo do POST /api/pedidos. O e-mail não vai: o back pega o da sessão */
+export interface NovoPedido {
   nomePesquisador: string
-  /** digitado pela pessoa; o back procura o projeto por ele */
+  /** digitado pela pessoa: só o formato é conferido */
   protocoloCeua: string
   idLinhagem: number
   machos: number
@@ -329,25 +391,52 @@ export interface NovaSolicitacao {
   /** idade exata é idadeMin = idadeMax */
   idadeMin: number
   idadeMax: number
-  dataEntrega: string
+  dataEntrega: DataISO
   observacoes?: string
 }
 
-export function useCriarSolicitacao() {
+export function useCriarPedido() {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: (pedido: NovaSolicitacao) =>
-      api<{ id: number }>('/api/solicitacoes', { metodo: 'POST', corpo: pedido }),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
+    mutationFn: (pedido: NovoPedido) =>
+      api<{ id: number }>('/api/pedidos', { metodo: 'POST', corpo: pedido }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.pedidos }),
   })
 }
 
-/** Antes de enviar, quem pede confere se o CPMR consegue atender. Não grava nada */
+/** Antes de enviar, quem pede confere se o biotério consegue atender. Não grava nada */
 export function useConferirViabilidade() {
   return useMutation({
-    mutationFn: (pedido: NovaSolicitacao) =>
-      api<Viabilidade>('/api/solicitacoes/viabilidade', { metodo: 'POST', corpo: pedido }),
+    mutationFn: (pedido: NovoPedido) =>
+      api<Viabilidade>('/api/pedidos/viabilidade', { metodo: 'POST', corpo: pedido }),
+  })
+}
+
+/** A equipe aceita fazer o pedido. Os animais são reservados depois, em useAlocar */
+export function useAprovarPedido() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (idPedido: number) =>
+      api<{ idPedido: number; status: 'aprovado' }>(`/api/pedidos/${idPedido}/aprovacao`, {
+        metodo: 'POST',
+      }),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.pedidos }),
+  })
+}
+
+/** Recusa o enviado, o aprovado ou o reservado: os animais do reservado voltam a ficar livres */
+export function useRecusarPedido() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idPedido, motivo }: { idPedido: number; motivo: string }) =>
+      api<RespostaDaRecusa>(`/api/pedidos/${idPedido}/recusa`, {
+        metodo: 'POST',
+        corpo: { motivo },
+      }),
+    onSuccess: () => invalidarColonia(cliente),
   })
 }
 
@@ -355,7 +444,7 @@ export function useConferirViabilidade() {
  * As caixas que atendem o pedido, já com a sugestão do sistema, para a equipe conferir ou
  * ajustar antes de reservar. Não grava nada
  */
-export function useAtendimento(pedido: Solicitacao) {
+export function useAtendimento(pedido: Pedido) {
   return useQuery({
     queryKey: chaves.atendimento(pedido.id),
     queryFn: () => {
@@ -374,55 +463,73 @@ export function useAtendimento(pedido: Solicitacao) {
   })
 }
 
-/** A equipe reserva as caixas do pedido aprovado: cada uma vira compromisso da solicitação */
+/** Quantos machos e fêmeas reservar de um lugar da busca: a caixa e a data de nascimento */
+export interface ItemDaReserva {
+  idCaixa: number
+  dtNascimento: DataISO
+  machos: number
+  femeas: number
+}
+
+/**
+ * Reserva os animais: o pedido aprovado inteiro, ou, no reservado em falta, o que completa a falta
+ * sem passar do pedido. O "qualquer" vai como macho ou fêmea
+ */
 export function useAlocar() {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      idSolicitacao,
-      itens,
-    }: {
-      idSolicitacao: number
-      itens: { idParto: number; machos: number; femeas: number }[]
-    }) => api(`/api/solicitacoes/${idSolicitacao}/alocacao`, { metodo: 'POST', corpo: { itens } }),
-    onSuccess: () =>
-      Promise.all([
-        cliente.invalidateQueries({ queryKey: chaves.solicitacoes }),
-        invalidarColonia(cliente),
-      ]),
+    mutationFn: ({ idPedido, itens }: { idPedido: number; itens: ItemDaReserva[] }) =>
+      api<RespostaDaAlocacao>(`/api/pedidos/${idPedido}/alocacao`, {
+        metodo: 'POST',
+        corpo: { itens },
+      }),
+    onSuccess: () => invalidarColonia(cliente),
   })
 }
+
+/** Desfaz a reserva, com falta ou sem: os animais voltam a ficar livres e o pedido, a aprovado */
+export function useDesfazerReserva() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (idPedido: number) =>
+      api<RespostaDaDevolucao>(`/api/pedidos/${idPedido}/devolucao`, { metodo: 'POST' }),
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
+/** De quais caixas tirar os animais do pedido na entrega: onde os reservados estão de fato */
+export function useRetirada(idPedido: number | null) {
+  return useQuery({
+    queryKey: chaves.retirada(idPedido ?? 0),
+    queryFn: async () =>
+      (await api<{ retirada: LugarDaRetirada[] }>(`/api/pedidos/${idPedido}/retirada`)).retirada,
+    enabled: idPedido !== null,
+  })
+}
+
+/** Os reservados saem das caixas onde estão, e a caixa que esvaziou é liberada */
+export function useRegistrarEntrega() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idPedido, dtEntrega }: { idPedido: number; dtEntrega: DataISO }) =>
+      api<RespostaDaEntrega>(`/api/pedidos/${idPedido}/entrega`, {
+        metodo: 'POST',
+        corpo: { dtEntrega },
+      }),
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
+// ------------------------------------------------------------ catálogo, estoque e histórico
 
 export function useCatalogo() {
   return useQuery({
     queryKey: chaves.catalogo,
     queryFn: () => api<Catalogo>('/api/catalogo'),
     staleTime: 60 * 60_000,
-  })
-}
-
-export type EventoCorrigivel = 'nascimento' | 'selecao' | 'desmame'
-
-/** A correção de um evento já registrado do parto: sempre com motivo, e volta o parto corrigido */
-export function useCorrigirEvento(idCaixa: number) {
-  const cliente = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({
-      idParto,
-      evento,
-      corpo,
-    }: {
-      idParto: number
-      evento: EventoCorrigivel
-      corpo: Record<string, unknown>
-    }) =>
-      api<{ parto: Parto; alerta: string | null }>(`/api/partos/${idParto}/${evento}`, {
-        metodo: 'PATCH',
-        corpo,
-      }),
-    onSuccess: () => invalidarColonia(cliente, idCaixa),
   })
 }
 
@@ -454,6 +561,15 @@ export function useHistorico(filtro: FiltroDoHistorico) {
     queryFn: async () =>
       (await api<{ historico: RegistroDoHistorico[] }>(caminhoDoHistorico(filtro))).historico,
     placeholderData: keepPreviousData,
+  })
+}
+
+// ------------------------------------------------------------ contas e projetos
+
+export function useProjetos() {
+  return useQuery({
+    queryKey: chaves.projetos,
+    queryFn: async () => (await api<{ projetos: Projeto[] }>('/api/projetos')).projetos,
   })
 }
 

@@ -1,6 +1,6 @@
 import { Form, InputNumber, Segmented } from 'antd'
 import { Formulario } from '@/componentes'
-import type { ModoDeIdade } from '@/dominio/solicitacao'
+import type { ModoDeIdade } from '@/dominio/pedido'
 import { IDADE, conferirIdadeMaxima, validadorDeIdade } from './solicitacao.schema'
 import './Solicitacao.css'
 

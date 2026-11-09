@@ -1,11 +1,12 @@
 // único ponto de saída HTTP do front
 import { config } from '@/app/config'
 import { camposDeErro, mensagemDeErro } from './erros'
+import type { CodigoDeErro } from './erros'
 
 /** Erro de qualquer chamada à API. */
 export class ErroDeApi extends Error {
   readonly status: number
-  readonly codigo: string | null
+  readonly codigo: CodigoDeErro | null
   readonly campos: Record<string, string>
 
   constructor(status: number, corpo: unknown) {
@@ -16,7 +17,7 @@ export class ErroDeApi extends Error {
 
     const erro =
       typeof corpo === 'object' && corpo !== null && 'erro' in corpo
-        ? (corpo as { erro: { codigo?: string } }).erro
+        ? (corpo as { erro: { codigo?: CodigoDeErro } }).erro
         : null
 
     this.codigo = erro?.codigo ?? null

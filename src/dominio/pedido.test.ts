@@ -1,19 +1,27 @@
 import { describe, expect, it } from 'vitest'
-import type { Solicitacao } from './tipos'
+import type { StatusDoPedido } from './tipos'
 import {
   AVISO_DE_ENTREGA_SEM_RESERVA_EM_DIAS,
+  alvoDaReserva,
   avisoDeEntregaSemReserva,
   compararDataDeEntrega,
   compararDataDoPedido,
   conferirReserva,
-  entraNoFiltro,
   descreverAnimais,
   descreverIdade,
   descreverQuantidadeEEspecie,
+  descreverQuantos,
   descreverSexos,
+  entraNoFiltro,
   faixaDeIdade,
+  FILTROS_DE_PEDIDO,
+  podeRecusar,
+  recebeReserva,
+  SITUACAO_DO_PEDIDO,
   totalDeAnimais,
-} from './solicitacao'
+} from './pedido'
+
+const STATUS: StatusDoPedido[] = ['enviado', 'aprovado', 'reservado', 'entregue', 'recusado']
 
 describe('faixaDeIdade', () => {
   it('na faixa, vai o que foi digitado', () => {
@@ -91,6 +99,20 @@ describe('descreverSexos', () => {
   })
 })
 
+describe('descreverQuantos', () => {
+  it('conta o que falta, com o de qualquer sexo, na ordem macho, fêmea, qualquer', () => {
+    expect(descreverQuantos({ m: 1, f: 2, qualquer: 3 })).toBe(
+      '1 macho, 2 fêmeas e 3 de qualquer sexo',
+    )
+    expect(descreverQuantos({ m: 0, f: 1, qualquer: 1 })).toBe('1 fêmea e 1 de qualquer sexo')
+    expect(descreverQuantos({ m: 0, f: 0, qualquer: 4 })).toBe('4 de qualquer sexo')
+  })
+
+  it('sem nada, diz que não há animal', () => {
+    expect(descreverQuantos({ m: 0, f: 0, qualquer: 0 })).toBe('nenhum animal')
+  })
+})
+
 describe('totalDeAnimais', () => {
   it('soma os três, com campo vazio valendo zero', () => {
     expect(totalDeAnimais({ machos: 5, femeas: null, qualquer: 10 })).toBe(15)
@@ -124,9 +146,9 @@ describe('compararDataDeEntrega', () => {
 describe('compararDataDoPedido', () => {
   it('o pedido mais antigo vem primeiro e, no mesmo dia, o de número menor', () => {
     const pedidos = [
-      { id: 1, dataSolicitacao: '2026-11-01' },
-      { id: 3, dataSolicitacao: '2026-11-03' },
-      { id: 2, dataSolicitacao: '2026-11-03' },
+      { id: 1, dataPedido: '2026-11-01' },
+      { id: 3, dataPedido: '2026-11-03' },
+      { id: 2, dataPedido: '2026-11-03' },
     ]
 
     expect(pedidos.sort(compararDataDoPedido).map((p) => p.id)).toEqual([1, 2, 3])
@@ -134,29 +156,69 @@ describe('compararDataDoPedido', () => {
 })
 
 describe('entraNoFiltro', () => {
-  const com = (status: Solicitacao['status'], dataAceite: string | null = null) =>
-    ({ status, dataAceite }) as Solicitacao
+  const filtrados = (status: StatusDoPedido) =>
+    FILTROS_DE_PEDIDO.filter(({ valor }) => entraNoFiltro(valor, { status })).map((f) => f.valor)
 
-  it('pendente é a que espera resposta; aceita é a que ainda falta entregar', () => {
-    expect(entraNoFiltro('pendentes', com('enviada'))).toBe(true)
-    expect(entraNoFiltro('pendentes', com('aprovada', '2026-11-03'))).toBe(false)
-    expect(entraNoFiltro('aceitas', com('aprovada', '2026-11-03'))).toBe(true)
-    // aprovada e ainda sem os animais reservados também já foi aceita
-    expect(entraNoFiltro('aceitas', com('em_atendimento', '2026-11-03'))).toBe(true)
-    expect(entraNoFiltro('pendentes', com('em_atendimento', '2026-11-03'))).toBe(false)
-    expect(entraNoFiltro('aceitas', com('concluida', '2026-11-03'))).toBe(false)
-    expect(entraNoFiltro('aceitas', com('enviada'))).toBe(false)
+  it('pendente é o que espera resposta', () => {
+    expect(filtrados('enviado')).toEqual(['todos', 'pendentes'])
   })
 
-  it('entregues só as entregues', () => {
-    expect(entraNoFiltro('entregues', com('concluida', '2026-11-03'))).toBe(true)
-    expect(entraNoFiltro('entregues', com('aprovada', '2026-11-03'))).toBe(false)
-    expect(entraNoFiltro('entregues', com('recusada'))).toBe(false)
+  it('aceito é o aprovado, com reserva ou ainda sem: o que falta entregar', () => {
+    expect(filtrados('aprovado')).toEqual(['todos', 'aceitos'])
+    expect(filtrados('reservado')).toEqual(['todos', 'aceitos'])
   })
 
-  it('recusadas só as recusadas; todas mostra tudo', () => {
-    expect(entraNoFiltro('recusadas', com('recusada'))).toBe(true)
-    expect(entraNoFiltro('todas', com('cancelada'))).toBe(true)
+  it('entregue e recusado ficam cada um no seu filtro', () => {
+    expect(filtrados('entregue')).toEqual(['todos', 'entregues'])
+    expect(filtrados('recusado')).toEqual(['todos', 'recusados'])
+  })
+})
+
+describe('situação do pedido', () => {
+  it('toda situação tem rótulo; aprovado e reservado, para quem pediu, são o mesmo aceito', () => {
+    for (const status of STATUS) expect(SITUACAO_DO_PEDIDO[status].rotulo).not.toBe('')
+    expect(SITUACAO_DO_PEDIDO.aprovado.paraQuemPediu).toBe('Aceito, em andamento')
+    expect(SITUACAO_DO_PEDIDO.reservado.paraQuemPediu).toBe('Aceito, em andamento')
+  })
+
+  it('o aprovado está sem os animais e o reservado, com eles: as duas palavras não se confundem', () => {
+    expect(SITUACAO_DO_PEDIDO.aprovado.rotulo).toBe('Aguardando animais')
+    expect(SITUACAO_DO_PEDIDO.reservado.rotulo).toBe('Animais reservados')
+  })
+})
+
+describe('podeRecusar', () => {
+  it('recusa até o reservado, que solta os animais; entregue e recusado são finais', () => {
+    expect(STATUS.filter(podeRecusar)).toEqual(['enviado', 'aprovado', 'reservado'])
+  })
+})
+
+describe('recebeReserva e alvoDaReserva', () => {
+  const pedido = { machos: 2, femeas: 2, qualquer: 2 }
+
+  it('o aprovado recebe a reserva do pedido inteiro', () => {
+    const aprovado = { ...pedido, status: 'aprovado' as const, reservaEmFalta: null }
+
+    expect(recebeReserva(aprovado)).toBe(true)
+    expect(alvoDaReserva(aprovado)).toEqual(pedido)
+  })
+
+  it('o reservado só recebe se está em falta, e só o que falta', () => {
+    const emFalta = { m: 1, f: 0, qualquer: 1 }
+
+    expect(recebeReserva({ status: 'reservado', reservaEmFalta: emFalta })).toBe(true)
+    expect(recebeReserva({ status: 'reservado', reservaEmFalta: null })).toBe(false)
+    expect(alvoDaReserva({ ...pedido, reservaEmFalta: emFalta })).toEqual({
+      machos: 1,
+      femeas: 0,
+      qualquer: 1,
+    })
+  })
+
+  it('enviado, entregue e recusado não recebem reserva', () => {
+    for (const status of ['enviado', 'entregue', 'recusado'] as const) {
+      expect(recebeReserva({ status, reservaEmFalta: null })).toBe(false)
+    }
   })
 })
 
@@ -184,39 +246,46 @@ describe('conferirReserva', () => {
     expect(conferencia.aMais).toEqual({ machos: 2, femeas: 0, total: 0 })
     expect(conferirReserva(pedido, { m: 4, f: 4 }).aMais.total).toBe(2)
   })
+
+  it('na falta, confere só o que falta completar', () => {
+    const falta = alvoDaReserva({ ...pedido, reservaEmFalta: { m: 1, f: 0, qualquer: 0 } })
+
+    expect(conferirReserva(falta, { m: 1, f: 0 }).cobre).toBe(true)
+    expect(conferirReserva(falta, { m: 1, f: 1 }).aMais.total).toBe(1)
+  })
 })
 
 describe('avisoDeEntregaSemReserva', () => {
-  const aprovada = (dataEntrega: string) => ({ status: 'em_atendimento' as const, dataEntrega })
+  const aprovado = (dataEntrega: string) => ({ status: 'aprovado' as const, dataEntrega })
   const hoje = '2026-11-07'
 
   it('avisa a equipe do pedido aprovado sem reserva com a entrega a até 7 dias', () => {
     expect(AVISO_DE_ENTREGA_SEM_RESERVA_EM_DIAS).toBe(7)
-    expect(avisoDeEntregaSemReserva(aprovada('2026-11-14'), hoje)).toBe(
+    expect(avisoDeEntregaSemReserva(aprovado('2026-11-14'), hoje)).toBe(
       'Entrega em 7 dias, sem reserva',
     )
-    expect(avisoDeEntregaSemReserva(aprovada('2026-11-10'), hoje)).toBe(
+    expect(avisoDeEntregaSemReserva(aprovado('2026-11-10'), hoje)).toBe(
       'Entrega em 3 dias, sem reserva',
     )
-    expect(avisoDeEntregaSemReserva(aprovada('2026-11-08'), hoje)).toBe(
+    expect(avisoDeEntregaSemReserva(aprovado('2026-11-08'), hoje)).toBe(
       'Entrega em 1 dia, sem reserva',
     )
   })
 
   it('a entrega de hoje e a que já passou também avisam', () => {
-    expect(avisoDeEntregaSemReserva(aprovada('2026-11-07'), hoje)).toBe('Entrega hoje, sem reserva')
-    expect(avisoDeEntregaSemReserva(aprovada('2026-11-02'), hoje)).toBe(
+    expect(avisoDeEntregaSemReserva(aprovado('2026-11-07'), hoje)).toBe('Entrega hoje, sem reserva')
+    expect(avisoDeEntregaSemReserva(aprovado('2026-11-02'), hoje)).toBe(
       'Entrega vencida, sem reserva',
     )
   })
 
   it('sem aviso com a entrega mais longe, ou com os animais já reservados', () => {
-    expect(avisoDeEntregaSemReserva(aprovada('2026-11-15'), hoje)).toBeNull()
+    expect(avisoDeEntregaSemReserva(aprovado('2026-11-15'), hoje)).toBeNull()
     expect(
-      avisoDeEntregaSemReserva({ status: 'aprovada', dataEntrega: '2026-11-08' }, hoje),
+      avisoDeEntregaSemReserva({ status: 'reservado', dataEntrega: '2026-11-08' }, hoje),
     ).toBeNull()
     expect(
-      avisoDeEntregaSemReserva({ status: 'enviada', dataEntrega: '2026-11-08' }, hoje),
+      avisoDeEntregaSemReserva({ status: 'enviado', dataEntrega: '2026-11-08' }, hoje),
     ).toBeNull()
   })
 })

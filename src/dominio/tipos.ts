@@ -1,4 +1,5 @@
-// Vocabulário do sistema e formato das respostas da API
+// Vocabulário do sistema e formato das respostas da API. Cada rato é uma linha anônima: dentro de
+// uma caixa, só a idade distingue os animais, e todo número que a API manda é contado neles
 
 export type Perfil = 'pesquisador' | 'tecnico' | 'gestor'
 
@@ -7,63 +8,97 @@ export type CodigoEspecie = 'rato' | 'camundongo'
 /** 'aaaa-mm-dd'. Na tela é sempre dd/mm/aaaa (ver 'lib/data.ts') */
 export type DataISO = string
 
-/**
- * As 4 colunas do kanban, na ordem da tela. Não existe Pré-reserva: o animal está reservado ou
- * não, e a caixa do casal com reserva fica em Livres, dizendo quantos reservados tem
- */
-export type EstadoCaixa = 'livres' | 'estoque' | 'reserva' | 'enviado'
+export type Sexo = 'M' | 'F'
 
 export interface PorSexo {
   m: number
   f: number
 }
 
-/** O sexo de uma caixa de estoque: machos e fêmeas desmamados ficam em caixas separadas */
-export type Sexo = 'M' | 'F'
+export type Face = 'frontal' | 'traseira'
 
 /**
- * A caixa de estoque no card do kanban e na célula da grade: os desmamados de um sexo e uma
- * linhagem, quantos tem e quantos já estão reservados
+ * As 4 colunas do kanban, na ordem da tela, calculadas do que a caixa tem: nada é gravado. A caixa
+ * de casal fica em Livres; a de estoque, em Reserva quando todos os vivos dela estão reservados
  */
-export interface EstoqueNoCard {
-  sexo: Sexo
-  total: number
-  reservado: number
-  /** a data de nascimento do mais velho e do mais novo; só no card */
-  nascimentoDe?: DataISO | null
-  nascimentoAte?: DataISO | null
+export type EstadoCaixa = 'livres' | 'estoque' | 'reserva' | 'enviado'
+
+export type TipoDeCaixa = 'casal' | 'estoque'
+
+/** O fato que esvaziou a caixa e a liberou */
+export type MotivoDaLiberacao = 'entrega' | 'baixa' | 'mudanca' | 'casal_encerrado'
+
+/** Uma posição da estante, no corpo das rotas que criam caixa ou mudam ela de lugar */
+export interface PosicaoNaEstante {
+  idEstante: number
+  face: Face
+  linha: number
+  coluna: number
 }
 
-/** Reserva acima do que a ninhada tem: quanto falta e o reservado de cada pedido nela */
-export interface FaltaNaReserva extends PorSexo {
-  pedidos: (PorSexo & { idSolicitacao: number })[]
+/** Para onde vão os animais de um sexo: uma caixa de estoque que já existe ou uma posição vazia */
+export type Destino = { idCaixa: number } | { posicao: PosicaoNaEstante }
+
+/**
+ * O que falta num pedido reservado que perdeu animais (baixa, correção): os sexos pedidos e os de
+ * qualquer sexo. A falta é do pedido, e não trava os outros pedidos da mesma ninhada
+ */
+export interface FaltaDoPedido {
+  idPedido: number
+  m: number
+  f: number
+  qualquer: number
 }
 
-/** O casal no card do kanban e na célula da grade */
-interface CasalNoCard {
-  /** dupla de grupos genéticos, macho primeiro. ex: AB */
-  identificacao: string
-  /** 1 a 5 - a cor da bolinha */
-  partoAtual: number
-  partoPrevisto: DataISO | null
-  encerrado: boolean
-  aguardandoDesmame?: boolean
-  /**
-   * só as ninhadas que já nasceram: o que existe de cada uma e a idade de hoje. Inclui as que um
-   * casal encerrado deixou na caixa
-   */
-  ninhadas: NinhadaNoCard[]
-  /** quantos animais reservados e ainda não entregues continuam na caixa do casal */
-  reservado: number
-}
+// ------------------------------------------------------------ kanban e grade
 
-export interface NinhadaNoCard {
+/** Os vivos de um parto que estão na caixa do casal, com a idade de hoje */
+export interface NinhadaNoCard extends PorSexo {
   /** o casal que teve a ninhada: o da caixa, ou um que veio antes dele */
   casal: string
   parto: number
-  m: number
-  f: number
   idadeDias: number
+  /** ainda não desmamou */
+  mamando: boolean
+}
+
+/** O casal no card do kanban e na célula da grade */
+export interface CasalNoCard {
+  /** dupla de grupos genéticos, macho primeiro. ex: AB */
+  identificacao: string
+  /** o parto em curso, 1 a 5: a cor da bolinha */
+  partoAtual: number
+  /** a previsão do parto pendente; vale também com o casal encerrado */
+  partoPrevisto: DataISO | null
+  encerrado: boolean
+  /** casal encerrado com ninhada ainda mamando */
+  aguardandoDesmame: boolean
+  /** os vivos da caixa por parto, também os que um casal encerrado deixou nela */
+  ninhadas: NinhadaNoCard[]
+  /** quantos vivos da caixa estão reservados */
+  reservado: number
+}
+
+/** Os vivos da caixa de estoque que nasceram no mesmo dia */
+export interface GrupoNoCard {
+  dtNascimento: DataISO
+  idadeDias: number
+  total: number
+  reservados: number
+}
+
+/** A caixa de estoque no card do kanban e na célula da grade: os vivos de um sexo e uma linhagem */
+export interface EstoqueNoCard {
+  sexo: Sexo
+  /** a linhagem gravada na caixa: a escolha do destino filtra por ela e pelo sexo */
+  idLinhagem: number | null
+  total: number
+  reservado: number
+  /** a data de nascimento do mais velho e do mais novo */
+  nascimentoDe: DataISO | null
+  nascimentoAte: DataISO | null
+  /** os vivos por data de nascimento, do mais velho para o mais novo */
+  grupos: GrupoNoCard[]
 }
 
 // GET /api/quadro?especie=
@@ -73,8 +108,9 @@ export interface CardDoKanban {
   codigo: string
   numeroVisivel: string
   linhagem: string | null
+  /** só na caixa de casal */
   casal: CasalNoCard | null
-  /** só na caixa de estoque, que não tem casal */
+  /** só na caixa de estoque */
   estoque: EstoqueNoCard | null
 }
 
@@ -103,12 +139,13 @@ export interface Estante {
   colunas: number
 }
 
+/** Na grade só aparece caixa ativa */
 export interface CaixaNaGrade {
   id: number
-  estado: EstadoCaixa
+  /** a coluna do kanban; null só na caixa que não aparece nele */
+  estado: EstadoCaixa | null
   linhagem: string | null
   casal: CasalNoCard | null
-  /** só na caixa de estoque, que não tem casal */
   estoque: EstoqueNoCard | null
 }
 
@@ -120,40 +157,21 @@ export interface Posicao {
   caixa: CaixaNaGrade | null
 }
 
-export type Face = 'frontal' | 'traseira'
-
 export interface Grade {
   faces: { face: Face; posicoes: Posicao[] }[]
 }
 
-// GET /api/caixas/:id
-export interface Parto {
+// ------------------------------------------------------------ ficha da caixa (GET /api/caixas/:id)
+
+export interface DadosDaCaixa {
   id: number
-  /** 1º a 5º */
-  ordem: number
-  dtAcasalamento: DataISO
-  dtPartoPrevisto: DataISO | null
-  dtPartoReal: DataISO | null
-  nascidoM: number | null
-  nascidoF: number | null
-  dtSelecao: DataISO | null
-  eutanasiadoM: number | null
-  eutanasiadoF: number | null
-  dtDesmamePrevisto: DataISO | null
-  dtDesmameReal: DataISO | null
-  desmamadoM: number | null
-  desmamadoF: number | null
-  disponivel: PorSexo
-  /** reservado para uma solicitação e ainda na caixa */
-  comprometido: PorSexo
-  /** já saiu da caixa: a entrega da solicitação foi registrada */
-  entregue: PorSexo
-  /** reserva acima do que a ninhada tem depois do desmame ou da correção; null quando cabe */
-  falta: FaltaNaReserva | null
-  /** o que ainda está na caixa do casal: mamando, ou desmamado que não foi para o estoque */
-  naCaixa: PorSexo
-  /** as caixas de estoque com desmamados deste parto */
-  noEstoque: { idCaixa: number; codigo: string; numeroVisivel: string; sexo: Sexo; qtd: number }[]
+  endereco: { numeroVisivel: string; sala: string; codigo: string }
+  especie: CodigoEspecie
+  /** a coluna do kanban; null na caixa liberada que não aparece nele */
+  estado: EstadoCaixa | null
+  ativa: boolean
+  dtLiberacao: DataISO | null
+  motivoLiberacao: MotivoDaLiberacao | null
 }
 
 export interface Casal {
@@ -167,76 +185,158 @@ export interface Casal {
   dtEncerramento: DataISO | null
 }
 
-/** A ficha da caixa de casal. A de estoque é 'FichaDeEstoque' */
-export interface Ficha {
+/** Uma caixa onde estão vivos do parto */
+export interface OndeEstao extends PorSexo {
+  idCaixa: number
+  codigo: string
+  numeroVisivel: string
+  tipo: TipoDeCaixa
+  reservados: number
+}
+
+/** O parto, todo contado nos animais. É também o que as rotas do parto devolvem */
+export interface Parto {
+  id: number
+  /** 1º a 5º */
+  ordem: number
+  dtAcasalamento: DataISO
+  /** calculado do acasalamento */
+  dtPartoPrevisto: DataISO
+  dtPartoReal: DataISO | null
+  /** calculado: parto real (ou previsto) + 22 */
+  dtDesmamePrevisto: DataISO
+  dtDesmameReal: DataISO | null
+  /** o parto pendente de casal encerrado que foi fechado sem ninhada */
+  dtSemNinhada: DataISO | null
+  motivoSemNinhada: string | null
+  /** null enquanto não nasceu; conta todo animal do parto, menos o registro anulado */
+  nascidoM: number | null
+  nascidoF: number | null
+  /** mortos até o dia do desmame, ou até agora se não desmamou: seleção, morte, "não chegou ao desmame" */
+  baixasAntesDoDesmame: PorSexo
+  /** nascidos menos as baixas antes do desmame; null enquanto não desmamou */
+  desmamadoM: number | null
+  desmamadoF: number | null
+  vivos: PorSexo
+  /** onde estão os vivos do parto agora */
+  onde: OndeEstao[]
+  /** os vivos reservados, por pedido */
+  reservados: (PorSexo & { idPedido: number })[]
+  entregues: PorSexo
+}
+
+export type TipoDeEvento =
+  | 'acasalamento'
+  | 'nascimento'
+  | 'baixa'
+  | 'anulacao'
+  | 'desmame'
+  | 'mudanca'
+  | 'entrega'
+  | 'virar_estoque'
+  | 'encerramento'
+  | 'sem_ninhada'
+  | 'liberacao'
+  | 'correcao'
+  | 'posicao'
+
+export interface EventoDaFicha {
+  /** o dia do fato, 'aaaa-mm-ddT00:00:00.000Z' */
+  dataHora: string
+  tipo: TipoDeEvento
+  descricao: string
+  /** 'Sistema' quando ninguém registrou */
+  autor: string
+  /** só nos fatos dos animais (nascimento, baixa, anulação, mudança, entrega) */
+  idOcorrencia: number | null
+  /** a baixa que ainda pode ser anulada */
+  anulavel: boolean
+}
+
+export interface CasalComPartos {
+  casal: Casal
+  partos: Parto[]
+}
+
+/** A ficha da caixa de casal */
+export interface FichaDeCasal {
   tipo: 'casal'
   /**
-   * o sexo que a caixa teria se virasse caixa de estoque no lugar: casal encerrado e só
-   * desmamados de um sexo e uma linhagem nela. null quando não pode
+   * o sexo que a caixa teria se virasse caixa de estoque no lugar: casal encerrado, nenhum parto
+   * pendente e só desmamados de um sexo e uma linhagem nela. null quando não pode
    */
   virarEstoque: Sexo | null
-  caixa: {
-    id: number
-    endereco: {
-      numeroVisivel: string
-      sala: string
-      codigo: string
-    }
-    especie: CodigoEspecie
-    linhagem: string | null
-    estado: EstadoCaixa
-  }
+  caixa: DadosDaCaixa & { linhagem: string | null }
+  /** o ativo, ou o mais recente */
   casal: Casal | null
-  /** do 1º ao último registrado - no máximo 5 */
+  /** do 1º ao último registrado: no máximo 5 */
   partos: Parto[]
-  /** casais de antes que deixaram ninhada na caixa, com os partos que nasceram */
-  anteriores: { casal: Casal; partos: Parto[] }[]
-  eventos: { dataHora: string; tipo: string; descricao: string; autor: string }[]
+  /** os casais que vieram antes nesta caixa, com os partos deles */
+  anteriores: CasalComPartos[]
+  /** do mais antigo para o mais novo */
+  eventos: EventoDaFicha[]
 }
 
-/** Os desmamados de um parto dentro de uma caixa de estoque */
-export interface LoteDoEstoque {
+/** De qual parto vieram os vivos de um grupo da caixa de estoque */
+export interface OrigemDoGrupo {
   idParto: number
-  qtd: number
   ordem: number
   casal: string
-  linhagem: string
-  /** a caixa do casal de onde vieram */
-  origem: { codigo: string; numeroVisivel: string }
-  dtNascimento: DataISO | null
-  idadeDias: number | null
+  /** a caixa do casal */
+  codigoOrigem: string
+  numeroVisivelOrigem: string
+  qtd: number
 }
 
-/** A ficha da caixa de estoque: o que tem, de onde veio e para quem está reservado */
+/** Os vivos da caixa de estoque que nasceram no mesmo dia: dentro da caixa, só a idade os separa */
+export interface GrupoDoEstoque {
+  dtNascimento: DataISO
+  idadeDias: number
+  total: number
+  reservados: number
+  livres: number
+  origens: OrigemDoGrupo[]
+}
+
+/** A ficha da caixa de estoque: o que tem, de onde veio, para quem está reservado e o que aconteceu */
 export interface FichaDeEstoque {
   tipo: 'estoque'
-  caixa: {
-    id: number
-    endereco: { numeroVisivel: string; sala: string; codigo: string }
-    especie: CodigoEspecie
-    linhagem: string | null
-    estado: EstadoCaixa
-    sexo: Sexo
-  }
+  caixa: DadosDaCaixa & { linhagem: string | null; idLinhagem: number | null; sexo: Sexo }
   total: number
   reservado: number
   livre: number
   nascimentoDe: DataISO | null
   nascimentoAte: DataISO | null
-  lotes: LoteDoEstoque[]
-  pedidos: { idSolicitacao: number; qtd: number }[]
+  grupos: GrupoDoEstoque[]
+  /** o que cada pedido tem reservado nesta caixa */
+  pedidos: { idPedido: number; qtd: number }[]
+  eventos: EventoDaFicha[]
+  /** os casais da caixa, se ela foi de casal antes de virar de estoque */
+  casaisAnteriores: CasalComPartos[]
 }
 
-// GET /api/solicitacoes/:id/retirada
-export interface RetiradaDaEntrega {
-  tipo: 'casal' | 'estoque'
-  codigo: string
-  numeroVisivel: string
-  sexo: Sexo
-  qtd: number
-  /** de qual parto saem os animais */
-  partos: { ordem: number; casal: string }[]
+export type FichaDaCaixa = FichaDeCasal | FichaDeEstoque
+
+// ------------------------------------------------------------ respostas das ações da colônia
+
+/** POST /api/caixas/:id/baixa */
+export interface RespostaDaBaixa {
+  baixas: PorSexo
+  /** a caixa ficou vazia e foi liberada */
+  liberada: boolean
+  /** os pedidos que ficaram em falta por esta baixa */
+  faltas: FaltaDoPedido[]
 }
+
+/** POST /api/caixas/:id/mudanca */
+export interface RespostaDaMudanca {
+  /** para onde foi cada sexo; a caixa nova numa posição vazia vem com o código que ela ganhou */
+  caixas: { idCaixa: number; codigo: string; sexo: Sexo; qtd: number }[]
+  /** a caixa de origem esvaziou e foi liberada */
+  liberada: boolean
+}
+
+// ------------------------------------------------------------ pedidos
 
 // GET /api/catalogo
 export interface Catalogo {
@@ -266,22 +366,19 @@ export interface Projeto {
   situacao: SituacaoDoProjeto
 }
 
-export type StatusSolicitacao =
-  | 'rascunho'
-  | 'enviada'
-  | 'em_analise'
-  | 'aprovada'
-  | 'recusada'
-  | 'ajustada'
-  | 'em_atendimento'
-  | 'concluida'
-  | 'cancelada'
+/**
+ * enviado (aguardando análise) | aprovado (aceito, sem animais reservados) | reservado (com os
+ * animais reservados) | entregue | recusado. Entregue e recusado são finais
+ */
+export type StatusDoPedido = 'enviado' | 'aprovado' | 'reservado' | 'entregue' | 'recusado'
 
-// GET /api/solicitacoes
-export interface Solicitacao {
+// GET /api/pedidos
+export interface Pedido {
   id: number
-  dataSolicitacao: DataISO
+  dataPedido: DataISO
+  /** só no enviado: o dia em que ele é recusado sozinho */
   prazoResposta: DataISO | null
+  /** o dia da aprovação (aprovado, reservado, entregue) */
   dataAceite: DataISO | null
   dataRecusa: DataISO | null
   /** o processo 23080.XXXXXX/AAAA-XX ou os 10 dígitos do Sistema CEUA (@/dominio/protocolo) */
@@ -300,52 +397,89 @@ export interface Solicitacao {
   /** a faixa de idade na entrega, em dias desde o nascimento; iguais quando a idade é exata */
   idadeMin: number
   idadeMax: number
+  /** a desejada */
   dataEntrega: DataISO
-  /** o dia em que a entrega foi registrada; só no pedido entregue */
-  dataEntregue?: DataISO | null
+  /** o dia em que a entrega foi registrada; só no entregue */
+  dataEntregue: DataISO | null
   observacoes: string | null
-  status: StatusSolicitacao
+  status: StatusDoPedido
   motivoRecusa: string | null
-  /** pedido aceito cuja ninhada ficou com menos animais do que o reservado: quanto pode faltar */
-  reservaEmFalta: PorSexo | null
+  /** só no reservado que perdeu animais: o que falta para cobrir o pedido */
+  reservaEmFalta: { m: number; f: number; qualquer: number } | null
 }
 
-/** de onde vem o animal: já desmamado, já nascido, ou parto ainda previsto */
+/** POST /api/pedidos/:id/alocacao: a reserva do aprovado inteiro, ou o que completou da falta */
+export interface RespostaDaAlocacao {
+  idPedido: number
+  status: 'reservado'
+  reservados: PorSexo
+  /** o que ainda falta, quando a reserva completou só parte da falta */
+  falta: { m: number; f: number; qualquer: number } | null
+}
+
+/** POST /api/pedidos/:id/devolucao: o pedido volta a aprovado e os animais, a ficar livres */
+export interface RespostaDaDevolucao {
+  idPedido: number
+  status: 'aprovado'
+  soltos: PorSexo
+}
+
+/** POST /api/pedidos/:id/recusa: o reservado também, e os animais dele voltam a ficar livres */
+export interface RespostaDaRecusa {
+  idPedido: number
+  status: 'recusado'
+  motivo: string
+  soltos: PorSexo
+}
+
+/** POST /api/pedidos/:id/entrega */
+export interface RespostaDaEntrega {
+  idPedido: number
+  status: 'entregue'
+  dtEntrega: DataISO
+  entregues: PorSexo
+  /** os códigos das caixas que a entrega esvaziou */
+  caixasLiberadas: string[]
+}
+
+/** GET /api/pedidos/:id/retirada: onde estão de fato os reservados vivos, na ordem da estante */
+export interface LugarDaRetirada {
+  tipo: TipoDeCaixa
+  codigo: string
+  numeroVisivel: string
+  sexo: Sexo
+  dtNascimento: DataISO
+  qtd: number
+  /** os partos de onde vieram */
+  partos: { ordem: number; casal: string }[]
+}
+
+/** 'de_fato': todos do lugar já desmamaram; 'previsao': desmamam até a entrega */
 export type Origem = 'de_fato' | 'previsao'
 
-// GET /api/busca
-export interface CaixaCandidata {
+/** Um lugar da busca: a caixa e a data de nascimento, com os livres que tem */
+export interface LugarCandidato {
   idCaixa: number
-  idParto: number
   codigo: string
   numeroVisivel: string
-  estado: EstadoCaixa
-  casal: string
-  /** 1º a 5º */
-  parto: number
-  origem: Origem
-  nascimento: DataISO
+  tipo: TipoDeCaixa
+  dtNascimento: DataISO
   idadeNaEntrega: number
-  disponivel: PorSexo
-  /** quanto o motor sugere tirar desta caixa */
+  origem: Origem
+  livres: PorSexo
+  /** os partos de onde vieram, só para mostrar */
+  partos: { ordem: number; casal: string }[]
+  /** quanto o motor sugere tirar deste lugar */
   alocar: PorSexo
   sugerida: boolean
-  /** em que caixas estão os animais livres da ninhada, na ordem em que saem na entrega */
-  onde: LugarDosLivres[]
 }
 
-/** Uma caixa com animais livres da ninhada: a do casal, ou uma de estoque */
-export interface LugarDosLivres {
-  codigo: string
-  numeroVisivel: string
-  tipo: 'casal' | 'estoque'
-  m: number
-  f: number
-}
-
+// GET /api/busca
 export interface ResultadoDaBusca {
+  /** a faixa aceita, com a tolerância */
   faixa: { min: number; max: number }
-  candidatas: CaixaCandidata[]
+  /** já na ordem de prioridade: de fato antes de previsão, depois a idade */
+  candidatas: LugarCandidato[]
   /** o que o plantel não cobre; o "qualquer" sobra quando nem a sobra das caixas o cobre */
   deficit: PorSexo & { qualquer: number }
   /** quantos casais novos cobririam o deficit, pelo esperado de cada um: é aproximado */
@@ -363,11 +497,13 @@ export interface ResultadoDaBusca {
   }
 }
 
-// GET /api/estoque?especie=
+// GET /api/estoque?especie=: só os vivos livres
 export interface EstoqueDaLinhagem {
   idLinhagem: number
   linhagem: string
+  /** já desmamados */
   confirmado: PorSexo
+  /** ainda mamando */
   previsto: PorSexo
   total: PorSexo
 }
@@ -377,7 +513,7 @@ export interface Estoque {
   linhagens: EstoqueDaLinhagem[]
 }
 
-// POST /api/solicitacoes/viabilidade: só se o CPMR consegue atender, sem números da colônia
+// POST /api/pedidos/viabilidade: só se o biotério consegue atender, sem números da colônia
 export interface Viabilidade {
   viavel: boolean
   /** por que não dá, escrito para quem pede; nulo quando dá */
@@ -396,12 +532,19 @@ export interface Usuario {
 
 // GET /api/historico
 export interface RegistroDoHistorico {
+  /** de onde veio a linha: o histórico das operações ou a trilha dos animais */
+  fonte: 'historico' | 'trilha'
+  /** só é único dentro da fonte */
   id: number
+  /** quando foi registrado, ISO */
   dataHora: string
+  /** 'Sistema' quando não houve pessoa */
   usuario: string
   entidade: string
   idEntidade: number
+  /** na trilha, o tipo da ocorrência: nascimento, baixa, mudanca, reserva, entrega... */
   acao: string
+  /** na trilha começa com a data do fato: 'Em aaaa-mm-dd: ' */
   descricao: string
   dados: unknown
 }
