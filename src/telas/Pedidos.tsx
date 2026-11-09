@@ -115,13 +115,13 @@ export function Pedidos() {
   const criar = useCriarPedido()
   const conferir = useConferirViabilidade()
   const falha = useFalhaDoFormulario(form, CAMPOS_COM_ERRO)
-  // O pedido aberto na janela, pelo número: depois de cada ação a lista volta da API, e a janela
-  // mostra o pedido como ficou
+  // O pedido aberto e o de cada ação, pelo número: depois de cada ação, e da recusa (409) que
+  // recarrega a lista, a janela mostra o pedido como ficou, com a situação e a falta de agora
   const [aberto, setAberto] = useState<number | null>(null)
-  const [reservando, setReservando] = useState<Pedido | null>(null)
-  const [entregando, setEntregando] = useState<Pedido | null>(null)
-  const [recusando, setRecusando] = useState<Pedido | null>(null)
-  const [desfazendo, setDesfazendo] = useState<Pedido | null>(null)
+  const [reservando, setReservando] = useState<number | null>(null)
+  const [entregando, setEntregando] = useState<number | null>(null)
+  const [recusando, setRecusando] = useState<number | null>(null)
+  const [desfazendo, setDesfazendo] = useState<number | null>(null)
   // O pedido já validado à espera da confirmação, com o veredito da viabilidade. 'null' no
   // veredito é a conferência que falhou
   const [aConfirmar, setAConfirmar] = useState<{
@@ -140,7 +140,13 @@ export function Pedidos() {
   // quando chega. Por isso cada um tem as suas colunas
   const telaLarga = Grid.useBreakpoint().sm === true
   const colunasDaTabela = pesquisador ? colunasDeQuemPediu(telaLarga) : colunasDaEquipe(telaLarga)
-  const pedidoAberto = pedidos.data?.find((p) => p.id === aberto) ?? null
+  const doNumero = (id: number | null) =>
+    id === null ? null : (pedidos.data?.find((p) => p.id === id) ?? null)
+  const pedidoAberto = doNumero(aberto)
+  const pedidoReservando = doNumero(reservando)
+  const pedidoEntregando = doNumero(entregando)
+  const pedidoRecusando = doNumero(recusando)
+  const pedidoDesfazendo = doNumero(desfazendo)
 
   // A ação feita até o fim fecha também o pedido; cancelada, volta para ele
   function concluir() {
@@ -403,16 +409,16 @@ export function Pedidos() {
           paraQuemPediu={pesquisador}
           aoFechar={() => setAberto(null)}
           equipe={{
-            aoReservar: setReservando,
-            aoEntregar: setEntregando,
-            aoRecusar: setRecusando,
-            aoDesfazer: setDesfazendo,
+            aoReservar: (p) => setReservando(p.id),
+            aoEntregar: (p) => setEntregando(p.id),
+            aoRecusar: (p) => setRecusando(p.id),
+            aoDesfazer: (p) => setDesfazendo(p.id),
           }}
         />
       )}
-      {reservando && (
+      {pedidoReservando && (
         <AtenderPedido
-          pedido={reservando}
+          pedido={pedidoReservando}
           aoFechar={() => setReservando(null)}
           aoConcluir={concluir}
           aoRecusar={() => {
@@ -421,9 +427,9 @@ export function Pedidos() {
           }}
         />
       )}
-      {entregando && (
+      {pedidoEntregando && (
         <RegistrarEntrega
-          pedido={entregando}
+          pedido={pedidoEntregando}
           aoFechar={() => setEntregando(null)}
           aoConcluir={concluir}
           aoDesfazer={() => {
@@ -432,16 +438,16 @@ export function Pedidos() {
           }}
         />
       )}
-      {recusando && (
+      {pedidoRecusando && (
         <RecusarPedido
-          pedido={recusando}
+          pedido={pedidoRecusando}
           aoFechar={() => setRecusando(null)}
           aoConcluir={concluir}
         />
       )}
-      {desfazendo && (
+      {pedidoDesfazendo && (
         <DesfazerReserva
-          pedido={desfazendo}
+          pedido={pedidoDesfazendo}
           aoFechar={() => setDesfazendo(null)}
           aoConcluir={concluir}
         />

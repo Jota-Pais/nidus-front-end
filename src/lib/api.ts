@@ -23,7 +23,11 @@ export class ErroDeApi extends Error {
     this.codigo = erro?.codigo ?? null
   }
 
-  /** 409 é sempre regra de negócio: mostrar a mensagem e não recarregar */
+  /**
+   * 409 é sempre regra de negócio: a tela mostra a mensagem. Nas ações do pedido, quase sempre quer
+   * dizer que o pedido ou os animais mudaram depois que a tela leu, e a consulta recarrega para
+   * mostrar como ficou (recarregarSeMudou, em @/dominio/consultas)
+   */
   get ehRegraDeNegocio(): boolean {
     return this.status === 409
   }

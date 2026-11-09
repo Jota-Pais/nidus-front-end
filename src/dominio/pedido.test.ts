@@ -298,6 +298,17 @@ describe('reservaPodeIr', () => {
     expect(pode({ m: 3, f: 0 }, false)).toBe(false)
     expect(pode({ m: 0, f: 0 }, false)).toBe(false)
   })
+
+  it('nenhum lugar dá mais do que tem livre agora', () => {
+    const reservado = { m: 2, f: 2 }
+    const conferencia = conferirReserva(pedido, reservado)
+    const cabe = { quantos: { m: 2, f: 2 }, livres: { m: 3, f: 2 } }
+    const naoCabe = { quantos: { m: 2, f: 2 }, livres: { m: 1, f: 2 } }
+
+    expect(reservaPodeIr(conferencia, reservado, true, [cabe])).toBe(true)
+    expect(reservaPodeIr(conferencia, reservado, true, [cabe, naoCabe])).toBe(false)
+    expect(reservaPodeIr(conferencia, reservado, false, [naoCabe])).toBe(false)
+  })
 })
 
 describe('avisoDeEntregaSemReserva', () => {

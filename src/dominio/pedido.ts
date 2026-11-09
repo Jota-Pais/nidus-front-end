@@ -154,15 +154,26 @@ export function conferirReserva(
   }
 }
 
+/** Um lugar marcado na reserva: quanto se tira dele e quantos livres ele tem agora */
+export interface LugarMarcado {
+  quantos: PorSexo
+  livres: PorSexo
+}
+
 /**
  * Se a reserva marcada pode ir para a API: a do pedido aprovado só inteira, cobrindo o alvo; a que
- * completa a falta do reservado vai aos poucos, com qualquer quantidade que não passe do alvo
+ * completa a falta do reservado vai aos poucos, com qualquer quantidade que não passe do alvo. E
+ * nenhum lugar dá mais do que tem livre: depois de a busca recarregar, um lugar pode ter menos
  */
 export function reservaPodeIr(
   conferencia: ConferenciaDaReserva,
   reservado: PorSexo,
   inteira: boolean,
+  lugares: LugarMarcado[] = [],
 ): boolean {
+  if (lugares.some(({ quantos, livres }) => quantos.m > livres.m || quantos.f > livres.f)) {
+    return false
+  }
   if (inteira) return conferencia.cobre
 
   const { aMais } = conferencia

@@ -175,6 +175,29 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     )
   })
 
+  it('recusada e recarregada a busca, o lugar com menos livres que o marcado prende o envio', () => {
+    estado.mutate.mockImplementationOnce(
+      (_dados: unknown, opcoes: { onError: (e: Error) => void }) => {
+        // outra pessoa reservou um macho da F1A: a busca volta com 1 livre
+        estado.busca = resultado([
+          lugar({ sugerida: true, alocar: { m: 1, f: 2 }, livres: { m: 1, f: 2 } }),
+        ])
+        opcoes.onError(erroDaApi(409, 'SEM_ANIMAIS', 'Os animais mudaram.'))
+      },
+    )
+    abrir()
+    // a reserva marcada à mão: 2 machos e 2 fêmeas da F1A
+    fireEvent.click(screen.getByLabelText('Reservar da caixa F2B, nascimento em 04/11/2026'))
+    fireEvent.click(reservar())
+
+    expect(
+      screen.getByText(
+        'Livres agora na F1A, desta idade: 1 macho e 2 fêmeas. Ajuste o que reservar dela.',
+      ),
+    ).toBeTruthy()
+    expect(reservar()).toHaveProperty('disabled', true)
+  })
+
   it('cada lugar diz a caixa, quando os animais nasceram e de que parto vieram', () => {
     abrir()
 
