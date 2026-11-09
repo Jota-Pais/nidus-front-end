@@ -18,13 +18,13 @@ describe('menu por perfil', () => {
   })
 })
 
-describe('solicitações', () => {
-  it('só o pesquisador pede animais: técnico e gestor veem a lista de solicitações', () => {
+describe('pedidos', () => {
+  it('só o pesquisador pede animais: técnico e gestor veem a lista de pedidos', () => {
     const rotulo = (perfil: 'pesquisador' | 'tecnico' | 'gestor') =>
       menuDoPerfil(perfil).find((item) => item.caminho === '/solicitar')?.rotulo
     expect(rotulo('pesquisador')).toBe('Solicitar animais')
-    expect(rotulo('tecnico')).toBe('Solicitações')
-    expect(rotulo('gestor')).toBe('Solicitações')
+    expect(rotulo('tecnico')).toBe('Pedidos')
+    expect(rotulo('gestor')).toBe('Pedidos')
   })
 })
 
@@ -57,7 +57,7 @@ describe('rotaInicial', () => {
     expect(rotaInicial('gestor')).toBe('/kanban')
   })
 
-  it('o pesquisador começa pela solicitação de animais', () => {
+  it('o pesquisador começa pelo pedido de animais', () => {
     expect(rotaInicial('pesquisador')).toBe('/solicitar')
   })
 })

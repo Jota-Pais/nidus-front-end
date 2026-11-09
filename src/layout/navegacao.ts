@@ -11,7 +11,7 @@ const ITENS_DE_MENU: ItemDeMenu[] = [
   { rotulo: 'Kanban', caminho: '/kanban', perfis: ['tecnico', 'gestor'] },
   { rotulo: 'Estantes', caminho: '/estantes', perfis: ['tecnico', 'gestor'] },
   { rotulo: 'Solicitar animais', caminho: '/solicitar', perfis: ['pesquisador'] },
-  { rotulo: 'Solicitações', caminho: '/solicitar', perfis: ['tecnico', 'gestor'] },
+  { rotulo: 'Pedidos', caminho: '/solicitar', perfis: ['tecnico', 'gestor'] },
   { rotulo: 'Estoque', caminho: '/estoque', perfis: ['tecnico', 'gestor'] },
 ]
 

@@ -2,7 +2,8 @@
 // dos tokens: a de cada coluna é --estado-<coluna>-fundo/borda/texto, e a grade de estantes pinta
 // a caixa com a mesma; a de cada parto é COR_DO_PARTO
 import { COR_DO_PARTO } from '@/app/tokens'
-import type { EstadoCaixa, EstoqueNoCard, FaltaNaReserva, Sexo } from './tipos'
+import { descreverQuantos } from './pedido'
+import type { EstadoCaixa, EstoqueNoCard, FaltaDoPedido, Sexo } from './tipos'
 
 interface Coluna {
   estado: EstadoCaixa
@@ -38,38 +39,38 @@ export function contarDoSexo(qtd: number, sexo: Sexo): string {
   return `${qtd} ${qtd === 1 ? 'fêmea' : 'fêmeas'}`
 }
 
+/** ", 2 reservados", ", todos reservados" ou nada, depois de quantos animais há */
+function quantosReservados(reservados: number, total: number): string {
+  if (reservados === 0) return ''
+  if (reservados === total) return ', todos reservados'
+  return `, ${reservados} ${reservados === 1 ? 'reservado' : 'reservados'}`
+}
+
 /** O que a caixa de estoque tem, numa linha: "6 machos, 2 reservados" */
 export function descreverEstoque(estoque: Pick<EstoqueNoCard, 'sexo' | 'total' | 'reservado'>): string {
-  const reservados =
-    estoque.reservado === 0
-      ? ''
-      : estoque.reservado === estoque.total
-        ? ', todos reservados'
-        : `, ${estoque.reservado} ${estoque.reservado === 1 ? 'reservado' : 'reservados'}`
-
-  return `${contarDoSexo(estoque.total, estoque.sexo)}${reservados}`
+  return `${contarDoSexo(estoque.total, estoque.sexo)}${quantosReservados(estoque.reservado, estoque.total)}`
 }
 
 /**
  * Na grade, caixa em Livres sem casal ativo fica neutra, como posição vazia. A cor da coluna
  * vale para quem tem casal ou já virou estoque, reserva ou envio
  */
-export function pintaNaGrade(estado: EstadoCaixa, temCasal: boolean): boolean {
-  return temCasal || estado !== 'livres'
+export function pintaNaGrade(estado: EstadoCaixa | null, temCasal: boolean): boolean {
+  return estado !== null && (temCasal || estado !== 'livres')
 }
 
 /**
- * A ninhada que ficou com menos animais do que o reservado, depois do desmame ou da correção:
- * quanto falta, de quais pedidos, e o que a equipe pode fazer
+ * Os pedidos que perderam animais reservados numa baixa, numa seleção, num desmame ou numa
+ * correção: o que falta em cada um, e o que a equipe pode fazer. Sem falta, null
  */
-export function descreverFalta(falta: FaltaNaReserva): string {
-  const pedidos = falta.pedidos
-    .map((pedido) => `#${pedido.idSolicitacao} (${pedido.m} M, ${pedido.f} F)`)
-    .join(', ')
+export function descreverFalta(faltas: FaltaDoPedido[]): string | null {
+  if (faltas.length === 0) return null
+
+  const cada = faltas.map((falta) => `#${falta.idPedido}, ${descreverQuantos(falta)}`).join('; ')
+  const quem = faltas.length === 1 ? 'O pedido ficou' : 'Os pedidos ficaram'
 
   return (
-    `A ninhada ficou com menos animais do que o reservado: faltam ${falta.m} M e ${falta.f} F. ` +
-    `Reservado para ${falta.pedidos.length > 1 ? 'os pedidos' : 'o pedido'} ${pedidos}. ` +
-    'Em Solicitações, a reserva do pedido em falta pode ser desfeita.'
+    `${quem} com menos animais do que o reservado: ${cada}. ` +
+    'Em Pedidos, a reserva em falta pode ser completada com outros animais ou desfeita.'
   )
 }

@@ -1,51 +1,66 @@
 import { QueryClient } from '@tanstack/react-query'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { chaves, invalidarColonia } from './chaves'
 
+/** Uma consulta de cada tela, como estariam no cache com a colônia aberta */
+const DA_COLONIA = [
+  chaves.quadro('rato'),
+  chaves.grade(1),
+  chaves.grade(2),
+  chaves.caixa(812),
+  chaves.caixa(813),
+  chaves.estoque('camundongo'),
+  chaves.pedidos,
+  chaves.atendimento(7),
+  chaves.retirada(7),
+  [...chaves.historico, { entidade: null, idEntidade: null, busca: '' }],
+]
+
+const FORA_DA_COLONIA = [
+  chaves.sessao,
+  chaves.catalogo,
+  chaves.salas,
+  chaves.estantes,
+  chaves.projetos,
+  chaves.usuarios,
+]
+
+function cacheCheio(): QueryClient {
+  const cliente = new QueryClient()
+  for (const chave of [...DA_COLONIA, ...FORA_DA_COLONIA]) cliente.setQueryData(chave, {})
+  return cliente
+}
+
 describe('chaves', () => {
-  it('grade e caixa são planas, para invalidar por prefixo', () => {
-    // ['grade'] tem que casar com ['grade', qualquerEstante]
-    expect(chaves.grade(3)).toEqual(['grade', 3])
-    expect(chaves.caixa(812)).toEqual(['caixa', 812])
-    expect(chaves.quadro('rato')).toEqual(['quadro', 'rato'])
+  it('tudo o que mostra animais começa pelo prefixo da colônia', () => {
+    for (const chave of DA_COLONIA) expect(chave[0]).toBe(chaves.colonia[0])
+  })
+
+  it('a ficha, a grade e a retirada levam o número no fim, para o prefixo casar com todas', () => {
+    expect(chaves.caixa(812)).toEqual(['colonia', 'caixa', 812])
+    expect(chaves.grade(3)).toEqual(['colonia', 'grade', 3])
+    expect(chaves.retirada(9)).toEqual(['colonia', 'retirada', 9])
   })
 })
 
 describe('invalidarColonia', () => {
-  it('derruba estantes, grade, kanban, estoque, histórico e as caixas de estoque de uma vez', async () => {
-    const cliente = new QueryClient()
-    const espia = vi.spyOn(cliente, 'invalidateQueries').mockResolvedValue()
+  it('derruba de uma vez kanban, grades, fichas, estoque, busca, pedidos, retirada e histórico', async () => {
+    const cliente = cacheCheio()
 
     await invalidarColonia(cliente)
 
-    expect(espia.mock.calls.map((c) => c[0]?.queryKey)).toEqual([
-      ['estantes'],
-      ['grade'],
-      ['quadro'],
-      ['estoque'],
-      ['historico'],
-      ['retirada'],
-    ])
+    for (const chave of DA_COLONIA) {
+      expect(cliente.getQueryState(chave)?.isInvalidated, JSON.stringify(chave)).toBe(true)
+    }
   })
 
-  it('inclui a ficha quando a mudança foi numa caixa específica', async () => {
-    const cliente = new QueryClient()
-    const espia = vi.spyOn(cliente, 'invalidateQueries').mockResolvedValue()
-
-    await invalidarColonia(cliente, 812)
-
-    expect(espia.mock.calls.map((c) => c[0]?.queryKey)).toContainEqual(['caixa', 812])
-  })
-
-  it('invalida a grade de todas as estantes em cache, não só a que está na tela', async () => {
-    const cliente = new QueryClient()
-    cliente.setQueryData(chaves.grade(1), { marcador: 1 })
-    cliente.setQueryData(chaves.grade(2), { marcador: 2 })
+  it('não mexe no que não depende dos animais: sessão, catálogo, salas, estantes, contas', async () => {
+    const cliente = cacheCheio()
 
     await invalidarColonia(cliente)
 
-    for (const id of [1, 2]) {
-      expect(cliente.getQueryState(chaves.grade(id))?.isInvalidated).toBe(true)
+    for (const chave of FORA_DA_COLONIA) {
+      expect(cliente.getQueryState(chave)?.isInvalidated, JSON.stringify(chave)).toBe(false)
     }
   })
 })

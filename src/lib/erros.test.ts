@@ -34,8 +34,8 @@ describe('mensagemDeErro — demais status', () => {
   it('repassa a mensagem do servidor em regra de negócio (409)', () => {
     const corpo = {
       erro: {
-        codigo: 'SOLICITACAO_JA_ALOCADA',
-        mensagem: 'A solicitação #12 já foi alocada.',
+        codigo: 'PEDIDO_JA_RESERVADO',
+        mensagem: 'Os animais do pedido #12 ja estao reservados.',
       },
     }
     expect(mensagemDeErro(409, corpo)).toBe(corpo.erro.mensagem)

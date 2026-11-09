@@ -1,7 +1,60 @@
 // tradução de erro da API para mensagem de tela.
 
+/**
+ * Os códigos que a API manda no envelope de erro. Todo 409 é regra de negócio e já vem com a
+ * mensagem em português: a tela só olha o código quando age diferente por ele (o pedido que a
+ * baixa precisa indicar, o código de acesso inválido)
+ */
+export type CodigoDeErro =
+  // 400, 401, 403, 404, 413, 429 e 500
+  | 'VALIDACAO'
+  | 'NAO_AUTENTICADO'
+  | 'SEM_PERMISSAO'
+  | 'NAO_ENCONTRADO'
+  | 'MUITAS_TENTATIVAS'
+  | 'ERRO_INTERNO'
+  // a ordem do ciclo: parto, desmame, pedido no status errado, filhote que ainda mama
+  | 'SEQUENCIA_INVALIDA'
+  | 'LIMITE_PARTOS_ATINGIDO'
+  | 'DATA_FORA_DA_ORDEM'
+  // caixas e estantes
+  | 'CAIXA_LIBERADA'
+  | 'CAIXA_COM_ANIMAIS'
+  | 'CAIXA_DE_ESTOQUE'
+  | 'CAIXA_JA_TEM_CASAL_ATIVO'
+  | 'POSICAO_OCUPADA'
+  | 'TOPOLOGIA'
+  | 'PAR_GENETICO_INVALIDO'
+  // os animais: a baixa, a mudança e a reserva acharam menos vivos; o pedido dos reservados
+  | 'SEM_ANIMAIS'
+  | 'PEDIDO_NAO_INDICADO'
+  | 'ANIMAL_ORIGEM'
+  | 'ANIMAL_SITUACAO'
+  | 'ANIMAL_CAIXA'
+  | 'OCORRENCIA_JA_ANULADA'
+  // o pedido: reserva e entrega
+  | 'PEDIDO_JA_RESERVADO'
+  | 'PEDIDO_INCOMPLETO'
+  | 'PEDIDO_EXCEDIDO'
+  | 'PEDIDO_RESERVA'
+  | 'PEDIDO_COM_RESERVA'
+  | 'PEDIDO_ENTREGUE'
+  | 'IDADE_FORA_DA_FAIXA'
+  | 'NAO_DESMAMADO'
+  // cadastros e contas
+  | 'ESTANTE_DUPLICADA'
+  | 'ESTANTE_OCUPADA'
+  | 'SALA_DUPLICADA'
+  | 'SALA_COM_ESTANTE'
+  | 'LINHAGEM_DUPLICADA'
+  | 'PROJETO_DUPLICADO'
+  | 'EMAIL_EM_USO'
+  | 'ALTERACAO_PROPRIA'
+  | 'CONTA_INATIVA'
+  | 'CODIGO_INVALIDO'
+
 interface ErroApi {
-  codigo: string
+  codigo: CodigoDeErro
   /** Já vem em português, pronta para exibir */
   mensagem: string
   /** Só em erro de validação, ou quando o erro aponta para campo específico. */

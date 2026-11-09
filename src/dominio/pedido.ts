@@ -1,0 +1,253 @@
+// O pedido de animais, sem tela: como ele se escreve, as situações e o que a equipe pode fazer em
+// cada uma. Quem pede e quem atende leem as mesmas frases: o que o pesquisador conferiu é o que a
+// equipe lê
+import type { TomDeEtiqueta } from '@/componentes'
+import { descreverDias, diasAte, hoje } from '@/lib/data'
+import type { CodigoEspecie, DataISO, Pedido, PorSexo, StatusDoPedido } from './tipos'
+
+/** Campo vazio do formulário conta como zero */
+interface Quantidades {
+  machos?: number | null | undefined
+  femeas?: number | null | undefined
+  qualquer?: number | null | undefined
+}
+
+export function totalDeAnimais({ machos, femeas, qualquer }: Quantidades): number {
+  return (machos ?? 0) + (femeas ?? 0) + (qualquer ?? 0)
+}
+
+/** "5 M · 5 F · 10 qualquer sexo", só com as partes que existem */
+export function descreverAnimais({ machos, femeas, qualquer }: Quantidades): string {
+  const partes = [
+    machos ? `${machos} M` : null,
+    femeas ? `${femeas} F` : null,
+    qualquer ? `${qualquer} qualquer sexo` : null,
+  ].filter((parte) => parte !== null)
+
+  return partes.length > 0 ? partes.join(' · ') : '—'
+}
+
+/** A espécie no singular e no plural, para contar os animais */
+const ESPECIE: Record<CodigoEspecie, [string, string]> = {
+  rato: ['rato', 'ratos'],
+  camundongo: ['camundongo', 'camundongos'],
+}
+
+const contar = (n: number, singular: string, plural: string) =>
+  `${n} ${n === 1 ? singular : plural}`
+
+/** "6 ratos Wistar": quantos ao todo, a espécie e a linhagem */
+export function descreverQuantidadeEEspecie(
+  s: Quantidades & { especie: CodigoEspecie; linhagem: string },
+): string {
+  const [singular, plural] = ESPECIE[s.especie]
+  return `${contar(totalDeAnimais(s), singular, plural)} ${s.linhagem}`
+}
+
+/**
+ * "4 machos · 2 fêmeas", com o de qualquer sexo junto quando o pedido mistura; sem sexo definido,
+ * só "qualquer sexo"
+ */
+export function descreverSexos({ machos, femeas, qualquer }: Quantidades): string {
+  const m = machos ?? 0
+  const f = femeas ?? 0
+  const q = qualquer ?? 0
+  if (m === 0 && f === 0) return q > 0 ? 'qualquer sexo' : '—'
+
+  return [
+    m ? contar(m, 'macho', 'machos') : null,
+    f ? contar(f, 'fêmea', 'fêmeas') : null,
+    q ? `${q} de qualquer sexo` : null,
+  ]
+    .filter((parte) => parte !== null)
+    .join(' · ')
+}
+
+/** "1 macho, 2 fêmeas e 3 de qualquer sexo": o que falta num pedido, só com o que não é zero */
+export function descreverQuantos({ m, f, qualquer }: PorSexo & { qualquer: number }): string {
+  const partes = [
+    m > 0 ? contar(m, 'macho', 'machos') : null,
+    f > 0 ? contar(f, 'fêmea', 'fêmeas') : null,
+    qualquer > 0 ? `${qualquer} de qualquer sexo` : null,
+  ].filter((parte) => parte !== null)
+
+  const ultima = partes.pop() ?? 'nenhum animal'
+  return partes.length > 0 ? `${partes.join(', ')} e ${ultima}` : ultima
+}
+
+/** Faixa ("de 20 a 40 dias") ou idade exata: a escolha do pedido e da busca */
+export type ModoDeIdade = 'faixa' | 'exata'
+
+/** O que o campo de idade guarda. O máximo vem nulo quando está em branco ou escondido */
+export interface CamposDeIdade {
+  modoIdade: ModoDeIdade
+  idadeMin: number
+  idadeMax?: number | null | undefined
+}
+
+/** A faixa que vai para a API. Na exata, o máximo é o próprio mínimo, sobre o que tiver ficado */
+export function faixaDeIdade({ modoIdade, idadeMin, idadeMax }: CamposDeIdade) {
+  return { idadeMin, idadeMax: modoIdade === 'exata' ? idadeMin : (idadeMax ?? idadeMin) }
+}
+
+/** "20 a 40 dias", ou "28 dias" quando a idade é exata */
+export function descreverIdade({ idadeMin, idadeMax }: { idadeMin: number; idadeMax: number }) {
+  return idadeMin === idadeMax ? `${idadeMin} dias` : `${idadeMin} a ${idadeMax} dias`
+}
+
+/** O que a reserva cobre do alvo, com as quantidades no formato de descreverAnimais */
+export interface ConferenciaDaReserva {
+  /** cobre o alvo inteiro, sem faltar nem passar: só assim a API aceita */
+  cobre: boolean
+  falta: { machos: number; femeas: number; qualquer: number }
+  /** o que passou do alvo em cada sexo, e no total */
+  aMais: { machos: number; femeas: number; total: number }
+}
+
+/**
+ * Confere a reserva contra o alvo (o pedido inteiro, ou a falta dele), com a mesma regra da API:
+ * os machos e as fêmeas pedidos, e os de qualquer sexo como macho ou fêmea, sem passar do total
+ */
+export function conferirReserva(
+  alvo: { machos: number; femeas: number; qualquer: number },
+  reservado: PorSexo,
+): ConferenciaDaReserva {
+  const total = alvo.machos + alvo.femeas + alvo.qualquer
+  const faltaM = Math.max(0, alvo.machos - reservado.m)
+  const faltaF = Math.max(0, alvo.femeas - reservado.f)
+  const restante = total - reservado.m - reservado.f
+
+  return {
+    cobre: faltaM === 0 && faltaF === 0 && restante === 0,
+    falta: { machos: faltaM, femeas: faltaF, qualquer: Math.max(0, restante - faltaM - faltaF) },
+    aMais: {
+      machos: Math.max(0, reservado.m - alvo.machos - alvo.qualquer),
+      femeas: Math.max(0, reservado.f - alvo.femeas - alvo.qualquer),
+      total: Math.max(0, -restante),
+    },
+  }
+}
+
+// ------------------------------------------------------------ situações
+
+/**
+ * A etiqueta de cada situação. Quando quem pediu lê outra coisa, o rótulo dele vem à parte: o
+ * aprovado ainda sem os animais é trabalho da equipe, e para quem pediu já é pedido aceito. Cada
+ * passo tem a sua cor: amarelo espera a decisão, azul está em andamento, verde tem os animais
+ * reservados, cinza já foi entregue e vermelho foi recusado
+ */
+export const SITUACAO_DO_PEDIDO: Record<
+  StatusDoPedido,
+  { rotulo: string; paraQuemPediu?: string; tom: TomDeEtiqueta }
+> = {
+  enviado: { rotulo: 'Aguardando análise', tom: 'atencao' },
+  aprovado: {
+    rotulo: 'Aguardando animais',
+    paraQuemPediu: 'Aceito, em andamento',
+    tom: 'informacao',
+  },
+  reservado: {
+    rotulo: 'Animais reservados',
+    paraQuemPediu: 'Aceito, em andamento',
+    tom: 'sucesso',
+  },
+  entregue: { rotulo: 'Entregue', tom: 'neutro' },
+  recusado: { rotulo: 'Recusado', tom: 'erro' },
+}
+
+/** O que a equipe pode recusar: o reservado também, e os animais dele voltam a ficar livres */
+export function podeRecusar(status: StatusDoPedido): boolean {
+  return status === 'enviado' || status === 'aprovado' || status === 'reservado'
+}
+
+/**
+ * Se o pedido recebe reserva agora: o aprovado, inteiro; o reservado, só o que completa a falta
+ */
+export function recebeReserva(pedido: Pick<Pedido, 'status' | 'reservaEmFalta'>): boolean {
+  return (
+    pedido.status === 'aprovado' ||
+    (pedido.status === 'reservado' && pedido.reservaEmFalta !== null)
+  )
+}
+
+/**
+ * O que a reserva tem de cobrir: o pedido inteiro no aprovado, só a falta no reservado em falta.
+ * No formato de conferirReserva
+ */
+export function alvoDaReserva(
+  pedido: Pick<Pedido, 'machos' | 'femeas' | 'qualquer' | 'reservaEmFalta'>,
+): { machos: number; femeas: number; qualquer: number } {
+  const falta = pedido.reservaEmFalta
+  return falta === null
+    ? { machos: pedido.machos, femeas: pedido.femeas, qualquer: pedido.qualquer }
+    : { machos: falta.m, femeas: falta.f, qualquer: falta.qualquer }
+}
+
+// A ordem das colunas de data, na ordem crescente: a seta da coluna inverte. As datas vêm como
+// AAAA-MM-DD, então a ordem do texto é a ordem do calendário. No mesmo dia, o número do pedido
+// desempata, e o pedido feito antes vem primeiro
+
+/** Pela data do pedido, do mais antigo para o mais novo */
+export function compararDataDoPedido(
+  a: { id: number; dataPedido: string },
+  b: { id: number; dataPedido: string },
+): number {
+  return a.dataPedido.localeCompare(b.dataPedido) || a.id - b.id
+}
+
+/** Pela data de entrega, da mais cedo para a mais tarde */
+export function compararDataDeEntrega(
+  a: { id: number; dataEntrega: string },
+  b: { id: number; dataEntrega: string },
+): number {
+  return a.dataEntrega.localeCompare(b.dataEntrega) || a.id - b.id
+}
+
+export type FiltroDePedido = 'todos' | 'pendentes' | 'aceitos' | 'entregues' | 'recusados'
+
+export const FILTROS_DE_PEDIDO: { valor: FiltroDePedido; rotulo: string }[] = [
+  { valor: 'todos', rotulo: 'Todos' },
+  { valor: 'pendentes', rotulo: 'Pendentes' },
+  { valor: 'aceitos', rotulo: 'Aceitos' },
+  { valor: 'entregues', rotulo: 'Entregues' },
+  { valor: 'recusados', rotulo: 'Recusados' },
+]
+
+export function entraNoFiltro(filtro: FiltroDePedido, pedido: Pick<Pedido, 'status'>): boolean {
+  switch (filtro) {
+    case 'todos':
+      return true
+    case 'pendentes':
+      return pedido.status === 'enviado'
+    case 'aceitos':
+      return pedido.status === 'aprovado' || pedido.status === 'reservado'
+    case 'entregues':
+      return pedido.status === 'entregue'
+    case 'recusados':
+      return pedido.status === 'recusado'
+  }
+}
+
+/**
+ * Até quantos dias antes da entrega a equipe vê o aviso do pedido aprovado que ainda está sem os
+ * animais reservados
+ */
+export const AVISO_DE_ENTREGA_SEM_RESERVA_EM_DIAS = 7
+
+/**
+ * O aviso para a equipe do pedido aprovado sem reserva com a entrega perto, hoje ou já passada:
+ * "Entrega em 3 dias, sem reserva". Fora disso, null
+ */
+export function avisoDeEntregaSemReserva(
+  pedido: Pick<Pedido, 'status' | 'dataEntrega'>,
+  hojeEm: DataISO = hoje(),
+): string | null {
+  if (pedido.status !== 'aprovado') return null
+
+  const dias = diasAte(pedido.dataEntrega, hojeEm)
+
+  if (dias > AVISO_DE_ENTREGA_SEM_RESERVA_EM_DIAS) return null
+  if (dias < 0) return 'Entrega vencida, sem reserva'
+  if (dias === 0) return 'Entrega hoje, sem reserva'
+  return `Entrega em ${descreverDias(dias)}, sem reserva`
+}

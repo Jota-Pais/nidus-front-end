@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { Botao, Formulario } from '@/componentes'
-import type { CamposDeIdade } from '@/dominio/solicitacao'
+import type { CamposDeIdade } from '@/dominio/pedido'
 import { renderizar } from '@/testes/renderizar'
 import { CampoDeIdade } from './CampoDeIdade'
 
