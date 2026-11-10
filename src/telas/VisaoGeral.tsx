@@ -58,8 +58,9 @@ function totalDaEspecie(linhagens: LinhagemNaVisaoGeral[]) {
 }
 
 /** "até 21 d", "22–35 d", "mais de 60 d": o rótulo da faixa, das pontas que a API manda */
-function rotuloDaFaixa({ de, ate }: Pick<FaixaDeIdade, 'de' | 'ate'>): string {
-  if (ate === null) return `mais de ${de - 1} d`
+function rotuloDaFaixa({ de, ate }: Pick<FaixaDeIdade, 'de' | 'ate'>, curto = false): string {
+  // no cartão do celular a coluna é estreita: "> 60 d" cabe onde "mais de 60 d" não cabe
+  if (ate === null) return curto ? `> ${de - 1} d` : `mais de ${de - 1} d`
   if (de === 0) return `até ${ate} d`
   return `${de}–${ate} d`
 }
@@ -197,7 +198,7 @@ function CartaoDaLinhagem({ linhagem: l }: { linhagem: LinhagemNaVisaoGeral }) {
         <dl className="visao__faixasDados">
           {l.livresPorIdade.map((faixa) => (
             <div key={rotuloDaFaixa(faixa)} className="visao__faixa">
-              <dt>{rotuloDaFaixa(faixa)}</dt>
+              <dt>{rotuloDaFaixa(faixa, true)}</dt>
               <dd>
                 <Pouco m={faixa.m} f={faixa.f} empilhado />
               </dd>
