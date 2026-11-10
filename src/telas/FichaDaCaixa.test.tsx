@@ -983,19 +983,15 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
 })
 
 describe('abas da ficha do casal', { timeout: 20_000 }, () => {
-  it('são Reprodução, Ninhada e Eventos', async () => {
+  it('são Reprodução e Ninhada', async () => {
     abrirFicha()
 
-    expect(await waitFor(() => nomesDasAbas().filter(Boolean))).toEqual([
-      'Reprodução',
-      'Ninhada',
-      'Eventos',
-    ])
+    expect(await waitFor(() => nomesDasAbas().filter(Boolean))).toEqual(['Reprodução', 'Ninhada'])
   })
 
-  it('os eventos têm o Anular na baixa que ainda pode ser anulada', async () => {
+  it('as Baixas lançadas, no fim da aba Ninhada, têm o Anular', async () => {
     api.ficha = fichaDeCasal({
-      eventos: [
+      baixas: [
         eventoDeBaixa(
           40,
           'Eutanasia de selecao do 1o parto do casal AB: 1 macho e 1 femea.',
@@ -1005,13 +1001,23 @@ describe('abas da ficha do casal', { timeout: 20_000 }, () => {
       ],
     })
     abrirFicha()
-    fireEvent.click(aba('Eventos'))
+    fireEvent.click(aba('Ninhada'))
 
     expect(await screen.findByText(/Eutanasia de selecao do 1o parto/)).toBeTruthy()
+    expect(screen.getByText('Baixas lançadas')).toBeTruthy()
     expect(botao('Anular')).toBeTruthy()
   })
 
-  it('a baixa da ninhada de um casal de antes volta para o estoque da linhagem dele, que o evento diz', async () => {
+  it('sem baixa anulável, não há Baixas lançadas', async () => {
+    api.ficha = fichaDeCasal({ baixas: [] })
+    abrirFicha()
+    fireEvent.click(aba('Ninhada'))
+    await abaAberta()
+
+    expect(screen.queryByText('Baixas lançadas')).toBeNull()
+  })
+
+  it('a baixa da ninhada de um casal de antes volta para o estoque da linhagem dele, que a baixa diz', async () => {
     api.ficha = fichaDeCasal({
       casal: { ...casal(2, 'CD', true), dtFormacao: '2026-11-01' },
       partos: [],
@@ -1022,7 +1028,7 @@ describe('abas da ficha do casal', { timeout: 20_000 }, () => {
           partos: [desmamado({ vivos: { m: 0, f: 0 }, onde: [] })],
         },
       ],
-      eventos: [
+      baixas: [
         eventoDeBaixa(41, 'Baixa de 2 machos nesta caixa.', {
           sexos: { m: 2, f: 0 },
           idLinhagem: 2,
@@ -1035,7 +1041,7 @@ describe('abas da ficha do casal', { timeout: 20_000 }, () => {
       soltos: { m: 0, f: 0 },
     })
     abrirFicha()
-    fireEvent.click(aba('Eventos'))
+    fireEvent.click(aba('Ninhada'))
     const linha = (await screen.findByText('Baixa de 2 machos nesta caixa.')).closest(
       'li',
     ) as HTMLElement
@@ -1066,7 +1072,7 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     const ficha = fichaDeCasal({
       casal: casal(1, 'AB', false),
       partos: [parto({ vivos: { m: 0, f: 0 }, onde: [], baixasAntesDoDesmame: { m: 5, f: 5 } })],
-      eventos: [
+      baixas: [
         eventoDeBaixa(60, 'Baixa de 4 machos e 4 femeas nesta caixa.', {
           sexos: { m: 4, f: 4 },
           idLinhagem: 1,
@@ -1120,11 +1126,11 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     expect(await screen.findByText(/em qual caixa de estoque entram os machos a mais/)).toBeTruthy()
   })
 
-  it('o Anular da baixa que a esvaziou continua nos Eventos', async () => {
+  it('o Anular da baixa que a esvaziou continua em Baixas lançadas', async () => {
     api.ficha = liberada()
     abrirFicha()
 
-    fireEvent.click(aba('Eventos'))
+    fireEvent.click(aba('Ninhada'))
     const linha = (await screen.findByText('Baixa de 4 machos e 4 femeas nesta caixa.')).closest(
       'li',
     ) as HTMLElement
@@ -1165,7 +1171,7 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     fireEvent.click(screen.getByText('recarregar'))
 
     expect(await screen.findByText('Liberada')).toBeTruthy()
-    fireEvent.click(aba('Eventos'))
+    fireEvent.click(aba('Ninhada'))
     expect(await screen.findByText('Baixa de 4 machos e 4 femeas nesta caixa.')).toBeTruthy()
     expect(botao('Anular')).toBeTruthy()
   })

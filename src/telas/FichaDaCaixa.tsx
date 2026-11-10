@@ -18,7 +18,7 @@ import type { Casal, CodigoEspecie, DataISO, FichaDeCasal, Parto } from '@/domin
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { ateHoje, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
-import { EventosDaFicha } from './AnimaisDaFicha'
+import { BaixasLancadas } from './AnimaisDaFicha'
 import { Campo, LadoALado } from './CamposDaFicha'
 import { FichaDoEstoque, VirarCaixaDeEstoque } from './EstoqueDaFicha'
 import { EtiquetaDaFase } from './FaseDaCaixa'
@@ -228,7 +228,7 @@ function BotaoDoParto({
 
 /**
  * A ficha da caixa de casal: o seletor dos partos (os do casal da caixa e os dos casais de antes)
- * e as abas Reprodução, Ninhada e Eventos
+ * e as abas Reprodução e Ninhada
  */
 function FichaDoCasal({
   ficha,
@@ -292,19 +292,17 @@ function FichaDoCasal({
             label: 'Ninhada',
             // remonta a cada parto escolhido: o formulário aberto é do parto que estava na tela
             children: (
-              <AbaNinhada
-                key={`${escolha.idCasal ?? 'atual'}-${ordem}`}
-                ficha={ficha}
-                casal={casal}
-                partos={partos}
-                ordem={ordem}
-              />
+              <>
+                <AbaNinhada
+                  key={`${escolha.idCasal ?? 'atual'}-${ordem}`}
+                  ficha={ficha}
+                  casal={casal}
+                  partos={partos}
+                  ordem={ordem}
+                />
+                <BaixasLancadas baixas={ficha.baixas} caixa={ficha.caixa} />
+              </>
             ),
-          },
-          {
-            key: 'eventos',
-            label: 'Eventos',
-            children: <EventosDaFicha eventos={ficha.eventos} caixa={ficha.caixa} />,
           },
         ]}
       />

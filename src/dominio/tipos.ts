@@ -246,6 +246,7 @@ export type TipoDeEvento =
   | 'correcao'
   | 'posicao'
 
+/** Uma baixa lançada que ainda pode ser anulada (o item da lista "Baixas lançadas") */
 export interface EventoDaFicha {
   /** o dia do fato, 'aaaa-mm-ddT00:00:00.000Z' */
   dataHora: string
@@ -292,8 +293,8 @@ export interface FichaDeCasal {
   partos: Parto[]
   /** os casais que vieram antes nesta caixa, com os partos deles */
   anteriores: CasalComPartos[]
-  /** do mais antigo para o mais novo */
-  eventos: EventoDaFicha[]
+  /** as baixas que ainda podem ser anuladas, da mais recente para a mais antiga */
+  baixas: EventoDaFicha[]
 }
 
 /** De qual parto vieram os vivos de um grupo da caixa de estoque */
@@ -333,7 +334,8 @@ export interface FichaDeEstoque {
   grupos: GrupoDoEstoque[]
   /** o que cada pedido tem reservado nesta caixa */
   pedidos: { idPedido: number; qtd: number }[]
-  eventos: EventoDaFicha[]
+  /** as baixas que ainda podem ser anuladas, da mais recente para a mais antiga */
+  baixas: EventoDaFicha[]
   /** os casais da caixa, se ela foi de casal antes de virar de estoque */
   casaisAnteriores: CasalComPartos[]
 }

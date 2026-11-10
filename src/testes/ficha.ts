@@ -53,7 +53,7 @@ export const lugar = (parcial: Partial<OndeEstao> & Pick<OndeEstao, 'idCaixa'>):
   ...parcial,
 })
 
-/** Uma baixa anulável nos eventos da caixa */
+/** Uma baixa anulável nas baixas lançadas da caixa */
 export const eventoDeBaixa = (
   idOcorrencia: number,
   descricao: string,
@@ -104,7 +104,7 @@ export const fichaDeCasal = (parcial: Partial<FichaDeCasal> = {}): FichaDeCasal 
   casal: casal(1, 'AB', true),
   partos: [parto()],
   anteriores: [],
-  eventos: [],
+  baixas: [],
   ...parcial,
 })
 
@@ -151,7 +151,7 @@ export const fichaDeEstoque = (parcial: Partial<FichaDeEstoque> = {}): FichaDeEs
     },
   ],
   pedidos: [{ idPedido: 12, qtd: 2 }],
-  eventos: [],
+  baixas: [],
   casaisAnteriores: [],
   ...parcial,
 })

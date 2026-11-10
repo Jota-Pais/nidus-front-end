@@ -154,14 +154,18 @@
   gap: 8px;
 }
 
-.ficha__eventos {
+.ficha__baixas {
+  margin-top: 16px;
+}
+
+.ficha__baixasLista {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-/* o evento é uma linha; a baixa que se anula abre o formulário embaixo dela */
-.ficha__evento {
+/* a baixa é uma linha; a baixa que se anula abre o formulário embaixo dela */
+.ficha__baixa {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -169,43 +173,38 @@
   border-bottom: 1px solid var(--cor-borda);
 }
 
-.ficha__eventoLinha {
+.ficha__baixaLinha {
   display: flex;
   align-items: baseline;
   gap: 12px;
 }
 
-.ficha__eventoData {
+.ficha__baixaData {
   min-width: 90px;
   font-family: var(--fonte-mono);
   font-size: 12px;
   color: var(--cor-suave-frente);
 }
 
-.ficha__eventoTexto {
+.ficha__baixaTexto {
   flex: 1;
 }
 
-.ficha__eventoAutor {
-  font-size: 12px;
-  color: var(--cor-suave-frente);
-}
-
-/* No celular, a data, o autor e o Anular ficam em cima, e o texto do evento ganha a largura toda:
+/* No celular, a data e o Anular ficam em cima, e o texto da baixa ganha a largura toda:
    numa linha só, ele ficava espremido numa coluna de uma palavra */
 @media (max-width: 600px) {
-  .ficha__eventoLinha {
+  .ficha__baixaLinha {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 1fr auto;
     align-items: center;
     gap: 4px 12px;
   }
 
-  .ficha__eventoData {
+  .ficha__baixaData {
     min-width: 0;
   }
 
-  .ficha__eventoTexto {
+  .ficha__baixaTexto {
     grid-row: 2;
     grid-column: 1 / -1;
   }
@@ -280,9 +279,9 @@
     flex-direction: column;
   }
 
-  /* o Anular do evento: pequeno no computador, alvo de dedo no celular */
-  .ficha__eventoLinha .ant-btn-sm {
-    height: 36px;
-    padding: 0 12px;
+  /* o Anular da baixa: pequeno no computador, alvo de dedo no celular */
+  .ficha__baixaLinha .ant-btn {
+    min-height: 40px;
+    padding: 0 14px;
   }
 }
