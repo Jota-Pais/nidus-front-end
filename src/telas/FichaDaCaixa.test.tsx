@@ -975,7 +975,7 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     }
   }
 
-  it('a ficha é só leitura: nada de corrigir, registrar ou formar casal', async () => {
+  it('a ficha não lança fato novo, mas corrige o que já foi registrado', async () => {
     api.ficha = liberada()
     abrirFicha()
 
@@ -988,11 +988,24 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     fireEvent.click(aba('Ninhada'))
     const ninhada = await abaAberta()
     expect(within(ninhada).getByText('Data do acasalamento')).toBeTruthy()
-    expect(talvezBotao('Corrigir', ninhada)).toBeNull()
     expect(talvezBotao('Registrar eutanásia', ninhada)).toBeNull()
     expect(talvezBotao('Registrar desmame', ninhada)).toBeNull()
     expect(talvezBotao('Baixa', ninhada)).toBeNull()
     expect(within(ninhada).getByText('A ninhada não chegou ao desmame.')).toBeTruthy()
+    // o acasalamento e o nascimento
+    expect(botoes('Corrigir', ninhada)).toHaveLength(2)
+  })
+
+  it('corrigir o nascimento com animais a mais pede a caixa de estoque: a liberada não recebe', async () => {
+    api.ficha = liberada()
+    abrirFicha()
+    fireEvent.click(aba('Ninhada'))
+    await abaAberta()
+
+    corrigir('Parto')
+    fireEvent.change(screen.getByLabelText('Machos nascidos'), { target: { value: '6' } })
+
+    expect(await screen.findByText(/em qual caixa de estoque entram os machos a mais/)).toBeTruthy()
   })
 
   it('o Anular da baixa que a esvaziou continua nos Eventos', async () => {
