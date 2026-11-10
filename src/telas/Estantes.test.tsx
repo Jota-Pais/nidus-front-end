@@ -1,6 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Estante, Grade } from '@/dominio/tipos'
+import type { Catalogo, Estante, Grade } from '@/dominio/tipos'
 import { consulta, renderizar } from '@/testes/renderizar'
 import { Estantes } from './Estantes'
 
@@ -28,7 +28,14 @@ const grade: Grade = {
           linha: 1,
           coluna: 1,
           codigo: 'F1A',
-          caixa: { id: 10, estado: 'livres', linhagem: 'Wistar', casal: null, estoque: null },
+          caixa: {
+            id: 10,
+            estado: 'livres',
+            idLinhagem: 1,
+            linhagem: 'Wistar',
+            casal: null,
+            estoque: null,
+          },
         },
         { linha: 1, coluna: 2, codigo: 'F1B', caixa: null },
         {
@@ -38,11 +45,12 @@ const grade: Grade = {
           caixa: {
             id: 11,
             estado: 'reserva',
+            idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
             estoque: {
               sexo: 'F',
-              idLinhagem: 2,
+              idLinhagem: 1,
               total: 4,
               reservado: 4,
               nascimentoDe: '2026-09-20',
@@ -61,7 +69,8 @@ const grade: Grade = {
           caixa: {
             id: 12,
             estado: 'livres',
-            linhagem: 'Wistar',
+            idLinhagem: 2,
+            linhagem: 'SHR',
             casal: {
               identificacao: 'AB',
               partoAtual: 2,
@@ -78,14 +87,37 @@ const grade: Grade = {
           linha: 1,
           coluna: 5,
           codigo: 'F1E',
-          caixa: { id: 13, estado: null, linhagem: 'Wistar', casal: null, estoque: null },
+          caixa: {
+            id: 13,
+            estado: null,
+            idLinhagem: 1,
+            linhagem: 'Wistar',
+            casal: null,
+            estoque: null,
+          },
         },
       ],
     },
   ],
 }
 
+const catalogo: Catalogo = {
+  especies: [
+    {
+      id: 1,
+      codigo: 'rato',
+      nome: 'Rato',
+      linhagens: [
+        { id: 1, nome: 'Wistar', ativa: true },
+        { id: 2, nome: 'SHR', ativa: true },
+      ],
+    },
+  ],
+  paresGeneticos: [],
+}
+
 vi.mock('@/dominio/consultas', () => ({
+  useCatalogo: () => consulta(catalogo),
   useEstantes: () => consulta([estante(1, 'Sala 1', 'E-01'), estante(2, 'Sala 2', 'E-03')]),
   useGrade: () => consulta(grade),
   useMudarDePosicao: () => ({ mutate: mover, isPending: false }),
@@ -228,12 +260,43 @@ describe('caixa de casal na grade', { timeout: 20_000 }, () => {
     expect(celula.className).toContain('posicao--livres')
   })
 
-  it('a caixa sem casal e a que não aparece no kanban ficam neutras', () => {
+  it('a caixa sem casal e a sem estado ficam neutras', () => {
     renderizar(<Estantes />, 'tecnico')
 
     for (const codigo of [/^F1A/, /^F1E/]) {
       const celula = screen.getByRole('button', { name: codigo })
       expect(celula.className).not.toMatch(/posicao--(livres|estoque|reserva|enviado)/)
     }
+  })
+})
+
+describe('só uma linhagem, vindo da Visão geral', { timeout: 20_000 }, () => {
+  const apagadas = () =>
+    [...document.querySelectorAll('.posicao--apagada')].map(
+      (celula) => celula.querySelector('.posicao__codigo')?.textContent,
+    )
+
+  it('sem linhagem no endereço, nada fica apagado', () => {
+    renderizar(<Estantes />, 'tecnico')
+
+    expect(apagadas()).toEqual([])
+    expect(screen.queryByRole('button', { name: 'Mostrar todas as linhagens' })).toBeNull()
+  })
+
+  it('apaga as caixas das outras linhagens e as vazias, e diz qual está acesa', () => {
+    renderizar(<Estantes />, 'tecnico', 'Teste', '/estantes?linhagem=2')
+
+    expect(screen.getByText('Só a linhagem SHR')).toBeTruthy()
+    expect(apagadas()).toEqual(['F1A', 'F1B', 'F1C', 'F1E'])
+    expect(screen.getByRole('button', { name: /^F1D/ }).className).not.toContain('posicao--apagada')
+  })
+
+  it('o botão do filtro volta a mostrar todas', () => {
+    renderizar(<Estantes />, 'tecnico', 'Teste', '/estantes?linhagem=2')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar todas as linhagens' }))
+
+    expect(apagadas()).toEqual([])
+    expect(screen.queryByText('Só a linhagem SHR')).toBeNull()
   })
 })

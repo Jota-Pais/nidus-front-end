@@ -7,11 +7,17 @@ import type { Perfil } from '@/dominio/tipos'
 
 /**
  * A tela com uma sessão do perfil pedido; 'nome' é o nome da conta, que o pedido já preenche.
- * 'redesenhar' desenha a mesma tela de novo, sem desmontar: como depois de a consulta recarregar
+ * 'caminho' é o endereço aberto, com a busca (?linhagem=2). 'redesenhar' desenha a mesma tela de
+ * novo, sem desmontar: como depois de a consulta recarregar
  */
-export function renderizar(tela: ReactNode, perfil: Perfil = 'tecnico', nome = 'Teste') {
+export function renderizar(
+  tela: ReactNode,
+  perfil: Perfil = 'tecnico',
+  nome = 'Teste',
+  caminho = '/',
+) {
   const comSessao = () => (
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[caminho]}>
       <PerfilContext.Provider
         value={{
           perfil,

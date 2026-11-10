@@ -1,8 +1,43 @@
 /*
  * Grade de estantes. As duas faces lado a lado, reproduzindo a estante real; numa estante
  * de 128 posições a grade rola dentro do próprio container, nunca empurra a página. A cor da
- * caixa é a da coluna dela no kanban (--estado-<coluna>-*)
+ * caixa é a do estado dela (--estado-<estado>-*)
  */
+
+/* A linhagem que a Visão geral mandou acender, com o botão que volta a mostrar todas */
+.estantes__filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 2px 4px 2px 12px;
+  border: 1px solid var(--cor-acao-borda);
+  border-radius: var(--raio-pilula);
+  background: var(--cor-acao-fundo);
+  color: var(--cor-acao);
+  font-weight: 600;
+}
+
+.estantes__limpar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--raio-pilula);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.estantes__limpar:hover {
+  background: var(--cor-acao-fundo-hover);
+}
+
+.estantes__limpar:focus-visible {
+  outline: 2px solid var(--cor-acao);
+}
 
 .faces {
   display: flex;
@@ -165,4 +200,10 @@
   background: var(--estado-enviado-fundo);
   border-color: var(--estado-enviado-borda);
   color: var(--estado-enviado-texto);
+}
+
+/* Com uma linhagem acesa, as caixas das outras e as posições vazias ficam apagadas. Continuam
+   clicáveis: o filtro só ajuda a achar, não trava nada */
+.posicao--apagada {
+  opacity: 0.3;
 }

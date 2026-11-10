@@ -48,11 +48,10 @@ const HISTORICO = [...chaves.historico, { entidade: null, idEntidade: null, busc
 
 /** Tudo o que mostra animais, como estaria no cache com as telas abertas */
 const QUE_MOSTRAM_ANIMAIS = [
-  chaves.quadro('rato'),
+  chaves.visaoGeral,
   chaves.grade(1),
   chaves.caixa(3),
   chaves.caixa(4),
-  chaves.estoque('rato'),
   chaves.atendimento(7),
   chaves.pedidos,
   chaves.retirada(7),

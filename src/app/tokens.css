@@ -104,8 +104,8 @@
   --movimento-rapido: 200ms;
   --movimento-normal: 300ms;
 
-  /* Superfície por coluna do kanban. A grade de estantes usa as mesmas. Só a
-     Reserva tem cor própria; as outras repetem um tom que já diz a mesma coisa */
+  /* Superfície por estado da caixa, na grade de estantes. Só a Reserva tem cor
+     própria; as outras repetem um tom que já diz a mesma coisa */
   --estado-livres-fundo: var(--superficie-sucesso-fundo);
   --estado-livres-borda: var(--superficie-sucesso-borda);
   --estado-livres-texto: var(--cor-sucesso);

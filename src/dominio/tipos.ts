@@ -18,8 +18,8 @@ export interface PorSexo {
 export type Face = 'frontal' | 'traseira'
 
 /**
- * As 4 colunas do kanban, na ordem da tela, calculadas do que a caixa tem: nada é gravado. A caixa
- * de casal fica em Livres; a de estoque, em Reserva quando todos os vivos dela estão reservados
+ * O estado da caixa, calculado do que ela tem: nada é gravado. É a cor dela na grade. A caixa de
+ * casal fica em Livres; a de estoque, em Reserva quando todos os vivos dela estão reservados
  */
 export type EstadoCaixa = 'livres' | 'estoque' | 'reserva' | 'enviado'
 
@@ -50,7 +50,7 @@ export interface FaltaDoPedido {
   qualquer: number
 }
 
-// ------------------------------------------------------------ kanban e grade
+// ------------------------------------------------------------ grade
 
 /** Os vivos de um parto que estão na caixa do casal, com a idade de hoje */
 export interface NinhadaNoCard extends PorSexo {
@@ -62,7 +62,7 @@ export interface NinhadaNoCard extends PorSexo {
   mamando: boolean
 }
 
-/** O casal no card do kanban e na célula da grade */
+/** O casal na célula da grade */
 export interface CasalNoCard {
   /** dupla de grupos genéticos, macho primeiro. ex: AB */
   identificacao: string
@@ -87,7 +87,7 @@ export interface GrupoNoCard {
   reservados: number
 }
 
-/** A caixa de estoque no card do kanban e na célula da grade: os vivos de um sexo e uma linhagem */
+/** A caixa de estoque na célula da grade: os vivos de um sexo e uma linhagem */
 export interface EstoqueNoCard {
   sexo: Sexo
   /** a linhagem gravada na caixa: a escolha do destino filtra por ela e pelo sexo */
@@ -99,23 +99,6 @@ export interface EstoqueNoCard {
   nascimentoAte: DataISO | null
   /** os vivos por data de nascimento, do mais velho para o mais novo */
   grupos: GrupoNoCard[]
-}
-
-// GET /api/quadro?especie=
-export interface CardDoKanban {
-  idCaixa: number
-  /** endereço na estante. ex: F1A */
-  codigo: string
-  numeroVisivel: string
-  linhagem: string | null
-  /** só na caixa de casal */
-  casal: CasalNoCard | null
-  /** só na caixa de estoque */
-  estoque: EstoqueNoCard | null
-}
-
-export interface Kanban {
-  colunas: { estado: EstadoCaixa; cards: CardDoKanban[] }[]
 }
 
 // GET /api/salas: as salas ativas, cada uma com quantas estantes ativas tem
@@ -142,8 +125,10 @@ export interface Estante {
 /** Na grade só aparece caixa ativa */
 export interface CaixaNaGrade {
   id: number
-  /** a coluna do kanban; null só na caixa que não aparece nele */
+  /** a cor da caixa; null na caixa sem casal nem estoque */
   estado: EstadoCaixa | null
+  /** a linhagem do casal ou da caixa de estoque: o filtro da Visão geral apaga as outras */
+  idLinhagem: number | null
   linhagem: string | null
   casal: CasalNoCard | null
   estoque: EstoqueNoCard | null
@@ -167,7 +152,7 @@ export interface DadosDaCaixa {
   id: number
   endereco: { numeroVisivel: string; sala: string; codigo: string }
   especie: CodigoEspecie
-  /** a coluna do kanban; null na caixa liberada que não aparece nele */
+  /** a cor da caixa na grade; null na caixa liberada, que já saiu dela */
   estado: EstadoCaixa | null
   ativa: boolean
   dtLiberacao: DataISO | null
@@ -539,20 +524,39 @@ export interface ResultadoDaBusca {
   }
 }
 
-// GET /api/estoque?especie=: só os vivos livres
-export interface EstoqueDaLinhagem {
-  idLinhagem: number
-  linhagem: string
-  /** já desmamados */
-  confirmado: PorSexo
-  /** ainda mamando */
-  previsto: PorSexo
-  total: PorSexo
+// GET /api/visao-geral: os vivos de cada linhagem, contados um a um
+
+/** Uma faixa de idade em dias, com as duas pontas dentro; 'ate' nulo é a última, sem teto */
+export interface FaixaDeIdade extends PorSexo {
+  de: number
+  ate: number | null
 }
 
-export interface Estoque {
-  especie: CodigoEspecie
-  linhagens: EstoqueDaLinhagem[]
+export interface LinhagemNaVisaoGeral {
+  idLinhagem: number
+  linhagem: string
+  /** casais ativos */
+  casais: number
+  /** mamando e desmamados */
+  vivos: PorSexo
+  /** a parte dos vivos que ainda não desmamou */
+  mamando: PorSexo
+  /** vivos com pedido */
+  reservados: PorSexo
+  /** vivos sem pedido, os que mamam inclusive */
+  livres: PorSexo
+  /** os livres por idade de hoje, sempre nas mesmas 4 faixas e na mesma ordem */
+  livresPorIdade: FaixaDeIdade[]
+}
+
+export interface EspecieNaVisaoGeral {
+  codigo: CodigoEspecie
+  nome: string
+  linhagens: LinhagemNaVisaoGeral[]
+}
+
+export interface VisaoGeral {
+  especies: EspecieNaVisaoGeral[]
 }
 
 // POST /api/pedidos/viabilidade: só se o biotério consegue atender, sem números da colônia

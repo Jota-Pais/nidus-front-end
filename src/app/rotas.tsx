@@ -12,11 +12,10 @@ const DefinirSenha = lazy(() =>
   import('@/telas/DefinirSenha').then((m) => ({ default: m.DefinirSenha })),
 )
 const Estantes = lazy(() => import('@/telas/Estantes').then((m) => ({ default: m.Estantes })))
-const Estoque = lazy(() => import('@/telas/Estoque').then((m) => ({ default: m.Estoque })))
 const Historico = lazy(() => import('@/telas/Historico').then((m) => ({ default: m.Historico })))
-const Kanban = lazy(() => import('@/telas/Kanban').then((m) => ({ default: m.Kanban })))
 const Pedidos = lazy(() => import('@/telas/Pedidos').then((m) => ({ default: m.Pedidos })))
 const Usuarios = lazy(() => import('@/telas/Usuarios').then((m) => ({ default: m.Usuarios })))
+const VisaoGeral = lazy(() => import('@/telas/VisaoGeral').then((m) => ({ default: m.VisaoGeral })))
 
 const COLONIA = ['tecnico', 'gestor'] as const
 
@@ -42,13 +41,16 @@ export const rotas = createBrowserRouter([
     children: [
       { index: true, element: <RaizPorPerfil /> },
       {
-        path: 'kanban',
+        path: 'visao-geral',
         element: (
           <RotaProtegida perfis={[...COLONIA]}>
-            <Kanban />
+            <VisaoGeral />
           </RotaProtegida>
         ),
       },
+      // o Kanban e o Estoque viraram a Visão geral: quem guardou o endereço antigo cai nela
+      { path: 'kanban', element: <Navigate to="/visao-geral" replace /> },
+      { path: 'estoque', element: <Navigate to="/visao-geral" replace /> },
       {
         path: 'estantes',
         element: (
@@ -59,14 +61,6 @@ export const rotas = createBrowserRouter([
       },
       // o caminho fica: os e-mails da API mandam quem pediu para cá
       { path: 'solicitar', element: <Pedidos /> },
-      {
-        path: 'estoque',
-        element: (
-          <RotaProtegida perfis={[...COLONIA]}>
-            <Estoque />
-          </RotaProtegida>
-        ),
-      },
       {
         path: 'historico',
         element: (

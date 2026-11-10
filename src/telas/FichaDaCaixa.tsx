@@ -36,7 +36,7 @@ export interface PosicaoVazia {
 
 const ROTULO_ESPECIE = { rato: 'Rato', camundongo: 'Camundongo' } as const
 
-/** A ficha da caixa, aberta pelo card do kanban e pela célula da grade */
+/** A ficha da caixa, aberta pela célula da grade e pelo histórico */
 export function FichaDaCaixa({
   idCaixa,
   posicaoVazia = null,

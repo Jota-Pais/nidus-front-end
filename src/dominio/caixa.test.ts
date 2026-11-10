@@ -44,7 +44,7 @@ describe('pintaNaGrade', () => {
     expect(pintaNaGrade('reserva', false)).toBe(true)
   })
 
-  it('a caixa que não aparece no kanban não ganha cor de coluna', () => {
+  it('a caixa sem estado não ganha cor', () => {
     expect(pintaNaGrade(null, true)).toBe(false)
   })
 })

@@ -1,6 +1,6 @@
-// As colunas do kanban e os partos, como na spec do cliente (seções 1.9 e 5.2). As cores vêm
-// dos tokens: a de cada coluna é --estado-<coluna>-fundo/borda/texto, e a grade de estantes pinta
-// a caixa com a mesma; a de cada parto é COR_DO_PARTO
+// Os estados da caixa e os partos. As cores vêm dos tokens: a de cada estado é
+// --estado-<estado>-fundo/borda/texto, com que a grade de estantes pinta a caixa; a de cada parto é
+// COR_DO_PARTO
 import { COR_DO_PARTO } from '@/app/tokens'
 import { formatarData } from '@/lib/data'
 import { descreverQuantos } from './pedido'
@@ -22,11 +22,11 @@ import type {
 interface Coluna {
   estado: EstadoCaixa
   rotulo: string
-  /** o que o card diz embaixo */
+  /** o que a caixa é, no título da célula da grade */
   legenda: string
 }
 
-export const COLUNAS: Coluna[] = [
+const COLUNAS: Coluna[] = [
   { estado: 'livres', rotulo: 'Livres', legenda: 'Casal ativo' },
   { estado: 'estoque', rotulo: 'Estoque', legenda: 'Animais de estoque' },
   { estado: 'reserva', rotulo: 'Reserva', legenda: 'Animais de reserva' },

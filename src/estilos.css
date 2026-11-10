@@ -55,7 +55,7 @@ h3 {
   background: var(--cor-acao-fundo-hover);
 }
 
-/* Legenda das cores de parto, a mesma no kanban, na grade e na ficha */
+/* Legenda das cores de parto, a mesma na grade e na ficha */
 .legendaDosPartos {
   display: flex;
   align-items: center;

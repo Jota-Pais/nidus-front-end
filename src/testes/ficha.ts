@@ -202,7 +202,14 @@ export const gradeE01: Grade = {
           linha: 1,
           coluna: 1,
           codigo: 'F1A',
-          caixa: { id: 7, estado: 'livres', linhagem: 'Wistar', casal: null, estoque: null },
+          caixa: {
+            id: 7,
+            estado: 'livres',
+            idLinhagem: 1,
+            linhagem: 'Wistar',
+            casal: null,
+            estoque: null,
+          },
         },
         { linha: 1, coluna: 2, codigo: 'F1B', caixa: null },
         {
@@ -212,6 +219,7 @@ export const gradeE01: Grade = {
           caixa: {
             id: 30,
             estado: 'estoque',
+            idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
             estoque: estoqueNaGrade('M', 6, 1),
@@ -225,6 +233,7 @@ export const gradeE01: Grade = {
           caixa: {
             id: 31,
             estado: 'estoque',
+            idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
             estoque: estoqueNaGrade('F', 3, 1),
@@ -237,6 +246,7 @@ export const gradeE01: Grade = {
           caixa: {
             id: 32,
             estado: 'estoque',
+            idLinhagem: 2,
             linhagem: 'Swiss',
             casal: null,
             estoque: estoqueNaGrade('M', 2, 2),

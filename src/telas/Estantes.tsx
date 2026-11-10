@@ -1,6 +1,8 @@
+import { CloseOutlined } from '@ant-design/icons'
 import { App, Segmented } from 'antd'
-import { useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import type { DragEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CabecalhoDaTela, Linha, Pilha, Secao, Texto, Vazio } from '@/componentes'
 import {
   COLUNA,
@@ -9,7 +11,7 @@ import {
   pintaNaGrade,
   SIMBOLO_DO_SEXO,
 } from '@/dominio/caixa'
-import { useEstantes, useGrade, useMudarDePosicao } from '@/dominio/consultas'
+import { useCatalogo, useEstantes, useGrade, useMudarDePosicao } from '@/dominio/consultas'
 import type { CaixaNaGrade, Estante, EstoqueNoCard, Grade, Posicao } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
@@ -45,6 +47,18 @@ interface Arraste {
   soltar: (destino: PosicaoVazia) => void
 }
 
+/**
+ * A linhagem que a Visão geral mandou acender (?linhagem=), ou null: com ela, as caixas das outras
+ * linhagens e as posições vazias ficam apagadas
+ */
+const LinhagemAcesa = createContext<number | null>(null)
+
+/** O id da linhagem no endereço; qualquer outra coisa é sem filtro */
+function linhagemDoEndereco(valor: string | null): number | null {
+  const id = Number(valor)
+  return valor !== null && Number.isInteger(id) && id > 0 ? id : null
+}
+
 /** O código da posição só não se repete dentro da estante */
 const chaveDaPosicao = (idEstante: number, codigo: string) => `${idEstante}:${codigo}`
 
@@ -57,6 +71,8 @@ export function Estantes() {
   const [aberta, setAberta] = useState<Alvo | null>(null)
   const [pega, setPega] = useState<Pega | null>(null)
   const [movimento, setMovimento] = useState<Movimento | null>(null)
+  const [parametros, setParametros] = useSearchParams()
+  const linhagem = linhagemDoEndereco(parametros.get('linhagem'))
 
   const lista = estantes.data ?? []
   const salas = [...new Set(lista.map((estante) => estante.sala))]
@@ -122,18 +138,29 @@ export function Estantes() {
                 />
                 <LegendaDosPartos />
               </Linha>
+              {linhagem !== null && (
+                <FiltroDaLinhagem
+                  idLinhagem={linhagem}
+                  aoLimpar={() => {
+                    parametros.delete('linhagem')
+                    setParametros(parametros, { replace: true })
+                  }}
+                />
+              )}
             </Secao>
 
-            {lista
-              .filter((estante) => estante.sala === salaAtiva)
-              .map((estante) => (
-                <CartaoDaEstante
-                  key={estante.id}
-                  estante={estante}
-                  arraste={arraste}
-                  aoAbrir={setAberta}
-                />
-              ))}
+            <LinhagemAcesa.Provider value={linhagem}>
+              {lista
+                .filter((estante) => estante.sala === salaAtiva)
+                .map((estante) => (
+                  <CartaoDaEstante
+                    key={estante.id}
+                    estante={estante}
+                    arraste={arraste}
+                    aoAbrir={setAberta}
+                  />
+                ))}
+            </LinhagemAcesa.Provider>
           </>
         )}
       </EstadoDaConsulta>
@@ -144,6 +171,29 @@ export function Estantes() {
         aoFechar={() => setAberta(null)}
       />
     </Pilha>
+  )
+}
+
+/** "Só a linhagem Wistar", com o botão que volta a mostrar todas */
+function FiltroDaLinhagem({ idLinhagem, aoLimpar }: { idLinhagem: number; aoLimpar: () => void }) {
+  const catalogo = useCatalogo()
+  const nome = catalogo.data?.especies
+    .flatMap((especie) => especie.linhagens)
+    .find((linhagem) => linhagem.id === idLinhagem)?.nome
+
+  return (
+    <div className="estantes__filtro">
+      <span>{nome ? `Só a linhagem ${nome}` : 'Só uma linhagem'}</span>
+      <button
+        type="button"
+        className="estantes__limpar"
+        onClick={aoLimpar}
+        aria-label="Mostrar todas as linhagens"
+        title="Mostrar todas as linhagens"
+      >
+        <CloseOutlined />
+      </button>
+    </div>
   )
 }
 
@@ -222,7 +272,7 @@ function Face({
   )
 }
 
-/** " (50 e 30 dias)": as idades da caixa de estoque, do mais velho ao mais novo, como no kanban */
+/** " (50 e 30 dias)": as idades da caixa de estoque, do mais velho ao mais novo */
 function idadesDoEstoque(estoque: EstoqueNoCard): string {
   const idades = estoque.grupos.map((grupo) => grupo.idadeDias)
   if (idades.length === 0) return ''
@@ -244,6 +294,7 @@ function Celula({
   aoAbrir: (alvo: Alvo) => void
 }) {
   const [sobre, setSobre] = useState(false)
+  const acesa = useContext(LinhagemAcesa)
   const { movimento } = arraste
   const chegando =
     movimento?.destino === chaveDaPosicao(vazia.idEstante, posicao.codigo) ? movimento.caixa : null
@@ -262,7 +313,7 @@ function Celula({
     return (
       <button
         type="button"
-        className={`posicao posicao--vazia${recebe ? ' posicao--destino' : ''}${recebe && sobre ? ' posicao--sobre' : ''}`}
+        className={`posicao posicao--vazia${recebe ? ' posicao--destino' : ''}${recebe && sobre ? ' posicao--sobre' : ''}${acesa !== null && !recebe ? ' posicao--apagada' : ''}`}
         title={`${posicao.codigo}: posição vazia - clique para formar um casal`}
         // a caixa ainda está sendo gravada no lugar novo: aqui ainda não dá para formar casal
         disabled={saindo}
@@ -291,6 +342,7 @@ function Celula({
     coluna ? `posicao--${coluna}` : '',
     erguida ? 'posicao--erguida' : '',
     chegando ? 'posicao--movendo' : '',
+    acesa !== null && caixa.idLinhagem !== acesa ? 'posicao--apagada' : '',
   ].filter(Boolean)
 
   // div e não button: o Firefox não arrasta button
