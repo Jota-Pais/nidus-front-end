@@ -84,7 +84,7 @@ export function MudarDeLugar({ caixa }: { caixa: Pick<DadosDaCaixa, 'id' | 'ende
           loading={mover.isPending}
           onClick={confirmar}
         >
-          {ondeVai ? `Mudar para ${ondeVai}` : 'Mover'}
+          {ondeVai ? `Mudar para ${ondeVai}` : 'Mudar'}
         </Botao>
         <Botao variante="fantasma" onClick={fechar}>
           Cancelar

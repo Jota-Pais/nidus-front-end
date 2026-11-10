@@ -22,7 +22,7 @@ export function confirmacaoDoPedido(viabilidade: Viabilidade | null): Confirmaca
   if (viabilidade === null) {
     return {
       tom: 'atencao',
-      titulo: 'Não deu para conferir agora se o CPMR consegue atender esse pedido.',
+      titulo: 'Não deu para conferir agora se a equipe consegue atender esse pedido.',
       detalhe: 'Você pode enviar assim mesmo: a equipe confere ao analisar.',
       enviar: 'Enviar pedido',
       voltar: 'Voltar',

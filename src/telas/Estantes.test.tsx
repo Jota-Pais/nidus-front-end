@@ -275,7 +275,7 @@ describe('arrastar caixa', { timeout: 20_000 }, () => {
 
     arrastarF1AParaF1B()
 
-    expect(await screen.findByText('Caixa F1A movida para F1B.')).toBeTruthy()
+    expect(await screen.findByText('Caixa mudou de lugar: de F1A para F1B.')).toBeTruthy()
   })
 
   it('mostra a recusa da API e devolve a caixa para o lugar dela', async () => {

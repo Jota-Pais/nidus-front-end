@@ -127,7 +127,7 @@ describe('mudar a caixa de lugar e o atraso, na ficha', { timeout: 40_000 }, () 
     // só a posição vazia serve; a caixa ocupada fica apagada, e a própria caixa diz onde está
     expect(celula('F1C: ocupada').disabled).toBe(true)
     expect(celula('F1A: onde a caixa está').disabled).toBe(true)
-    expect(botao('Mover').disabled).toBe(true)
+    expect(botao('Mudar').disabled).toBe(true)
 
     fireEvent.click(celula('F1B: posição vazia, a caixa vai para cá'))
     fireEvent.click(botao('Mudar para F1B'))
