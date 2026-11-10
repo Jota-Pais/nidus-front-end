@@ -163,21 +163,6 @@
   white-space: normal;
 }
 
-.pedidos__compacta {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-/* A data e a situação lado a lado; no celular estreito, a situação desce para baixo da data */
-.pedidos__compactaTopo {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  align-items: flex-start;
-}
-
 /* O resumo do pedido nas janelas da equipe: um cartão com quem pediu em cima e, embaixo, cada
    dado sob o seu rótulo. As quantidades vêm maiores, que são o que se confere primeiro; sem
    largura, o que não cabe desce */
@@ -256,4 +241,169 @@
 
 .pedidos__rodapeFim {
   margin-left: auto;
+}
+
+/* ------------------------------------------------------------------ celular (abaixo de 768 px) */
+
+/* Em cima da lista: o filtro numa linha que rola de lado e, embaixo, quantos e a ordem */
+.pedidos__barra {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 12px;
+}
+
+.secao--rente > .pedidos__barra:first-child {
+  padding-top: 16px;
+}
+
+/* O filtro passa da largura da tela: rola de lado, sem barra, e as opções não quebram linha */
+.pedidos__filtroRolando {
+  margin: 0 -16px;
+  padding: 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pedidos__filtroRolando::-webkit-scrollbar {
+  display: none;
+}
+
+.pedidos__filtro--linha .ant-segmented-group {
+  flex-wrap: nowrap;
+}
+
+.pedidos__filtro--linha .ant-segmented-item {
+  white-space: nowrap;
+}
+
+.pedidos__ordem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pedidos__ordemEscolha {
+  min-width: 200px;
+}
+
+/* O cartão do pedido: inteiro tocável, a situação em cima com a seta ao lado */
+.pedidos__cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.pedidos__cartaoTopo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* A seta do cartão, do tamanho do dedo */
+.pedidos__cartaoTopo .pedidos__seta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px -10px 0;
+  color: var(--cor-suave-frente);
+}
+
+.pedidos__cartaoRodape {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pedidos__cartaoRodape > .pedidos__alerta {
+  color: var(--cor-aviso);
+  font-weight: 600;
+}
+
+/* No pedido aberto do celular: as ações que recusam ou desfazem numa linha, dividindo a largura, e
+   embaixo, sozinha e larga, a que leva o pedido adiante */
+.pedidos__rodape--estreito {
+  flex: 1 1 100%;
+  flex-direction: column;
+  flex-wrap: nowrap;
+}
+
+.pedidos__rodapeSecundario {
+  display: flex;
+  gap: 8px;
+}
+
+.pedidos__rodapeSecundario:empty {
+  display: none;
+}
+
+.pedidos__rodapeSecundario > .ant-btn {
+  flex: 1 1 0;
+}
+
+.pedidos__rodapePrincipal > .ant-btn {
+  width: 100%;
+}
+
+@media (max-width: 767.98px) {
+  /* O formulário de quem pede numa coluna só, cada campo na largura da tela */
+  .pedidos__fileira {
+    flex-direction: column;
+  }
+
+  .pedidos__fileira > * {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  /* A espécie divide a largura entre as duas opções */
+  .pedidos__fileira .ant-segmented {
+    display: flex;
+    width: 100%;
+  }
+
+  .pedidos__fileira .ant-segmented-group {
+    flex: 1;
+  }
+
+  .pedidos__fileira .ant-segmented-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Machos, fêmeas e qualquer sexo lado a lado, em três colunas iguais; o total embaixo */
+  .pedidos__fileira--animais {
+    display: grid;
+    flex-direction: row;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 8px;
+    align-items: end;
+  }
+
+  .pedidos__fileira--animais > * {
+    width: auto;
+  }
+
+  .pedidos__fileira--animais > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  /* O total vem na linha de baixo: o rótulo vazio que o alinhava às caixas não faz falta */
+  .pedidos__fileira--animais > :last-child .ant-form-item-label {
+    display: none;
+  }
+
+  /* O rótulo pode quebrar ("Qualquer sexo" não cabe num terço da tela) */
+  .pedidos__campo--numero label {
+    white-space: normal;
+  }
+
+  .pedidos__acoes > .ant-btn {
+    width: 100%;
+  }
 }

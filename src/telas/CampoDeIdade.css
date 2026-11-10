@@ -31,3 +31,35 @@
   visibility: hidden;
   max-height: 0;
 }
+
+/* No celular: a escolha Faixa|Exata na linha toda, dividindo a largura, e embaixo a mínima e a
+   máxima lado a lado, cada uma com metade */
+@media (max-width: 767.98px) {
+  .campoDeIdade {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+  }
+
+  .campoDeIdade > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .campoDeIdade .ant-segmented {
+    display: flex;
+    width: 100%;
+  }
+
+  .campoDeIdade .ant-segmented-group {
+    flex: 1;
+  }
+
+  .campoDeIdade .ant-segmented-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  .campoDeIdade__dias label {
+    white-space: normal;
+  }
+}

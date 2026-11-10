@@ -80,3 +80,47 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* ------------------------------------------------------------------ celular (abaixo de 768 px) */
+
+/* Os sexos um embaixo do outro, na faixa de idade estreita */
+.visao__celula--empilhada {
+  flex-direction: column;
+  gap: 0;
+}
+
+/* O nome da linhagem no cartão: alvo do tamanho do dedo */
+.cartoes__titulo .visao__linhagem {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -10px 0;
+  font-size: 17px;
+}
+
+/* Os livres de cada faixa de idade, numa linha de quatro colunas */
+.visao__faixas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.visao__faixasDados {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.visao__faixa dt {
+  font-size: 12px;
+  color: var(--cor-suave-frente);
+  white-space: nowrap;
+}
+
+.visao__faixa dd {
+  margin: 0;
+  font-weight: 600;
+}

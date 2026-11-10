@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Estante, Sala } from '@/dominio/tipos'
 import { consulta, mutacao, renderizar } from '@/testes/renderizar'
+import { larguraDaTela } from '@/testes/tela'
 import { Cadastros } from './Cadastros'
 
 const usarEstantes = vi.hoisted(() => vi.fn())
@@ -188,5 +189,36 @@ describe('estantes', { timeout: 60_000 }, () => {
 
     await waitFor(() => expect(removerEstante).toHaveBeenCalledWith({ tipo: 'remover', id: 7 }))
     expect(await screen.findByText('Estante E-01 removida.')).toBeTruthy()
+  })
+})
+
+describe('salas e estantes no celular', { timeout: 60_000 }, () => {
+  it('cada sala e cada estante é um cartão, com as ações em botões', async () => {
+    const voltar = larguraDaTela(390)
+    try {
+      abrirAba()
+
+      expect(document.querySelector('.ant-tabs-tabpane-active table')).toBeNull()
+      const salasNaTela = screen.getByRole('list', { name: 'Salas' })
+      const sala4 = within(salasNaTela).getByText('Sala 4').closest('li')!
+      expect(within(sala4).getByText('0 estantes')).toBeTruthy()
+
+      const estantesNaTela = screen.getByRole('list', { name: 'Estantes' })
+      const e01 = within(estantesNaTela).getByText('E-01').closest('li')!
+      expect(within(e01).getByText('ALESCO Modelo 1')).toBeTruthy()
+      expect(within(e01).getByText('128 caixas (8 x 8 por face)')).toBeTruthy()
+
+      fireEvent.click(within(sala4).getByRole('button', { name: 'Renomear' }))
+      fireEvent.change(await screen.findByLabelText('Nome'), { target: { value: 'Sala B' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+      await waitFor(() =>
+        expect(salvarSala).toHaveBeenCalledWith(
+          { tipo: 'renomear', id: 4, nome: 'Sala B' },
+          expect.anything(),
+        ),
+      )
+    } finally {
+      voltar()
+    }
   })
 })

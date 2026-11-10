@@ -1,0 +1,24 @@
+/* As contas. No celular, o perfil e a conta ativa lado a lado no cartão: o perfil fica com a sobra */
+.usuarios__perfil {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.usuarios__campo {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.usuarios__campo--ativa {
+  flex: none;
+  align-items: flex-start;
+}
+
+/* A chave do tamanho do dedo, na altura do campo do perfil */
+.usuarios__campo--ativa .ant-switch {
+  margin: 12px 0;
+}

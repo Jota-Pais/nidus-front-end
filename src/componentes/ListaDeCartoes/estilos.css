@@ -1,0 +1,83 @@
+/*
+ * A lista de cartões do celular. Cada cartão é um bloco com borda: o topo com o nome, os dados
+ * em duas colunas e as ações embaixo. Dentro de uma seção rente (sem respiro), a lista desenha o
+ * próprio respiro
+ */
+.cartoes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.secao--rente .cartoes {
+  padding: 0 16px 16px;
+}
+
+.cartoes__item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-cartao);
+}
+
+.cartoes__topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cartoes__titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.cartoes__lado {
+  flex: none;
+}
+
+.cartoes__dados {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin: 0;
+}
+
+.cartoes__dado--largo {
+  grid-column: 1 / -1;
+}
+
+.cartoes__dado dt {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--cor-suave-frente);
+}
+
+.cartoes__dado dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* As ações dividem a largura do cartão, cada uma do tamanho do dedo */
+.cartoes__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cartoes__acoes > * {
+  flex: 1 1 0;
+  min-width: 120px;
+}

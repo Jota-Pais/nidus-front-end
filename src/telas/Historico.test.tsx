@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FiltroDoHistorico } from '@/dominio/consultas'
 import type { RegistroDoHistorico } from '@/dominio/tipos'
 import { consulta, renderizar } from '@/testes/renderizar'
+import { larguraDaTela } from '@/testes/tela'
 import { Historico } from './Historico'
 
 const filtros = vi.hoisted(() => [] as unknown[])
@@ -96,5 +97,27 @@ describe('tela Histórico', { timeout: 20_000 }, () => {
       idEntidade: null,
       busca: 'Ana',
     } satisfies FiltroDoHistorico)
+  })
+})
+
+describe('Histórico no celular', { timeout: 20_000 }, () => {
+  it('cada registro é um cartão com o texto inteiro; o da caixa abre a ficha', () => {
+    const voltar = larguraDaTela(390)
+    try {
+      const { container } = renderizar(<Historico />, 'gestor')
+
+      expect(container.querySelector('table')).toBeNull()
+      const lista = screen.getByRole('list', { name: 'Registros do histórico' })
+      const [daCaixa, doPedido] = within(lista).getAllByRole('listitem')
+      expect(within(daCaixa!).getByText('Em 2026-11-08: baixa de 1 M na F1B (morte).')).toBeTruthy()
+      expect(within(daCaixa!).getByText(/· Ana Souza$/)).toBeTruthy()
+      expect(within(doPedido!).getByText('Pedido #3')).toBeTruthy()
+      expect(within(doPedido!).queryByRole('button')).toBeNull()
+
+      fireEvent.click(within(daCaixa!).getByText('Caixa #4'))
+      expect(screen.getByText('ficha da caixa 4')).toBeTruthy()
+    } finally {
+      voltar()
+    }
   })
 })

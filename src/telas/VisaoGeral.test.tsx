@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { LinhagemNaVisaoGeral, VisaoGeral as DadosDaVisao } from '@/dominio/tipos'
 import { consulta, renderizar } from '@/testes/renderizar'
+import { larguraDaTela } from '@/testes/tela'
 import { VisaoGeral } from './VisaoGeral'
 
 const faixas = (...livres: [number, number][]): LinhagemNaVisaoGeral['livresPorIdade'] =>
@@ -99,5 +100,39 @@ describe('Visão geral', { timeout: 20_000 }, () => {
     expect(screen.getByText('Camundongos')).toBeTruthy()
     expect(screen.getByText('Nenhuma linhagem nesta espécie.')).toBeTruthy()
     expect(screen.queryByLabelText('Totais de Camundongos')).toBeNull()
+  })
+})
+
+describe('Visão geral no celular', { timeout: 20_000 }, () => {
+  it('cada linhagem vira um cartão: o nome leva às estantes, os números em duas colunas e os livres por idade em quatro', () => {
+    const voltar = larguraDaTela(390)
+    try {
+      renderizar(<VisaoGeral />)
+
+      // sem as tabelas, que rolariam de lado
+      expect(screen.queryByRole('table')).toBeNull()
+      // o placar continua
+      expect(noPlacar('Ratos', 'Livres')).toBe('♂17♀18')
+
+      const lista = screen.getByRole('list', { name: 'Linhagens de Ratos' })
+      expect(within(lista).getAllByRole('listitem')).toHaveLength(2)
+      const shr = within(lista).getByRole('link', { name: 'SHR' })
+      expect(shr.getAttribute('href')).toBe('/estantes?linhagem=2')
+
+      const cartao = shr.closest('li')!
+      expect(within(cartao).getByText('1 casal')).toBeTruthy()
+      const dado = (rotulo: string) =>
+        within(cartao).getByText(rotulo, { selector: 'dt' }).parentElement!.querySelector('dd')!
+          .textContent
+      expect(dado('Vivos')).toBe('♂ 6♀ 5')
+      expect(dado('Mamando')).toBe('♂ 3♀ 3')
+      expect(dado('Reservados')).toBe('–')
+      expect(dado('Livres')).toBe('♂ 6♀ 5')
+      expect(
+        [...cartao.querySelectorAll('.visao__faixa')].map((faixa) => faixa.textContent),
+      ).toEqual(['até 21 d♂ 3♀ 3', '22–35 d♂ 3♀ 2', '36–60 d–', 'mais de 60 d–'])
+    } finally {
+      voltar()
+    }
   })
 })

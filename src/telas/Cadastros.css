@@ -1,0 +1,40 @@
+/* Os cadastros: projetos, linhagens, salas e estantes */
+
+/* O número do projeto e o da estante são código, e código vai em mono */
+.cadastros__codigo {
+  font-family: var(--fonte-mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cartoes__titulo > .cadastros__codigo {
+  font-weight: 400;
+  color: var(--cor-suave-frente);
+}
+
+.cadastros__lado {
+  color: var(--cor-suave-frente);
+  white-space: nowrap;
+}
+
+/* O nome da linhagem nova: largura fixa no computador; no celular, o que sobra do botão */
+.cadastros__novaLinhagem {
+  width: 200px;
+}
+
+@media (max-width: 767.98px) {
+  .secao__acoes:has(.cadastros__novaLinhagem) {
+    flex: 1 1 100%;
+  }
+
+  .secao__acoes:has(.cadastros__novaLinhagem) > div {
+    flex: 1 1 auto;
+    flex-wrap: nowrap !important;
+  }
+
+  .cadastros__novaLinhagem {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+}

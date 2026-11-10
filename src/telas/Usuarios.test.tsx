@@ -1,7 +1,8 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Usuario } from '@/dominio/tipos'
 import { consulta, renderizar } from '@/testes/renderizar'
+import { larguraDaTela } from '@/testes/tela'
 import { Usuarios } from './Usuarios'
 
 const salvar = vi.hoisted(() => vi.fn())
@@ -106,5 +107,31 @@ describe('nova conta', { timeout: 20_000 }, () => {
 
     expect(await screen.findByLabelText('E-mail')).toBeTruthy()
     expect(screen.queryByLabelText(/senha/i)).toBeNull()
+  })
+})
+
+describe('contas no celular', { timeout: 20_000 }, () => {
+  it('cada conta é um cartão: o perfil largo, a conta ativa ao lado e a redefinição num botão', async () => {
+    const voltar = larguraDaTela(390)
+    try {
+      const { container } = renderizar(<Usuarios />, 'gestor')
+
+      expect(container.querySelector('table')).toBeNull()
+      const cartao = within(screen.getByRole('list', { name: 'Contas' })).getByRole('listitem')
+      expect(within(cartao).getByText('Ana')).toBeTruthy()
+      expect(within(cartao).getByText('ana@ufsc.br')).toBeTruthy()
+      expect(within(cartao).getByText('Definida')).toBeTruthy()
+      expect(within(cartao).getByRole('combobox', { name: 'Perfil de Ana' })).toBeTruthy()
+      expect(
+        within(cartao).getByRole('button', { name: 'Enviar redefinição de senha' }),
+      ).toBeTruthy()
+
+      // desativar continua pedindo confirmação
+      fireEvent.click(within(cartao).getByRole('switch', { name: 'Conta de Ana ativa' }))
+      expect(await screen.findAllByText('Desativar a conta de Ana?')).not.toHaveLength(0)
+      expect(salvar).not.toHaveBeenCalled()
+    } finally {
+      voltar()
+    }
   })
 })

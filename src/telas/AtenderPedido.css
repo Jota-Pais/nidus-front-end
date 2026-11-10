@@ -136,3 +136,24 @@
   display: flex;
   gap: 8px;
 }
+
+/* No celular: Cancelar e Reservar dividem o rodapé; o Recusar fica no fim da janela, longe deles */
+.atender__rodape--estreito {
+  flex: 1 1 100%;
+}
+
+.atender__rodape--estreito > .atender__rodapeFim {
+  flex: 1;
+}
+
+.atender__rodape--estreito > .atender__rodapeFim > .ant-btn {
+  flex: 1 1 0;
+}
+
+.atender__recusar {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--cor-borda);
+}

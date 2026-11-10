@@ -1,5 +1,5 @@
 import { RightOutlined } from '@ant-design/icons'
-import { App, Form, Grid, Input, InputNumber, Segmented, Select, Table } from 'antd'
+import { App, Form, Input, InputNumber, Segmented, Select, Table } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
@@ -13,6 +13,7 @@ import {
   Etiqueta,
   Formulario,
   Janela,
+  ListaDeCartoes,
   Pilha,
   Secao,
   SetasDeOrdem,
@@ -51,6 +52,7 @@ import type { FiltroDePedido } from '@/dominio/pedido'
 import type { CodigoEspecie, DataISO, Pedido, Viabilidade } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
+import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { ErroDeApi } from '@/lib/api'
 import { formatarData, hoje } from '@/lib/data'
 import { AtenderPedido } from './AtenderPedido'
@@ -130,6 +132,8 @@ export function Pedidos() {
     viabilidade: Viabilidade | null
   } | null>(null)
   const [filtro, setFiltro] = useState<FiltroDePedido>('todos')
+  // a ordem da lista do celular, que não tem o cabeçalho de coluna para clicar
+  const [ordem, setOrdem] = useState<OrdemDaLista>(pesquisador ? 'entregaProxima' : 'maisNovo')
 
   const especie = Form.useWatch('especie', form)
   const total = totalDeAnimais({
@@ -138,9 +142,14 @@ export function Pedidos() {
     qualquer: Form.useWatch('qualquer', form),
   })
   // A equipe quer saber quem pediu e o que fazer com o pedido; quem pediu, se aceitaram e
-  // quando chega. Por isso cada um tem as suas colunas
-  const telaLarga = Grid.useBreakpoint().sm === true
-  const colunasDaTabela = pesquisador ? colunasDeQuemPediu(telaLarga) : colunasDaEquipe(telaLarga)
+  // quando chega. Por isso cada um tem as suas colunas, e no celular, o seu cartão
+  const estreita = useTelaEstreita()
+  const colunasDaTabela = pesquisador ? COLUNAS_DE_QUEM_PEDIU : COLUNAS_DA_EQUIPE
+  const doFiltro = (pedidos.data ?? []).filter((p) => entraNoFiltro(filtro, p))
+  const opcoesDoFiltro = FILTROS_DE_PEDIDO.map(({ valor, rotulo }) => ({
+    value: valor,
+    label: `${rotulo} (${(pedidos.data ?? []).filter((p) => entraNoFiltro(valor, p)).length})`,
+  }))
   const doNumero = (id: number | null) =>
     id === null ? null : (pedidos.data?.find((p) => p.id === id) ?? null)
   const pedidoAberto = doNumero(aberto)
@@ -355,53 +364,94 @@ export function Pedidos() {
       )}
 
       <EstadoDaConsulta consulta={pedidos} rotulo="Carregando os pedidos…">
-        <Secao
-          titulo={pesquisador ? 'Meus pedidos' : undefined}
-          semPreenchimento
-          acoes={
-            <Segmented<FiltroDePedido>
-              className="pedidos__filtro"
-              aria-label="Filtrar pedidos"
-              value={filtro}
-              onChange={setFiltro}
-              options={FILTROS_DE_PEDIDO.map(({ valor, rotulo }) => ({
-                value: valor,
-                label: `${rotulo} (${(pedidos.data ?? []).filter((p) => entraNoFiltro(valor, p)).length})`,
-              }))}
+        {estreita ? (
+          // No celular: o filtro numa linha que rola de lado, a ordem num controle à parte (não há
+          // cabeçalho de coluna para tocar) e um cartão por pedido, que se abre inteiro
+          <Secao titulo={pesquisador ? 'Meus pedidos' : undefined} semPreenchimento>
+            <div className="pedidos__barra">
+              <div className="pedidos__filtroRolando">
+                <Segmented<FiltroDePedido>
+                  className="pedidos__filtro pedidos__filtro--linha"
+                  aria-label="Filtrar pedidos"
+                  value={filtro}
+                  onChange={setFiltro}
+                  options={opcoesDoFiltro}
+                />
+              </div>
+              <div className="pedidos__ordem">
+                <Texto tom="secundario">
+                  {doFiltro.length} {doFiltro.length === 1 ? 'pedido' : 'pedidos'}
+                </Texto>
+                <Select<OrdemDaLista>
+                  aria-label="Ordem da lista"
+                  value={ordem}
+                  onChange={setOrdem}
+                  options={ORDENS.map(({ valor, rotulo }) => ({ value: valor, label: rotulo }))}
+                  popupMatchSelectWidth={false}
+                  className="pedidos__ordemEscolha"
+                />
+              </div>
+            </div>
+            <ListaDeCartoes
+              itens={[...doFiltro].sort(ORDEM_DA_LISTA[ordem])}
+              chave={(p) => p.id}
+              rotulo="Pedidos"
+              vazio="Nenhum pedido aqui."
+              renderizar={(p) => (
+                <CartaoDoPedido
+                  pedido={p}
+                  paraQuemPediu={pesquisador}
+                  aoAbrir={() => setAberto(p.id)}
+                />
+              )}
             />
-          }
-        >
-          {/* A ordem é a das setas no cabeçalho da coluna de data. Sem seta acesa, fica a da API,
+          </Secao>
+        ) : (
+          <Secao
+            titulo={pesquisador ? 'Meus pedidos' : undefined}
+            semPreenchimento
+            acoes={
+              <Segmented<FiltroDePedido>
+                className="pedidos__filtro"
+                aria-label="Filtrar pedidos"
+                value={filtro}
+                onChange={setFiltro}
+                options={opcoesDoFiltro}
+              />
+            }
+          >
+            {/* A ordem é a das setas no cabeçalho da coluna de data. Sem seta acesa, fica a da API,
               do pedido mais novo para o mais antigo */}
-          <Table<Pedido>
-            rowKey="id"
-            className="pedidos__lista"
-            tableLayout="fixed"
-            dataSource={(pedidos.data ?? []).filter((p) => entraNoFiltro(filtro, p))}
-            showSorterTooltip={false}
-            pagination={false}
-            locale={{ emptyText: 'Nenhum pedido aqui.' }}
-            columns={[
-              ...colunasDaTabela,
-              {
-                key: 'abrir',
-                width: 56,
-                render: (_, p) => (
-                  <button
-                    type="button"
-                    className="pedidos__seta"
-                    aria-label={pesquisador ? 'Abrir o pedido' : `Abrir o pedido #${p.id}`}
-                    onClick={() => setAberto(p.id)}
-                  >
-                    <RightOutlined />
-                  </button>
-                ),
-              },
-            ]}
-            // a linha inteira abre o pedido; a seta no fim é a mesma coisa pelo teclado
-            onRow={(p) => ({ className: 'pedidos__linha', onClick: () => setAberto(p.id) })}
-          />
-        </Secao>
+            <Table<Pedido>
+              rowKey="id"
+              className="pedidos__lista"
+              tableLayout="fixed"
+              dataSource={doFiltro}
+              showSorterTooltip={false}
+              pagination={false}
+              locale={{ emptyText: 'Nenhum pedido aqui.' }}
+              columns={[
+                ...colunasDaTabela,
+                {
+                  key: 'abrir',
+                  width: 56,
+                  render: (_, p) => (
+                    <button
+                      type="button"
+                      className="pedidos__seta"
+                      aria-label={pesquisador ? 'Abrir o pedido' : `Abrir o pedido #${p.id}`}
+                      onClick={() => setAberto(p.id)}
+                    >
+                      <RightOutlined />
+                    </button>
+                  ),
+                },
+              ]}
+              // a linha inteira abre o pedido; a seta no fim é a mesma coisa pelo teclado
+              onRow={(p) => ({ className: 'pedidos__linha', onClick: () => setAberto(p.id) })}
+            />
+          </Secao>
+        )}
       </EstadoDaConsulta>
       {/* As ações abrem por cima do pedido: canceladas, ele continua aberto embaixo */}
       {pedidoAberto && (
@@ -549,18 +599,9 @@ function Entrega({ pedido: p }: { pedido: Pedido }) {
 
 /**
  * O que foi pedido, na lista: quantos ao todo, a espécie e a linhagem em destaque e, embaixo,
- * quantos de cada sexo, ou só "qualquer sexo". Quem pediu vê a idade junto; a equipe na tela
- * estreita vê ainda o nome de quem pediu
+ * quantos de cada sexo, ou só "qualquer sexo". Quem pediu vê a idade junto
  */
-function OQuePediu({
-  pedido: p,
-  comIdade = false,
-  comNome = false,
-}: {
-  pedido: Pedido
-  comIdade?: boolean
-  comNome?: boolean
-}) {
+function OQuePediu({ pedido: p, comIdade = false }: { pedido: Pedido; comIdade?: boolean }) {
   const sexos = descreverSexos(p)
 
   return (
@@ -569,11 +610,6 @@ function OQuePediu({
       <Texto className="pedidos__sexos">
         {comIdade ? `${sexos} · ${descreverIdade(p)} de idade` : sexos}
       </Texto>
-      {comNome && (
-        <span title={p.pesquisador}>
-          <Texto tom="secundario">{p.pesquisador}</Texto>
-        </span>
-      )}
     </div>
   )
 }
@@ -600,99 +636,138 @@ const PELA_ENTREGA = ordenaPor(compararDataDeEntrega, 'ascend')
 const PELO_PEDIDO = ordenaPor(compararDataDoPedido, 'descend')
 
 /**
- * Para quem pediu: quando chega, se aceitaram e o que pediu. O resto fica no pedido aberto. Na
- * tela estreita a coluna única ordena pela entrega, que é a data no topo de cada pedido
+ * Para quem pediu: quando chega, se aceitaram e o que pediu. O resto fica no pedido aberto. No
+ * celular, o cartão do pedido faz as vezes das colunas
  */
-function colunasDeQuemPediu(telaLarga: boolean): TableColumnsType<Pedido> {
-  if (!telaLarga) {
-    return [
-      {
-        key: 'pedido',
-        title: 'Pedido',
-        ...PELA_ENTREGA,
-        render: (_, p) => (
-          <div className="pedidos__compacta">
-            <div className="pedidos__compactaTopo">
-              <Entrega pedido={p} />
-              <Situacao pedido={p} paraQuemPediu />
-            </div>
-            <OQuePediu pedido={p} comIdade />
-          </div>
-        ),
-      },
-    ]
-  }
-
-  return [
-    {
-      key: 'entrega',
-      title: 'Entrega',
-      width: 140,
-      ...PELA_ENTREGA,
-      render: (_, p) => <Entrega pedido={p} />,
-    },
-    {
-      title: 'Situação',
-      width: 280,
-      render: (_, p) => <Situacao pedido={p} paraQuemPediu />,
-    },
-    {
-      title: 'Pedido',
-      render: (_, p) => <OQuePediu pedido={p} comIdade />,
-    },
-  ]
-}
+const COLUNAS_DE_QUEM_PEDIU: TableColumnsType<Pedido> = [
+  {
+    key: 'entrega',
+    title: 'Entrega',
+    width: 140,
+    ...PELA_ENTREGA,
+    render: (_, p) => <Entrega pedido={p} />,
+  },
+  {
+    title: 'Situação',
+    width: 280,
+    render: (_, p) => <Situacao pedido={p} paraQuemPediu />,
+  },
+  {
+    title: 'Pedido',
+    render: (_, p) => <OQuePediu pedido={p} comIdade />,
+  },
+]
 
 /**
  * Para a equipe: quando pediram, a situação com a entrega embaixo, quem pediu e o quê. O que fazer
- * com o pedido fica nele aberto. Na tela estreita a coluna única ordena pela data do pedido, que é
- * a data no topo de cada um
+ * com o pedido fica nele aberto. No celular, o cartão do pedido faz as vezes das colunas
  */
-function colunasDaEquipe(telaLarga: boolean): TableColumnsType<Pedido> {
-  if (!telaLarga) {
-    return [
-      {
-        key: 'pedido',
-        title: 'Pedido',
-        ...PELO_PEDIDO,
-        render: (_, p) => (
-          <div className="pedidos__compacta">
-            <div className="pedidos__compactaTopo">
-              <span className="pedidos__semQuebra">{formatarData(p.dataPedido)}</span>
-              <Situacao pedido={p} paraQuemPediu={false} naLista />
-            </div>
-            <OQuePediu pedido={p} comNome />
-          </div>
-        ),
-      },
-    ]
-  }
+const COLUNAS_DA_EQUIPE: TableColumnsType<Pedido> = [
+  {
+    key: 'pedidoEm',
+    title: 'Pedido em',
+    // a data inteira e, no cabeçalho, o título com as setas ao lado
+    width: 140,
+    className: 'pedidos__semQuebra',
+    ...PELO_PEDIDO,
+    render: (_, p) => formatarData(p.dataPedido),
+  },
+  {
+    title: 'Situação',
+    width: 280,
+    render: (_, p) => <Situacao pedido={p} paraQuemPediu={false} naLista />,
+  },
+  {
+    title: 'Quem pediu',
+    ellipsis: true,
+    render: (_, p) => p.pesquisador,
+  },
+  {
+    title: 'Pedido',
+    render: (_, p) => <OQuePediu pedido={p} />,
+  },
+]
 
-  return [
-    {
-      key: 'pedidoEm',
-      title: 'Pedido em',
-      // a data inteira e, no cabeçalho, o título com as setas ao lado
-      width: 140,
-      className: 'pedidos__semQuebra',
-      ...PELO_PEDIDO,
-      render: (_, p) => formatarData(p.dataPedido),
-    },
-    {
-      title: 'Situação',
-      width: 280,
-      render: (_, p) => <Situacao pedido={p} paraQuemPediu={false} naLista />,
-    },
-    {
-      title: 'Quem pediu',
-      ellipsis: true,
-      render: (_, p) => p.pesquisador,
-    },
-    {
-      title: 'Pedido',
-      render: (_, p) => <OQuePediu pedido={p} />,
-    },
-  ]
+/** As ordens da lista do celular. A equipe começa pelo pedido mais novo; quem pediu, pela entrega */
+type OrdemDaLista = 'maisNovo' | 'maisAntigo' | 'entregaProxima' | 'entregaDistante'
+
+const ORDENS: { valor: OrdemDaLista; rotulo: string }[] = [
+  { valor: 'maisNovo', rotulo: 'Pedido mais novo' },
+  { valor: 'maisAntigo', rotulo: 'Pedido mais antigo' },
+  { valor: 'entregaProxima', rotulo: 'Entrega mais próxima' },
+  { valor: 'entregaDistante', rotulo: 'Entrega mais distante' },
+]
+
+const ORDEM_DA_LISTA: Record<OrdemDaLista, (a: Pedido, b: Pedido) => number> = {
+  maisNovo: (a, b) => compararDataDoPedido(b, a),
+  maisAntigo: compararDataDoPedido,
+  entregaProxima: compararDataDeEntrega,
+  entregaDistante: (a, b) => compararDataDeEntrega(b, a),
+}
+
+/**
+ * O pedido no celular: a situação em cima, o que pediu em destaque e, embaixo, quando entrega e
+ * quem pediu. O cartão inteiro abre o pedido; a seta é a mesma coisa pelo teclado e pelo leitor
+ * de tela. A equipe vê ainda o que tem de resolver (a reserva em falta, a entrega perto sem
+ * reserva); quem pediu, por que recusaram, quando aceitaram ou até quando sai a resposta
+ */
+function CartaoDoPedido({
+  pedido: p,
+  paraQuemPediu,
+  aoAbrir,
+}: {
+  pedido: Pedido
+  paraQuemPediu: boolean
+  aoAbrir: () => void
+}) {
+  const situacao = SITUACAO_DO_PEDIDO[p.status]
+  const rotulo = (paraQuemPediu && situacao.paraQuemPediu) || situacao.rotulo
+  const alertas = paraQuemPediu
+    ? []
+    : [reservaEmFalta(p), avisoDeEntregaSemReserva(p)].filter((alerta) => alerta !== null)
+  // para quem pediu, o entregue já diz o dia embaixo da situação
+  const entrega = p.dataEntregue
+    ? paraQuemPediu
+      ? null
+      : `Entregue em ${formatarData(p.dataEntregue)}`
+    : `Entrega em ${formatarData(p.dataEntrega)}`
+  const embaixo = paraQuemPediu ? situacaoParaQuemPediu(p) : null
+
+  return (
+    <div className="pedidos__cartao" onClick={aoAbrir}>
+      <div className="pedidos__cartaoTopo">
+        <Etiqueta tom={situacao.tom} grande>
+          {rotulo}
+        </Etiqueta>
+        <button
+          type="button"
+          className="pedidos__seta"
+          aria-label={paraQuemPediu ? 'Abrir o pedido' : `Abrir o pedido #${p.id}`}
+          onClick={(evento) => {
+            evento.stopPropagation()
+            aoAbrir()
+          }}
+        >
+          <RightOutlined />
+        </button>
+      </div>
+      <OQuePediu pedido={p} comIdade={paraQuemPediu} />
+      <div className="pedidos__cartaoRodape">
+        {entrega && <Texto className="pedidos__entrega">{entrega}</Texto>}
+        {!paraQuemPediu && (
+          <Texto tom="secundario">
+            {p.pesquisador} · #{p.id} de {formatarData(p.dataPedido)}
+          </Texto>
+        )}
+        {embaixo && <Texto tom="secundario">{embaixo}</Texto>}
+        {alertas.map((alerta) => (
+          <Texto key={alerta} className="pedidos__alerta">
+            {alerta}
+          </Texto>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 const ROTULO_ESPECIE: Record<CodigoEspecie, string> = { rato: 'Rato', camundongo: 'Camundongo' }
@@ -712,6 +787,16 @@ function PedidoAberto({
   equipe: AcoesDaEquipe
   aoFechar: () => void
 }) {
+  const estreita = useTelaEstreita()
+  // No celular o X do título fecha, e um Fechar no rodapé só repetiria: sem ação, sem rodapé
+  const rodape = paraQuemPediu ? (
+    estreita ? null : (
+      <Botao onClick={aoFechar}>Fechar</Botao>
+    )
+  ) : estreita && !temAcao(p) ? null : (
+    <AcoesDoPedido pedido={p} equipe={equipe} aoFechar={aoFechar} estreita={estreita} />
+  )
+
   return (
     <Janela
       open
@@ -719,13 +804,7 @@ function PedidoAberto({
       // quem pediu não vê o número do pedido: para ele, o pedido é a data
       title={paraQuemPediu ? `Pedido de ${formatarData(p.dataPedido)}` : `Pedido #${p.id}`}
       onCancel={aoFechar}
-      footer={
-        paraQuemPediu ? (
-          <Botao onClick={aoFechar}>Fechar</Botao>
-        ) : (
-          <AcoesDoPedido pedido={p} equipe={equipe} aoFechar={aoFechar} />
-        )
-      }
+      footer={rodape}
     >
       <Pilha>
         <Situacao pedido={p} paraQuemPediu={paraQuemPediu} />
@@ -751,19 +830,29 @@ function PedidoAberto({
   )
 }
 
+/** Se a equipe tem o que fazer com o pedido: o recusado e o entregue só se consultam */
+function temAcao(p: Pedido): boolean {
+  return (
+    p.status === 'enviado' || recebeReserva(p) || p.status === 'reservado' || podeRecusar(p.status)
+  )
+}
+
 /**
  * O que a equipe faz com o pedido em cada situação: a ação que leva o pedido adiante à direita,
  * em destaque, e a que recusa ou desfaz à esquerda, longe dela. Aprovar é aqui mesmo, sem outra
- * janela: o pedido inteiro já está à vista
+ * janela: o pedido inteiro já está à vista. No celular, a ação que leva adiante vai sozinha e
+ * larga no pé da tela, ao alcance do polegar, e as outras numa linha acima dela
  */
 function AcoesDoPedido({
   pedido: p,
   equipe,
   aoFechar,
+  estreita,
 }: {
   pedido: Pedido
   equipe: AcoesDaEquipe
   aoFechar: () => void
+  estreita: boolean
 }) {
   const { message } = App.useApp()
   const aprovar = useAprovarPedido()
@@ -795,21 +884,34 @@ function AcoesDoPedido({
       </Botao>
     ) : null
 
+  const secundarias = (
+    <>
+      {podeRecusar(p.status) && (
+        <Botao variante={estreita ? 'secundario' : 'fantasma'} onClick={() => equipe.aoRecusar(p)}>
+          Recusar
+        </Botao>
+      )}
+      {/* a reserva se desfaz a qualquer momento: os animais voltam a ficar livres */}
+      {p.status === 'reservado' && (
+        <Botao variante={estreita ? 'secundario' : 'fantasma'} onClick={() => equipe.aoDesfazer(p)}>
+          Desfazer reserva
+        </Botao>
+      )}
+    </>
+  )
+
+  if (estreita) {
+    return (
+      <div className="pedidos__rodape pedidos__rodape--estreito">
+        <div className="pedidos__rodapeSecundario">{secundarias}</div>
+        {principal && <div className="pedidos__rodapePrincipal">{principal}</div>}
+      </div>
+    )
+  }
+
   return (
     <div className="pedidos__rodape">
-      <div className="pedidos__rodapeInicio">
-        {podeRecusar(p.status) && (
-          <Botao variante="fantasma" onClick={() => equipe.aoRecusar(p)}>
-            Recusar
-          </Botao>
-        )}
-        {/* a reserva se desfaz a qualquer momento: os animais voltam a ficar livres */}
-        {p.status === 'reservado' && (
-          <Botao variante="fantasma" onClick={() => equipe.aoDesfazer(p)}>
-            Desfazer reserva
-          </Botao>
-        )}
-      </div>
+      <div className="pedidos__rodapeInicio">{secundarias}</div>
       <div className="pedidos__rodapeFim">
         <Botao onClick={aoFechar}>Fechar</Botao>
         {principal}

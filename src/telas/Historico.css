@@ -1,0 +1,36 @@
+/* O histórico: os filtros em cima e a lista dos registros */
+
+/* No celular: onde e o número na primeira linha, a busca inteira embaixo */
+.historico__filtros--estreito {
+  width: 100%;
+}
+
+.historico__filtros--estreito .historico__entidade {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.historico__filtros--estreito .historico__busca {
+  flex: 1 1 100%;
+}
+
+/* A seção põe o título (aqui, os filtros) numa coluna que não estica: no celular ela ocupa a
+   largura toda */
+.secao__identificacao:has(> .secao__titulo > .historico__filtros--estreito) {
+  flex: 1 1 100%;
+  align-items: stretch;
+}
+
+.secao__titulo:has(> .historico__filtros--estreito) {
+  width: 100%;
+}
+
+.historico__mais {
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 16px;
+}
+
+.historico__mais > .ant-btn {
+  width: 100%;
+}

@@ -15,6 +15,7 @@ import {
 import type { ConferenciaDaReserva } from '@/dominio/pedido'
 import type { DataISO, LugarCandidato, Pedido, PorSexo, ResultadoDaBusca } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
+import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { ErroDeApi } from '@/lib/api'
 import { formatarData, hoje } from '@/lib/data'
 import './AtenderPedido.css'
@@ -62,6 +63,7 @@ export function AtenderPedido({
   aoRecusar: () => void
 }) {
   const { message } = App.useApp()
+  const estreita = useTelaEstreita()
   const atendimento = useAtendimento(pedido)
   const alocar = useAlocar()
   // até a primeira mudança, vale a sugestão que chegou da API
@@ -163,10 +165,14 @@ export function AtenderPedido({
       }
       onCancel={aoFechar}
       footer={
-        <div className="atender__rodape">
-          <Botao variante="fantasma" onClick={aoRecusar}>
-            Recusar
-          </Botao>
+        <div className={estreita ? 'atender__rodape atender__rodape--estreito' : 'atender__rodape'}>
+          {/* no celular o Recusar sai do rodapé: lá ele ficaria colado no Cancelar, onde o dedo
+              erra fácil. Vai para o fim da janela, longe das duas */}
+          {!estreita && (
+            <Botao variante="fantasma" onClick={aoRecusar}>
+              Recusar
+            </Botao>
+          )}
           <div className="atender__rodapeFim">
             <Botao onClick={aoFechar}>Cancelar</Botao>
             <Botao
@@ -230,6 +236,13 @@ export function AtenderPedido({
           </div>
         )}
       </EstadoDaConsulta>
+      {estreita && (
+        <div className="atender__recusar">
+          <Botao variante="secundario" onClick={aoRecusar}>
+            Recusar o pedido
+          </Botao>
+        </div>
+      )}
     </Janela>
   )
 }
