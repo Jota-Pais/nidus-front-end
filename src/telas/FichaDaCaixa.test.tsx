@@ -1076,22 +1076,42 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
     expect(within(aba).getByText('1/5')).toBeTruthy()
   })
 
-  it('o acasalamento seguinte aparece nas duas abas sem repetir o id do campo', async () => {
+  it('o parto que ainda não existe diz que o acasalamento abre sozinho, sem formulário', async () => {
     abrirFicha()
     await abaAberta()
 
-    // o 2º parto ainda não existe: as abas Reprodução e Ninhada, montadas juntas, oferecem o acasalamento
+    // o 2º parto ainda não existe: nas abas Reprodução e Ninhada, só o aviso
     fireEvent.click(screen.getByText('2º', { selector: 'button' }))
+    const abre = /O acasalamento do 2º parto abre sozinho, 6 dias depois do nascimento do 1º/
+    expect(within(await abaAberta()).getByText(abre)).toBeTruthy()
     fireEvent.click(aba('Ninhada'))
-    await abaAberta()
-    fireEvent.click(aba('Reprodução'))
-    await abaAberta()
+    expect(within(await abaAberta()).getByText(abre)).toBeTruthy()
 
-    const ids = [...document.querySelectorAll('input[id$="_dtAcasalamento"]')].map(
-      (campo) => campo.id,
-    )
-    expect(ids).toHaveLength(2)
-    expect(new Set(ids).size).toBe(2)
+    expect(document.querySelectorAll('input[id$="_dtAcasalamento"]')).toHaveLength(0)
+    expect(talvezBotao('Registrar acasalamento')).toBeNull()
+  })
+
+  it('o acasalamento que abriu sozinho diz isso na aba Ninhada; o corrigido, não', async () => {
+    const pendente = (dtAcasalamento: string) =>
+      parto({
+        id: 11,
+        ordem: 2,
+        dtAcasalamento,
+        dtPartoReal: null,
+        nascidoM: null,
+        nascidoF: null,
+        vivos: { m: 0, f: 0 },
+        baixasAntesDoDesmame: { m: 0, f: 0 },
+        onde: [],
+      })
+    // 30/09 é o parto do 1º (24/09) mais 6 dias
+    api.ficha = fichaDeCasal({ partos: [desmamado({ onde: [] }), pendente('2026-09-30')] })
+    await abrirNinhada()
+    fireEvent.click(screen.getByText('2º', { selector: 'button' }))
+
+    expect(
+      within(await abaAberta()).getByText(/Aberto sozinho, 6 dias depois do 1º parto\./),
+    ).toBeTruthy()
   })
 
   it('mostra o parto e o desmame previstos do parto escolhido', async () => {
@@ -1114,7 +1134,7 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
 })
 
 describe('encerrar casal', { timeout: 40_000 }, () => {
-  it('encerra com a data e o motivo, do último acasalamento até hoje', async () => {
+  it('encerra com a data e o motivo até hoje; antes do acasalamento pendente também, que se desfaz', async () => {
     // só o relógio: o calendário abre em outubro, no dia de hoje
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-10-30T12:00:00'))
@@ -1148,9 +1168,12 @@ describe('encerrar casal', { timeout: 40_000 }, () => {
       corpo: { dtEncerramento: '2026-10-30', motivo: 'queda de produtividade' },
     })
 
+    // o 2º parto ainda não nasceu: o limite é o acasalamento do 1º (01/09), e a API desfaz o
+    // acasalamento de 20/10 se o encerramento vier antes dele
     fireEvent.click(screen.getByLabelText('Data'))
     await waitFor(() => expect(diaNoCalendario('2026-10-20')).not.toBe('(sem dia)'))
-    expect(diaNoCalendario('2026-10-19')).toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-01')).not.toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-19')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-10-20')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-10-30')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-10-31')).toContain(APAGADO)

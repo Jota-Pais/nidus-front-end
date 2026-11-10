@@ -363,7 +363,13 @@ function AbaReproducao({
       {casal?.ativo ? (
         <EncerrarCasal
           idCasal={casal.id}
-          desde={maisTarde(casal.dtFormacao, ficha.partos.at(-1)?.dtAcasalamento)}
+          // o acasalamento pendente marcado para depois do encerramento é desfeito por ele (é o
+          // que abriu sozinho no nascimento): o limite é o último acasalamento que deu parto
+          desde={maisTarde(
+            casal.dtFormacao,
+            ficha.partos.filter((p) => p.dtPartoReal !== null || p.dtSemNinhada !== null).at(-1)
+              ?.dtAcasalamento,
+          )}
         />
       ) : naoRecebe ? (
         <p className="ficha__vazio">{naoRecebe}</p>
@@ -393,12 +399,7 @@ function AbaReproducao({
           </Campo>
         </LadoALado>
       ) : (
-        <ProximoAcasalamento
-          nome="acasalamento"
-          casal={casalDeAntes ?? casal}
-          partos={partos}
-          ordem={ordem}
-        />
+        <ProximoAcasalamento casal={casalDeAntes ?? casal} partos={partos} ordem={ordem} />
       )}
     </div>
   )
