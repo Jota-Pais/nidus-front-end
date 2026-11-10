@@ -1,6 +1,7 @@
 // A aba Ninhada da ficha do casal: o ciclo de um parto, do acasalamento ao lugar onde os filhotes
 // estão. Cada passo mostra o que a API contou nos animais e o formulário do passo seguinte, e cada
-// registro tem a correção dele, sempre com motivo. Nenhum número é contado aqui: nascidos, baixas,
+// registro tem a correção dele, com motivo. A data do acasalamento é a exceção: ninguém vê o casal
+// acasalar, e ela se edita ali mesmo, sem motivo. Nenhum número é contado aqui: nascidos, baixas,
 // desmamados, vivos, onde estão e reservados vêm prontos da API
 import { App, Form, Input, InputNumber } from 'antd'
 import { useState } from 'react'
@@ -24,6 +25,7 @@ import {
 import { descreverQuantos, descreverReservados } from '@/dominio/pedido'
 import type { Casal, DataISO, FichaDeCasal, OndeEstao, Parto, PorSexo } from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
+import { ErroDeApi } from '@/lib/api'
 import { ateHoje, descreverDias, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
 import { BaixaNaCaixa, CampoDoPedido, MudarAnimais } from './AnimaisDaFicha'
 import type { CaixaDaAcao, GrupoDaCaixa } from './AnimaisDaFicha'
@@ -37,7 +39,7 @@ const porSexo = (porSexo: PorSexo) => `${porSexo.m} M · ${porSexo.f} F`
 
 /**
  * O acasalamento seguinte abre sozinho no nascimento, 6 dias depois do parto: a regra do cliente,
- * que a API aplica (INTERVALO_ACASALAMENTO_DIAS). Ninguém registra; quem souber a data certa corrige
+ * que a API aplica (INTERVALO_ACASALAMENTO_DIAS). Ninguém registra; quem souber a data certa edita
  */
 const INTERVALO_ACASALAMENTO_DIAS = 6
 
@@ -210,56 +212,108 @@ function BotaoCorrigir({ aoAbrir }: { aoAbrir: () => void }) {
 }
 
 /**
- * A correção de uma data do parto, com motivo: o acasalamento (erro de digitação ou nova monta,
- * sem gastar um dos 5 partos) ou o desmame. A contagem do desmame não se corrige aqui: anula-se a
+ * A data do acasalamento, editável ali mesmo: a que o sistema abriu, 6 dias depois do parto
+ * anterior, ou a que alguém pôs. Escolher outro dia grava na hora, sem motivo e sem confirmar, e a
+ * que vale é a última. Se a API recusa (fora da ordem dos fatos), o campo volta à data de antes e
+ * diz por quê. O calendário apaga os dias fora da ordem, como os outros campos da ficha
+ */
+function DataDoAcasalamento({
+  parto,
+  desde,
+  ate,
+}: {
+  parto: Parto
+  desde: (DataISO | null | undefined)[]
+  ate: (DataISO | null | undefined)[]
+}) {
+  const { message } = App.useApp()
+  const editar = useCorrigirAcasalamento()
+  // a data escolhida enquanto grava; a ficha recarrega com ela e o campo monta de novo (key)
+  const [escolhida, setEscolhida] = useState<DataISO | null>(null)
+  const [erro, setErro] = useState<string | null>(null)
+  const id = `acasalamento-${parto.id}`
+
+  function mudar(data: DataISO | undefined) {
+    // apagar o campo não grava nada: a data continua a de antes
+    if (!data || data === (escolhida ?? parto.dtAcasalamento)) return
+
+    setErro(null)
+    setEscolhida(data)
+    editar.mutateAsync({ idParto: parto.id, dtAcasalamento: data }).then(
+      () => void message.success('Registrado.'),
+      (falha: Error) => {
+        setEscolhida(null)
+        setErro(
+          falha instanceof ErroDeApi
+            ? (falha.campos.dtAcasalamento ?? falha.message)
+            : falha.message,
+        )
+      },
+    )
+  }
+
+  return (
+    <Form layout="vertical" component={false}>
+      <Form.Item
+        label="Data do acasalamento"
+        htmlFor={id}
+        validateStatus={erro ? 'error' : ''}
+        help={erro ?? undefined}
+      >
+        <CampoDeData
+          id={id}
+          value={escolhida ?? parto.dtAcasalamento}
+          onChange={mudar}
+          min={maisTarde(...desde)}
+          max={ateHoje(...ate)}
+          disabled={editar.isPending}
+        />
+      </Form.Item>
+    </Form>
+  )
+}
+
+/**
+ * A correção da data do desmame, com motivo. A contagem do desmame não se corrige aqui: anula-se a
  * baixa "não chegou ao desmame" nos Eventos, ou lança-se outra
  */
-function CorrigirData({
+function CorrigirDesmame({
   idParto,
-  evento,
-  rotulo,
   atual,
   desde,
   ate,
 }: {
   idParto: number
-  evento: 'acasalamento' | 'desmame'
-  rotulo: string
   atual: DataISO
   desde: (DataISO | null | undefined)[]
   ate: (DataISO | null | undefined)[]
 }) {
   const { message } = App.useApp()
-  const corrigirDesmame = useCorrigirEvento()
-  const corrigirAcasalamento = useCorrigirAcasalamento()
+  const corrigir = useCorrigirEvento()
   const [aberto, setAberto] = useState(false)
   const [form] = Form.useForm<{ data: DataISO; motivo: string }>()
   const falha = useFalhaDoFormulario(form, ['data', 'motivo'])
-  const nomeNaApi = evento === 'desmame' ? 'dtDesmameReal' : 'dtAcasalamento'
 
   if (!aberto) return <BotaoCorrigir aoAbrir={() => setAberto(true)} />
 
   function salvar({ data, motivo }: { data: DataISO; motivo: string }) {
     falha.limpar()
-    const envio =
-      evento === 'desmame'
-        ? corrigirDesmame.mutateAsync({ idParto, evento, corpo: { dtDesmameReal: data, motivo } })
-        : corrigirAcasalamento.mutateAsync({ idParto, dtAcasalamento: data, motivo })
-
-    envio.then(
-      () => {
-        void message.success('Correção registrada.')
-        setAberto(false)
-      },
-      // a API aponta a data pelo nome dela no corpo
-      (erro: Error) =>
-        falha.mostrarComNomes(erro, (chave) => (chave === nomeNaApi ? 'data' : chave)),
-    )
+    corrigir
+      .mutateAsync({ idParto, evento: 'desmame', corpo: { dtDesmameReal: data, motivo } })
+      .then(
+        () => {
+          void message.success('Correção registrada.')
+          setAberto(false)
+        },
+        // a API aponta a data pelo nome dela no corpo
+        (erro: Error) =>
+          falha.mostrarComNomes(erro, (chave) => (chave === 'dtDesmameReal' ? 'data' : chave)),
+      )
   }
 
   return (
     <Form
-      name={`correcao-${evento}`}
+      name="correcao-desmame"
       form={form}
       layout="vertical"
       initialValues={{ data: atual }}
@@ -267,12 +321,11 @@ function CorrigirData({
       onFinish={salvar}
     >
       {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
-      <CamposDoEvento campos={[{ nome: 'data', rotulo, tipo: 'data', desde, ate }]} />
-      <CampoDoMotivo />
-      <BotoesDaCorrecao
-        salvando={corrigirDesmame.isPending || corrigirAcasalamento.isPending}
-        aoCancelar={() => setAberto(false)}
+      <CamposDoEvento
+        campos={[{ nome: 'data', rotulo: 'Data do desmame', tipo: 'data', desde, ate }]}
       />
+      <CampoDoMotivo />
+      <BotoesDaCorrecao salvando={corrigir.isPending} aoCancelar={() => setAberto(false)} />
     </Form>
   )
 }
@@ -545,15 +598,6 @@ export function ProximoAcasalamento({
   )
 }
 
-/** O acasalamento que o sistema abriu: exatamente 6 dias depois do parto anterior */
-function abertoSozinho(parto: Parto, anterior: Parto | undefined): anterior is Parto {
-  return (
-    anterior !== undefined &&
-    anterior.dtPartoReal !== null &&
-    idadeEmDias(anterior.dtPartoReal, parto.dtAcasalamento) === INTERVALO_ACASALAMENTO_DIAS
-  )
-}
-
 // ------------------------------------------------------------ desmame
 
 /**
@@ -727,22 +771,15 @@ export function AbaNinhada({
   return (
     <div className="ficha__aba">
       <h3>Acasalamento</h3>
-      <Campo rotulo="Data do acasalamento">{formatarData(parto.dtAcasalamento)}</Campo>
-      {abertoSozinho(parto, anterior) && (
-        <p className="ficha__dica">
-          Aberto sozinho, {INTERVALO_ACASALAMENTO_DIAS} dias depois do {anterior.ordem}º parto.
-          Ninguém vê o casal acasalar: a data só prevê o parto. Se souber que foi em outro dia,
-          corrija.
-        </p>
-      )}
-      <CorrigirData
-        idParto={parto.id}
-        evento="acasalamento"
-        rotulo="Data do acasalamento"
-        atual={parto.dtAcasalamento}
-        desde={[casal?.dtFormacao, anterior?.dtPartoReal]}
-        ate={[parto.dtPartoReal, parto.dtSemNinhada, casal?.dtEncerramento]}
-      />
+      <LadoALado>
+        <DataDoAcasalamento
+          // a ficha recarrega com a data gravada: o campo começa de novo com ela
+          key={`${parto.id}-${parto.dtAcasalamento}`}
+          parto={parto}
+          desde={[casal?.dtFormacao, anterior?.dtPartoReal]}
+          ate={[parto.dtPartoReal, parto.dtSemNinhada, casal?.dtEncerramento]}
+        />
+      </LadoALado>
 
       <h3>Parto</h3>
       {nasceu ? (
@@ -846,10 +883,8 @@ export function AbaNinhada({
                 <Campo rotulo="Fêmeas desmamadas">{parto.desmamadoF ?? '—'}</Campo>
               </LadoALado>
               {/* nem antes da última rodada da seleção, nem depois da primeira saída dos animais */}
-              <CorrigirData
+              <CorrigirDesmame
                 idParto={parto.id}
-                evento="desmame"
-                rotulo="Data do desmame"
                 atual={parto.dtDesmameReal ?? hoje()}
                 desde={[parto.dtPartoReal, parto.dtUltimaSelecao]}
                 ate={[parto.dtPrimeiraSaida]}
