@@ -39,7 +39,7 @@ const quantos = (porSexo: PorSexo) => descreverQuantos({ ...porSexo, qualquer: 0
 const porSexo = (porSexo: PorSexo) => `${porSexo.m} M · ${porSexo.f} F`
 
 /**
- * O acasalamento seguinte abre sozinho no nascimento, 6 dias depois do parto: a regra do cliente,
+ * O acasalamento seguinte abre automaticamente no nascimento, 6 dias depois do parto: a regra do cliente,
  * que a API aplica (INTERVALO_ACASALAMENTO_DIAS). Ninguém registra; quem souber a data certa edita
  */
 const INTERVALO_ACASALAMENTO_DIAS = 6
@@ -621,7 +621,7 @@ function FecharSemNinhada({ parto, casal }: { parto: Parto; casal: Casal }) {
 }
 
 /**
- * O parto que ainda não existe. O acasalamento dele não se registra: abre sozinho quando o parto
+ * O parto que ainda não existe. O acasalamento dele não se registra: abre automaticamente quando o parto
  * anterior nasce, 6 dias depois, e daí em diante se corrige na aba Ninhada. Aparece nas abas
  * Reprodução e Ninhada
  */
@@ -650,8 +650,8 @@ export function ProximoAcasalamento({
 
   return (
     <p className="ficha__vazio">
-      O acasalamento do {ordem}º parto abre sozinho, {INTERVALO_ACASALAMENTO_DIAS} dias depois do
-      nascimento do {ordem - 1}º.
+      O acasalamento do {ordem}º parto abre automaticamente, {INTERVALO_ACASALAMENTO_DIAS} dias
+      depois do nascimento do {ordem - 1}º.
     </p>
   )
 }
@@ -696,7 +696,7 @@ function descreverLugar(lugar: OndeEstao, idCaixa: number): string {
     lugar.idCaixa === idCaixa
       ? 'nesta caixa'
       : lugar.tipo === 'casal'
-        ? 'caixa de casal'
+        ? 'caixa do casal'
         : 'estoque'
   const reservados =
     lugar.reservados === 0

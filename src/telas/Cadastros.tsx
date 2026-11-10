@@ -119,7 +119,7 @@ function Projetos() {
             scroll={{ x: true }}
             locale={{ emptyText: 'Nenhum projeto cadastrado.' }}
             columns={[
-              { title: 'Número', dataIndex: 'numero' },
+              { title: 'Protocolo CEUA', dataIndex: 'numero' },
               { title: 'Título', dataIndex: 'titulo' },
               { title: 'Responsável', dataIndex: 'responsavel' },
               { title: 'Vigência', render: (_, p) => vigencia(p) },
@@ -208,7 +208,7 @@ function FormularioDoProjeto({
             : { situacao: 'vigente', cotaAutorizada: 0 }
         }
       >
-        <CampoDoProtocolo name="numero" rotulo="Número" />
+        <CampoDoProtocolo name="numero" rotulo="Protocolo CEUA" />
         <Form.Item
           name="titulo"
           label="Título"
@@ -246,7 +246,7 @@ function FormularioDoProjeto({
           <Form.Item
             name="cotaAutorizada"
             label="Cota autorizada"
-            rules={[{ required: true, message: 'Cota' }]}
+            rules={[{ required: true, message: 'Informe a cota autorizada.' }]}
           >
             <InputNumber min={0} />
           </Form.Item>

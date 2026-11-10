@@ -88,7 +88,7 @@ describe('descreverFalta', () => {
 
   it('diz o que falta em cada pedido, com o de qualquer sexo, e o que a equipe pode fazer', () => {
     expect(descreverFalta([{ idPedido: 3, m: 1, f: 0, qualquer: 1 }])).toBe(
-      'O pedido ficou com menos animais do que o reservado: #3, 1 macho e 1 de qualquer sexo. ' +
+      'O pedido ficou com animais a menos que a reserva (reserva em falta): #3, 1 macho e 1 de qualquer sexo. ' +
         'Em Pedidos, a reserva em falta pode ser completada com outros animais ou desfeita.',
     )
   })

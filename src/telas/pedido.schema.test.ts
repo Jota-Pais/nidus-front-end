@@ -43,11 +43,11 @@ describe('conferirIdadeMaxima', () => {
   })
 
   it('com o mínimo preenchido, pede o máximo', () => {
-    expect(conferirIdadeMaxima(20, null)).toBe('Informe até que idade')
+    expect(conferirIdadeMaxima(20, null)).toBe('Informe a idade máxima')
   })
 
   it('recusa o máximo menor que o mínimo e acima do teto', () => {
-    expect(conferirIdadeMaxima(40, 20)).toBe('Menor que a idade inicial')
+    expect(conferirIdadeMaxima(40, 20)).toBe('Menor que a idade mínima')
     expect(conferirIdadeMaxima(21, 301)).toBe('Máximo de 300 dias')
   })
 

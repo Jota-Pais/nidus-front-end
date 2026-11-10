@@ -133,7 +133,7 @@ export function Usuarios() {
     <Pilha>
       <CabecalhoDaTela
         rotulo="Configurações"
-        titulo="Usuários"
+        titulo="Contas"
         descricao="Quem entra no sistema e com qual perfil. Mudar o perfil ou desativar encerra as sessões abertas da pessoa."
         acoes={
           <Botao variante="primario" onClick={() => setCriando(true)}>

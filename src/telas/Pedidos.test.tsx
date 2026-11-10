@@ -267,7 +267,7 @@ describe('lista de pedidos', { timeout: 40_000 }, () => {
     expect(screen.queryByRole('columnheader', { name: 'Quem pediu' })).toBeNull()
     expect(screen.queryByText('Ana')).toBeNull()
     expect(screen.getByText('Resposta até 15/11/2026')).toBeTruthy()
-    expect(screen.getByText('Aceito em 03/11/2026')).toBeTruthy()
+    expect(screen.getByText('Aprovado em 03/11/2026')).toBeTruthy()
     expect(screen.getAllByText('4 ratos Wistar')).toHaveLength(3)
     expect(screen.getAllByText('2 machos · 2 fêmeas · 28 dias de idade')).toHaveLength(3)
   })
@@ -284,12 +284,12 @@ describe('lista de pedidos', { timeout: 40_000 }, () => {
     renderizar(<Pedidos />, 'tecnico')
 
     expect(screen.getByText('Todos (4)')).toBeTruthy()
-    expect(screen.getByText('Pendentes (1)')).toBeTruthy()
-    expect(screen.getByText('Aceitos (1)')).toBeTruthy()
+    expect(screen.getByText('Aguardando análise (1)')).toBeTruthy()
+    expect(screen.getByText('Aprovados (1)')).toBeTruthy()
     expect(screen.getByText('Entregues (1)')).toBeTruthy()
     expect(screen.getByText('Recusados (1)')).toBeTruthy()
 
-    fireEvent.click(screen.getByText('Pendentes (1)'))
+    fireEvent.click(screen.getByText('Aguardando análise (1)'))
     expect(setas('Abrir o pedido #1')).toHaveLength(1)
     expect(setas('Abrir o pedido #2')).toHaveLength(0)
 
@@ -315,8 +315,8 @@ describe('lista de pedidos', { timeout: 40_000 }, () => {
     extras.lista = [aprovadoSemReserva(5)]
     renderizar(<Pedidos />, 'pesquisador')
 
-    expect(screen.getAllByText('Aceito, em andamento')).toHaveLength(2)
-    expect(screen.getByText('Aceito em 05/11/2026')).toBeTruthy()
+    expect(screen.getAllByText('Aprovado, em andamento')).toHaveLength(2)
+    expect(screen.getByText('Aprovado em 05/11/2026')).toBeTruthy()
     expect(screen.queryByText('Animais reservados')).toBeNull()
     expect(screen.queryByText('Aguardando animais')).toBeNull()
   })
@@ -699,7 +699,7 @@ describe('no celular', { timeout: 40_000 }, () => {
     expect(within(lista).getByText('Entrega em 01/12/2026')).toBeTruthy()
     expect(within(lista).getByText('Ana · #1 de 01/11/2026')).toBeTruthy()
     // o filtro continua, numa linha só, e a lista diz quantos mostra
-    expect(screen.getByText('Pendentes (1)')).toBeTruthy()
+    expect(screen.getByText('Aguardando análise (1)')).toBeTruthy()
     expect(screen.getByText('3 pedidos')).toBeTruthy()
   })
 

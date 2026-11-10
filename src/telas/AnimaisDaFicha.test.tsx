@@ -217,7 +217,7 @@ function abrirPassagem(reservas: GrupoDaCaixa['reservas'] = []) {
   }
 }
 
-describe('mudança de caixa', { timeout: 30_000 }, () => {
+describe('passagem para outra caixa', { timeout: 30_000 }, () => {
   it('para cada sexo é a quantidade e um clique: a posição vazia vira caixa nova', async () => {
     const { machos, femeas, passar } = abrirPassagem()
 
@@ -317,7 +317,7 @@ describe('mudança de caixa', { timeout: 30_000 }, () => {
             dtChegada: null,
           },
         ]}
-        botao="Mudar animais"
+        botao="Passar para outra caixa"
         aoTerminar={() => {}}
       />,
     )
@@ -338,7 +338,7 @@ describe('mudança de caixa', { timeout: 30_000 }, () => {
     expect(screen.queryByLabelText('Quais machos')).toBeNull()
 
     fireEvent.click(celula(/^F1B: posição vazia/))
-    fireEvent.click(botao('Mudar animais'))
+    fireEvent.click(botao('Passar para outra caixa'))
     await waitFor(() => expect(api.mudanca).toHaveBeenCalled(), DEMORA)
     expect(api.mudanca).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -378,7 +378,7 @@ describe('mudança de caixa', { timeout: 30_000 }, () => {
     fingirHoje('2026-10-20')
     abrirPassagem()
 
-    fireEvent.click(screen.getByLabelText('Data da mudança'))
+    fireEvent.click(screen.getByLabelText('Data'))
     await waitFor(() => expect(diaNoCalendario('2026-10-16')).not.toBe('(sem dia)'))
 
     expect(diaNoCalendario('2026-10-15')).toContain(APAGADO)

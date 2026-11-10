@@ -123,9 +123,9 @@ describe('conferirProtocolo', () => {
 
   it('separa o número incompleto da data errada ou futura', () => {
     expect(conferirProtocolo('310624092', HOJE)).toBe('O número do Sistema CEUA tem 10 dígitos')
-    expect(conferirProtocolo('1234310220', HOJE)).toBe('Protocolo no formato incorreto')
-    expect(conferirProtocolo('1234001320', HOJE)).toBe('Protocolo no formato incorreto')
-    expect(conferirProtocolo('1234061126', HOJE)).toBe('Protocolo no formato incorreto')
+    expect(conferirProtocolo('1234310220', HOJE)).toBe('Protocolo CEUA no formato incorreto')
+    expect(conferirProtocolo('1234001320', HOJE)).toBe('Protocolo CEUA no formato incorreto')
+    expect(conferirProtocolo('1234061126', HOJE)).toBe('Protocolo CEUA no formato incorreto')
   })
 
   it('campo em branco pede o protocolo', () => {

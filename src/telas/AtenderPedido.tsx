@@ -192,8 +192,8 @@ export function AtenderPedido({
           <div className="atender">
             {completar && pedido.reservaEmFalta && (
               <Texto>
-                A reserva deste pedido perdeu animais: {descreverQueFalta(pedido.reservaEmFalta)}.
-                Os que continuam reservados ficam; marque de onde completar.
+                A reserva deste pedido está em falta: {descreverQueFalta(pedido.reservaEmFalta)}. Os
+                que continuam reservados ficam; marque de qual caixa completar.
               </Texto>
             )}
             {falha && <Aviso tom="erro" titulo={falha} />}
@@ -439,7 +439,7 @@ function acasalamentosNecessarios(busca: ResultadoDaBusca, hojeEm: DataISO = hoj
 }
 
 /**
- * O que o placar não diz: o que passou do alvo nos lugares marcados, e o que o plantel inteiro não
+ * O que o placar não diz: o que passou do alvo nas caixas marcadas, e o que o plantel inteiro não
  * tem, com os acasalamentos que faltam para isso
  */
 function Avisos({
@@ -463,7 +463,7 @@ function Avisos({
 
   return (
     <>
-      {sobra && <Aviso tom="atencao" titulo={`Há ${sobra} a mais nos lugares marcados.`} />}
+      {sobra && <Aviso tom="atencao" titulo={`Há ${sobra} a mais nas caixas marcadas.`} />}
       {semAnimais && (
         <Aviso
           tom="atencao"

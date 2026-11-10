@@ -17,6 +17,7 @@ const registros: RegistroDoHistorico[] = [
     usuario: 'Ana Souza',
     entidade: 'caixa',
     idEntidade: 4,
+    onde: 'Caixa F1B',
     acao: 'baixa',
     descricao: 'Em 2026-11-08: baixa de 1 M na F1B (morte).',
     dados: { dtFato: '2026-11-08', motivo: 'morte' },
@@ -28,6 +29,7 @@ const registros: RegistroDoHistorico[] = [
     usuario: 'Carlos Mendes',
     entidade: 'pedido',
     idEntidade: 3,
+    onde: null,
     acao: 'aprovacao',
     descricao: 'Pedido #3 aprovado.',
     dados: null,
@@ -59,7 +61,7 @@ describe('tela Histórico', { timeout: 20_000 }, () => {
     const linhas = [...container.querySelectorAll<HTMLElement>('tbody tr.ant-table-row')]
     expect(linhas).toHaveLength(2)
     expect(within(linhas[0]!).getByText('Em 2026-11-08: baixa de 1 M na F1B (morte).')).toBeTruthy()
-    expect(within(linhas[0]!).getByText('Caixa #4')).toBeTruthy()
+    expect(within(linhas[0]!).getByText('Caixa F1B')).toBeTruthy()
     expect(within(linhas[1]!).getByText('Pedido #3')).toBeTruthy()
   })
 
@@ -71,7 +73,7 @@ describe('tela Histórico', { timeout: 20_000 }, () => {
 
     expect(screen.queryByText(/^ficha da caixa/)).toBeNull()
     expect(within(doPedido!).queryByRole('button')).toBeNull()
-    fireEvent.click(within(daCaixa!).getByText('Caixa #4'))
+    fireEvent.click(within(daCaixa!).getByText('Caixa F1B'))
 
     expect(screen.getByText('ficha da caixa 4')).toBeTruthy()
   })
@@ -114,7 +116,7 @@ describe('Histórico no celular', { timeout: 20_000 }, () => {
       expect(within(doPedido!).getByText('Pedido #3')).toBeTruthy()
       expect(within(doPedido!).queryByRole('button')).toBeNull()
 
-      fireEvent.click(within(daCaixa!).getByText('Caixa #4'))
+      fireEvent.click(within(daCaixa!).getByText('Caixa F1B'))
       expect(screen.getByText('ficha da caixa 4')).toBeTruthy()
     } finally {
       voltar()

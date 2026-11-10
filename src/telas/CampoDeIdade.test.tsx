@@ -37,7 +37,7 @@ describe('CampoDeIdade', { timeout: 20_000 }, () => {
     const minimo = screen.getByLabelText('Idade mínima (dias)')
     const maximo = screen.getByLabelText('Idade máxima (dias)')
     await waitFor(() => expect(descricao(minimo)).toBe('Mínimo de 21 dias'), ESPERA)
-    expect(descricao(maximo)).toBe('Informe até que idade')
+    expect(descricao(maximo)).toBe('Informe a idade máxima')
     expect(minimo.getAttribute('aria-invalid')).toBe('true')
     expect(maximo.getAttribute('aria-invalid')).toBe('true')
   })
@@ -49,7 +49,7 @@ describe('CampoDeIdade', { timeout: 20_000 }, () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enviar' }))
 
     const maximo = screen.getByLabelText('Idade máxima (dias)')
-    await waitFor(() => expect(descricao(maximo)).toBe('Menor que a idade inicial'), ESPERA)
+    await waitFor(() => expect(descricao(maximo)).toBe('Menor que a idade mínima'), ESPERA)
     expect(maximo.getAttribute('aria-invalid')).toBe('true')
     expect(screen.getByLabelText('Idade mínima (dias)').getAttribute('aria-invalid')).toBeNull()
   })

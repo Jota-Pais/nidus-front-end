@@ -29,9 +29,9 @@ function dataEHora(iso: string): string {
 /** No celular a lista cresce de tanto em tanto, como as páginas da tabela */
 const POR_VEZ = 50
 
-/** "Caixa #4", "Pedido #3": a entidade da linha e o número dela */
+/** O que a API diz em `onde` ("Caixa F1A", "Pedido #3"); sem ele, a entidade da linha e o número dela */
 const ondeFoi = (r: RegistroDoHistorico) =>
-  `${ROTULO_ENTIDADE[r.entidade] ?? r.entidade} #${r.idEntidade}`
+  r.onde ?? `${ROTULO_ENTIDADE[r.entidade] ?? r.entidade} #${r.idEntidade}`
 
 /**
  * Quem fez cada operação, quando e o que mudou: o histórico das operações junto com a trilha dos
@@ -105,7 +105,7 @@ export function Historico() {
       <CabecalhoDaTela
         rotulo="Configurações"
         titulo="Histórico"
-        descricao="Quem fez cada alteração e cada fato dos animais (nascimento, baixa, mudança, reserva, entrega), quando e o quê. Mostra os 300 registros mais recentes do filtro escolhido."
+        descricao="Quem fez cada registro dos animais e das operações (nascimento, baixa, mudança, reserva, entrega), quando e o quê. Mostra os 300 registros mais recentes do filtro escolhido."
       />
 
       <Secao semPreenchimento titulo={filtros}>
@@ -118,7 +118,7 @@ export function Historico() {
                 itens={registros.slice(0, quantos)}
                 chave={(r) => `${r.fonte}-${r.id}`}
                 rotulo="Registros do histórico"
-                vazio="Nenhuma alteração registrada."
+                vazio="Nenhum registro."
                 renderizar={(r) => (
                   <>
                     <ListaDeCartoes.Topo lado={onde(r)}>
@@ -145,7 +145,7 @@ export function Historico() {
               dataSource={registros}
               pagination={{ pageSize: 50, showSizeChanger: false }}
               scroll={{ x: true }}
-              locale={{ emptyText: 'Nenhuma alteração registrada.' }}
+              locale={{ emptyText: 'Nenhum registro.' }}
               columns={[
                 { title: 'Quando', width: 140, render: (_, r) => dataEHora(r.dataHora) },
                 { title: 'Quem', dataIndex: 'usuario', width: 160 },

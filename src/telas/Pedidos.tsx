@@ -186,7 +186,7 @@ export function Pedidos() {
     criar.mutate(pedido, {
       onSuccess: () => {
         setAConfirmar(null)
-        void message.success('Pedido enviado. A equipe técnica vai analisar.')
+        void message.success('Pedido enviado. A equipe vai analisar.')
         form.resetFields(CAMPOS_DO_PEDIDO)
       },
       onError: (erro) => {
@@ -538,7 +538,7 @@ function situacaoParaQuemPediu(p: Pedido): string | null {
     return p.motivoRecusa ? `Motivo: ${p.motivoRecusa}` : null
   }
   if (p.dataEntregue) return `Entregue em ${formatarData(p.dataEntregue)}`
-  if (p.dataAceite) return `Aceito em ${formatarData(p.dataAceite)}`
+  if (p.dataAceite) return `Aprovado em ${formatarData(p.dataAceite)}`
   if (p.prazoResposta) return `Resposta até ${formatarData(p.prazoResposta)}`
   return null
 }

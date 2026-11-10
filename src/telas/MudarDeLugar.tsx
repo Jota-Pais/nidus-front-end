@@ -53,8 +53,8 @@ export function MudarDeLugar({ caixa }: { caixa: Pick<DadosDaCaixa, 'id' | 'ende
         coluna: destino.coluna,
       },
       {
-        onSuccess: ({ codigo: novo }) => {
-          void message.success(`Caixa ${codigo} movida para ${novo}.`)
+        onSuccess: () => {
+          void message.success(`Caixa mudou de lugar.`)
           fechar()
         },
         onError: (erro) => void message.error(motivoDaFalha(erro)),
@@ -84,7 +84,7 @@ export function MudarDeLugar({ caixa }: { caixa: Pick<DadosDaCaixa, 'id' | 'ende
           loading={mover.isPending}
           onClick={confirmar}
         >
-          {ondeVai ? `Mover para ${ondeVai}` : 'Mover'}
+          {ondeVai ? `Mudar para ${ondeVai}` : 'Mover'}
         </Botao>
         <Botao variante="fantasma" onClick={fechar}>
           Cancelar

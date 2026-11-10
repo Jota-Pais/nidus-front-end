@@ -9,13 +9,13 @@ export interface Confirmacao {
 }
 
 /** Quando a API não diz o motivo, o aviso ainda precisa dizer alguma coisa */
-const NAO_DA = 'O CPMR provavelmente não consegue atender esse pedido.'
+const NAO_DA = 'A equipe provavelmente não consegue atender esse pedido.'
 
 /**
  * O que o modal diz antes de enviar. Quem pede só quer saber se dá ou não dá: quando dá, sem
  * números e sem prometer, porque a conferência é pelo que a colônia tem hoje e quem decide é
- * a equipe técnica; quando não dá, o motivo em vermelho, e o envio continua possível. Sem a
- * conferência (rede, API dormindo), o pedido também não trava: a equipe técnica confere ao
+ * a equipe; quando não dá, o motivo em vermelho, e o envio continua possível. Sem a
+ * conferência (rede, API dormindo), o pedido também não trava: a equipe confere ao
  * analisar
  */
 export function confirmacaoDoPedido(viabilidade: Viabilidade | null): Confirmacao {
@@ -23,7 +23,7 @@ export function confirmacaoDoPedido(viabilidade: Viabilidade | null): Confirmaca
     return {
       tom: 'atencao',
       titulo: 'Não deu para conferir agora se o CPMR consegue atender esse pedido.',
-      detalhe: 'Você pode enviar assim mesmo: a equipe técnica confere ao analisar.',
+      detalhe: 'Você pode enviar assim mesmo: a equipe confere ao analisar.',
       enviar: 'Enviar pedido',
       voltar: 'Voltar',
     }
@@ -33,7 +33,7 @@ export function confirmacaoDoPedido(viabilidade: Viabilidade | null): Confirmaca
     return {
       tom: 'sucesso',
       titulo: 'Esse pedido é possível.',
-      detalhe: 'A equipe do CPMR vai avaliar e, estando tudo certo, segue com o seu pedido.',
+      detalhe: 'A equipe vai analisar e, estando tudo certo, segue com o seu pedido.',
       enviar: 'Enviar pedido',
       voltar: 'Voltar',
     }
@@ -42,7 +42,7 @@ export function confirmacaoDoPedido(viabilidade: Viabilidade | null): Confirmaca
   return {
     tom: 'erro',
     titulo: viabilidade.motivo ?? NAO_DA,
-    detalhe: 'Você ainda pode enviar: a equipe técnica analisa o pedido e responde.',
+    detalhe: 'Você ainda pode enviar: a equipe analisa o pedido e responde.',
     enviar: 'Enviar mesmo assim',
     voltar: 'Voltar e ajustar',
   }

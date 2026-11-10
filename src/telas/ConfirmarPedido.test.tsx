@@ -5,7 +5,7 @@ import { ConfirmarPedido } from './ConfirmarPedido'
 import { confirmacaoDoPedido } from './confirmacaoDoPedido'
 
 const DATA_PROXIMA =
-  'Essa data é muito próxima: o CPMR provavelmente não consegue entregar esses animais a tempo.'
+  'Essa data é muito próxima: a equipe provavelmente não consegue entregar esses animais a tempo.'
 
 describe('confirmacaoDoPedido', () => {
   it('quando dá, diz que é possível, sem números nem promessa, e envia normalmente', () => {
@@ -14,7 +14,7 @@ describe('confirmacaoDoPedido', () => {
     expect(confirmacao).toEqual({
       tom: 'sucesso',
       titulo: 'Esse pedido é possível.',
-      detalhe: 'A equipe do CPMR vai avaliar e, estando tudo certo, segue com o seu pedido.',
+      detalhe: 'A equipe vai analisar e, estando tudo certo, segue com o seu pedido.',
       enviar: 'Enviar pedido',
       voltar: 'Voltar',
     })
@@ -32,7 +32,7 @@ describe('confirmacaoDoPedido', () => {
 
   it('não dá sem motivo ainda diz alguma coisa', () => {
     expect(confirmacaoDoPedido({ viavel: false, motivo: null }).titulo).toBe(
-      'O CPMR provavelmente não consegue atender esse pedido.',
+      'A equipe provavelmente não consegue atender esse pedido.',
     )
   })
 

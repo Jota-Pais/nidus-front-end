@@ -18,7 +18,7 @@ const ITENS_DE_MENU: ItemDeMenu[] = [
 const ITENS_DE_CONFIGURACAO: ItemDeMenu[] = [
   { rotulo: 'Cadastros', caminho: '/cadastros', perfis: ['gestor'] },
   { rotulo: 'Histórico', caminho: '/historico', perfis: ['gestor'] },
-  { rotulo: 'Usuários', caminho: '/usuarios', perfis: ['gestor'] },
+  { rotulo: 'Contas', caminho: '/usuarios', perfis: ['gestor'] },
 ]
 
 export function menuDoPerfil(perfil: Perfil): ItemDeMenu[] {
