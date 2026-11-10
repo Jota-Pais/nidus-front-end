@@ -1,8 +1,16 @@
 /*
  * Grade de estantes. As duas faces lado a lado, reproduzindo a estante real; numa estante
  * de 128 posições a grade rola dentro do próprio container, nunca empurra a página. A cor da
- * caixa é a do estado dela (--estado-<estado>-*)
+ * caixa é a da fase dela (--fase-<fase>-*), e a borda vermelha é o atraso
  */
+
+/* As legendas das fases e dos partos, lado a lado; sem largura, uma desce */
+.estantes__legendas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+}
 
 /* A linhagem que a Visão geral mandou acender, com o botão que volta a mostrar todas */
 .estantes__filtro {
@@ -181,25 +189,52 @@
   z-index: 1;
 }
 
-.posicao--livres {
-  background: var(--estado-livres-fundo);
-  border-color: var(--estado-livres-borda);
+.posicao--acasalado {
+  background: var(--fase-acasalado-fundo);
+  border-color: var(--fase-acasalado-borda);
+}
+
+.posicao--mamando {
+  background: var(--fase-mamando-fundo);
+  border-color: var(--fase-mamando-borda);
+}
+
+.posicao--pronto_estoque {
+  background: var(--fase-pronto-estoque-fundo);
+  border-color: var(--fase-pronto-estoque-borda);
 }
 
 .posicao--estoque {
-  background: var(--estado-estoque-fundo);
-  border-color: var(--estado-estoque-borda);
+  background: var(--fase-estoque-fundo);
+  border-color: var(--fase-estoque-borda);
 }
 
-.posicao--reserva {
-  background: var(--estado-reserva-fundo);
-  border-color: var(--estado-reserva-borda);
+/* O atraso engrossa a borda para dentro, sem mexer no tamanho da caixa: o parto previsto que
+   passou sem nascimento ou os filhotes que passaram da idade de desmamar */
+.posicao--atrasado {
+  border-color: var(--cor-erro);
+  box-shadow: inset 0 0 0 1px var(--cor-erro);
 }
 
-.posicao--enviado {
-  background: var(--estado-enviado-fundo);
-  border-color: var(--estado-enviado-borda);
-  color: var(--estado-enviado-texto);
+.posicao--atrasado:hover {
+  box-shadow:
+    inset 0 0 0 1px var(--cor-erro),
+    var(--sombra-md);
+}
+
+/* A previsão do parto da caixa acasalada. Na tela estreita a célula só cabe a data: o "parto"
+   sai, e o título da célula continua dizendo que ela espera o parto */
+.posicao__previsto {
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  color: var(--fase-acasalado-texto);
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .posicao__previstoRotulo {
+    display: none;
+  }
 }
 
 /* Com uma linhagem acesa, as caixas das outras e as posições vazias ficam apagadas. Continuam

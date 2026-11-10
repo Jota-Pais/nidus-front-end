@@ -5,19 +5,20 @@ import type { DragEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CabecalhoDaTela, Linha, Pilha, Secao, Texto, Vazio } from '@/componentes'
 import {
-  COLUNA,
   corDoParto,
   descreverEstoque,
-  pintaNaGrade,
+  FASE,
+  motivoDoAtraso,
   SIMBOLO_DO_SEXO,
 } from '@/dominio/caixa'
 import { useCatalogo, useEstantes, useGrade, useMudarDePosicao } from '@/dominio/consultas'
 import type { CaixaNaGrade, Estante, EstoqueNoCard, Grade, Posicao } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
-import { descreverDias } from '@/lib/data'
+import { descreverDias, formatarDataCurta } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import type { PosicaoVazia } from './FichaDaCaixa'
+import { LegendaDasFases } from './FaseDaCaixa'
 import { LegendaDosPartos } from './LegendaDosPartos'
 import './Estantes.css'
 
@@ -136,7 +137,10 @@ export function Estantes() {
                   options={salas}
                   size="large"
                 />
-                <LegendaDosPartos />
+                <div className="estantes__legendas">
+                  <LegendaDasFases />
+                  <LegendaDosPartos />
+                </div>
               </Linha>
               {linhagem !== null && (
                 <FiltroDaLinhagem
@@ -335,11 +339,13 @@ function Celula({
     )
   }
 
-  const coluna = pintaNaGrade(caixa.estado, caixa.casal !== null) ? caixa.estado : null
+  const { fase } = caixa
+  const atraso = motivoDoAtraso(caixa)
   const erguida = arraste.pega?.caixa.id === caixa.id
   const classes = [
     'posicao',
-    coluna ? `posicao--${coluna}` : '',
+    fase ? `posicao--${fase}` : '',
+    caixa.atrasado ? 'posicao--atrasado' : '',
     erguida ? 'posicao--erguida' : '',
     chegando ? 'posicao--movendo' : '',
     acesa !== null && caixa.idLinhagem !== acesa ? 'posicao--apagada' : '',
@@ -355,10 +361,10 @@ function Celula({
       title={`${posicao.codigo}: ${
         caixa.estoque
           ? `caixa de estoque, ${descreverEstoque(caixa.estoque)}${idadesDoEstoque(caixa.estoque)}`
-          : coluna
-            ? COLUNA[coluna].legenda
-            : 'sem casal'
-      } - clique para abrir a ficha, arraste para mudar de lugar`}
+          : fase
+            ? FASE[fase].legenda
+            : 'sem ciclo aberto'
+      }${atraso ? `. ${atraso}` : ''} - clique para abrir a ficha, arraste para mudar de lugar`}
       draggable={movimento === null}
       onDragStart={(evento) => {
         evento.dataTransfer.setData('text/plain', String(caixa.id))
@@ -392,6 +398,12 @@ function Celula({
       </span>
       {caixa.linhagem && <span className="posicao__linhagem">{caixa.linhagem}</span>}
       {caixa.casal && <span className="posicao__casal">{caixa.casal.identificacao}</span>}
+      {fase === 'acasalado' && caixa.casal?.partoPrevisto && (
+        <span className="posicao__previsto">
+          <span className="posicao__previstoRotulo">parto </span>
+          {formatarDataCurta(caixa.casal.partoPrevisto)}
+        </span>
+      )}
       {caixa.casal && caixa.casal.reservado > 0 && (
         <span className="posicao__casal">{caixa.casal.reservado} res.</span>
       )}

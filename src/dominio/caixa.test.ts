@@ -5,9 +5,10 @@ import {
   descreverFalta,
   descreverLiberacao,
   destinoDoLugar,
-  pintaNaGrade,
+  motivoDoAtraso,
   reservadosDoSexo,
 } from './caixa'
+import type { CasalNoCard } from './tipos'
 
 describe('descreverEstoque', () => {
   it('diz quantos animais e quantos reservados', () => {
@@ -37,15 +38,46 @@ describe('reservadosDoSexo', () => {
   })
 })
 
-describe('pintaNaGrade', () => {
-  it('pinta a caixa com casal e a de estoque; a de casal sem casal fica neutra', () => {
-    expect(pintaNaGrade('livres', true)).toBe(true)
-    expect(pintaNaGrade('livres', false)).toBe(false)
-    expect(pintaNaGrade('reserva', false)).toBe(true)
+describe('motivoDoAtraso', () => {
+  const hojeEm = '2026-11-10'
+  const casal = (parcial: Partial<CasalNoCard>): CasalNoCard => ({
+    identificacao: 'AB',
+    partoAtual: 2,
+    partoPrevisto: null,
+    encerrado: false,
+    aguardandoDesmame: false,
+    ninhadas: [],
+    reservado: 0,
+    ...parcial,
+  })
+  const mamando = (idadeDias: number) => ({
+    casal: 'AB',
+    parto: 1,
+    m: 3,
+    f: 2,
+    idadeDias,
+    mamando: true,
   })
 
-  it('a caixa sem estado não ganha cor', () => {
-    expect(pintaNaGrade(null, true)).toBe(false)
+  it('sem atraso, nada a dizer', () => {
+    expect(motivoDoAtraso({ atrasado: false, casal: casal({}) }, hojeEm)).toBeNull()
+  })
+
+  it('diz o parto que passou da data e os filhotes que passaram da idade de desmamar', () => {
+    expect(
+      motivoDoAtraso({ atrasado: true, casal: casal({ partoPrevisto: '2026-11-08' }) }, hojeEm),
+    ).toBe('Atrasado: o parto previsto para 08/11 não foi registrado')
+    expect(
+      motivoDoAtraso({ atrasado: true, casal: casal({ ninhadas: [mamando(23)] }) }, hojeEm),
+    ).toBe('Atrasado: filhotes com mais de 22 dias sem desmame')
+    expect(
+      motivoDoAtraso(
+        { atrasado: true, casal: casal({ partoPrevisto: '2026-11-01', ninhadas: [mamando(30)] }) },
+        hojeEm,
+      ),
+    ).toBe(
+      'Atrasado: o parto previsto para 01/11 não foi registrado e filhotes com mais de 22 dias sem desmame',
+    )
   })
 })
 

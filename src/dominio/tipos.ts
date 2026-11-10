@@ -18,10 +18,11 @@ export interface PorSexo {
 export type Face = 'frontal' | 'traseira'
 
 /**
- * O estado da caixa, calculado do que ela tem: nada é gravado. É a cor dela na grade. A caixa de
- * casal fica em Livres; a de estoque, em Reserva quando todos os vivos dela estão reservados
+ * A fase da caixa, calculada do que ela tem: nada é gravado. É a cor dela na grade e na ficha. A de
+ * casal fica pronta para o estoque se ainda tem desmamados; senão, mamando se tem filhotes; senão,
+ * acasalada se tem parto pendente. A de estoque fica em estoque
  */
-export type EstadoCaixa = 'livres' | 'estoque' | 'reserva' | 'enviado'
+export type FaseDaCaixa = 'acasalado' | 'mamando' | 'pronto_estoque' | 'estoque'
 
 export type TipoDeCaixa = 'casal' | 'estoque'
 
@@ -125,8 +126,10 @@ export interface Estante {
 /** Na grade só aparece caixa ativa */
 export interface CaixaNaGrade {
   id: number
-  /** a cor da caixa; null na caixa sem casal nem estoque */
-  estado: EstadoCaixa | null
+  /** a cor da caixa; null na caixa de casal sem ciclo aberto e sem animais */
+  fase: FaseDaCaixa | null
+  /** o parto previsto passou sem nascimento, ou filhotes passaram da idade de desmamar */
+  atrasado: boolean
   /** a linhagem do casal ou da caixa de estoque: o filtro da Visão geral apaga as outras */
   idLinhagem: number | null
   linhagem: string | null
@@ -152,8 +155,9 @@ export interface DadosDaCaixa {
   id: number
   endereco: { numeroVisivel: string; sala: string; codigo: string }
   especie: CodigoEspecie
-  /** a cor da caixa na grade; null na caixa liberada, que já saiu dela */
-  estado: EstadoCaixa | null
+  /** a fase da caixa, como na grade; null na caixa liberada, que já saiu dela */
+  fase: FaseDaCaixa | null
+  atrasado: boolean
   ativa: boolean
   dtLiberacao: DataISO | null
   motivoLiberacao: MotivoDaLiberacao | null

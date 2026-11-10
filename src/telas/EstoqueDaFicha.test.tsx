@@ -122,7 +122,8 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
           caixa: {
             ...liberada.caixa,
             ativa: false,
-            estado: 'enviado',
+            fase: null,
+            atrasado: false,
             dtLiberacao: '2026-11-08',
             motivoLiberacao: 'entrega',
           },
@@ -364,7 +365,8 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
           caixa: {
             ...liberada.caixa,
             ativa: false,
-            estado: null,
+            fase: null,
+            atrasado: false,
             dtLiberacao: '2026-10-20',
             motivoLiberacao: 'baixa',
           },

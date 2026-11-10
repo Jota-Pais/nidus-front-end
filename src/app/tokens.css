@@ -104,23 +104,23 @@
   --movimento-rapido: 200ms;
   --movimento-normal: 300ms;
 
-  /* Superfície por estado da caixa, na grade de estantes. Só a Reserva tem cor
-     própria; as outras repetem um tom que já diz a mesma coisa */
-  --estado-livres-fundo: var(--superficie-sucesso-fundo);
-  --estado-livres-borda: var(--superficie-sucesso-borda);
-  --estado-livres-texto: var(--cor-sucesso);
+  /* Superfície por fase da caixa, na grade de estantes e na ficha. Nenhuma no tom
+     de uma bolinha de parto; pronto para o estoque repete o sucesso e o estoque, a ação */
+  --fase-acasalado-fundo: #F1EDFB;
+  --fase-acasalado-borda: #D5C8F2;
+  --fase-acasalado-texto: #5B3E9E;
 
-  --estado-estoque-fundo: var(--cor-acao-fundo);
-  --estado-estoque-borda: var(--cor-acao-borda);
-  --estado-estoque-texto: var(--cor-acao);
+  --fase-mamando-fundo: #FFEEE0;
+  --fase-mamando-borda: #F7CBA4;
+  --fase-mamando-texto: #8A4300;
 
-  --estado-reserva-fundo: #FFEEE0;
-  --estado-reserva-borda: #F7CBA4;
-  --estado-reserva-texto: #8A4300;
+  --fase-pronto-estoque-fundo: var(--superficie-sucesso-fundo);
+  --fase-pronto-estoque-borda: var(--superficie-sucesso-borda);
+  --fase-pronto-estoque-texto: var(--cor-sucesso);
 
-  --estado-enviado-fundo: var(--cor-suave);
-  --estado-enviado-borda: var(--cor-borda);
-  --estado-enviado-texto: var(--cor-suave-frente);
+  --fase-estoque-fundo: var(--cor-acao-fundo);
+  --fase-estoque-borda: var(--cor-acao-borda);
+  --fase-estoque-texto: var(--cor-acao);
 }
 
 /* ------------------------------------------------------------------------ *
