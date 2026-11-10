@@ -39,22 +39,28 @@ const SITUACOES: { value: SituacaoDoProjeto; label: string }[] = [
   { value: 'suspenso', label: 'Suspenso' },
 ]
 
-/** Projetos CEUA, linhagens, salas e estantes: o que antes só entrava pela carga inicial */
+/**
+ * Os projetos CEUA ficam ocultos por enquanto: o pedido vale pelo protocolo digitado e nada no
+ * sistema lê o cadastro de projetos (nem vigência nem cota). A aba volta quando houver uso
+ */
+const MOSTRAR_PROJETOS = false
+
+/** Linhagens, salas e estantes: o que antes só entrava pela carga inicial */
 export function Cadastros() {
+  const abas = [
+    { key: 'projetos', label: 'Projetos CEUA', children: <Projetos /> },
+    { key: 'linhagens', label: 'Linhagens', children: <Linhagens /> },
+    { key: 'salas', label: 'Salas e estantes', children: <SalasEEstantes /> },
+  ].filter((aba) => MOSTRAR_PROJETOS || aba.key !== 'projetos')
+
   return (
     <Pilha>
       <CabecalhoDaTela
         rotulo="Configurações"
         titulo="Cadastros"
-        descricao="Projetos CEUA, linhagens, salas e estantes. Nada é apagado: projeto encerrado vira vencido ou suspenso, linhagem fora de uso fica inativa, e sala ou estante removida sai das listas, mas fica no histórico."
+        descricao="Linhagens, salas e estantes. Nada é apagado: linhagem fora de uso fica inativa, e sala ou estante removida sai das listas, mas fica no histórico."
       />
-      <Tabs
-        items={[
-          { key: 'projetos', label: 'Projetos CEUA', children: <Projetos /> },
-          { key: 'linhagens', label: 'Linhagens', children: <Linhagens /> },
-          { key: 'salas', label: 'Salas e estantes', children: <SalasEEstantes /> },
-        ]}
-      />
+      <Tabs items={abas} />
     </Pilha>
   )
 }
