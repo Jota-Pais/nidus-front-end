@@ -36,6 +36,12 @@ const quantos = (porSexo: PorSexo) => descreverQuantos({ ...porSexo, qualquer: 0
 const porSexo = (porSexo: PorSexo) => `${porSexo.m} M · ${porSexo.f} F`
 
 /**
+ * O acasalamento seguinte abre sozinho no nascimento, 6 dias depois do parto: a regra do cliente,
+ * que a API aplica (INTERVALO_ACASALAMENTO_DIAS). Ninguém registra; quem souber a data certa corrige
+ */
+const INTERVALO_ACASALAMENTO_DIAS = 6
+
+/**
  * Os pedidos com reservados do parto: as opções quando a API pede de qual pedido saem os animais
  * da seleção, do desmame ou da correção, que tiram do parto todo
  */
@@ -86,8 +92,8 @@ function CamposDoEvento({ campos }: { campos: CampoDoEvento[] }) {
 }
 
 /**
- * Formulário de um registro do parto ou do casal: acasalamento, nascimento, eutanásia de seleção
- * ou desmame. Quando o registro tira animais reservados e há mais de um pedido, a API pede de qual
+ * Formulário de um registro do parto: nascimento, eutanásia de seleção ou desmame. Quando o
+ * registro tira animais reservados e há mais de um pedido, a API pede de qual
  * deles, e o campo aparece com os pedidos do parto. A seleção se repete: depois de registrar, o
  * formulário volta ao começo, sem o pedido da rodada anterior
  */
@@ -504,55 +510,47 @@ function FecharSemNinhada({ parto, casal }: { parto: Parto; casal: Casal }) {
 }
 
 /**
- * O acasalamento seguinte do casal, que abre o parto que ainda não existe. Aparece nas abas
- * Reprodução e Ninhada, que ficam montadas juntas: cada uma dá o nome do seu formulário, e os
- * campos das duas não dividem o id
+ * O parto que ainda não existe. O acasalamento dele não se registra: abre sozinho quando o parto
+ * anterior nasce, 6 dias depois, e daí em diante se corrige na aba Ninhada. Aparece nas abas
+ * Reprodução e Ninhada
  */
 export function ProximoAcasalamento({
-  nome,
   casal,
   partos,
   ordem,
 }: {
-  nome: string
   casal: Casal | null
   partos: Parto[]
   ordem: number
 }) {
-  const ultimo = partos.at(-1)
-  const seguinte = (ultimo?.ordem ?? 0) + 1
+  const seguinte = (partos.at(-1)?.ordem ?? 0) + 1
 
   if (!casal?.ativo) {
     return <p className="ficha__vazio">O {ordem}º parto não aconteceu: o casal está encerrado.</p>
   }
 
-  if (ultimo && ultimo.dtPartoReal === null) {
+  if (ordem !== seguinte) {
     return (
       <p className="ficha__vazio">
-        Registre o {ultimo.ordem}º parto antes do acasalamento seguinte.
+        O {ordem}º parto vem depois do {seguinte}º.
       </p>
     )
   }
 
-  if (ordem !== seguinte) {
-    return <p className="ficha__vazio">Registre antes o acasalamento do {seguinte}º parto.</p>
-  }
-
   return (
-    <RegistrarEvento
-      nome={nome}
-      caminho={`/api/casais/${casal.id}/acasalamento`}
-      campos={[
-        {
-          nome: 'dtAcasalamento',
-          rotulo: 'Data do acasalamento',
-          tipo: 'data',
-          desde: [casal.dtFormacao, ultimo?.dtPartoReal],
-        },
-      ]}
-      inicial={{ dtAcasalamento: hoje() }}
-      botao="Registrar acasalamento"
-    />
+    <p className="ficha__vazio">
+      O acasalamento do {ordem}º parto abre sozinho, {INTERVALO_ACASALAMENTO_DIAS} dias depois do
+      nascimento do {ordem - 1}º.
+    </p>
+  )
+}
+
+/** O acasalamento que o sistema abriu: exatamente 6 dias depois do parto anterior */
+function abertoSozinho(parto: Parto, anterior: Parto | undefined): anterior is Parto {
+  return (
+    anterior !== undefined &&
+    anterior.dtPartoReal !== null &&
+    idadeEmDias(anterior.dtPartoReal, parto.dtAcasalamento) === INTERVALO_ACASALAMENTO_DIAS
   )
 }
 
@@ -706,12 +704,7 @@ export function AbaNinhada({
   if (!parto) {
     return (
       <div className="ficha__aba">
-        <ProximoAcasalamento
-          nome="acasalamento-ninhada"
-          casal={casal}
-          partos={partos}
-          ordem={ordem}
-        />
+        <ProximoAcasalamento casal={casal} partos={partos} ordem={ordem} />
       </div>
     )
   }
@@ -735,6 +728,13 @@ export function AbaNinhada({
     <div className="ficha__aba">
       <h3>Acasalamento</h3>
       <Campo rotulo="Data do acasalamento">{formatarData(parto.dtAcasalamento)}</Campo>
+      {abertoSozinho(parto, anterior) && (
+        <p className="ficha__dica">
+          Aberto sozinho, {INTERVALO_ACASALAMENTO_DIAS} dias depois do {anterior.ordem}º parto.
+          Ninguém vê o casal acasalar: a data só prevê o parto. Se souber que foi em outro dia,
+          corrija.
+        </p>
+      )}
       <CorrigirData
         idParto={parto.id}
         evento="acasalamento"
