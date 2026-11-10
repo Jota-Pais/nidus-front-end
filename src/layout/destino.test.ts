@@ -40,12 +40,12 @@ describe('destinoAposLogin', () => {
 
   it('sem destino guardado, cai na home do perfil', () => {
     expect(destinoAposLogin(null, 'tecnico')).toBe('/visao-geral')
-    expect(destinoAposLogin(undefined, 'pesquisador')).toBe('/solicitar')
+    expect(destinoAposLogin(undefined, 'pesquisador')).toBe('/pedidos')
     expect(destinoAposLogin({}, 'gestor')).toBe('/visao-geral')
   })
 
   it('destino externo é descartado em favor da home do perfil', () => {
     expect(destinoAposLogin({ de: 'https://exemplo.com' }, 'tecnico')).toBe('/visao-geral')
-    expect(destinoAposLogin({ de: '//exemplo.com' }, 'pesquisador')).toBe('/solicitar')
+    expect(destinoAposLogin({ de: '//exemplo.com' }, 'pesquisador')).toBe('/pedidos')
   })
 })

@@ -86,7 +86,7 @@ function Especie({ especie }: { especie: EspecieNaVisaoGeral }) {
   return (
     <Secao titulo={titulo}>
       <dl className="visao__placar" aria-label={`Totais de ${titulo}`}>
-        <Dado rotulo="Vivos" nota={`${mamando} mamando`}>
+        <Dado rotulo="Vivos" nota={`${mamando} em aleitamento`}>
           <Sexos {...total.vivos} />
         </Dado>
         <Dado rotulo="Reservados">
@@ -127,7 +127,7 @@ function Especie({ especie }: { especie: EspecieNaVisaoGeral }) {
               },
               { title: 'Casais', render: (_, l) => (l.casais === 0 ? '–' : l.casais) },
               { title: 'Vivos', render: (_, l) => <Pouco {...l.vivos} /> },
-              { title: 'Mamando', render: (_, l) => <Pouco {...l.mamando} /> },
+              { title: 'Em aleitamento', render: (_, l) => <Pouco {...l.mamando} /> },
               { title: 'Reservados', render: (_, l) => <Pouco {...l.reservados} /> },
               { title: 'Livres', render: (_, l) => <Pouco {...l.livres} forte /> },
             ]}
@@ -183,7 +183,7 @@ function CartaoDaLinhagem({ linhagem: l }: { linhagem: LinhagemNaVisaoGeral }) {
         <ListaDeCartoes.Dado rotulo="Vivos">
           <Pouco {...l.vivos} />
         </ListaDeCartoes.Dado>
-        <ListaDeCartoes.Dado rotulo="Mamando">
+        <ListaDeCartoes.Dado rotulo="Em aleitamento">
           <Pouco {...l.mamando} />
         </ListaDeCartoes.Dado>
         <ListaDeCartoes.Dado rotulo="Reservados">

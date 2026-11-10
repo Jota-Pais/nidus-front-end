@@ -60,7 +60,8 @@ export const rotas = createBrowserRouter([
         ),
       },
       // o caminho fica: os e-mails da API mandam quem pediu para cá
-      { path: 'solicitar', element: <Pedidos /> },
+      { path: 'pedidos', element: <Pedidos /> },
+      { path: 'solicitar', element: <Navigate to="/pedidos" replace /> },
       {
         path: 'historico',
         element: (

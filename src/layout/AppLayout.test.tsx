@@ -40,7 +40,7 @@ describe('telas no celular', () => {
       'page',
     )
     expect(within(barra).getByRole('link', { name: 'Pedidos' }).getAttribute('href')).toBe(
-      '/solicitar',
+      '/pedidos',
     )
 
     expect(screen.queryByRole('button', { name: 'Abrir o menu' })).toBeNull()
@@ -50,7 +50,7 @@ describe('telas no celular', () => {
 
   it('quem tem uma tela só não tem barra', () => {
     const voltar = larguraDaTela(390)
-    abrirCasca('pesquisador', { caminho: '/solicitar' })
+    abrirCasca('pesquisador', { caminho: '/pedidos' })
 
     expect(screen.queryByRole('navigation', { name: 'Telas' })).toBeNull()
     voltar()

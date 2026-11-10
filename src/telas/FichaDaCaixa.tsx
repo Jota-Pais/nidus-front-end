@@ -330,7 +330,7 @@ function porQueNaoRecebeCasal(ficha: FichaDeCasal): string | null {
   if (comAnimais.length === 0) return null
 
   return comAnimais.some((parto) => parto.dtDesmameReal === null)
-    ? 'A ninhada ainda mama nesta caixa. Casal novo entra depois do desmame, com os desmamados no estoque.'
+    ? 'A ninhada ainda está em aleitamento nesta caixa. Casal novo entra depois do desmame, com os desmamados no estoque.'
     : 'A caixa ainda tem desmamados. Casal novo entra depois que eles forem para o estoque, na aba Ninhada.'
 }
 
