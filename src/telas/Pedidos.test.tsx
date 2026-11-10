@@ -198,7 +198,7 @@ describe('lista de pedidos', { timeout: 40_000 }, () => {
   it('o pesquisador vê o formulário de pedido', () => {
     renderizar(<Pedidos />, 'pesquisador')
 
-    expect(titulo('Solicitar animais')).toBeTruthy()
+    expect(titulo('Pedir animais')).toBeTruthy()
     expect(botao('Enviar pedido')).toBeTruthy()
   })
 

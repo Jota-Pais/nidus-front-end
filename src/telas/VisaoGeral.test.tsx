@@ -57,7 +57,7 @@ describe('Visão geral', { timeout: 20_000 }, () => {
   it('soma as linhagens no placar da espécie', () => {
     renderizar(<VisaoGeral />)
 
-    expect(noPlacar('Ratos', 'Vivos')).toBe('♂21♀2111 mamando')
+    expect(noPlacar('Ratos', 'Vivos')).toBe('♂21♀2111 em aleitamento')
     expect(noPlacar('Ratos', 'Reservados')).toBe('♂4♀3')
     expect(noPlacar('Ratos', 'Livres')).toBe('♂17♀18')
     expect(noPlacar('Ratos', 'Casais')).toBe('3 ativos')
@@ -125,7 +125,7 @@ describe('Visão geral no celular', { timeout: 20_000 }, () => {
         within(cartao).getByText(rotulo, { selector: 'dt' }).parentElement!.querySelector('dd')!
           .textContent
       expect(dado('Vivos')).toBe('♂ 6♀ 5')
-      expect(dado('Mamando')).toBe('♂ 3♀ 3')
+      expect(dado('Em aleitamento')).toBe('♂ 3♀ 3')
       expect(dado('Reservados')).toBe('–')
       expect(dado('Livres')).toBe('♂ 6♀ 5')
       expect(

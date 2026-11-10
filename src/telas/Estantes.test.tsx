@@ -338,7 +338,13 @@ describe('caixa de casal na grade', { timeout: 20_000 }, () => {
   it('a legenda diz o que cada cor de fundo é, e que a borda vermelha é o atraso', () => {
     renderizar(<Estantes />, 'tecnico')
 
-    for (const rotulo of ['Acasalado', 'Mamando', 'Pronto para o estoque', 'Estoque', 'Atrasado']) {
+    for (const rotulo of [
+      'Acasalado',
+      'Em aleitamento',
+      'Pronto para o estoque',
+      'Estoque',
+      'Atrasado',
+    ]) {
       expect(screen.getByText(rotulo)).toBeTruthy()
     }
   })

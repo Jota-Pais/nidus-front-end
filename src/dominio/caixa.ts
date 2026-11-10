@@ -30,7 +30,7 @@ interface DadosDaFase {
 /** As fases na ordem do ciclo da caixa de casal, e a da caixa de estoque por último */
 export const FASES: readonly DadosDaFase[] = [
   { fase: 'acasalado', rotulo: 'Acasalado', legenda: 'casal acasalado, esperando o parto' },
-  { fase: 'mamando', rotulo: 'Mamando', legenda: 'filhotes mamando' },
+  { fase: 'mamando', rotulo: 'Em aleitamento', legenda: 'filhotes em aleitamento' },
   {
     fase: 'pronto_estoque',
     rotulo: 'Pronto para o estoque',

@@ -198,7 +198,7 @@ export function Pedidos() {
 
   return (
     <Pilha>
-      <CabecalhoDaTela titulo={pesquisador ? 'Solicitar animais' : 'Pedidos'} />
+      <CabecalhoDaTela titulo={pesquisador ? 'Pedir animais' : 'Pedidos'} />
 
       {pesquisador && (
         <Secao>

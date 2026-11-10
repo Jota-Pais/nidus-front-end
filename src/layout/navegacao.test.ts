@@ -4,25 +4,25 @@ import { configuracoesDoPerfil, menuDoPerfil, mostraBarraLateral, rotaInicial } 
 describe('menu por perfil', () => {
   it('o pesquisador só solicita animais: não vê a colônia', () => {
     const caminhos = menuDoPerfil('pesquisador').map((item) => item.caminho)
-    expect(caminhos).toEqual(['/solicitar'])
+    expect(caminhos).toEqual(['/pedidos'])
   })
 
   it('o técnico vê a visão geral, as estantes e os pedidos', () => {
     const caminhos = menuDoPerfil('tecnico').map((item) => item.caminho)
-    expect(caminhos).toEqual(['/visao-geral', '/estantes', '/solicitar'])
+    expect(caminhos).toEqual(['/visao-geral', '/estantes', '/pedidos'])
   })
 
   it('o gestor vê as mesmas telas do dia a dia que o técnico', () => {
     const caminhos = menuDoPerfil('gestor').map((item) => item.caminho)
-    expect(caminhos).toEqual(['/visao-geral', '/estantes', '/solicitar'])
+    expect(caminhos).toEqual(['/visao-geral', '/estantes', '/pedidos'])
   })
 })
 
 describe('pedidos', () => {
   it('só o pesquisador pede animais: técnico e gestor veem a lista de pedidos', () => {
     const rotulo = (perfil: 'pesquisador' | 'tecnico' | 'gestor') =>
-      menuDoPerfil(perfil).find((item) => item.caminho === '/solicitar')?.rotulo
-    expect(rotulo('pesquisador')).toBe('Solicitar animais')
+      menuDoPerfil(perfil).find((item) => item.caminho === '/pedidos')?.rotulo
+    expect(rotulo('pesquisador')).toBe('Pedir animais')
     expect(rotulo('tecnico')).toBe('Pedidos')
     expect(rotulo('gestor')).toBe('Pedidos')
   })
@@ -58,6 +58,6 @@ describe('rotaInicial', () => {
   })
 
   it('o pesquisador começa pelo pedido de animais', () => {
-    expect(rotaInicial('pesquisador')).toBe('/solicitar')
+    expect(rotaInicial('pesquisador')).toBe('/pedidos')
   })
 })

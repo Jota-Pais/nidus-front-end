@@ -29,7 +29,7 @@ const SAIR = 'sair'
 const ICONE_DA_TELA: Record<string, ReactNode> = {
   '/visao-geral': <PieChartOutlined aria-hidden="true" />,
   '/estantes': <AppstoreOutlined aria-hidden="true" />,
-  '/solicitar': <FileTextOutlined aria-hidden="true" />,
+  '/pedidos': <FileTextOutlined aria-hidden="true" />,
 }
 
 /** casca da aplicação: cabeçalho, navegação por perfil e área de conteúdo */
