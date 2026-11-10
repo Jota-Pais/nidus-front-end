@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { AriaAttributes } from 'react'
 import type { DataISO } from '@/dominio/tipos'
+import { useTelaEstreita } from '@/layout/useTelaEstreita'
 // '@/lib/data' também deixa o dayjs em português, para o calendário
 import { FORMATO_DA_API } from '@/lib/data'
 
@@ -28,12 +29,17 @@ const paraDia = (data: DataISO): Dayjs => dayjs(data, FORMATO_DA_API, true)
 /**
  * Campo de data sempre em dd/mm/aaaa. O campo nativo do navegador segue o idioma do navegador,
  * e num navegador em inglês aparecia mm/dd/aaaa. O valor continua 'aaaa-mm-dd', como a API e
- * as regras do formulário esperam
+ * as regras do formulário esperam.
+ *
+ * No celular o campo não abre o teclado: o dia se escolhe no calendário, que o teclado cobriria
  */
 export function CampoDeData({ value, onChange, min, max, ...resto }: Props) {
+  const estreita = useTelaEstreita()
+
   return (
     <DatePicker
       {...resto}
+      inputReadOnly={estreita}
       value={value ? paraDia(value) : null}
       onChange={(dia: Dayjs | null) => onChange?.(dia ? dia.format(FORMATO_DA_API) : undefined)}
       format={FORMATOS}

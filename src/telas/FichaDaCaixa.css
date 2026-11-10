@@ -210,3 +210,79 @@
     grid-column: 1 / -1;
   }
 }
+
+/* O topo da ficha: o motivo do atraso e o Mudar de lugar, antes das abas */
+.ficha__topo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mudarDeLugar .escolherCaixa {
+  margin-bottom: 12px;
+}
+
+/*
+ * Celular (abaixo de 768 px). O dado só de leitura vira texto, rótulo pequeno em cima e valor em
+ * negrito, dois por linha, em vez da caixa cinza que parecia campo desabilitado. Cada ação é um
+ * botão largo, e o formulário dela abre um de cada vez (NinhadaDaFicha), com o gravar largo no fim
+ */
+@media (max-width: 767.98px) {
+  .ficha__partos {
+    gap: 8px;
+  }
+
+  .ficha__parto {
+    min-width: 48px;
+    min-height: 40px;
+    padding: 8px 14px;
+    font-size: 14px;
+  }
+
+  .ficha__linha {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .ficha__formulario .ficha__linha {
+    row-gap: 0;
+  }
+
+  /* a data e o texto livre pedem a linha inteira; número e lista cabem em meia */
+  .ficha__linha > :has(.ant-picker),
+  .ficha__linha > :has(input.ant-input),
+  .ficha__linha > :has(textarea) {
+    grid-column: 1 / -1;
+  }
+
+  .ficha__campo {
+    gap: 2px;
+  }
+
+  .ficha__valor,
+  .ficha__valor--destaque {
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .ficha__aba .botao:not(.ant-btn-sm),
+  .ficha__topo .botao:not(.ant-btn-sm) {
+    width: 100%;
+  }
+
+  .ficha__botoes {
+    flex-direction: column;
+  }
+
+  /* o Anular do evento: pequeno no computador, alvo de dedo no celular */
+  .ficha__eventoLinha .ant-btn-sm {
+    height: 36px;
+    padding: 0 12px;
+  }
+}

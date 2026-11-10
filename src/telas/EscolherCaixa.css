@@ -80,3 +80,23 @@
   color: var(--cor-acao);
   font-weight: 700;
 }
+
+/* a caixa mudando de lugar: onde ela está agora, para ver de onde sai */
+.miniGrade__celula--origem {
+  border: 2px solid var(--cor-frente);
+  color: var(--cor-frente);
+  font-weight: 700;
+  opacity: 1;
+}
+
+/* no celular a célula é alvo de dedo: mais alta, com o código legível */
+@media (max-width: 767.98px) {
+  .miniGrade__celula {
+    height: 40px;
+    font-size: 12px;
+  }
+
+  .miniGrade__celulas {
+    gap: 4px;
+  }
+}

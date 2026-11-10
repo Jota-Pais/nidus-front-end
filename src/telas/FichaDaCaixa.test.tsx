@@ -30,6 +30,7 @@ import {
   talvezBotao,
 } from '@/testes/ficha'
 import { consulta, renderizar } from '@/testes/renderizar'
+import { larguraDaTela } from '@/testes/tela'
 import { FichaDaCaixa } from './FichaDaCaixa'
 
 /** o que cada ação da ficha manda para a API */
@@ -43,6 +44,7 @@ const api = vi.hoisted(() => ({
   baixa: vi.fn(),
   anulacao: vi.fn(),
   virar: vi.fn(),
+  mover: vi.fn(),
 }))
 
 vi.mock('@/dominio/consultas', () => ({
@@ -59,6 +61,7 @@ vi.mock('@/dominio/consultas', () => ({
   useVirarCaixaDeEstoque: () => mutacaoComResposta(api.virar),
   useEstantes: () => consulta([estanteE01]),
   useGrade: () => consulta(gradeE01),
+  useMudarDePosicao: () => ({ mutate: api.mover, isPending: false }),
 }))
 
 beforeEach(() => {
@@ -70,6 +73,7 @@ beforeEach(() => {
   api.mudanca.mockReset().mockResolvedValue({ caixas: [], liberada: false })
   api.baixa.mockReset().mockResolvedValue({ baixas: { m: 0, f: 0 }, liberada: false, faltas: [] })
   api.virar.mockReset().mockResolvedValue({ idCaixa: 7, sexo: 'F' })
+  api.mover.mockReset()
 })
 
 afterEach(() => vi.useRealTimers())
@@ -114,6 +118,86 @@ function corrigir(titulo: string) {
   }
   throw new Error(`Sem Corrigir em ${titulo}`)
 }
+
+describe('mudar a caixa de lugar e o atraso, na ficha', { timeout: 40_000 }, () => {
+  it('a caixa muda de lugar pela ficha: toca a posição vazia e confirma o destino', async () => {
+    abrirFicha()
+
+    fireEvent.click(await acharBotao('Mudar de lugar'))
+    // só a posição vazia serve; a caixa ocupada fica apagada, e a própria caixa diz onde está
+    expect(celula('F1C: ocupada').disabled).toBe(true)
+    expect(celula('F1A: onde a caixa está').disabled).toBe(true)
+    expect(botao('Mover').disabled).toBe(true)
+
+    fireEvent.click(celula('F1B: posição vazia, a caixa vai para cá'))
+    fireEvent.click(botao('Mover para F1B'))
+
+    expect(api.mover).toHaveBeenCalledWith(
+      { idCaixa: 7, idEstante: 1, face: 'frontal', linha: 1, coluna: 2 },
+      expect.anything(),
+    )
+  })
+
+  it('a caixa liberada não muda de lugar', () => {
+    api.ficha = fichaDeCasal({
+      caixa: { ...fichaDeCasal().caixa, ativa: false, dtLiberacao: '2026-10-20', fase: null },
+    })
+    abrirFicha()
+
+    expect(talvezBotao('Mudar de lugar')).toBeNull()
+  })
+
+  it('a caixa atrasada diz na ficha por quê: no toque, o título da célula não aparece', async () => {
+    // a ninhada nasceu em 24/09 e ainda mama: passou dos 22 dias
+    api.ficha = fichaDeCasal({ caixa: { ...fichaDeCasal().caixa, atrasado: true } })
+    abrirFicha()
+
+    expect(
+      await screen.findByText('Atrasado: filhotes com mais de 22 dias sem desmame.'),
+    ).toBeTruthy()
+  })
+})
+
+describe('a aba Ninhada no celular', { timeout: 40_000 }, () => {
+  it('cada ação é um botão, e o formulário dela abre um de cada vez', async () => {
+    const voltar = larguraDaTela(390)
+
+    try {
+      const painel = await abrirNinhada()
+
+      // nada aberto: só os botões das ações, sem os campos
+      expect(within(painel).queryByLabelText('Machos')).toBeNull()
+      expect(within(painel).queryByLabelText('Machos desmamados')).toBeNull()
+
+      fireEvent.click(botao('Registrar eutanásia', painel))
+      await waitFor(() => expect(within(painel).getByLabelText('Machos')).toBeTruthy(), DEMORA)
+
+      // abrir o desmame fecha a seleção
+      fireEvent.click(botao('Registrar desmame', painel))
+      await waitFor(
+        () => expect(within(painel).getByLabelText('Machos desmamados')).toBeTruthy(),
+        DEMORA,
+      )
+      expect(within(painel).queryByLabelText('Machos')).toBeNull()
+
+      // e o Cancelar volta o desmame para trás do botão
+      fireEvent.click(botao('Cancelar', painel))
+      await waitFor(
+        () => expect(within(painel).queryByLabelText('Machos desmamados')).toBeNull(),
+        DEMORA,
+      )
+    } finally {
+      voltar()
+    }
+  })
+
+  it('no computador, os formulários continuam abertos como sempre', async () => {
+    const painel = await abrirNinhada()
+
+    expect(within(painel).getByLabelText('Machos')).toBeTruthy()
+    expect(within(painel).getByLabelText('Machos desmamados')).toBeTruthy()
+  })
+})
 
 // O modal do antd com as abas leva segundos para montar no jsdom, e o envio do formulário mais
 // alguns: com a suíte inteira rodando, passa de 20 s

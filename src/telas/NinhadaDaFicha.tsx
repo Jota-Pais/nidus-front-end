@@ -4,7 +4,7 @@
 // acasalar, e ela se edita ali mesmo, sem motivo. Nenhum número é contado aqui: nascidos, baixas,
 // desmamados, vivos, onde estão e reservados vêm prontos da API
 import { App, Form, Input, InputNumber } from 'antd'
-import { useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Aviso, Botao, CampoDeData, Texto } from '@/componentes'
 import {
@@ -25,6 +25,7 @@ import {
 import { descreverQuantos, descreverReservados } from '@/dominio/pedido'
 import type { Casal, DataISO, FichaDeCasal, OndeEstao, Parto, PorSexo } from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
+import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { ErroDeApi } from '@/lib/api'
 import { ateHoje, descreverDias, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
 import { BaixaNaCaixa, CampoDoPedido, MudarAnimais } from './AnimaisDaFicha'
@@ -48,6 +49,30 @@ const INTERVALO_ACASALAMENTO_DIAS = 6
  * da seleção, do desmame ou da correção, que tiram do parto todo
  */
 const pedidosDoParto = (parto: Parto) => parto.reservados.map((reserva) => reserva.idPedido)
+
+// ------------------------------------------------------------ uma ação de cada vez
+
+/** A ação aberta na aba, e como abrir outra (ou fechar, com null) */
+interface Acoes {
+  aberta: string | null
+  abrir: (nome: string | null) => void
+}
+
+/**
+ * No celular a aba tem uma ação aberta por vez: cada registro, correção, baixa ou passagem é um
+ * botão largo, e abrir um fecha o outro, em vez de todos os formulários abertos em fila. Fora do
+ * celular não há contexto, e cada formulário cuida de si como sempre
+ */
+const AcaoAberta = createContext<Acoes | null>(null)
+
+/** Se a ação de nome dado está aberta, e como abrir ou fechar ela */
+function useAcao(nome: string): [boolean, (aberta: boolean) => void] {
+  const acoes = useContext(AcaoAberta)
+  const [local, setLocal] = useState(false)
+
+  if (acoes === null) return [local, setLocal]
+  return [acoes.aberta === nome, (aberta) => acoes.abrir(aberta ? nome : null)]
+}
 
 // ------------------------------------------------------------ registrar e corrigir
 
@@ -107,6 +132,7 @@ function RegistrarEvento({
   botao,
   pedidos = [],
   repetir = false,
+  variante = 'primario',
   children,
 }: {
   /** o nome do formulário: os campos de dois formulários abertos não dividem o id */
@@ -119,6 +145,8 @@ function RegistrarEvento({
   pedidos?: number[]
   /** registrar de novo depois: volta o formulário ao começo */
   repetir?: boolean
+  /** no celular, o botão que abre o formulário: o passo principal é primário */
+  variante?: 'primario' | 'secundario'
   /** o que vem embaixo dos campos, dentro do formulário (o aviso do desmame) */
   children?: ReactNode
 }) {
@@ -126,6 +154,19 @@ function RegistrarEvento({
   const registrar = useRegistrarNaFicha()
   const [form] = Form.useForm<Record<string, unknown>>()
   const falha = useFalhaDoFormulario(form, [...campos.map((campo) => campo.nome), 'idPedido'])
+  // no celular o formulário fica atrás do botão dele, e um de cada vez
+  const recolhe = useContext(AcaoAberta) !== null
+  const [aberto, setAberto] = useAcao(nome)
+
+  if (recolhe && !aberto) {
+    return (
+      <div>
+        <Botao variante={variante} onClick={() => setAberto(true)}>
+          {botao}
+        </Botao>
+      </div>
+    )
+  }
 
   function enviar(valores: Record<string, unknown>) {
     falha.limpar()
@@ -136,7 +177,10 @@ function RegistrarEvento({
         void message.success('Registrado.')
         const falta = descreverFalta(faltas ?? [])
         if (falta) modal.warning({ title: 'Reserva em falta', content: falta })
-        if (repetir) {
+        if (recolhe) {
+          // no celular, registrado, o formulário volta para trás do botão
+          setAberto(false)
+        } else if (repetir) {
           form.resetFields()
           falha.recomecar()
         }
@@ -160,9 +204,20 @@ function RegistrarEvento({
         <CampoDoPedido nome={['idPedido']} quem="os animais reservados" pedidos={pedidos} />
       )}
       {children}
-      <Botao variante="primario" htmlType="submit" loading={registrar.isPending}>
-        {botao}
-      </Botao>
+      {recolhe ? (
+        <div className="ficha__botoes">
+          <Botao variante="primario" htmlType="submit" loading={registrar.isPending}>
+            {botao}
+          </Botao>
+          <Botao variante="fantasma" onClick={() => setAberto(false)}>
+            Cancelar
+          </Botao>
+        </div>
+      ) : (
+        <Botao variante="primario" htmlType="submit" loading={registrar.isPending}>
+          {botao}
+        </Botao>
+      )}
     </Form>
   )
 }
@@ -202,9 +257,12 @@ function BotoesDaCorrecao({
 }
 
 function BotaoCorrigir({ aoAbrir }: { aoAbrir: () => void }) {
+  // no celular, com cara de botão: o de texto parece link e fica solto na tela
+  const estreita = useTelaEstreita()
+
   return (
     <div>
-      <Botao variante="fantasma" onClick={aoAbrir}>
+      <Botao variante={estreita ? 'secundario' : 'fantasma'} onClick={aoAbrir}>
         Corrigir
       </Botao>
     </div>
@@ -290,7 +348,7 @@ function CorrigirDesmame({
 }) {
   const { message } = App.useApp()
   const corrigir = useCorrigirEvento()
-  const [aberto, setAberto] = useState(false)
+  const [aberto, setAberto] = useAcao('corrigir-desmame')
   const [form] = Form.useForm<{ data: DataISO; motivo: string }>()
   const falha = useFalhaDoFormulario(form, ['data', 'motivo'])
 
@@ -352,7 +410,7 @@ function CorrigirNascimento(props: {
   /** o parto seguinte do casal: o acasalamento dele limita a data */
   seguinte: Parto | undefined
 }) {
-  const [aberto, setAberto] = useState(false)
+  const [aberto, setAberto] = useAcao('corrigir-nascimento')
 
   if (!aberto) return <BotaoCorrigir aoAbrir={() => setAberto(true)} />
 
@@ -505,7 +563,7 @@ function FormularioDoNascimento({
 function FecharSemNinhada({ parto, casal }: { parto: Parto; casal: Casal }) {
   const { message } = App.useApp()
   const fechar = useSemNinhada()
-  const [aberto, setAberto] = useState(false)
+  const [aberto, setAberto] = useAcao('sem-ninhada')
   const [form] = Form.useForm<{ dtSemNinhada: DataISO; motivo: string }>()
   const falha = useFalhaDoFormulario(form, ['dtSemNinhada', 'motivo'])
 
@@ -661,7 +719,8 @@ function OndeEstaoOsVivos({
   caixa: CaixaDaAcao
   ativa: boolean
 }) {
-  const [acao, setAcao] = useState<'baixa' | 'passagem' | null>(null)
+  const [baixa, abrirBaixa] = useAcao('baixa')
+  const [passagem, abrirPassagem] = useAcao('passagem')
   const aqui = ativa ? vivosNaCaixa(parto, caixa.id) : undefined
   const grupos: GrupoDaCaixa[] =
     aqui && parto.dtPartoReal
@@ -701,26 +760,24 @@ function OndeEstaoOsVivos({
         </ul>
       )}
 
-      {acao === 'baixa' && (
-        <BaixaNaCaixa caixa={caixa} grupos={grupos} aoTerminar={() => setAcao(null)} />
-      )}
-      {acao === 'passagem' && (
+      {baixa && <BaixaNaCaixa caixa={caixa} grupos={grupos} aoTerminar={() => abrirBaixa(false)} />}
+      {passagem && (
         <MudarAnimais
           caixa={caixa}
           grupos={grupos}
           desde={parto.dtDesmameReal}
           botao="Passar para o estoque"
-          aoTerminar={() => setAcao(null)}
+          aoTerminar={() => abrirPassagem(false)}
         />
       )}
-      {acao === null && grupos.length > 0 && (
+      {!baixa && !passagem && grupos.length > 0 && (
         <div className="ficha__botoes">
           {parto.dtDesmameReal && (
-            <Botao variante="primario" onClick={() => setAcao('passagem')}>
+            <Botao variante="primario" onClick={() => abrirPassagem(true)}>
               Passar para o estoque
             </Botao>
           )}
-          <Botao variante="perigo" onClick={() => setAcao('baixa')}>
+          <Botao variante="perigo" onClick={() => abrirBaixa(true)}>
             Baixa
           </Botao>
         </div>
@@ -731,18 +788,27 @@ function OndeEstaoOsVivos({
 
 // ------------------------------------------------------------ a aba
 
-export function AbaNinhada({
-  ficha,
-  casal,
-  partos,
-  ordem,
-}: {
+interface PropsDaNinhada {
   ficha: FichaDeCasal
   /** o casal do parto: o da caixa, ou um que veio antes dele */
   casal: Casal | null
   partos: Parto[]
   ordem: number
-}) {
+}
+
+/** A aba Ninhada. No celular, com a ação aberta: uma de cada vez */
+export function AbaNinhada(props: PropsDaNinhada) {
+  const estreita = useTelaEstreita()
+  const [aberta, setAberta] = useState<string | null>(null)
+
+  return (
+    <AcaoAberta.Provider value={estreita ? { aberta, abrir: setAberta } : null}>
+      <NinhadaDoParto {...props} />
+    </AcaoAberta.Provider>
+  )
+}
+
+function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
   const parto = partos.find((p) => p.ordem === ordem)
 
   if (!parto) {
@@ -867,6 +933,7 @@ export function AbaNinhada({
               botao="Registrar eutanásia"
               pedidos={pedidos}
               repetir
+              variante="secundario"
             >
               <p className="ficha__dica">
                 Cada rodada vira uma baixa nos Eventos, onde pode ser anulada se foi lançada errada.
