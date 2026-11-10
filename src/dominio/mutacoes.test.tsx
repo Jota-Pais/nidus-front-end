@@ -101,7 +101,7 @@ const ACOES_DA_COLONIA: [string, () => { mutateAsync: (v: never) => Promise<unkn
     [
       'corrigir acasalamento',
       useCorrigirAcasalamento,
-      { idParto: 9, dtAcasalamento: '2026-10-01', motivo: 'digitação' },
+      { idParto: 9, dtAcasalamento: '2026-10-01' },
     ],
     ['baixa', useBaixa, { idCaixa: 3, dtFato: '2026-11-01', itens: [{ sexo: 'M', qtd: 1 }] }],
     [

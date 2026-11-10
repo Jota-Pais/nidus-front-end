@@ -273,14 +273,9 @@ export function useCorrigirAcasalamento() {
   const cliente = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      idParto,
-      ...corpo
-    }: {
-      idParto: number
-      dtAcasalamento: DataISO
-      motivo: string
-    }) => api<Parto>(`/api/partos/${idParto}/acasalamento`, { metodo: 'PATCH', corpo }),
+    // a data do acasalamento se edita direto, sem motivo
+    mutationFn: ({ idParto, ...corpo }: { idParto: number; dtAcasalamento: DataISO }) =>
+      api<Parto>(`/api/partos/${idParto}/acasalamento`, { metodo: 'PATCH', corpo }),
     onSuccess: () => invalidarColonia(cliente),
   })
 }
