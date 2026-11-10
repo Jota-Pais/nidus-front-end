@@ -333,7 +333,7 @@ function DataDoAcasalamento({
 
 /**
  * A correção da data do desmame, com motivo. A contagem do desmame não se corrige aqui: anula-se a
- * baixa "não chegou ao desmame" nos Eventos, ou lança-se outra
+ * baixa "não chegou ao desmame" em Baixas lançadas, ou lança-se outra
  */
 function CorrigirDesmame({
   idParto,
@@ -831,7 +831,7 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
   }
   const pedidos = pedidosDoParto(parto)
   // na caixa liberada não se lança fato novo (parto, seleção, desmame); corrigir o que já foi
-  // registrado continua, e a baixa se anula nos Eventos
+  // registrado continua, e a baixa se anula em Baixas lançadas
   const semFatoNovo = !ficha.caixa.ativa
 
   return (
@@ -910,7 +910,7 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
           </LadoALado>
           {desmamou || semFatoNovo ? (
             <Texto tom="secundario">
-              Seleção registrada errada se corrige anulando a baixa nos Eventos.
+              Seleção lançada errada se desfaz em Baixas lançadas, com Anular.
             </Texto>
           ) : (
             <RegistrarEvento
@@ -936,7 +936,7 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
               variante="secundario"
             >
               <p className="ficha__dica">
-                Cada rodada vira uma baixa nos Eventos, onde pode ser anulada se foi lançada errada.
+                Cada rodada vira uma baixa. Se foi lançada errada, anule em Baixas lançadas.
               </p>
             </RegistrarEvento>
           )}
@@ -957,8 +957,8 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
                 ate={[parto.dtPrimeiraSaida]}
               />
               <p className="ficha__dica">
-                A contagem do desmame se corrige nos Eventos: anulando a baixa &quot;não chegou ao
-                desmame&quot; ou lançando outra baixa.
+                A contagem do desmame se corrige em Baixas lançadas, anulando a baixa &quot;não
+                chegou ao desmame&quot;, ou lançando outra baixa.
               </p>
             </>
           ) : semFatoNovo ? (

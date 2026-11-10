@@ -91,7 +91,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     expect(screen.getByText('6 do 1º parto do casal AB, caixa F1A (E-01)')).toBeTruthy()
     expect(screen.getByText('3 do 2º parto do casal CD, caixa F2A (E-02)')).toBeTruthy()
     expect(screen.getByText('Pedido #12')).toBeTruthy()
-    expect(nomesDasAbas()).toEqual(['Animais', 'Eventos'])
+    expect(nomesDasAbas()).toEqual(['Animais'])
   })
 
   it('a caixa que já foi de casal mostra os casais de antes, sem ação', async () => {
@@ -271,11 +271,11 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     expect(diaNoCalendario('2026-10-02')).not.toContain(APAGADO)
   })
 
-  it('os eventos da caixa ficam na aba deles, com o Anular na baixa', async () => {
+  it('as baixas lançadas ficam no fim da aba dos animais, com o Anular', async () => {
     renderizar(
       <FichaDoEstoque
         ficha={fichaDeEstoque({
-          eventos: [
+          baixas: [
             eventoDeBaixa(50, 'Baixa de 1 macho nesta caixa.', {
               sexos: { m: 1, f: 0 },
               idLinhagem: 1,
@@ -286,13 +286,18 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
       />,
     )
 
-    fireEvent.click(aba('Eventos'))
-
     expect(await screen.findByText('Baixa de 1 macho nesta caixa.')).toBeTruthy()
+    expect(screen.getByText('Baixas lançadas')).toBeTruthy()
     expect(botao('Anular')).toBeTruthy()
   })
 
-  it('a baixa de quando a caixa era de casal volta para o estoque da linhagem que o evento diz', async () => {
+  it('sem baixa anulável, não há Baixas lançadas', () => {
+    renderizar(<FichaDoEstoque ficha={fichaDeEstoque({ baixas: [] })} />)
+
+    expect(screen.queryByText('Baixas lançadas')).toBeNull()
+  })
+
+  it('a baixa de quando a caixa era de casal volta para o estoque da linhagem que a baixa diz', async () => {
     api.anulacao.mockResolvedValueOnce({
       voltaram: [{ sexo: 'M', qtd: 2, idCaixa: 32, codigo: 'F1F' }],
       soltos: { m: 0, f: 0 },
@@ -307,7 +312,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
               partos: [desmamado()],
             },
           ],
-          eventos: [
+          baixas: [
             eventoDeBaixa(
               51,
               'Baixa de 2 machos nesta caixa.',
@@ -318,7 +323,6 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
         })}
       />,
     )
-    fireEvent.click(aba('Eventos'))
     const linha = (await screen.findByText('Baixa de 2 machos nesta caixa.')).closest(
       'li',
     ) as HTMLElement
@@ -343,14 +347,14 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     })
   })
 
-  it('a caixa liberada por uma baixa mostra o evento com o Anular, e mais nenhuma ação', async () => {
+  it('a caixa liberada por uma baixa mostra a baixa com o Anular, e mais nenhuma ação', async () => {
     const liberada = fichaDeEstoque({
       total: 0,
       reservado: 0,
       livre: 0,
       grupos: [],
       pedidos: [],
-      eventos: [
+      baixas: [
         eventoDeBaixa(52, 'Baixa de 6 machos nesta caixa.', {
           sexos: { m: 6, f: 0 },
           idLinhagem: 1,
@@ -379,7 +383,6 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     ).toBeTruthy()
     expect(talvezBotao('Baixa')).toBeNull()
     expect(talvezBotao('Passar para outra caixa')).toBeNull()
-    fireEvent.click(aba('Eventos'))
     expect(await screen.findByText('Baixa de 6 machos nesta caixa.')).toBeTruthy()
     expect(botao('Anular')).toBeTruthy()
   })

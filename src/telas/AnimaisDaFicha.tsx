@@ -1,5 +1,5 @@
 // As ações sobre os animais de uma caixa, de casal ou de estoque: a baixa (morte ou eutanásia, uma
-// ação só), a mudança para outra caixa (a passagem para o estoque é uma delas) e, nos eventos, a
+// ação só), a mudança para outra caixa (a passagem para o estoque é uma delas) e, em Baixas lançadas, a
 // anulação da baixa lançada por engano. Cada ação pede o mínimo: quantos, de qual idade quando a
 // caixa tem mais de uma, a data do fato e um clique na estante. Dentro da caixa, só a idade separa
 // os animais, e quem escolhe quais saem é a API: os livres primeiro. De qual pedido saem os
@@ -31,6 +31,7 @@ import type {
 } from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import type { NomeNoFormulario } from '@/layout/useFalhaDoFormulario'
+import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { ateHoje, descreverDias, formatarData, idadeEmDias, maisTarde } from '@/lib/data'
 import { LadoALado } from './CamposDaFicha'
 import { EscolherCaixa } from './EscolherCaixa'
@@ -534,70 +535,70 @@ export function MudarAnimais({
   )
 }
 
-// ------------------------------------------------------------ eventos e anulação
+// ------------------------------------------------------------ baixas lançadas e anulação
 
 /**
- * A caixa dos eventos: onde a estante da anulação abre e qual caixa não recebe a si mesma. A
- * linhagem não vai junto: a da baixa vem no evento, e pode ser de animais que já não estão nela
+ * A caixa das baixas: onde a estante da anulação abre e qual caixa não recebe a si mesma. A
+ * linhagem não vai junto: a da baixa vem no item dela, e pode ser de animais que já não estão nela
  */
-type CaixaDosEventos = Pick<CaixaDaAcao, 'id' | 'endereco'>
-
-/** A chave do evento: a ocorrência quando há; o que vem do histórico, pela posição e pelo dia */
-const chaveDoEvento = (evento: EventoDaFicha, indice: number) =>
-  evento.idOcorrencia === null
-    ? `h${indice}-${evento.tipo}-${evento.dataHora}`
-    : `o${evento.idOcorrencia}`
+type CaixaDasBaixas = Pick<CaixaDaAcao, 'id' | 'endereco'>
 
 /**
- * Os eventos da caixa, do mais antigo para o mais novo. A baixa que ainda pode ser anulada tem o
- * Anular, também na caixa liberada: é a única ação que a ficha dela oferece
+ * As baixas lançadas que ainda podem ser anuladas, da mais recente para a mais antiga, cada uma
+ * com o Anular (também na caixa liberada: é a única ação que a ficha dela oferece). Sem baixa
+ * anulável, a lista não aparece
  */
-export function EventosDaFicha({
-  eventos,
+export function BaixasLancadas({
+  baixas,
   caixa,
 }: {
-  eventos: EventoDaFicha[]
-  caixa: CaixaDosEventos
+  baixas: EventoDaFicha[]
+  caixa: CaixaDasBaixas
 }) {
   const [anulando, setAnulando] = useState<number | null>(null)
+  const estreita = useTelaEstreita()
 
-  if (eventos.length === 0) {
-    return <p className="ficha__vazio">Nenhum evento registrado.</p>
-  }
+  const anulaveis = baixas.filter(
+    (item) => item.anulavel && item.idOcorrencia !== null && item.baixa !== null,
+  )
+  if (anulaveis.length === 0) return null
 
   return (
-    <ul className="ficha__eventos">
-      {eventos.map((evento, indice) => {
-        // a baixa que ainda pode ser anulada; o Anular abre o formulário embaixo dela
-        const anulavel = evento.anulavel ? evento.idOcorrencia : null
-        const { baixa } = evento
+    <section className="ficha__baixas">
+      <h3>Baixas lançadas</h3>
+      <ul className="ficha__baixasLista">
+        {anulaveis.map((item) => {
+          const { idOcorrencia, baixa } = item
+          if (idOcorrencia === null || baixa === null) return null
 
-        return (
-          <li key={chaveDoEvento(evento, indice)} className="ficha__evento">
-            <div className="ficha__eventoLinha">
-              <span className="ficha__eventoData">
-                {formatarData(evento.dataHora.slice(0, 10))}
-              </span>
-              <span className="ficha__eventoTexto">{evento.descricao}</span>
-              <span className="ficha__eventoAutor">{evento.autor}</span>
-              {anulavel !== null && baixa !== null && anulando !== anulavel && (
-                <Botao variante="fantasma" size="small" onClick={() => setAnulando(anulavel)}>
-                  Anular
-                </Botao>
+          return (
+            <li key={idOcorrencia} className="ficha__baixa">
+              <div className="ficha__baixaLinha">
+                <span className="ficha__baixaData">{formatarData(item.dataHora.slice(0, 10))}</span>
+                <span className="ficha__baixaTexto">{item.descricao}</span>
+                {anulando !== idOcorrencia && (
+                  <Botao
+                    variante="fantasma"
+                    size={estreita ? 'middle' : 'small'}
+                    onClick={() => setAnulando(idOcorrencia)}
+                  >
+                    Anular
+                  </Botao>
+                )}
+              </div>
+              {anulando === idOcorrencia && (
+                <AnularBaixa
+                  idOcorrencia={idOcorrencia}
+                  baixa={baixa}
+                  caixa={caixa}
+                  aoTerminar={() => setAnulando(null)}
+                />
               )}
-            </div>
-            {anulavel !== null && baixa !== null && anulando === anulavel && (
-              <AnularBaixa
-                idOcorrencia={anulavel}
-                baixa={baixa}
-                caixa={caixa}
-                aoTerminar={() => setAnulando(null)}
-              />
-            )}
-          </li>
-        )
-      })}
-    </ul>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
   )
 }
 
@@ -634,7 +635,7 @@ function AnularBaixa({
 }: {
   idOcorrencia: number
   baixa: BaixaAnulavel
-  caixa: CaixaDosEventos
+  caixa: CaixaDasBaixas
   aoTerminar: () => void
 }) {
   const { message } = App.useApp()

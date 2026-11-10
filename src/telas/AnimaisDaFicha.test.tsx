@@ -18,7 +18,7 @@ import {
   talvezBotao,
 } from '@/testes/ficha'
 import { consulta, renderizar } from '@/testes/renderizar'
-import { BaixaNaCaixa, EventosDaFicha, MudarAnimais } from './AnimaisDaFicha'
+import { BaixaNaCaixa, BaixasLancadas, MudarAnimais } from './AnimaisDaFicha'
 import type { CaixaDaAcao, GrupoDaCaixa } from './AnimaisDaFicha'
 
 /** o que cada ação manda para a API */
@@ -400,25 +400,10 @@ const baixa = (
     anulavel ? { sexos: { m: 2, f: 1 }, idLinhagem: 1, voltaNaOrigem: true, ...parcial } : null,
   )
 
-describe('eventos e anulação da baixa', { timeout: 30_000 }, () => {
-  const nascimento: EventoDaFicha = {
-    dataHora: '2026-09-24T00:00:00.000Z',
-    tipo: 'nascimento',
-    descricao: 'Nasceram 5 machos e 5 femeas.',
-    autor: 'Ana Souza',
-    idOcorrencia: 3,
-    anulavel: false,
-    baixa: null,
-  }
-
-  /** abre o Anular da baixa anulável, com o que o evento dela diz */
+describe('Baixas lançadas e anulação da baixa', { timeout: 30_000 }, () => {
+  /** abre o Anular da baixa anulável, com o que a baixa diz */
   function anular(parcial: Partial<BaixaAnulavel> = {}) {
-    renderizar(
-      <EventosDaFicha
-        eventos={[nascimento, baixa(40, false), baixa(41, true, parcial)]}
-        caixa={caixaDoCasal}
-      />,
-    )
+    renderizar(<BaixasLancadas baixas={[baixa(41, true, parcial)]} caixa={caixaDoCasal} />)
     const linha = screen
       .getByText(/^Baixa de 2 machos e 1 fêmea nesta caixa\.$/)
       .closest('li') as HTMLElement
@@ -431,17 +416,20 @@ describe('eventos e anulação da baixa', { timeout: 30_000 }, () => {
   const estanteDas = (linha: HTMLElement, quem: RegExp) =>
     within(linha).getByText(quem).closest('.ant-form-item') as HTMLElement
 
-  it('só a baixa que ainda pode ser anulada tem o Anular', () => {
-    renderizar(
-      <EventosDaFicha
-        eventos={[nascimento, baixa(40, false), baixa(41, true)]}
-        caixa={caixaDoCasal}
-      />,
-    )
+  it('lista a baixa anulável, com o Anular', () => {
+    renderizar(<BaixasLancadas baixas={[baixa(41, true)]} caixa={caixaDoCasal} />)
 
+    expect(screen.getByText('Baixas lançadas')).toBeTruthy()
+    expect(screen.getByText('20/10/2026')).toBeTruthy()
     expect(botoes('Anular')).toHaveLength(1)
-    const anulada = screen.getByText(/\(anulada\)/).closest('li') as HTMLElement
-    expect(talvezBotao('Anular', anulada)).toBeNull()
+  })
+
+  it('some quando nenhuma baixa pode mais ser anulada', () => {
+    renderizar(<BaixasLancadas baixas={[baixa(40, false)]} caixa={caixaDoCasal} />)
+
+    expect(screen.queryByText('Baixas lançadas')).toBeNull()
+    expect(talvezBotao('Anular')).toBeNull()
+    expect(screen.queryByText(/\(anulada\)/)).toBeNull()
   })
 
   it('os animais voltam para a caixa da baixa: só o motivo, sem estante', async () => {
