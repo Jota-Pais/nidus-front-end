@@ -128,3 +128,19 @@ export const tema: ThemeConfig = {
     Modal: { borderRadiusLG: RAIO.lg },
   },
 }
+
+/**
+ * O tema do celular, abaixo de 768 px (ver `useTelaEstreita`). O do computador já tem campos e
+ * botões de 48 px com fonte de 16, que é tamanho de toque e não faz o iPhone dar zoom no campo;
+ * aqui crescem só as peças pequenas, a caixinha de marcar, o rádio e os dias do calendário, e a
+ * tabela perde respiro dos lados
+ */
+export const temaEstreito: ThemeConfig = {
+  ...tema,
+  token: { ...tema.token, controlInteractiveSize: 20 },
+  components: {
+    ...tema.components,
+    DatePicker: { ...tema.components?.DatePicker, cellHeight: 36 },
+    Table: { ...tema.components?.Table, cellPaddingInline: 12, cellPaddingBlock: 12 },
+  },
+}

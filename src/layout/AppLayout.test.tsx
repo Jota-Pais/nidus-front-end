@@ -1,16 +1,17 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { PerfilContext } from '@/auth/contexto'
 import type { Perfil } from '@/dominio/tipos'
+import { larguraDaTela } from '@/testes/tela'
 import { AppLayout } from './AppLayout'
 
 const NOME_DO_MENU = 'Menu da conta de Gilda Gestora'
 
 /** A casca com uma sessão de teste. O `renderizar` fixa a sessão, e aqui o teste escolhe o Sair */
-function abrirCasca(perfil: Perfil, { sair = () => {}, saindo = false } = {}) {
+function abrirCasca(perfil: Perfil, { sair = () => {}, saindo = false, caminho = '/' } = {}) {
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[caminho]}>
       <PerfilContext.Provider
         value={{
           perfil,
@@ -27,24 +28,41 @@ function abrirCasca(perfil: Perfil, { sair = () => {}, saindo = false } = {}) {
 
 const gatilho = () => screen.getByRole('button', { name: NOME_DO_MENU })
 
-describe('menu das telas no celular', () => {
-  /** A tela abaixo de 992px: o antd fecha a barra lateral */
-  function telaEstreita() {
-    const original = window.matchMedia
-    window.matchMedia = (consulta: string) =>
-      ({
-        ...original(consulta),
-        matches: consulta.includes('max-width'),
-      }) as MediaQueryList
-    return () => {
-      window.matchMedia = original
-    }
-  }
+describe('telas no celular', () => {
+  it('ficam numa barra embaixo, com a tela aberta em destaque, sem menu lateral nem botão de menu', () => {
+    const voltar = larguraDaTela(390)
+    abrirCasca('tecnico', { caminho: '/estantes' })
 
+    const barra = screen.getByRole('navigation', { name: 'Telas' })
+    const telas = within(barra).getAllByRole('link')
+    expect(telas.map((tela) => tela.textContent)).toEqual(['Visão geral', 'Estantes', 'Pedidos'])
+    expect(within(barra).getByRole('link', { name: 'Estantes' }).getAttribute('aria-current')).toBe(
+      'page',
+    )
+    expect(within(barra).getByRole('link', { name: 'Pedidos' }).getAttribute('href')).toBe(
+      '/solicitar',
+    )
+
+    expect(screen.queryByRole('button', { name: 'Abrir o menu' })).toBeNull()
+    expect(document.querySelector('.ant-layout-sider')).toBeNull()
+    voltar()
+  })
+
+  it('quem tem uma tela só não tem barra', () => {
+    const voltar = larguraDaTela(390)
+    abrirCasca('pesquisador', { caminho: '/solicitar' })
+
+    expect(screen.queryByRole('navigation', { name: 'Telas' })).toBeNull()
+    voltar()
+  })
+})
+
+describe('menu das telas no tablet', () => {
   it('abre pelo botão do cabeçalho, sem gatilho em cima da tela, e fecha ao escolher a tela', async () => {
-    const voltar = telaEstreita()
+    const voltar = larguraDaTela(800)
     abrirCasca('tecnico')
 
+    expect(screen.queryByRole('navigation', { name: 'Telas' })).toBeNull()
     expect(document.querySelector('.ant-layout-sider-zero-width-trigger')).toBeNull()
     const abrir = await screen.findByRole('button', { name: 'Abrir o menu' })
     expect(document.querySelector('.ant-layout-sider-collapsed')).toBeTruthy()
@@ -61,11 +79,14 @@ describe('menu das telas no celular', () => {
     voltar()
   })
 
-  it('na tela larga, a barra fica aberta e não há botão de menu', () => {
+  it('na tela larga, a barra fica aberta e não há botão de menu nem barra embaixo', () => {
+    const voltar = larguraDaTela(1280)
     abrirCasca('tecnico')
 
     expect(screen.queryByRole('button', { name: 'Abrir o menu' })).toBeNull()
+    expect(screen.queryByRole('navigation', { name: 'Telas' })).toBeNull()
     expect(document.querySelector('.ant-layout-sider-collapsed')).toBeNull()
+    voltar()
   })
 })
 

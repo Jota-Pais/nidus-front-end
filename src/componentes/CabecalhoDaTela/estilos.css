@@ -46,3 +46,31 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/*
+ * No celular o cabeçalho não pode comer a primeira tela: título de 26px, rótulo e descrição mais
+ * juntos, e a descrição em até duas linhas (o texto inteiro continua lá para o leitor de tela)
+ */
+@media (max-width: 767.98px) {
+  .cabecalhoDaTela {
+    gap: 12px;
+  }
+
+  .cabecalhoDaTela__identificacao {
+    gap: 6px;
+  }
+
+  .cabecalhoDaTela__titulo {
+    font-size: 1.625rem;
+  }
+
+  .cabecalhoDaTela__descricao {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+}

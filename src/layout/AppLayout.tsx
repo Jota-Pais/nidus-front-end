@@ -1,13 +1,23 @@
-import { DownOutlined, LoadingOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
+import {
+  AppstoreOutlined,
+  DownOutlined,
+  FileTextOutlined,
+  LoadingOutlined,
+  LogoutOutlined,
+  MenuOutlined,
+  PieChartOutlined,
+} from '@ant-design/icons'
 import { Dropdown, Layout, Menu } from 'antd'
 import type { DropdownProps, MenuProps } from 'antd'
 import { Suspense, useState } from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import type { ReactNode } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Botao, Etiqueta, Linha } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
 import { usePerfil } from '@/auth/contexto'
 import { Carregando } from './Carregando'
 import { configuracoesDoPerfil, menuDoPerfil, mostraBarraLateral } from './navegacao'
+import { useTelaEstreita } from './useTelaEstreita'
 import './appLayout.css'
 
 const { Header, Content, Sider } = Layout
@@ -15,13 +25,22 @@ const { Header, Content, Sider } = Layout
 /** A chave do Sair no menu da conta. As outras opções usam o caminho da tela como chave */
 const SAIR = 'sair'
 
+/** O ícone de cada tela na barra de baixo do celular, pelo caminho dela */
+const ICONE_DA_TELA: Record<string, ReactNode> = {
+  '/visao-geral': <PieChartOutlined aria-hidden="true" />,
+  '/estantes': <AppstoreOutlined aria-hidden="true" />,
+  '/solicitar': <FileTextOutlined aria-hidden="true" />,
+}
+
 /** casca da aplicação: cabeçalho, navegação por perfil e área de conteúdo */
 export function AppLayout() {
   const { perfil, usuario, sair, saindo } = usePerfil()
   const navegar = useNavigate()
   const { pathname } = useLocation()
   const [contaAberta, setContaAberta] = useState(false)
-  // Abaixo de 992px a barra lateral some, e o botão do cabeçalho abre o menu por cima da tela
+  // No celular (abaixo de 768px) as telas ficam numa barra embaixo, ao alcance do polegar. Entre
+  // 768 e 992px a barra lateral some, e o botão do cabeçalho abre o menu por cima da tela
+  const celular = useTelaEstreita()
   const [estreita, setEstreita] = useState(false)
   const [menuAberto, setMenuAberto] = useState(false)
 
@@ -75,6 +94,8 @@ export function AppLayout() {
   }
 
   const comMenu = mostraBarraLateral(perfil)
+  const comBarraEmbaixo = comMenu && celular
+  const comMenuDoLado = comMenu && !celular
 
   function irPara(caminho: string) {
     navegar(caminho)
@@ -82,11 +103,11 @@ export function AppLayout() {
   }
 
   return (
-    <Layout className="casca">
+    <Layout className={comBarraEmbaixo ? 'casca casca--comBarra' : 'casca'}>
       <Header className="casca__topo">
         {/* A marca não encolhe: no celular, quem cede espaço é o nome de quem entrou */}
         <Linha espaco={12} estilo={{ flexShrink: 0 }}>
-          {comMenu && estreita && (
+          {comMenuDoLado && estreita && (
             <Botao
               variante="fantasma"
               className="casca__abrirMenu"
@@ -133,7 +154,7 @@ export function AppLayout() {
       </Header>
 
       <Layout className="casca__corpo">
-        {comMenu && (
+        {comMenuDoLado && (
           // O antd põe um gatilho flutuante na barra fechada, que cobria o começo da tela: o
           // gatilho é o botão do cabeçalho
           <Sider
@@ -166,6 +187,21 @@ export function AppLayout() {
           </Suspense>
         </Content>
       </Layout>
+
+      {comBarraEmbaixo && (
+        <nav className="casca__abas" aria-label="Telas">
+          {itens.map((item) => (
+            <NavLink
+              key={item.key}
+              to={item.key}
+              className={item.key === selecionado ? 'casca__aba casca__aba--ativa' : 'casca__aba'}
+            >
+              <span className="casca__abaIcone">{ICONE_DA_TELA[item.key]}</span>
+              <span className="casca__abaRotulo">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      )}
     </Layout>
   )
 }

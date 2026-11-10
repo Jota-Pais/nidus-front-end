@@ -1,7 +1,7 @@
-import { App, Form, Input, Modal, Select, Switch, Table } from 'antd'
+import { App, Form, Input, Select, Switch, Table } from 'antd'
 import { useState } from 'react'
 import { usePerfil } from '@/auth/contexto'
-import { Botao, CabecalhoDaTela, Etiqueta, Pilha, Secao } from '@/componentes'
+import { Botao, CabecalhoDaTela, Etiqueta, Janela, Pilha, Secao } from '@/componentes'
 import {
   useCriarConta,
   useEnviarRedefinicaoDeSenha,
@@ -184,7 +184,7 @@ function NovaConta({ aoFechar }: { aoFechar: () => void }) {
   }
 
   return (
-    <Modal
+    <Janela
       open
       title="Nova conta"
       okText="Criar conta"
@@ -217,6 +217,6 @@ function NovaConta({ aoFechar }: { aoFechar: () => void }) {
           <Select options={PERFIS} />
         </Form.Item>
       </Form>
-    </Modal>
+    </Janela>
   )
 }

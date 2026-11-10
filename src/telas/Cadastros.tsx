@@ -1,6 +1,15 @@
-import { App, Form, Input, InputNumber, Modal, Select, Switch, Table, Tabs } from 'antd'
+import { App, Form, Input, InputNumber, Select, Switch, Table, Tabs } from 'antd'
 import { useState } from 'react'
-import { Botao, CabecalhoDaTela, CampoDeData, Etiqueta, Linha, Pilha, Secao } from '@/componentes'
+import {
+  Botao,
+  CabecalhoDaTela,
+  CampoDeData,
+  Etiqueta,
+  Janela,
+  Linha,
+  Pilha,
+  Secao,
+} from '@/componentes'
 import {
   useCatalogo,
   useEstantes,
@@ -139,7 +148,7 @@ function FormularioDoProjeto({
   }
 
   return (
-    <Modal
+    <Janela
       open
       title={projeto ? `Editar projeto · ${projeto.numero}` : 'Novo projeto CEUA'}
       okText="Salvar"
@@ -214,7 +223,7 @@ function FormularioDoProjeto({
           </Form.Item>
         </Linha>
       </Form>
-    </Modal>
+    </Janela>
   )
 }
 
@@ -423,7 +432,7 @@ function FormularioDaSala({ sala, aoFechar }: { sala: Sala | null; aoFechar: () 
   }
 
   return (
-    <Modal
+    <Janela
       open
       title={sala ? `Renomear ${sala.nome}` : 'Nova sala'}
       okText="Salvar"
@@ -441,7 +450,7 @@ function FormularioDaSala({ sala, aoFechar }: { sala: Sala | null; aoFechar: () 
           <Input maxLength={60} placeholder="Sala 4" />
         </Form.Item>
       </Form>
-    </Modal>
+    </Janela>
   )
 }
 
@@ -571,7 +580,7 @@ function FormularioDaEstante({
   }
 
   return (
-    <Modal
+    <Janela
       open
       title={estante ? `Editar estante · ${estante.numeroVisivel}` : 'Nova estante'}
       okText={estante ? 'Salvar' : 'Cadastrar estante'}
@@ -636,6 +645,6 @@ function FormularioDaEstante({
           <Input placeholder="E-05" maxLength={30} />
         </Form.Item>
       </Form>
-    </Modal>
+    </Janela>
   )
 }
