@@ -1,5 +1,5 @@
 import { RightOutlined } from '@ant-design/icons'
-import { App, Form, Grid, Input, InputNumber, Modal, Segmented, Select, Table } from 'antd'
+import { App, Form, Grid, Input, InputNumber, Segmented, Select, Table } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
@@ -12,6 +12,7 @@ import {
   Entrada,
   Etiqueta,
   Formulario,
+  Janela,
   Pilha,
   Secao,
   SetasDeOrdem,
@@ -712,7 +713,7 @@ function PedidoAberto({
   aoFechar: () => void
 }) {
   return (
-    <Modal
+    <Janela
       open
       width={600}
       // quem pediu não vê o número do pedido: para ele, o pedido é a data
@@ -746,7 +747,7 @@ function PedidoAberto({
           </Dado>
         </dl>
       </Pilha>
-    </Modal>
+    </Janela>
   )
 }
 
@@ -920,7 +921,7 @@ function RegistrarEntrega({
   }
 
   return (
-    <Modal
+    <Janela
       open
       title={`Registrar a entrega do pedido #${pedido.id}`}
       okText="Registrar entrega"
@@ -981,7 +982,7 @@ function RegistrarEntrega({
           <CampoDeData min={pedido.dataPedido} max={hoje()} />
         </Form.Item>
       </Form>
-    </Modal>
+    </Janela>
   )
 }
 
@@ -1022,7 +1023,7 @@ function RecusarPedido({
   }
 
   return (
-    <Modal
+    <Janela
       open
       title={`Recusar o pedido #${pedido.id}`}
       okText="Recusar"
@@ -1051,7 +1052,7 @@ function RecusarPedido({
           </Form.Item>
         </Form>
       </Pilha>
-    </Modal>
+    </Janela>
   )
 }
 
@@ -1087,7 +1088,7 @@ function DesfazerReserva({
   }
 
   return (
-    <Modal
+    <Janela
       open
       title={`Desfazer a reserva do pedido #${pedido.id}`}
       okText="Desfazer reserva"
@@ -1103,6 +1104,6 @@ function DesfazerReserva({
           Aguardando animais; depois, é só reservar de novo. Quem pediu não é avisado.
         </Texto>
       </Pilha>
-    </Modal>
+    </Janela>
   )
 }

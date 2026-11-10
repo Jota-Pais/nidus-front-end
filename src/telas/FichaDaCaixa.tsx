@@ -1,6 +1,6 @@
-import { App, Form, Input, Modal, Select, Tabs } from 'antd'
+import { App, Form, Input, Select, Tabs } from 'antd'
 import { useState } from 'react'
-import { Aviso, Botao, CampoDeData, Etiqueta, Linha, Texto } from '@/componentes'
+import { Aviso, Botao, CampoDeData, Etiqueta, Janela, Linha, Texto } from '@/componentes'
 import { COR_DO_PARTO } from '@/app/tokens'
 import {
   corDoParto,
@@ -66,7 +66,7 @@ export function FichaDaCaixa({
   }
 
   return (
-    <Modal
+    <Janela
       open={id !== null || posicaoVazia !== null}
       onCancel={fechar}
       footer={null}
@@ -123,7 +123,7 @@ export function FichaDaCaixa({
           {deCasal && <FichaDoCasal ficha={deCasal} escolha={escolha} aoEscolher={setEscolhido} />}
         </EstadoDaConsulta>
       )}
-    </Modal>
+    </Janela>
   )
 }
 

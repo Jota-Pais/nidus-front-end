@@ -1,5 +1,4 @@
-import { Modal } from 'antd'
-import { Aviso } from '@/componentes'
+import { Aviso, Janela } from '@/componentes'
 import type { Viabilidade } from '@/dominio/tipos'
 import { confirmacaoDoPedido } from './confirmacaoDoPedido'
 
@@ -18,7 +17,7 @@ export function ConfirmarPedido({
   const { tom, titulo, detalhe, enviar, voltar } = confirmacaoDoPedido(viabilidade)
 
   return (
-    <Modal
+    <Janela
       open
       title="Enviar pedido"
       okText={enviar}
@@ -31,6 +30,6 @@ export function ConfirmarPedido({
       <Aviso tom={tom} titulo={titulo}>
         {detalhe}
       </Aviso>
-    </Modal>
+    </Janela>
   )
 }

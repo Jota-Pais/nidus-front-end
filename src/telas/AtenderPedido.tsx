@@ -1,6 +1,6 @@
-import { App, Checkbox, InputNumber, Modal } from 'antd'
+import { App, Checkbox, InputNumber } from 'antd'
 import { useState } from 'react'
-import { Aviso, Botao, Etiqueta, Texto } from '@/componentes'
+import { Aviso, Botao, Etiqueta, Janela, Texto } from '@/componentes'
 import { SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import { useAlocar, useAtendimento } from '@/dominio/consultas'
 import type { ItemDaReserva } from '@/dominio/consultas'
@@ -153,7 +153,7 @@ export function AtenderPedido({
   }
 
   return (
-    <Modal
+    <Janela
       open
       width={760}
       title={
@@ -230,7 +230,7 @@ export function AtenderPedido({
           </div>
         )}
       </EstadoDaConsulta>
-    </Modal>
+    </Janela>
   )
 }
 

@@ -8,6 +8,7 @@
 
 .casca {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .casca__topo {
@@ -123,4 +124,99 @@
   .casca__topo {
     padding-inline: 12px;
   }
+}
+
+/*
+ * Celular (abaixo de 768px, o mesmo corte do `useTelaEstreita`). O cabeçalho fica mais baixo e
+ * passa por baixo da barra de status do iPhone, e as telas ficam numa barra fixa embaixo, ao
+ * alcance do polegar: ícone e nome, a tela aberta em destaque. O conteúdo ganha folga embaixo
+ * para a barra não cobrir o fim da tela.
+ */
+@media (max-width: 767.98px) {
+  .casca__topo {
+    height: calc(56px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) max(12px, env(safe-area-inset-right)) 0
+      max(12px, env(safe-area-inset-left));
+    line-height: 56px;
+  }
+
+  .casca__nome {
+    font-size: 18px;
+  }
+
+  .casca__usuario {
+    max-width: 40vw;
+  }
+
+  .casca__conteudo {
+    padding: 16px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
+  }
+
+  .casca--comBarra .casca__conteudo {
+    padding-bottom: calc(64px + 24px + env(safe-area-inset-bottom));
+  }
+}
+
+.casca__abas {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  padding: 4px max(4px, env(safe-area-inset-right)) env(safe-area-inset-bottom)
+    max(4px, env(safe-area-inset-left));
+  border-top: 1px solid var(--cor-borda);
+  background: var(--cor-cartao);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.casca__aba {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  min-width: 0;
+  padding: 4px 2px;
+  color: var(--cor-suave-frente);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.casca__aba:hover {
+  color: var(--cor-frente);
+}
+
+/* O ícone numa pílula, que fica na cor de ação na tela aberta */
+.casca__abaIcone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 30px;
+  border-radius: 15px;
+  font-size: 20px;
+  transition: background-color 0.15s ease;
+}
+
+.casca__abaRotulo {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.casca__aba--ativa,
+.casca__aba--ativa:hover {
+  color: var(--cor-acao);
+  font-weight: 600;
+}
+
+.casca__aba--ativa .casca__abaIcone {
+  background: var(--cor-acao-fundo);
 }
