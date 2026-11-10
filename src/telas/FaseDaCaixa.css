@@ -1,0 +1,89 @@
+/* A legenda das fases, ao lado da dos partos, e a etiqueta da fase na ficha. As cores são as
+   da grade (--fase-<fase>-*) */
+
+.legendaDasFases {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.legendaDasFases__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--cor-suave-frente);
+}
+
+/* Um quadradinho com o fundo e a borda da caixa nessa fase */
+.amostraDaFase {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 3px;
+  background: var(--cor-cartao);
+}
+
+.amostraDaFase--acasalado {
+  background: var(--fase-acasalado-fundo);
+  border-color: var(--fase-acasalado-borda);
+}
+
+.amostraDaFase--mamando {
+  background: var(--fase-mamando-fundo);
+  border-color: var(--fase-mamando-borda);
+}
+
+.amostraDaFase--pronto_estoque {
+  background: var(--fase-pronto-estoque-fundo);
+  border-color: var(--fase-pronto-estoque-borda);
+}
+
+.amostraDaFase--estoque {
+  background: var(--fase-estoque-fundo);
+  border-color: var(--fase-estoque-borda);
+}
+
+/* O atraso é a borda, por cima de qualquer fundo */
+.amostraDaFase--atrasado {
+  border: 2px solid var(--cor-erro);
+}
+
+.etiquetaDaFase {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border: 1px solid transparent;
+  border-radius: var(--raio-sm);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.etiquetaDaFase--acasalado {
+  background: var(--fase-acasalado-fundo);
+  border-color: var(--fase-acasalado-borda);
+  color: var(--fase-acasalado-texto);
+}
+
+.etiquetaDaFase--mamando {
+  background: var(--fase-mamando-fundo);
+  border-color: var(--fase-mamando-borda);
+  color: var(--fase-mamando-texto);
+}
+
+.etiquetaDaFase--pronto_estoque {
+  background: var(--fase-pronto-estoque-fundo);
+  border-color: var(--fase-pronto-estoque-borda);
+  color: var(--fase-pronto-estoque-texto);
+}
+
+.etiquetaDaFase--estoque {
+  background: var(--fase-estoque-fundo);
+  border-color: var(--fase-estoque-borda);
+  color: var(--fase-estoque-texto);
+}

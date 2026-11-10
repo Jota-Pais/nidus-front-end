@@ -6,7 +6,7 @@ import {
   COR,
   COR_DE_RETORNO,
   COR_DO_PARTO,
-  ESTADO,
+  FASE,
   FONTE,
   MOVIMENTO,
   RAIO,
@@ -67,7 +67,7 @@ function doTypeScript(): Map<string, string> {
   por('cor', COR)
   por('cor', COR_DE_RETORNO)
   por('superficie', SUPERFICIE_DE_RETORNO)
-  por('estado', ESTADO)
+  por('fase', FASE)
   por('fonte', FONTE)
   por('raio', RAIO, 'px')
   por('sombra', SOMBRA)
@@ -93,7 +93,7 @@ describe('tokens.ts e tokens.css dizem a mesma coisa', () => {
   it('toda cor do tokens.ts tem a variável dela no CSS', () => {
     const doCss = variaveis()
     const cores = [...doTypeScript().keys()].filter((nome) =>
-      /^--(cor|superficie|estado)-/.test(nome),
+      /^--(cor|superficie|fase)-/.test(nome),
     )
     expect(cores.filter((nome) => !doCss.has(nome))).toEqual([])
   })
@@ -125,11 +125,11 @@ describe('contraste da paleta', () => {
       COR_DE_RETORNO.informacao,
       SUPERFICIE_DE_RETORNO.informacaoFundo,
     ],
-    ...(['livres', 'estoque', 'reserva', 'enviado'] as const).map(
-      (coluna): [string, string, string] => [
-        `texto da coluna ${coluna}`,
-        ESTADO[`${coluna}Texto`],
-        ESTADO[`${coluna}Fundo`],
+    ...(['acasalado', 'mamando', 'prontoEstoque', 'estoque'] as const).map(
+      (fase): [string, string, string] => [
+        `texto da fase ${fase}`,
+        FASE[`${fase}Texto`],
+        FASE[`${fase}Fundo`],
       ],
     ),
     ...COR_DO_PARTO.map(({ cor, frente }, i): [string, string, string] => [

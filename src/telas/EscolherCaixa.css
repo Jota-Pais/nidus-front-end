@@ -63,8 +63,8 @@
 }
 
 .miniGrade__celula--estoque {
-  background: var(--estado-estoque-fundo);
-  border-color: var(--estado-estoque-borda);
+  background: var(--fase-estoque-fundo);
+  border-color: var(--fase-estoque-borda);
   color: var(--cor-frente);
   font-weight: 700;
 }

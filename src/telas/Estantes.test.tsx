@@ -30,7 +30,8 @@ const grade: Grade = {
           codigo: 'F1A',
           caixa: {
             id: 10,
-            estado: 'livres',
+            fase: null,
+            atrasado: false,
             idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
@@ -44,7 +45,8 @@ const grade: Grade = {
           codigo: 'F1C',
           caixa: {
             id: 11,
-            estado: 'reserva',
+            fase: 'estoque',
+            atrasado: false,
             idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
@@ -68,7 +70,8 @@ const grade: Grade = {
           codigo: 'F1D',
           caixa: {
             id: 12,
-            estado: 'livres',
+            fase: 'pronto_estoque',
+            atrasado: false,
             idLinhagem: 2,
             linhagem: 'SHR',
             casal: {
@@ -89,10 +92,34 @@ const grade: Grade = {
           codigo: 'F1E',
           caixa: {
             id: 13,
-            estado: null,
+            fase: null,
+            atrasado: false,
             idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
+            estoque: null,
+          },
+        },
+        // só o casal, com o parto previsto para 01/11 sem nascimento registrado
+        {
+          linha: 2,
+          coluna: 1,
+          codigo: 'F2A',
+          caixa: {
+            id: 14,
+            fase: 'acasalado',
+            atrasado: true,
+            idLinhagem: 2,
+            linhagem: 'SHR',
+            casal: {
+              identificacao: 'CD',
+              partoAtual: 1,
+              partoPrevisto: '2026-11-01',
+              encerrado: false,
+              aguardandoDesmame: false,
+              ninhadas: [],
+              reservado: 0,
+            },
             estoque: null,
           },
         },
@@ -235,13 +262,14 @@ describe('arrastar caixa', { timeout: 20_000 }, () => {
 })
 
 describe('caixa de estoque na grade', { timeout: 20_000 }, () => {
-  it('mostra o sexo e quantos animais tem, na cor da coluna', () => {
+  it('mostra o sexo e quantos animais tem, na cor do estoque', () => {
     renderizar(<Estantes />, 'tecnico')
 
     const celula = screen.getByRole('button', { name: /^F1C/ })
 
     expect(celula.textContent).toContain('♀ 4')
-    expect(celula.className).toContain('posicao--reserva')
+    expect(celula.className).toContain('posicao--estoque')
+    expect(celula.className).not.toContain('posicao--atrasado')
     expect(celula.getAttribute('title')).toContain(
       'caixa de estoque, 4 fêmeas, todas reservadas (50 e 30 dias)',
     )
@@ -249,7 +277,7 @@ describe('caixa de estoque na grade', { timeout: 20_000 }, () => {
 })
 
 describe('caixa de casal na grade', { timeout: 20_000 }, () => {
-  it('mostra o parto em curso, o casal e quantos reservados a caixa tem, na cor de Livres', () => {
+  it('mostra o parto em curso, o casal e quantos reservados a caixa tem, na cor da fase', () => {
     renderizar(<Estantes />, 'tecnico')
 
     const celula = screen.getByRole('button', { name: /^F1D/ })
@@ -257,15 +285,38 @@ describe('caixa de casal na grade', { timeout: 20_000 }, () => {
     expect(celula.textContent).toContain('2º')
     expect(celula.textContent).toContain('AB')
     expect(celula.textContent).toContain('2 res.')
-    expect(celula.className).toContain('posicao--livres')
+    // os desmamados do 1º parto continuam na caixa do casal
+    expect(celula.className).toContain('posicao--pronto_estoque')
+    expect(celula.getAttribute('title')).toContain('desmamados, prontos para o estoque')
   })
 
-  it('a caixa sem casal e a sem estado ficam neutras', () => {
+  it('a caixa acasalada mostra a data do parto, e o atraso vem na borda e no título', () => {
+    renderizar(<Estantes />, 'tecnico')
+
+    const celula = screen.getByRole('button', { name: /^F2A/ })
+
+    expect(celula.textContent).toContain('parto 01/11')
+    expect(celula.className).toContain('posicao--acasalado')
+    expect(celula.className).toContain('posicao--atrasado')
+    expect(celula.getAttribute('title')).toContain(
+      'Atrasado: o parto previsto para 01/11 não foi registrado',
+    )
+  })
+
+  it('a legenda diz o que cada cor de fundo é, e que a borda vermelha é o atraso', () => {
+    renderizar(<Estantes />, 'tecnico')
+
+    for (const rotulo of ['Acasalado', 'Mamando', 'Pronto para o estoque', 'Estoque', 'Atrasado']) {
+      expect(screen.getByText(rotulo)).toBeTruthy()
+    }
+  })
+
+  it('a caixa sem fase fica neutra', () => {
     renderizar(<Estantes />, 'tecnico')
 
     for (const codigo of [/^F1A/, /^F1E/]) {
       const celula = screen.getByRole('button', { name: codigo })
-      expect(celula.className).not.toMatch(/posicao--(livres|estoque|reserva|enviado)/)
+      expect(celula.className).not.toMatch(/posicao--(acasalado|mamando|pronto_estoque|estoque)/)
     }
   })
 })

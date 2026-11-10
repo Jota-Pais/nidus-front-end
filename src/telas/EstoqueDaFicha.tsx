@@ -7,7 +7,6 @@ import { App, Tabs } from 'antd'
 import { useState } from 'react'
 import { Aviso, Botao } from '@/componentes'
 import {
-  COLUNA,
   contarDoSexo,
   descreverLiberacao,
   reservadosDoSexo,
@@ -75,7 +74,7 @@ export function FichaDoEstoque({ ficha }: { ficha: FichaDeEstoque }) {
 
 function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDaAcao }) {
   const [acao, setAcao] = useState<'baixa' | 'mudanca' | null>(null)
-  const { sexo, estado, ativa } = ficha.caixa
+  const { sexo, ativa } = ficha.caixa
   // a API diz o que cada pedido tem reservado em cada idade e quando os vivos dela chegaram
   const grupos: GrupoDaCaixa[] = ficha.grupos.map((grupo) => ({
     dtNascimento: grupo.dtNascimento,
@@ -91,7 +90,7 @@ function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDa
     <div className="ficha__aba">
       <div className="ficha__casal">
         {ativa
-          ? `Caixa de estoque${estado ? ` · ${COLUNA[estado].legenda}` : ''}. Os animais saem dela pela entrega, pela baixa ou mudando de caixa; quando ela esvaziar, a posição fica livre.`
+          ? `Caixa de estoque. Os animais saem dela pela entrega, pela baixa ou mudando de caixa; quando ela esvaziar, a posição fica livre.`
           : descreverLiberacao(ficha.caixa.dtLiberacao, ficha.caixa.motivoLiberacao)}
       </div>
 

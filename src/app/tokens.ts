@@ -100,30 +100,32 @@ export const SUPERFICIE_DE_RETORNO = {
 } as const
 
 /**
- * Superfície de cada estado da caixa na grade de estantes. Só a Reserva tem cor própria: as outras
- * usam o tom de retorno, a ação ou o neutro que já diz a mesma coisa.
+ * Superfície de cada fase da caixa, na grade de estantes e na ficha. Fundos claros, cada um de um
+ * matiz, e nenhum no tom de uma bolinha de parto. Pronto para o estoque repete o sucesso (é a
+ * caixa pronta para o próximo passo) e o estoque repete a ação, como antes; o acasalado (lilás) e
+ * o mamando (pêssego) têm cor própria.
  */
-export const ESTADO = {
-  livresFundo: SUPERFICIE_DE_RETORNO.sucessoFundo,
-  livresBorda: SUPERFICIE_DE_RETORNO.sucessoBorda,
-  livresTexto: COR_DE_RETORNO.sucesso,
+export const FASE = {
+  acasaladoFundo: '#F1EDFB',
+  acasaladoBorda: '#D5C8F2',
+  acasaladoTexto: '#5B3E9E',
+
+  mamandoFundo: '#FFEEE0',
+  mamandoBorda: '#F7CBA4',
+  mamandoTexto: '#8A4300',
+
+  prontoEstoqueFundo: SUPERFICIE_DE_RETORNO.sucessoFundo,
+  prontoEstoqueBorda: SUPERFICIE_DE_RETORNO.sucessoBorda,
+  prontoEstoqueTexto: COR_DE_RETORNO.sucesso,
 
   estoqueFundo: COR.acaoFundo,
   estoqueBorda: COR.acaoBorda,
   estoqueTexto: COR.acao,
-
-  reservaFundo: '#FFEEE0',
-  reservaBorda: '#F7CBA4',
-  reservaTexto: '#8A4300',
-
-  enviadoFundo: COR.suave,
-  enviadoBorda: COR.borda,
-  enviadoTexto: COR.suaveFrente,
 } as const
 
 /**
  * Do 1º ao 5º parto, como na spec do cliente (seção 5.2): não coincidem com as cores das
- * colunas, para a bolinha nunca se confundir com o fundo da caixa. O texto em cima de cada
+ * fases, para a bolinha nunca se confundir com o fundo da caixa. O texto em cima de cada
  * uma é o preto ou o branco, o que contrastar mais, e o fundo é o do cabeçalho da ficha.
  */
 export const COR_DO_PARTO = (['#EC4899', '#FACC15', '#22D3EE', '#A3E635', '#6366F1'] as const).map(

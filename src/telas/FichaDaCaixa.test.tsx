@@ -968,7 +968,8 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
       caixa: {
         ...ficha.caixa,
         ativa: false,
-        estado: null,
+        fase: null,
+        atrasado: false,
         dtLiberacao: '2026-10-20',
         motivoLiberacao: 'baixa',
       },
@@ -1200,7 +1201,8 @@ describe('casal novo na caixa', { timeout: 20_000 }, () => {
       caixa: {
         ...vazia.caixa,
         ativa: false,
-        estado: null,
+        fase: null,
+        atrasado: false,
         dtLiberacao: '2026-10-28',
         motivoLiberacao: 'casal_encerrado',
       },

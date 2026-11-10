@@ -20,6 +20,7 @@ import { ateHoje, formatarData, hoje, maisTarde } from '@/lib/data'
 import { EventosDaFicha } from './AnimaisDaFicha'
 import { Campo, LadoALado } from './CamposDaFicha'
 import { FichaDoEstoque, VirarCaixaDeEstoque } from './EstoqueDaFicha'
+import { EtiquetaDaFase } from './FaseDaCaixa'
 import { AbaNinhada, ProximoAcasalamento } from './NinhadaDaFicha'
 import './FichaDaCaixa.css'
 
@@ -56,7 +57,7 @@ export function FichaDaCaixa({
   const deEstoque = ficha.data?.tipo === 'estoque' ? ficha.data : undefined
   const escolha = escolhido ?? escolhaInicial(deCasal)
   const endereco = ficha.data?.caixa.endereco ?? posicaoVazia
-  const estadoDoEstoque = deEstoque?.caixa.estado
+  const caixa = ficha.data?.caixa
 
   function fechar() {
     setEscolhido(null)
@@ -74,8 +75,8 @@ export function FichaDaCaixa({
       styles={{
         header: {
           background: deEstoque
-            ? estadoDoEstoque
-              ? `var(--estado-${estadoDoEstoque}-fundo)`
+            ? deEstoque.caixa.fase === 'estoque'
+              ? 'var(--fase-estoque-fundo)'
               : 'var(--cor-suave)'
             : corDoParto(escolha.ordem).fundo,
           margin: '-20px -24px 0',
@@ -93,7 +94,10 @@ export function FichaDaCaixa({
           {deEstoque && (
             <Etiqueta>Caixa de estoque {SIMBOLO_DO_SEXO[deEstoque.caixa.sexo]}</Etiqueta>
           )}
-          {ficha.data && !ficha.data.caixa.ativa && <Etiqueta tom="atencao">Liberada</Etiqueta>}
+          {/* a de estoque já diz o que é na etiqueta de cima */}
+          {deCasal && caixa?.fase && <EtiquetaDaFase fase={caixa.fase} />}
+          {caixa?.atrasado && <Etiqueta tom="erro">Atrasado</Etiqueta>}
+          {caixa && !caixa.ativa && <Etiqueta tom="atencao">Liberada</Etiqueta>}
         </Linha>
       }
     >

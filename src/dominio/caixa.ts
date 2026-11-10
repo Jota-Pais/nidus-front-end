@@ -1,16 +1,17 @@
-// Os estados da caixa e os partos. As cores vêm dos tokens: a de cada estado é
-// --estado-<estado>-fundo/borda/texto, com que a grade de estantes pinta a caixa; a de cada parto é
-// COR_DO_PARTO
+// As fases da caixa e os partos. As cores vêm dos tokens: a de cada fase é
+// --fase-<fase>-fundo/borda/texto, com que a grade de estantes e a ficha pintam a caixa; a de cada
+// parto é COR_DO_PARTO
 import { COR_DO_PARTO } from '@/app/tokens'
-import { formatarData } from '@/lib/data'
+import { formatarData, formatarDataCurta, hoje } from '@/lib/data'
 import { descreverQuantos } from './pedido'
 import type {
+  CaixaNaGrade,
   DataISO,
   Destino,
-  EstadoCaixa,
   EstoqueNoCard,
   Face,
   FaltaDoPedido,
+  FaseDaCaixa,
   FichaDeCasal,
   MotivoDaLiberacao,
   OndeEstao,
@@ -19,23 +20,58 @@ import type {
   Sexo,
 } from './tipos'
 
-interface Coluna {
-  estado: EstadoCaixa
+interface DadosDaFase {
+  fase: FaseDaCaixa
+  /** o nome na legenda e na etiqueta da ficha */
   rotulo: string
-  /** o que a caixa é, no título da célula da grade */
+  /** o que a caixa tem, no título da célula da grade */
   legenda: string
 }
 
-const COLUNAS: Coluna[] = [
-  { estado: 'livres', rotulo: 'Livres', legenda: 'Casal ativo' },
-  { estado: 'estoque', rotulo: 'Estoque', legenda: 'Animais de estoque' },
-  { estado: 'reserva', rotulo: 'Reserva', legenda: 'Animais de reserva' },
-  { estado: 'enviado', rotulo: 'Enviado', legenda: 'Enviado' },
+/** As fases na ordem do ciclo da caixa de casal, e a da caixa de estoque por último */
+export const FASES: readonly DadosDaFase[] = [
+  { fase: 'acasalado', rotulo: 'Acasalado', legenda: 'casal acasalado, esperando o parto' },
+  { fase: 'mamando', rotulo: 'Mamando', legenda: 'filhotes mamando' },
+  {
+    fase: 'pronto_estoque',
+    rotulo: 'Pronto para o estoque',
+    legenda: 'desmamados, prontos para o estoque',
+  },
+  { fase: 'estoque', rotulo: 'Estoque', legenda: 'caixa de estoque' },
 ]
 
-export const COLUNA = Object.fromEntries(
-  COLUNAS.map((coluna) => [coluna.estado, coluna]),
-) as Record<EstadoCaixa, Coluna>
+export const FASE = Object.fromEntries(FASES.map((dados) => [dados.fase, dados])) as Record<
+  FaseDaCaixa,
+  DadosDaFase
+>
+
+/** Quantos dias o filhote mama: o mesmo ALEITAMENTO_DIAS da API. Depois disso, o desmame atrasou */
+export const DIAS_DE_ALEITAMENTO = 22
+
+/**
+ * Por que a caixa está atrasada, para o título da célula: o parto previsto que passou sem
+ * nascimento, os filhotes que passaram da idade de desmamar, ou os dois. Null sem atraso
+ */
+export function motivoDoAtraso(
+  caixa: Pick<CaixaNaGrade, 'atrasado' | 'casal'>,
+  hojeEm: DataISO = hoje(),
+): string | null {
+  if (!caixa.atrasado) return null
+
+  const previsto = caixa.casal?.partoPrevisto ?? null
+  const motivos = [
+    previsto !== null && previsto < hojeEm
+      ? `o parto previsto para ${formatarDataCurta(previsto)} não foi registrado`
+      : null,
+    caixa.casal?.ninhadas.some(
+      (ninhada) => ninhada.mamando && ninhada.idadeDias > DIAS_DE_ALEITAMENTO,
+    )
+      ? `filhotes com mais de ${DIAS_DE_ALEITAMENTO} dias sem desmame`
+      : null,
+  ].filter((motivo) => motivo !== null)
+
+  return motivos.length > 0 ? `Atrasado: ${motivos.join(' e ')}` : 'Atrasado'
+}
 
 export const MAX_PARTOS_POR_CASAL = 5
 
@@ -147,14 +183,6 @@ export function descreverEstoque(
   estoque: Pick<EstoqueNoCard, 'sexo' | 'total' | 'reservado'>,
 ): string {
   return `${contarDoSexo(estoque.total, estoque.sexo)}${quantosReservados(estoque.reservado, estoque.total, estoque.sexo)}`
-}
-
-/**
- * Na grade, caixa em Livres sem casal ativo fica neutra, como posição vazia. A cor da coluna
- * vale para quem tem casal ou já virou estoque, reserva ou envio
- */
-export function pintaNaGrade(estado: EstadoCaixa | null, temCasal: boolean): boolean {
-  return estado !== null && (temCasal || estado !== 'livres')
 }
 
 /**
