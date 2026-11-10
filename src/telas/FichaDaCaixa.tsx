@@ -380,7 +380,7 @@ function AbaReproducao({
           )}
           {casal.ativo && confirmados >= MAX_PARTOS_POR_CASAL - 1 && (
             <Etiqueta tom="atencao">
-              Último parto: o casal encerra sozinho no {MAX_PARTOS_POR_CASAL}º
+              Último parto: o casal encerra automaticamente no {MAX_PARTOS_POR_CASAL}º
             </Etiqueta>
           )}
           <LadoALado>

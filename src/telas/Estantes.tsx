@@ -107,8 +107,8 @@ export function Estantes() {
         onSuccess: ({ codigo }) => {
           const texto =
             pega.numeroVisivel === destino.numeroVisivel
-              ? `Caixa ${pega.codigo} movida para ${codigo}.`
-              : `Caixa ${pega.codigo} da ${pega.numeroVisivel} movida para ${codigo} da ${destino.numeroVisivel}.`
+              ? `Caixa mudou de lugar: de ${pega.codigo} para ${codigo}.`
+              : `Caixa mudou de lugar: de ${pega.codigo} da ${pega.numeroVisivel} para ${codigo} da ${destino.numeroVisivel}.`
           void message.success(texto)
         },
         // sem campo para destacar: o motivo vai no aviso
