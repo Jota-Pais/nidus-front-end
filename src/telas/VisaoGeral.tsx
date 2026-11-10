@@ -1,7 +1,7 @@
 import { Table } from 'antd'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { CabecalhoDaTela, Pilha, Secao, Texto, Vazio } from '@/componentes'
+import { CabecalhoDaTela, ListaDeCartoes, Pilha, Secao, Texto, Vazio } from '@/componentes'
 import { SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import { useVisaoGeral } from '@/dominio/consultas'
 import type {
@@ -12,6 +12,7 @@ import type {
   PorSexo,
 } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
+import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import './VisaoGeral.css'
 
 /** A colônia de relance: quantos animais cada espécie e linhagem tem, reservados e livres */
@@ -64,6 +65,7 @@ function rotuloDaFaixa({ de, ate }: Pick<FaixaDeIdade, 'de' | 'ate'>): string {
 }
 
 function Especie({ especie }: { especie: EspecieNaVisaoGeral }) {
+  const estreita = useTelaEstreita()
   const { linhagens } = especie
   const titulo = TITULO[especie.codigo] ?? especie.nome
 
@@ -98,52 +100,112 @@ function Especie({ especie }: { especie: EspecieNaVisaoGeral }) {
         </Dado>
       </dl>
 
-      <Table<LinhagemNaVisaoGeral>
-        className="visao__tabela"
-        aria-label={`Linhagens de ${titulo}`}
-        rowKey="idLinhagem"
-        dataSource={linhagens}
-        pagination={false}
-        size="middle"
-        scroll={{ x: 'max-content' }}
-        columns={[
-          {
-            title: 'Linhagem',
-            render: (_, l) => <NomeDaLinhagem linhagem={l} />,
-          },
-          { title: 'Casais', render: (_, l) => (l.casais === 0 ? '–' : l.casais) },
-          { title: 'Vivos', render: (_, l) => <Pouco {...l.vivos} /> },
-          { title: 'Mamando', render: (_, l) => <Pouco {...l.mamando} /> },
-          { title: 'Reservados', render: (_, l) => <Pouco {...l.reservados} /> },
-          { title: 'Livres', render: (_, l) => <Pouco {...l.livres} forte /> },
-        ]}
-      />
+      {estreita ? (
+        // no celular, um cartão por linhagem no lugar das duas tabelas, que rolariam de lado
+        <ListaDeCartoes
+          itens={linhagens}
+          chave={(l) => l.idLinhagem}
+          rotulo={`Linhagens de ${titulo}`}
+          vazio="Nenhuma linhagem nesta espécie."
+          renderizar={(l) => <CartaoDaLinhagem linhagem={l} />}
+        />
+      ) : (
+        <>
+          <Table<LinhagemNaVisaoGeral>
+            className="visao__tabela"
+            aria-label={`Linhagens de ${titulo}`}
+            rowKey="idLinhagem"
+            dataSource={linhagens}
+            pagination={false}
+            size="middle"
+            scroll={{ x: 'max-content' }}
+            columns={[
+              {
+                title: 'Linhagem',
+                render: (_, l) => <NomeDaLinhagem linhagem={l} />,
+              },
+              { title: 'Casais', render: (_, l) => (l.casais === 0 ? '–' : l.casais) },
+              { title: 'Vivos', render: (_, l) => <Pouco {...l.vivos} /> },
+              { title: 'Mamando', render: (_, l) => <Pouco {...l.mamando} /> },
+              { title: 'Reservados', render: (_, l) => <Pouco {...l.reservados} /> },
+              { title: 'Livres', render: (_, l) => <Pouco {...l.livres} forte /> },
+            ]}
+          />
 
-      <h4 className="visao__subtitulo">Livres por idade</h4>
-      <Table<LinhagemNaVisaoGeral>
-        className="visao__tabela"
-        aria-label={`Livres por idade de ${titulo}`}
-        rowKey="idLinhagem"
-        dataSource={linhagens}
-        pagination={false}
-        size="middle"
-        scroll={{ x: 'max-content' }}
-        columns={[
-          {
-            title: 'Linhagem',
-            render: (_, l) => <NomeDaLinhagem linhagem={l} />,
-          },
-          ...faixas.map((faixa, indice) => ({
-            title: rotuloDaFaixa(faixa),
-            key: rotuloDaFaixa(faixa),
-            render: (_: unknown, l: LinhagemNaVisaoGeral) => {
-              const daFaixa = l.livresPorIdade[indice] ?? NADA
-              return <Pouco m={daFaixa.m} f={daFaixa.f} />
-            },
-          })),
-        ]}
-      />
+          <h4 className="visao__subtitulo">Livres por idade</h4>
+          <Table<LinhagemNaVisaoGeral>
+            className="visao__tabela"
+            aria-label={`Livres por idade de ${titulo}`}
+            rowKey="idLinhagem"
+            dataSource={linhagens}
+            pagination={false}
+            size="middle"
+            scroll={{ x: 'max-content' }}
+            columns={[
+              {
+                title: 'Linhagem',
+                render: (_, l) => <NomeDaLinhagem linhagem={l} />,
+              },
+              ...faixas.map((faixa, indice) => ({
+                title: rotuloDaFaixa(faixa),
+                key: rotuloDaFaixa(faixa),
+                render: (_: unknown, l: LinhagemNaVisaoGeral) => {
+                  const daFaixa = l.livresPorIdade[indice] ?? NADA
+                  return <Pouco m={daFaixa.m} f={daFaixa.f} />
+                },
+              })),
+            ]}
+          />
+        </>
+      )}
     </Secao>
+  )
+}
+
+/**
+ * A linhagem no celular: o nome leva às estantes; embaixo, os números em duas colunas, com os
+ * livres em destaque, e os livres de cada faixa de idade numa linha de quatro
+ */
+function CartaoDaLinhagem({ linhagem: l }: { linhagem: LinhagemNaVisaoGeral }) {
+  return (
+    <>
+      <ListaDeCartoes.Topo
+        lado={
+          <Texto tom="secundario">
+            {l.casais === 0 ? 'sem casal' : `${l.casais} ${l.casais === 1 ? 'casal' : 'casais'}`}
+          </Texto>
+        }
+      >
+        <NomeDaLinhagem linhagem={l} />
+      </ListaDeCartoes.Topo>
+      <ListaDeCartoes.Dados>
+        <ListaDeCartoes.Dado rotulo="Vivos">
+          <Pouco {...l.vivos} />
+        </ListaDeCartoes.Dado>
+        <ListaDeCartoes.Dado rotulo="Mamando">
+          <Pouco {...l.mamando} />
+        </ListaDeCartoes.Dado>
+        <ListaDeCartoes.Dado rotulo="Reservados">
+          <Pouco {...l.reservados} />
+        </ListaDeCartoes.Dado>
+        <ListaDeCartoes.Dado rotulo="Livres">
+          <Pouco {...l.livres} forte />
+        </ListaDeCartoes.Dado>
+      </ListaDeCartoes.Dados>
+      <div className="visao__faixas">
+        <Texto tom="rotulo">Livres por idade</Texto>
+        <dl className="visao__faixasDados">
+          {l.livresPorIdade.map((faixa) => (
+            <div key={rotuloDaFaixa(faixa)} className="visao__faixa">
+              <dt>{rotuloDaFaixa(faixa)}</dt>
+              <dd>
+                <Pouco m={faixa.m} f={faixa.f} empilhado />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </>
   )
 }
 
@@ -182,12 +244,26 @@ function Sexos({ m, f }: PorSexo) {
   )
 }
 
-/** "♂ 3  ♀ 2" na tabela, ou "–" quando não há nenhum dos dois */
-function Pouco({ m, f, forte = false }: PorSexo & { forte?: boolean }) {
+/**
+ * "♂ 3  ♀ 2" na tabela, ou "–" quando não há nenhum dos dois. Empilhado, um sexo embaixo do
+ * outro, para caber na faixa de idade do cartão do celular
+ */
+function Pouco({
+  m,
+  f,
+  forte = false,
+  empilhado = false,
+}: PorSexo & { forte?: boolean; empilhado?: boolean }) {
   if (m + f === 0) return <span className="visao__nenhum">–</span>
 
+  const classes = [
+    'visao__celula',
+    forte ? 'visao__celula--forte' : '',
+    empilhado ? 'visao__celula--empilhada' : '',
+  ].filter(Boolean)
+
   return (
-    <span className={forte ? 'visao__celula visao__celula--forte' : 'visao__celula'}>
+    <span className={classes.join(' ')}>
       <span>
         {SIMBOLO_DO_SEXO.M} {m}
       </span>

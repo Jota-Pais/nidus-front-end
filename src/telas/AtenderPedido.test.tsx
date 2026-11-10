@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LugarCandidato, Pedido, ResultadoDaBusca } from '@/dominio/tipos'
 import { botao, erroDaApi } from '@/testes/ficha'
 import { consulta, renderizar } from '@/testes/renderizar'
+import { larguraDaTela } from '@/testes/tela'
 import { AtenderPedido } from './AtenderPedido'
 
 const aprovado: Pedido = {
@@ -481,5 +482,26 @@ describe('completar a reserva em falta', { timeout: 30_000 }, () => {
       screen.getByText('Não há animais livres para completar a reserva com a idade pedida.'),
     ).toBeTruthy()
     expect(screen.getByText(/^Para completar, são necessários/)).toBeTruthy()
+  })
+})
+
+describe('reservar no celular', { timeout: 30_000 }, () => {
+  it('Cancelar e Reservar dividem o rodapé, e o Recusar vai para o fim da janela, longe deles', () => {
+    const voltar = larguraDaTela(390)
+    try {
+      estado.busca = resultado([lugar({ sugerida: true, alocar: { m: 2, f: 2 } })])
+      const recusar = vi.fn()
+      abrir(aprovado, { aoRecusar: recusar })
+
+      const rodape = document.querySelector<HTMLElement>('.ant-modal-footer')!
+      expect(botao('Cancelar', rodape)).toBeTruthy()
+      expect(botao('Reservar', rodape)).toBeTruthy()
+      expect(within(rodape).queryByText('Recusar')).toBeNull()
+
+      fireEvent.click(botao('Recusar o pedido'))
+      expect(recusar).toHaveBeenCalled()
+    } finally {
+      voltar()
+    }
   })
 })

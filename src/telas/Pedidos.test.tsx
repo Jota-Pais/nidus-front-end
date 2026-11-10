@@ -2,8 +2,9 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import dayjs from 'dayjs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LugarDaRetirada, Pedido } from '@/dominio/tipos'
-import { botao, erroDaApi, talvezBotao } from '@/testes/ficha'
+import { botao, erroDaApi, selecao, talvezBotao } from '@/testes/ficha'
 import { consulta, mutacao, renderizar } from '@/testes/renderizar'
+import { larguraDaTela } from '@/testes/tela'
 import { Pedidos } from './Pedidos'
 
 const pedido = (
@@ -119,20 +120,6 @@ const aprovadoSemReserva = (id: number, dataEntrega = daqui(30)): Pedido => ({
   ...pedido(id, 'aprovado'),
   dataEntrega,
 })
-
-/** O jsdom não tem largura: aqui o Grid do antd acha que a tela é larga */
-function emTelaLarga(teste: () => void) {
-  const original = window.matchMedia
-  window.matchMedia = ((query: string) => ({
-    ...original(query),
-    matches: true,
-  })) as typeof window.matchMedia
-  try {
-    teste()
-  } finally {
-    window.matchMedia = original
-  }
-}
 
 // O getByRole calcula o nome acessível de cada elemento, e a tela com o formulário e a lista tem
 // milhares: as consultas abaixo acham pelo atributo e pelo texto, que é o que o teste confere
@@ -257,36 +244,32 @@ describe('lista de pedidos', { timeout: 40_000 }, () => {
     expect(talvezBotao('Desfazer reserva', janela)).toBeNull()
   })
 
-  it('em tela larga, as informações ficam em colunas, sem rolar de lado', () => {
-    emTelaLarga(() => {
-      renderizar(<Pedidos />, 'tecnico')
+  it('no computador, as informações ficam em colunas, sem rolar de lado', () => {
+    renderizar(<Pedidos />, 'tecnico')
 
-      for (const coluna of ['Pedido em', 'Situação', 'Quem pediu', 'Pedido']) {
-        expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
-      }
-      // a entrega vem embaixo da situação, e não numa coluna a mais
-      expect(screen.queryByRole('columnheader', { name: 'Entrega' })).toBeNull()
-      expect(screen.getByText('Entrega em 01/12/2026')).toBeTruthy()
-      expect(screen.getAllByText('Ana')).toHaveLength(3)
-      expect(screen.getAllByText('4 ratos Wistar')).toHaveLength(3)
-      expect(screen.getAllByText('2 machos · 2 fêmeas')).toHaveLength(3)
-    })
+    for (const coluna of ['Pedido em', 'Situação', 'Quem pediu', 'Pedido']) {
+      expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
+    }
+    // a entrega vem embaixo da situação, e não numa coluna a mais
+    expect(screen.queryByRole('columnheader', { name: 'Entrega' })).toBeNull()
+    expect(screen.getByText('Entrega em 01/12/2026')).toBeTruthy()
+    expect(screen.getAllByText('Ana')).toHaveLength(3)
+    expect(screen.getAllByText('4 ratos Wistar')).toHaveLength(3)
+    expect(screen.getAllByText('2 machos · 2 fêmeas')).toHaveLength(3)
   })
 
   it('quem pediu vê quando chega, se aceitaram e o que pediu, sem o próprio nome', () => {
-    emTelaLarga(() => {
-      renderizar(<Pedidos />, 'pesquisador')
+    renderizar(<Pedidos />, 'pesquisador')
 
-      for (const coluna of ['Entrega', 'Situação', 'Pedido']) {
-        expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
-      }
-      expect(screen.queryByRole('columnheader', { name: 'Quem pediu' })).toBeNull()
-      expect(screen.queryByText('Ana')).toBeNull()
-      expect(screen.getByText('Resposta até 15/11/2026')).toBeTruthy()
-      expect(screen.getByText('Aceito em 03/11/2026')).toBeTruthy()
-      expect(screen.getAllByText('4 ratos Wistar')).toHaveLength(3)
-      expect(screen.getAllByText('2 machos · 2 fêmeas · 28 dias de idade')).toHaveLength(3)
-    })
+    for (const coluna of ['Entrega', 'Situação', 'Pedido']) {
+      expect(screen.getByRole('columnheader', { name: coluna })).toBeTruthy()
+    }
+    expect(screen.queryByRole('columnheader', { name: 'Quem pediu' })).toBeNull()
+    expect(screen.queryByText('Ana')).toBeNull()
+    expect(screen.getByText('Resposta até 15/11/2026')).toBeTruthy()
+    expect(screen.getByText('Aceito em 03/11/2026')).toBeTruthy()
+    expect(screen.getAllByText('4 ratos Wistar')).toHaveLength(3)
+    expect(screen.getAllByText('2 machos · 2 fêmeas · 28 dias de idade')).toHaveLength(3)
   })
 
   it('quem pediu vê o motivo da recusa na própria linha, sem abrir o pedido', () => {
@@ -689,5 +672,119 @@ describe('quem pede', { timeout: 40_000 }, () => {
     renderizar(<Pedidos />, 'pesquisador', '   ')
 
     expect(screen.getByLabelText<HTMLInputElement>('Nome').value).toBe('')
+  })
+})
+
+describe('no celular', { timeout: 40_000 }, () => {
+  let voltar = () => {}
+  beforeEach(() => {
+    voltar = larguraDaTela(390)
+  })
+  afterEach(() => voltar())
+
+  /** os números dos pedidos na ordem dos cartões, pela seta de cada um */
+  const ordemDosCartoes = () =>
+    [...document.querySelectorAll<HTMLButtonElement>('.pedidos__cartao .pedidos__seta')].map(
+      (seta) => seta.getAttribute('aria-label'),
+    )
+
+  it('a equipe vê um cartão por pedido, sem tabela: a situação, o que pediu, a entrega e quem pediu', () => {
+    renderizar(<Pedidos />, 'tecnico')
+
+    expect(screen.queryByRole('columnheader')).toBeNull()
+    const lista = screen.getByRole('list', { name: 'Pedidos' })
+    expect(within(lista).getAllByRole('listitem')).toHaveLength(3)
+    expect(within(lista).getByText('Aguardando análise')).toBeTruthy()
+    expect(within(lista).getAllByText('4 ratos Wistar')).toHaveLength(3)
+    expect(within(lista).getByText('Entrega em 01/12/2026')).toBeTruthy()
+    expect(within(lista).getByText('Ana · #1 de 01/11/2026')).toBeTruthy()
+    // o filtro continua, numa linha só, e a lista diz quantos mostra
+    expect(screen.getByText('Pendentes (1)')).toBeTruthy()
+    expect(screen.getByText('3 pedidos')).toBeTruthy()
+  })
+
+  it('a equipe começa pelo pedido mais novo, e a ordem se troca no controle de cima', async () => {
+    renderizar(<Pedidos />, 'tecnico')
+
+    expect(ordemDosCartoes()).toEqual([
+      'Abrir o pedido #3',
+      'Abrir o pedido #2',
+      'Abrir o pedido #1',
+    ])
+
+    fireEvent.mouseDown(selecao('Ordem da lista'))
+    fireEvent.click(await screen.findByTitle('Entrega mais distante'))
+
+    await waitFor(() =>
+      expect(ordemDosCartoes()).toEqual([
+        'Abrir o pedido #3',
+        'Abrir o pedido #2',
+        'Abrir o pedido #1',
+      ]),
+    )
+    fireEvent.mouseDown(selecao('Ordem da lista'))
+    fireEvent.click(await screen.findByTitle('Pedido mais antigo'))
+
+    await waitFor(() =>
+      expect(ordemDosCartoes()).toEqual([
+        'Abrir o pedido #1',
+        'Abrir o pedido #2',
+        'Abrir o pedido #3',
+      ]),
+    )
+  })
+
+  it('tocar em qualquer lugar do cartão abre o pedido', async () => {
+    renderizar(<Pedidos />, 'tecnico')
+
+    fireEvent.click(screen.getByText('Entrega em 01/12/2026'))
+
+    expect(within(await janelaAberta()).getByText('Pedido #1')).toBeTruthy()
+  })
+
+  it('quem pediu vê a entrega mais próxima primeiro, com a idade e a resposta, sem o número', () => {
+    renderizar(<Pedidos />, 'pesquisador')
+
+    const entregas = [...document.querySelectorAll('.pedidos__cartao .pedidos__entrega')].map(
+      (no) => no.textContent,
+    )
+    expect(entregas).toEqual([
+      'Entrega em 01/12/2026',
+      'Entrega em 02/12/2026',
+      'Entrega em 03/12/2026',
+    ])
+    expect(ordemDosCartoes()).toEqual(['Abrir o pedido', 'Abrir o pedido', 'Abrir o pedido'])
+    expect(screen.getAllByText('2 machos · 2 fêmeas · 28 dias de idade')).toHaveLength(3)
+    expect(screen.getByText('Resposta até 15/11/2026')).toBeTruthy()
+    expect(screen.getByText('Motivo: Sem Wistar ate dezembro')).toBeTruthy()
+    expect(screen.queryByText(/#\d/)).toBeNull()
+    expect(screen.queryByText('Ana')).toBeNull()
+  })
+
+  it('no pedido aberto, a ação que leva adiante vai larga embaixo, e não há Fechar: o X fecha', async () => {
+    renderizar(<Pedidos />, 'tecnico')
+
+    const chegou = await abrir('Abrir o pedido #1')
+    const principal = chegou.querySelector<HTMLElement>('.pedidos__rodapePrincipal')
+    expect(principal && botao('Aprovar', principal)).toBeTruthy()
+    expect(botao('Recusar', chegou).closest('.pedidos__rodapeSecundario')).toBeTruthy()
+    expect(talvezBotao('Fechar', chegou)).toBeNull()
+  })
+
+  it('o pedido sem o que fazer abre sem rodapé', async () => {
+    renderizar(<Pedidos />, 'tecnico')
+
+    const recusado = await abrir('Abrir o pedido #3')
+    expect(within(recusado).getByText('Recusado em 04/11/2026')).toBeTruthy()
+    expect(recusado.querySelector('.ant-modal-footer')).toBeNull()
+    expect(talvezBotao('Fechar', recusado)).toBeNull()
+  })
+
+  it('quem pediu fecha o pedido pelo X, sem Fechar no rodapé', async () => {
+    renderizar(<Pedidos />, 'pesquisador')
+
+    const janela = await abrir('Abrir o pedido')
+    expect(talvezBotao('Fechar', janela)).toBeNull()
+    expect(janela.querySelector('.ant-modal-footer')).toBeNull()
   })
 })

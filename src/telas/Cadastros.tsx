@@ -7,6 +7,7 @@ import {
   Etiqueta,
   Janela,
   Linha,
+  ListaDeCartoes,
   Pilha,
   Secao,
 } from '@/componentes'
@@ -27,8 +28,10 @@ import { formatarProtocolo } from '@/dominio/protocolo'
 import type { Catalogo, Estante, Projeto, Sala, SituacaoDoProjeto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
+import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { formatarData } from '@/lib/data'
 import { CampoDoProtocolo } from './CampoDoProtocolo'
+import './Cadastros.css'
 
 const SITUACOES: { value: SituacaoDoProjeto; label: string }[] = [
   { value: 'vigente', label: 'Vigente' },
@@ -56,8 +59,21 @@ export function Cadastros() {
   )
 }
 
+/** A situação do projeto na etiqueta: vigente em verde */
+function SituacaoDoProjetoNaEtiqueta({ projeto: p }: { projeto: Projeto }) {
+  return (
+    <Etiqueta tom={p.vigente ? 'sucesso' : 'neutro'}>
+      {SITUACOES.find((s) => s.value === p.situacao)?.label ?? p.situacao}
+    </Etiqueta>
+  )
+}
+
+const vigencia = (p: Projeto) =>
+  `${formatarData(p.dtVigenciaInicio)} a ${formatarData(p.dtVigenciaFim)}`
+
 function Projetos() {
   const projetos = useProjetos()
+  const estreita = useTelaEstreita()
   const [editando, setEditando] = useState<Projeto | 'novo' | null>(null)
 
   return (
@@ -70,40 +86,56 @@ function Projetos() {
       }
     >
       <EstadoDaConsulta consulta={projetos} rotulo="Carregando os projetos…">
-        <Table<Projeto>
-          rowKey="id"
-          dataSource={projetos.data ?? []}
-          pagination={false}
-          scroll={{ x: true }}
-          locale={{ emptyText: 'Nenhum projeto cadastrado.' }}
-          columns={[
-            { title: 'Número', dataIndex: 'numero' },
-            { title: 'Título', dataIndex: 'titulo' },
-            { title: 'Responsável', dataIndex: 'responsavel' },
-            {
-              title: 'Vigência',
-              render: (_, p) =>
-                `${formatarData(p.dtVigenciaInicio)} a ${formatarData(p.dtVigenciaFim)}`,
-            },
-            { title: 'Cota', dataIndex: 'cotaAutorizada' },
-            {
-              title: 'Situação',
-              render: (_, p) => (
-                <Etiqueta tom={p.vigente ? 'sucesso' : 'neutro'}>
-                  {SITUACOES.find((s) => s.value === p.situacao)?.label ?? p.situacao}
-                </Etiqueta>
-              ),
-            },
-            {
-              title: '',
-              render: (_, p) => (
-                <Botao variante="fantasma" onClick={() => setEditando(p)}>
-                  Editar
-                </Botao>
-              ),
-            },
-          ]}
-        />
+        {estreita ? (
+          <ListaDeCartoes
+            itens={projetos.data ?? []}
+            chave={(p) => p.id}
+            rotulo="Projetos CEUA"
+            vazio="Nenhum projeto cadastrado."
+            renderizar={(p) => (
+              <>
+                <ListaDeCartoes.Topo lado={<SituacaoDoProjetoNaEtiqueta projeto={p} />}>
+                  {p.titulo}
+                  <span className="cadastros__codigo">{p.numero}</span>
+                </ListaDeCartoes.Topo>
+                <ListaDeCartoes.Dados>
+                  <ListaDeCartoes.Dado rotulo="Responsável" largo>
+                    {p.responsavel}
+                  </ListaDeCartoes.Dado>
+                  <ListaDeCartoes.Dado rotulo="Vigência">{vigencia(p)}</ListaDeCartoes.Dado>
+                  <ListaDeCartoes.Dado rotulo="Cota">{p.cotaAutorizada}</ListaDeCartoes.Dado>
+                </ListaDeCartoes.Dados>
+                <ListaDeCartoes.Acoes>
+                  <Botao onClick={() => setEditando(p)}>Editar</Botao>
+                </ListaDeCartoes.Acoes>
+              </>
+            )}
+          />
+        ) : (
+          <Table<Projeto>
+            rowKey="id"
+            dataSource={projetos.data ?? []}
+            pagination={false}
+            scroll={{ x: true }}
+            locale={{ emptyText: 'Nenhum projeto cadastrado.' }}
+            columns={[
+              { title: 'Número', dataIndex: 'numero' },
+              { title: 'Título', dataIndex: 'titulo' },
+              { title: 'Responsável', dataIndex: 'responsavel' },
+              { title: 'Vigência', render: (_, p) => vigencia(p) },
+              { title: 'Cota', dataIndex: 'cotaAutorizada' },
+              { title: 'Situação', render: (_, p) => <SituacaoDoProjetoNaEtiqueta projeto={p} /> },
+              {
+                title: '',
+                render: (_, p) => (
+                  <Botao variante="fantasma" onClick={() => setEditando(p)}>
+                    Editar
+                  </Botao>
+                ),
+              },
+            ]}
+          />
+        )}
       </EstadoDaConsulta>
       {editando && (
         <FormularioDoProjeto
@@ -276,11 +308,12 @@ function LinhagensDaEspecie({ especie }: { especie: Catalogo['especies'][number]
         <Linha espaco={8}>
           <Input
             placeholder="Nova linhagem"
+            aria-label={`Nova linhagem de ${especie.nome}`}
             value={nome}
             maxLength={60}
             onChange={(evento) => setNome(evento.target.value)}
             onPressEnter={adicionar}
-            style={{ width: 200 }}
+            className="cadastros__novaLinhagem"
           />
           <Botao onClick={adicionar} loading={salvar.isPending} disabled={nome.trim() === ''}>
             Adicionar
@@ -348,6 +381,7 @@ function SalasEEstantes() {
 
 function Salas() {
   const { message, modal } = App.useApp()
+  const estreita = useTelaEstreita()
   const salas = useSalas()
   const salvar = useSalvarSala()
   const [editando, setEditando] = useState<Sala | 'nova' | null>(null)
@@ -378,31 +412,57 @@ function Salas() {
       }
     >
       <EstadoDaConsulta consulta={salas} rotulo="Carregando as salas…">
-        <Table<Sala>
-          rowKey="id"
-          dataSource={salas.data ?? []}
-          pagination={false}
-          scroll={{ x: true }}
-          locale={{ emptyText: 'Nenhuma sala cadastrada.' }}
-          columns={[
-            { title: 'Sala', dataIndex: 'nome' },
-            { title: 'Estantes', dataIndex: 'estantes' },
-            {
-              title: '',
-              align: 'right',
-              render: (_, sala) => (
-                <Linha espaco={4} distribuicao="flex-end" estilo={{ flexWrap: 'nowrap' }}>
-                  <Botao variante="fantasma" onClick={() => setEditando(sala)}>
-                    Renomear
-                  </Botao>
-                  <Botao variante="fantasma" onClick={() => remover(sala)}>
-                    Remover
-                  </Botao>
-                </Linha>
-              ),
-            },
-          ]}
-        />
+        {estreita ? (
+          <ListaDeCartoes
+            itens={salas.data ?? []}
+            chave={(sala) => sala.id}
+            rotulo="Salas"
+            vazio="Nenhuma sala cadastrada."
+            renderizar={(sala) => (
+              <>
+                <ListaDeCartoes.Topo
+                  lado={
+                    <span className="cadastros__lado">
+                      {sala.estantes} {sala.estantes === 1 ? 'estante' : 'estantes'}
+                    </span>
+                  }
+                >
+                  {sala.nome}
+                </ListaDeCartoes.Topo>
+                <ListaDeCartoes.Acoes>
+                  <Botao onClick={() => setEditando(sala)}>Renomear</Botao>
+                  <Botao onClick={() => remover(sala)}>Remover</Botao>
+                </ListaDeCartoes.Acoes>
+              </>
+            )}
+          />
+        ) : (
+          <Table<Sala>
+            rowKey="id"
+            dataSource={salas.data ?? []}
+            pagination={false}
+            scroll={{ x: true }}
+            locale={{ emptyText: 'Nenhuma sala cadastrada.' }}
+            columns={[
+              { title: 'Sala', dataIndex: 'nome' },
+              { title: 'Estantes', dataIndex: 'estantes' },
+              {
+                title: '',
+                align: 'right',
+                render: (_, sala) => (
+                  <Linha espaco={4} distribuicao="flex-end" estilo={{ flexWrap: 'nowrap' }}>
+                    <Botao variante="fantasma" onClick={() => setEditando(sala)}>
+                      Renomear
+                    </Botao>
+                    <Botao variante="fantasma" onClick={() => remover(sala)}>
+                      Remover
+                    </Botao>
+                  </Linha>
+                ),
+              },
+            ]}
+          />
+        )}
       </EstadoDaConsulta>
       {editando && (
         <FormularioDaSala
@@ -454,8 +514,13 @@ function FormularioDaSala({ sala, aoFechar }: { sala: Sala | null; aoFechar: () 
   )
 }
 
+/** "50 caixas (5 x 5 por face)": quantas posições a estante tem */
+const capacidade = (e: Estante) =>
+  `${e.faces * e.linhas * e.colunas} caixas (${e.linhas} x ${e.colunas} por face)`
+
 function EstantesDasSalas() {
   const { message, modal } = App.useApp()
+  const estreita = useTelaEstreita()
   const estantes = useEstantes()
   const salas = useSalas()
   const salvar = useSalvarEstante()
@@ -490,37 +555,61 @@ function EstantesDasSalas() {
       }
     >
       <EstadoDaConsulta consulta={estantes} rotulo="Carregando as estantes…">
-        <Table<Estante>
-          rowKey="id"
-          dataSource={estantes.data ?? []}
-          pagination={false}
-          scroll={{ x: true }}
-          locale={{ emptyText: 'Nenhuma estante cadastrada.' }}
-          columns={[
-            { title: 'Número', dataIndex: 'numeroVisivel' },
-            { title: 'Sala', dataIndex: 'sala' },
-            { title: 'Modelo', render: (_, e) => `${e.fabricante} ${e.modelo}` },
-            {
-              title: 'Capacidade',
-              render: (_, e) =>
-                `${e.faces * e.linhas * e.colunas} caixas (${e.linhas} x ${e.colunas} por face)`,
-            },
-            {
-              title: '',
-              align: 'right',
-              render: (_, estante) => (
-                <Linha espaco={4} distribuicao="flex-end" estilo={{ flexWrap: 'nowrap' }}>
-                  <Botao variante="fantasma" onClick={() => setEditando(estante)}>
-                    Editar
-                  </Botao>
-                  <Botao variante="fantasma" onClick={() => remover(estante)}>
-                    Remover
-                  </Botao>
-                </Linha>
-              ),
-            },
-          ]}
-        />
+        {estreita ? (
+          <ListaDeCartoes
+            itens={estantes.data ?? []}
+            chave={(estante) => estante.id}
+            rotulo="Estantes"
+            vazio="Nenhuma estante cadastrada."
+            renderizar={(estante) => (
+              <>
+                <ListaDeCartoes.Topo lado={<span className="cadastros__lado">{estante.sala}</span>}>
+                  <span className="cadastros__codigo">{estante.numeroVisivel}</span>
+                </ListaDeCartoes.Topo>
+                <ListaDeCartoes.Dados>
+                  <ListaDeCartoes.Dado rotulo="Modelo">
+                    {estante.fabricante} {estante.modelo}
+                  </ListaDeCartoes.Dado>
+                  <ListaDeCartoes.Dado rotulo="Capacidade">
+                    {capacidade(estante)}
+                  </ListaDeCartoes.Dado>
+                </ListaDeCartoes.Dados>
+                <ListaDeCartoes.Acoes>
+                  <Botao onClick={() => setEditando(estante)}>Editar</Botao>
+                  <Botao onClick={() => remover(estante)}>Remover</Botao>
+                </ListaDeCartoes.Acoes>
+              </>
+            )}
+          />
+        ) : (
+          <Table<Estante>
+            rowKey="id"
+            dataSource={estantes.data ?? []}
+            pagination={false}
+            scroll={{ x: true }}
+            locale={{ emptyText: 'Nenhuma estante cadastrada.' }}
+            columns={[
+              { title: 'Número', dataIndex: 'numeroVisivel' },
+              { title: 'Sala', dataIndex: 'sala' },
+              { title: 'Modelo', render: (_, e) => `${e.fabricante} ${e.modelo}` },
+              { title: 'Capacidade', render: (_, e) => capacidade(e) },
+              {
+                title: '',
+                align: 'right',
+                render: (_, estante) => (
+                  <Linha espaco={4} distribuicao="flex-end" estilo={{ flexWrap: 'nowrap' }}>
+                    <Botao variante="fantasma" onClick={() => setEditando(estante)}>
+                      Editar
+                    </Botao>
+                    <Botao variante="fantasma" onClick={() => remover(estante)}>
+                      Remover
+                    </Botao>
+                  </Linha>
+                ),
+              },
+            ]}
+          />
+        )}
       </EstadoDaConsulta>
       {editando && (
         <FormularioDaEstante

@@ -1,7 +1,16 @@
 import { App, Form, Input, Select, Switch, Table } from 'antd'
 import { useState } from 'react'
 import { usePerfil } from '@/auth/contexto'
-import { Botao, CabecalhoDaTela, Etiqueta, Janela, Pilha, Secao } from '@/componentes'
+import {
+  Botao,
+  CabecalhoDaTela,
+  Etiqueta,
+  Janela,
+  ListaDeCartoes,
+  Pilha,
+  Secao,
+  Texto,
+} from '@/componentes'
 import {
   useCriarConta,
   useEnviarRedefinicaoDeSenha,
@@ -11,6 +20,8 @@ import {
 import type { ContaNova } from '@/dominio/consultas'
 import type { Perfil, Usuario } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
+import { useTelaEstreita } from '@/layout/useTelaEstreita'
+import './Usuarios.css'
 
 const PERFIS: { value: Perfil; label: string }[] = [
   { value: 'pesquisador', label: 'Pesquisador' },
@@ -29,6 +40,7 @@ export function Usuarios() {
   const salvar = useSalvarUsuario()
   const redefinir = useEnviarRedefinicaoDeSenha()
   const [criando, setCriando] = useState(false)
+  const estreita = useTelaEstreita()
 
   function alterar(conta: Usuario, dados: { perfil?: Perfil; ativo?: boolean }, aviso: string) {
     salvar.mutate(
@@ -70,6 +82,53 @@ export function Usuarios() {
     })
   }
 
+  // o que cada conta mostra e muda, igual na tabela e no cartão do celular
+  const perfil = (conta: Usuario) => (
+    <Select<Perfil>
+      aria-label={`Perfil de ${conta.nome}`}
+      value={conta.perfil}
+      options={PERFIS}
+      disabled={conta.id === eu?.id}
+      style={estreita ? { width: '100%' } : { width: 150 }}
+      onChange={(perfil) =>
+        confirmar(
+          conta,
+          { perfil },
+          `Mudar o perfil de ${conta.nome}?`,
+          `Perfil de ${conta.nome} alterado.`,
+        )
+      }
+    />
+  )
+  const ativa = (conta: Usuario) => (
+    <Switch
+      aria-label={`Conta de ${conta.nome} ativa`}
+      checked={conta.ativo}
+      disabled={conta.id === eu?.id}
+      onChange={(ativo) =>
+        ativo
+          ? alterar(conta, { ativo }, `${conta.nome} reativada.`)
+          : confirmar(
+              conta,
+              { ativo },
+              `Desativar a conta de ${conta.nome}?`,
+              `${conta.nome} desativada.`,
+            )
+      }
+    />
+  )
+  const senha = (conta: Usuario) =>
+    conta.temSenha ? <Etiqueta tom="sucesso">Definida</Etiqueta> : <Etiqueta>Sem senha</Etiqueta>
+  const redefinicao = (conta: Usuario) => (
+    <Botao
+      variante={estreita ? 'secundario' : 'fantasma'}
+      disabled={!conta.ativo}
+      onClick={() => enviarRedefinicao(conta)}
+    >
+      Enviar redefinição de senha
+    </Botao>
+  )
+
   return (
     <Pilha>
       <CabecalhoDaTela
@@ -85,77 +144,49 @@ export function Usuarios() {
 
       <Secao semPreenchimento>
         <EstadoDaConsulta consulta={usuarios} rotulo="Carregando as contas…">
-          <Table<Usuario>
-            rowKey="id"
-            dataSource={usuarios.data ?? []}
-            pagination={false}
-            scroll={{ x: true }}
-            columns={[
-              { title: 'Nome', dataIndex: 'nome' },
-              { title: 'E-mail', dataIndex: 'email' },
-              {
-                title: 'Perfil',
-                width: 170,
-                render: (_, conta) => (
-                  <Select<Perfil>
-                    value={conta.perfil}
-                    options={PERFIS}
-                    disabled={conta.id === eu?.id}
-                    style={{ width: 150 }}
-                    onChange={(perfil) =>
-                      confirmar(
-                        conta,
-                        { perfil },
-                        `Mudar o perfil de ${conta.nome}?`,
-                        `Perfil de ${conta.nome} alterado.`,
-                      )
-                    }
-                  />
-                ),
-              },
-              {
-                title: 'Ativa',
-                width: 80,
-                render: (_, conta) => (
-                  <Switch
-                    checked={conta.ativo}
-                    disabled={conta.id === eu?.id}
-                    onChange={(ativo) =>
-                      ativo
-                        ? alterar(conta, { ativo }, `${conta.nome} reativada.`)
-                        : confirmar(
-                            conta,
-                            { ativo },
-                            `Desativar a conta de ${conta.nome}?`,
-                            `${conta.nome} desativada.`,
-                          )
-                    }
-                  />
-                ),
-              },
-              {
-                title: 'Senha',
-                render: (_, conta) =>
-                  conta.temSenha ? (
-                    <Etiqueta tom="sucesso">Definida</Etiqueta>
-                  ) : (
-                    <Etiqueta>Sem senha</Etiqueta>
-                  ),
-              },
-              {
-                title: '',
-                render: (_, conta) => (
-                  <Botao
-                    variante="fantasma"
-                    disabled={!conta.ativo}
-                    onClick={() => enviarRedefinicao(conta)}
-                  >
-                    Enviar redefinição de senha
-                  </Botao>
-                ),
-              },
-            ]}
-          />
+          {estreita ? (
+            // no celular, uma conta por cartão: o perfil em largura total e a conta ativa ao lado
+            <ListaDeCartoes
+              itens={usuarios.data ?? []}
+              chave={(conta) => conta.id}
+              rotulo="Contas"
+              vazio="Nenhuma conta."
+              renderizar={(conta) => (
+                <>
+                  <ListaDeCartoes.Topo lado={senha(conta)}>
+                    {conta.nome}
+                    <Texto tom="secundario">{conta.email}</Texto>
+                  </ListaDeCartoes.Topo>
+                  <div className="usuarios__perfil">
+                    <div className="usuarios__campo">
+                      <Texto tom="rotulo">Perfil</Texto>
+                      {perfil(conta)}
+                    </div>
+                    <div className="usuarios__campo usuarios__campo--ativa">
+                      <Texto tom="rotulo">Ativa</Texto>
+                      {ativa(conta)}
+                    </div>
+                  </div>
+                  <ListaDeCartoes.Acoes>{redefinicao(conta)}</ListaDeCartoes.Acoes>
+                </>
+              )}
+            />
+          ) : (
+            <Table<Usuario>
+              rowKey="id"
+              dataSource={usuarios.data ?? []}
+              pagination={false}
+              scroll={{ x: true }}
+              columns={[
+                { title: 'Nome', dataIndex: 'nome' },
+                { title: 'E-mail', dataIndex: 'email' },
+                { title: 'Perfil', width: 170, render: (_, conta) => perfil(conta) },
+                { title: 'Ativa', width: 80, render: (_, conta) => ativa(conta) },
+                { title: 'Senha', render: (_, conta) => senha(conta) },
+                { title: '', render: (_, conta) => redefinicao(conta) },
+              ]}
+            />
+          )}
         </EstadoDaConsulta>
       </Secao>
 
