@@ -2,6 +2,7 @@ import { fireEvent, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Catalogo, Estante, Grade } from '@/dominio/tipos'
 import { consulta, renderizar } from '@/testes/renderizar'
+import { larguraDaTela } from '@/testes/tela'
 import { Estantes } from './Estantes'
 
 const mover = vi.hoisted(() => vi.fn())
@@ -191,6 +192,37 @@ describe('tela Estantes', { timeout: 20_000 }, () => {
     expect(screen.getByText('Sala 2')).toBeTruthy()
     expect(screen.getByText('E-01 · ALESCO Modelo 2')).toBeTruthy()
     expect(screen.queryByText('E-03 · ALESCO Modelo 2')).toBeNull()
+  })
+})
+
+describe('no celular', { timeout: 20_000 }, () => {
+  it('as colunas cabem na largura, ninguém arrasta e a legenda fica atrás de um botão', () => {
+    const voltar = larguraDaTela(390)
+
+    try {
+      renderizar(<Estantes />)
+
+      // o arrastar do navegador não funciona no toque: a caixa muda de lugar pela ficha
+      expect(caixaF1A().getAttribute('draggable')).toBe('false')
+      // as 5 colunas da estante dividem a largura, sem rolar de lado
+      const grade = caixaF1A().closest<HTMLElement>('.face__grade')
+      expect(grade?.style.gridTemplateColumns).toBe('repeat(5, minmax(44px, 1fr))')
+      expect(screen.queryByText(/arraste/)).toBeNull()
+
+      expect(screen.queryByText('Fases')).toBeNull()
+      fireEvent.click(screen.getByRole('button', { name: /Legenda/ }))
+      expect(screen.getByText('Fases')).toBeTruthy()
+    } finally {
+      voltar()
+    }
+  })
+
+  it('no computador a caixa continua arrastável e a legenda aberta', () => {
+    renderizar(<Estantes />)
+
+    expect(caixaF1A().getAttribute('draggable')).toBe('true')
+    expect(screen.getByText('Fases')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Legenda/ })).toBeNull()
   })
 })
 

@@ -1,9 +1,9 @@
-import { CloseOutlined } from '@ant-design/icons'
+import { CloseOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { App, Segmented } from 'antd'
 import { createContext, useContext, useState } from 'react'
 import type { DragEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { CabecalhoDaTela, Linha, Pilha, Secao, Texto, Vazio } from '@/componentes'
+import { Botao, CabecalhoDaTela, Linha, Pilha, Secao, Texto, Vazio } from '@/componentes'
 import {
   corDoParto,
   descreverEstoque,
@@ -15,6 +15,7 @@ import { useCatalogo, useEstantes, useGrade, useMudarDePosicao } from '@/dominio
 import type { CaixaNaGrade, Estante, EstoqueNoCard, Grade, Posicao } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
+import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { descreverDias, formatarDataCurta } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import type { PosicaoVazia } from './FichaDaCaixa'
@@ -54,6 +55,13 @@ interface Arraste {
  */
 const LinhagemAcesa = createContext<number | null>(null)
 
+/**
+ * A tela do celular: a grade encolhe para caber as colunas da estante na largura, a célula mostra
+ * só o código e o parto (ou o sexo e quantos, na de estoque), e ninguém arrasta. O arrastar do
+ * navegador não funciona no toque: a caixa muda de lugar pela ficha, em Mudar de lugar
+ */
+const GradeEstreita = createContext(false)
+
 /** O id da linhagem no endereço; qualquer outra coisa é sem filtro */
 function linhagemDoEndereco(valor: string | null): number | null {
   const id = Number(valor)
@@ -74,6 +82,9 @@ export function Estantes() {
   const [movimento, setMovimento] = useState<Movimento | null>(null)
   const [parametros, setParametros] = useSearchParams()
   const linhagem = linhagemDoEndereco(parametros.get('linhagem'))
+  const estreita = useTelaEstreita()
+  // no celular a legenda fica atrás de um botão: aberta, ela empurra a grade para baixo
+  const [comLegenda, setComLegenda] = useState(false)
 
   const lista = estantes.data ?? []
   const salas = [...new Set(lista.map((estante) => estante.sala))]
@@ -121,7 +132,11 @@ export function Estantes() {
       <CabecalhoDaTela
         rotulo="Infraestrutura"
         titulo="Estantes"
-        descricao="As duas faces de cada estante, como estão na sala. Clique numa caixa para abrir a ficha, ou arraste para uma posição vazia para mudar de lugar. Numa posição vazia, clique para formar um casal."
+        descricao={
+          estreita
+            ? 'As duas faces de cada estante, como estão na sala. Toque numa caixa para abrir a ficha, ou numa posição vazia para formar um casal.'
+            : 'As duas faces de cada estante, como estão na sala. Clique numa caixa para abrir a ficha, ou arraste para uma posição vazia para mudar de lugar. Numa posição vazia, clique para formar um casal.'
+        }
       />
 
       <EstadoDaConsulta consulta={estantes} rotulo="Carregando as estantes…">
@@ -137,11 +152,19 @@ export function Estantes() {
                   options={salas}
                   size="large"
                 />
-                <div className="estantes__legendas">
-                  <LegendaDasFases />
-                  <LegendaDosPartos />
-                </div>
+                {estreita ? (
+                  <Botao
+                    icon={<InfoCircleOutlined />}
+                    aria-expanded={comLegenda}
+                    onClick={() => setComLegenda(!comLegenda)}
+                  >
+                    Legenda
+                  </Botao>
+                ) : (
+                  <Legendas />
+                )}
               </Linha>
+              {estreita && comLegenda && <Legendas />}
               {linhagem !== null && (
                 <FiltroDaLinhagem
                   idLinhagem={linhagem}
@@ -153,18 +176,20 @@ export function Estantes() {
               )}
             </Secao>
 
-            <LinhagemAcesa.Provider value={linhagem}>
-              {lista
-                .filter((estante) => estante.sala === salaAtiva)
-                .map((estante) => (
-                  <CartaoDaEstante
-                    key={estante.id}
-                    estante={estante}
-                    arraste={arraste}
-                    aoAbrir={setAberta}
-                  />
-                ))}
-            </LinhagemAcesa.Provider>
+            <GradeEstreita.Provider value={estreita}>
+              <LinhagemAcesa.Provider value={linhagem}>
+                {lista
+                  .filter((estante) => estante.sala === salaAtiva)
+                  .map((estante) => (
+                    <CartaoDaEstante
+                      key={estante.id}
+                      estante={estante}
+                      arraste={arraste}
+                      aoAbrir={setAberta}
+                    />
+                  ))}
+              </LinhagemAcesa.Provider>
+            </GradeEstreita.Provider>
           </>
         )}
       </EstadoDaConsulta>
@@ -175,6 +200,16 @@ export function Estantes() {
         aoFechar={() => setAberta(null)}
       />
     </Pilha>
+  )
+}
+
+/** O que é cada cor de fundo, a borda vermelha e a bolinha do parto */
+function Legendas() {
+  return (
+    <div className="estantes__legendas">
+      <LegendaDasFases />
+      <LegendaDosPartos />
+    </div>
   )
 }
 
@@ -242,6 +277,7 @@ function Face({
   arraste: Arraste
   aoAbrir: (alvo: Alvo) => void
 }) {
+  const estreita = useContext(GradeEstreita)
   const posicoes = [...face.posicoes].sort((a, b) => a.linha - b.linha || a.coluna - b.coluna)
   const rotulo = face.face === 'frontal' ? 'Face frontal' : 'Face traseira'
 
@@ -251,7 +287,10 @@ function Face({
       <div className="face__rolagem">
         <div
           className="face__grade"
-          style={{ gridTemplateColumns: `repeat(${estante.colunas}, minmax(58px, 1fr))` }}
+          // no celular, 6 colunas cabem em 320 px; a estante mais larga rola de lado
+          style={{
+            gridTemplateColumns: `repeat(${estante.colunas}, minmax(${estreita ? 44 : 58}px, 1fr))`,
+          }}
         >
           {posicoes.map((posicao) => (
             <Celula
@@ -299,6 +338,7 @@ function Celula({
 }) {
   const [sobre, setSobre] = useState(false)
   const acesa = useContext(LinhagemAcesa)
+  const estreita = useContext(GradeEstreita)
   const { movimento } = arraste
   const chegando =
     movimento?.destino === chaveDaPosicao(vazia.idEstante, posicao.codigo) ? movimento.caixa : null
@@ -364,8 +404,8 @@ function Celula({
           : fase
             ? FASE[fase].legenda
             : 'sem ciclo aberto'
-      }${atraso ? `. ${atraso}` : ''} - clique para abrir a ficha, arraste para mudar de lugar`}
-      draggable={movimento === null}
+      }${atraso ? `. ${atraso}` : ''} - ${estreita ? 'toque para abrir a ficha' : 'clique para abrir a ficha, arraste para mudar de lugar'}`}
+      draggable={movimento === null && !estreita}
       onDragStart={(evento) => {
         evento.dataTransfer.setData('text/plain', String(caixa.id))
         evento.dataTransfer.effectAllowed = 'move'

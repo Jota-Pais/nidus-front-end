@@ -1,6 +1,7 @@
 // A estante desenhada, para clicar no lugar dos animais: a caixa de estoque que os recebe ou uma
-// posição vazia, que vira caixa de estoque nova. O que não serve fica apagado. É um campo de
-// formulário: o Form.Item dá o valor (o lugar clicado) e recebe a mudança
+// posição vazia, que vira caixa de estoque nova. Sem sexo, é o lugar novo da própria caixa: só a
+// posição vazia serve. O que não serve fica apagado. É um campo de formulário: o Form.Item dá o
+// valor (o lugar clicado) e recebe a mudança
 import { Segmented } from 'antd'
 import { useState } from 'react'
 import { Texto } from '@/componentes'
@@ -12,7 +13,8 @@ import './EscolherCaixa.css'
 
 /** Quem a caixa de estoque tem de aceitar, e onde mais dá para clicar */
 interface Filtro {
-  sexo: Sexo
+  /** null: não são animais, é a caixa inteira mudando de lugar, e só a posição vazia serve */
+  sexo: Sexo | null
   /**
    * a linhagem dos animais: a caixa de estoque que recebe é dela. Na anulação, a que o evento da
    * baixa diz. Sem linhagem (null), nenhuma caixa de estoque casa
@@ -20,7 +22,7 @@ interface Filtro {
   idLinhagem: number | null
   /** a posição vazia vira caixa nova (a mudança); sem ela, só a caixa que já existe recebe */
   aceitaVazia: boolean
-  /** a caixa de onde os animais saem não recebe a si mesma */
+  /** a caixa de onde os animais saem não recebe a si mesma (ou a que muda de lugar) */
   idOrigem: number
   /** o lugar que o outro sexo já pegou na mesma ação: machos e fêmeas não dividem a caixa */
   doOutroSexo: LugarNaEstante | null
@@ -34,6 +36,7 @@ function recebe(caixa: CaixaNaGrade, filtro: Filtro): boolean {
   const estoque = caixa.estoque
   return (
     estoque !== null &&
+    filtro.sexo !== null &&
     estoque.sexo === filtro.sexo &&
     estoque.idLinhagem !== null &&
     estoque.idLinhagem === filtro.idLinhagem &&
@@ -56,7 +59,8 @@ export function EscolherCaixa({
   /** a sala e a estante que abrem primeiro: as da caixa de onde os animais saem */
   sala: string
   numeroVisivel: string
-  sexo: Sexo
+  /** null: a própria caixa muda de lugar, para uma posição vazia */
+  sexo: Sexo | null
   idLinhagem: number | null
   aceitaVazia: boolean
   idOrigem: number
@@ -104,6 +108,11 @@ export function EscolherCaixa({
 /** O que a célula diz, para o título e para o leitor de tela */
 function tituloDa(posicao: Posicao, filtro: Filtro, doOutro: boolean): string {
   const { caixa, codigo } = posicao
+
+  if (filtro.sexo === null) {
+    if (caixa === null) return `${codigo}: posição vazia, a caixa vai para cá`
+    return caixa.id === filtro.idOrigem ? `${codigo}: onde a caixa está` : `${codigo}: ocupada`
+  }
 
   if (caixa === null) {
     if (doOutro) return `${codigo}: já escolhida para ${OS_DO_SEXO[OUTRO_SEXO[filtro.sexo]]}`
@@ -161,6 +170,8 @@ function MiniGrade({
                 const estoque = caixa !== null && recebe(caixa, filtro) ? caixa.estoque : null
                 const livre = vazia && filtro.aceitaVazia && !doOutro
                 const marcada = naPosicao(escolhida, posicao.codigo)
+                // mudando a caixa de lugar: onde ela está agora
+                const origem = filtro.sexo === null && caixa?.id === filtro.idOrigem
                 const titulo = tituloDa(posicao, filtro, doOutro)
 
                 return (
@@ -172,6 +183,7 @@ function MiniGrade({
                       livre ? 'miniGrade__celula--vazia' : '',
                       estoque ? 'miniGrade__celula--estoque' : '',
                       marcada ? 'miniGrade__celula--marcada' : '',
+                      origem ? 'miniGrade__celula--origem' : '',
                     ]
                       .filter(Boolean)
                       .join(' ')}
@@ -191,8 +203,8 @@ function MiniGrade({
                     }
                   >
                     {estoque
-                      ? `${SIMBOLO_DO_SEXO[filtro.sexo]}${estoque.total}`
-                      : doOutro
+                      ? `${SIMBOLO_DO_SEXO[estoque.sexo]}${estoque.total}`
+                      : doOutro && filtro.sexo !== null
                         ? SIMBOLO_DO_SEXO[OUTRO_SEXO[filtro.sexo]]
                         : posicao.codigo}
                   </button>

@@ -95,9 +95,12 @@
     transform var(--movimento-rapido) var(--movimento-curva);
 }
 
-.posicao:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--sombra-md);
+/* no toque o hover gruda depois do toque: a caixa ficaria erguida */
+@media (hover: hover) {
+  .posicao:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--sombra-md);
+  }
 }
 
 .posicao--vazia {
@@ -216,10 +219,12 @@
   box-shadow: inset 0 0 0 1px var(--cor-erro);
 }
 
-.posicao--atrasado:hover {
-  box-shadow:
-    inset 0 0 0 1px var(--cor-erro),
-    var(--sombra-md);
+@media (hover: hover) {
+  .posicao--atrasado:hover {
+    box-shadow:
+      inset 0 0 0 1px var(--cor-erro),
+      var(--sombra-md);
+  }
 }
 
 /* A previsão do parto da caixa acasalada. Na tela estreita a célula só cabe a data: o "parto"
@@ -241,4 +246,48 @@
    clicáveis: o filtro só ajuda a achar, não trava nada */
 .posicao--apagada {
   opacity: 0.3;
+}
+
+/*
+ * Celular (abaixo de 768 px): as colunas da estante cabem na largura. A célula fica com o que se
+ * reconhece de longe, o endereço e o parto (ou o sexo e quantos, na de estoque), na cor da fase e
+ * com a borda do atraso; linhagem, casal, previsão e reservados ficam na ficha, a um toque
+ */
+@media (max-width: 767.98px) {
+  .face__grade {
+    gap: 4px;
+  }
+
+  .posicao {
+    justify-content: flex-start;
+    gap: 4px;
+    min-height: 52px;
+    padding: 5px 4px;
+    font-size: 12px;
+  }
+
+  .posicao__topo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+
+  .posicao__linhagem,
+  .posicao__casal,
+  .posicao__previsto {
+    display: none;
+  }
+
+  .estantes__legendas {
+    margin-top: 12px;
+  }
+
+  .estantes__filtro {
+    padding-left: 14px;
+  }
+
+  .estantes__limpar {
+    width: 40px;
+    height: 40px;
+  }
 }

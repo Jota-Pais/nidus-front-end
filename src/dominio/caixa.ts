@@ -5,7 +5,6 @@ import { COR_DO_PARTO } from '@/app/tokens'
 import { formatarData, formatarDataCurta, hoje } from '@/lib/data'
 import { descreverQuantos } from './pedido'
 import type {
-  CaixaNaGrade,
   DataISO,
   Destino,
   EstoqueNoCard,
@@ -49,11 +48,17 @@ export const FASE = Object.fromEntries(FASES.map((dados) => [dados.fase, dados])
 export const DIAS_DE_ALEITAMENTO = 22
 
 /**
- * Por que a caixa está atrasada, para o título da célula: o parto previsto que passou sem
- * nascimento, os filhotes que passaram da idade de desmamar, ou os dois. Null sem atraso
+ * Por que a caixa está atrasada, para o título da célula e para a ficha: o parto previsto que
+ * passou sem nascimento, os filhotes que passaram da idade de desmamar, ou os dois. Null sem atraso
  */
 export function motivoDoAtraso(
-  caixa: Pick<CaixaNaGrade, 'atrasado' | 'casal'>,
+  caixa: {
+    atrasado: boolean
+    casal: {
+      partoPrevisto: DataISO | null
+      ninhadas: { mamando: boolean; idadeDias: number }[]
+    } | null
+  },
   hojeEm: DataISO = hoje(),
 ): string | null {
   if (!caixa.atrasado) return null

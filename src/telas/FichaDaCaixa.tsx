@@ -7,6 +7,7 @@ import {
   descreverLiberacao,
   doSexo,
   MAX_PARTOS_POR_CASAL,
+  motivoDoAtraso,
   partosDaCaixa,
   SIMBOLO_DO_SEXO,
   vivosNaCaixa,
@@ -16,11 +17,12 @@ import type { CasalNovo } from '@/dominio/consultas'
 import type { Casal, CodigoEspecie, DataISO, FichaDeCasal, Parto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
-import { ateHoje, formatarData, hoje, maisTarde } from '@/lib/data'
+import { ateHoje, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
 import { EventosDaFicha } from './AnimaisDaFicha'
 import { Campo, LadoALado } from './CamposDaFicha'
 import { FichaDoEstoque, VirarCaixaDeEstoque } from './EstoqueDaFicha'
 import { EtiquetaDaFase } from './FaseDaCaixa'
+import { MudarDeLugar } from './MudarDeLugar'
 import { AbaNinhada, ProximoAcasalamento } from './NinhadaDaFicha'
 import './FichaDaCaixa.css'
 
@@ -58,6 +60,7 @@ export function FichaDaCaixa({
   const escolha = escolhido ?? escolhaInicial(deCasal)
   const endereco = ficha.data?.caixa.endereco ?? posicaoVazia
   const caixa = ficha.data?.caixa
+  const atraso = deCasal ? atrasoDaFicha(deCasal) : null
 
   function fechar() {
     setEscolhido(null)
@@ -119,12 +122,41 @@ export function FichaDaCaixa({
         </div>
       ) : (
         <EstadoDaConsulta consulta={ficha}>
+          {(atraso || caixa?.ativa) && (
+            <div className="ficha__topo">
+              {/* o motivo que a grade só dava no título da célula, que no toque não aparece */}
+              {atraso && <Aviso tom="erro" titulo={`${atraso}.`} />}
+              {caixa?.ativa && <MudarDeLugar key={caixa.id} caixa={caixa} />}
+            </div>
+          )}
           {deEstoque && <FichaDoEstoque ficha={deEstoque} />}
           {deCasal && <FichaDoCasal ficha={deCasal} escolha={escolha} aoEscolher={setEscolhido} />}
         </EstadoDaConsulta>
       )}
     </Janela>
   )
+}
+
+/**
+ * O motivo do atraso, contado nos partos da ficha como a grade conta nos dela: o parto pendente
+ * que passou da previsão e as ninhadas que mamam na caixa. Null sem atraso, ou sem um motivo que
+ * os partos mostrem
+ */
+function atrasoDaFicha(ficha: FichaDeCasal): string | null {
+  const partos = partosDaCaixa(ficha)
+  const pendente = partos.find((parto) => parto.dtPartoReal === null && parto.dtSemNinhada === null)
+  const ninhadas = partos.flatMap((parto) =>
+    parto.dtPartoReal !== null && vivosNaCaixa(parto, ficha.caixa.id)
+      ? [{ mamando: parto.dtDesmameReal === null, idadeDias: idadeEmDias(parto.dtPartoReal) }]
+      : [],
+  )
+  const motivo = motivoDoAtraso({
+    atrasado: ficha.caixa.atrasado,
+    casal: { partoPrevisto: pendente?.dtPartoPrevisto ?? null, ninhadas },
+  })
+
+  // "Atrasado" sozinho a etiqueta do título já diz
+  return motivo === 'Atrasado' ? null : motivo
 }
 
 /** O parto escolhido no seletor: do casal da caixa (idCasal null) ou de um casal de antes */
