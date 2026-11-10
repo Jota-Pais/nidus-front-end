@@ -396,7 +396,7 @@ function AbaReproducao({
         <EncerrarCasal
           idCasal={casal.id}
           // o acasalamento pendente marcado para depois do encerramento é desfeito por ele (é o
-          // que abriu sozinho no nascimento): o limite é o último acasalamento que deu parto
+          // que abriu automaticamente no nascimento): o limite é o último acasalamento que deu parto
           desde={maisTarde(
             casal.dtFormacao,
             ficha.partos.filter((p) => p.dtPartoReal !== null || p.dtSemNinhada !== null).at(-1)
@@ -520,14 +520,14 @@ function FormarCasal({
       <LadoALado>
         <Form.Item
           name="grupoMacho"
-          label="Macho (A-E)"
+          label="Grupo do macho (A-E)"
           rules={[{ required: true, message: 'Grupo do macho' }]}
         >
           <Select options={GRUPOS} onChange={escolherMacho} />
         </Form.Item>
         <Form.Item
           name="grupoFemea"
-          label="Fêmea (A-E)"
+          label="Grupo da fêmea (A-E)"
           rules={[{ required: true, message: 'Grupo da fêmea' }]}
         >
           <Select options={GRUPOS} />

@@ -130,7 +130,7 @@ describe('mudar a caixa de lugar e o atraso, na ficha', { timeout: 40_000 }, () 
     expect(botao('Mover').disabled).toBe(true)
 
     fireEvent.click(celula('F1B: posição vazia, a caixa vai para cá'))
-    fireEvent.click(botao('Mover para F1B'))
+    fireEvent.click(botao('Mudar para F1B'))
 
     expect(api.mover).toHaveBeenCalledWith(
       { idCaixa: 7, idEstante: 1, face: 'frontal', linha: 1, coluna: 2 },
@@ -1187,13 +1187,14 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
     expect(within(aba).getByText('1/5')).toBeTruthy()
   })
 
-  it('o parto que ainda não existe diz que o acasalamento abre sozinho, sem formulário', async () => {
+  it('o parto que ainda não existe diz que o acasalamento abre automaticamente, sem formulário', async () => {
     abrirFicha()
     await abaAberta()
 
     // o 2º parto ainda não existe: nas abas Reprodução e Ninhada, só o aviso
     fireEvent.click(screen.getByText('2º', { selector: 'button' }))
-    const abre = /O acasalamento do 2º parto abre sozinho, 6 dias depois do nascimento do 1º/
+    const abre =
+      /O acasalamento do 2º parto abre automaticamente, 6 dias depois do nascimento do 1º/
     expect(within(await abaAberta()).getByText(abre)).toBeTruthy()
     fireEvent.click(aba('Ninhada'))
     expect(within(await abaAberta()).getByText(abre)).toBeTruthy()
@@ -1202,7 +1203,7 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
     expect(talvezBotao('Registrar acasalamento')).toBeNull()
   })
 
-  it('o acasalamento que abriu sozinho é só a data no campo, sem texto nem Corrigir', async () => {
+  it('o acasalamento que abriu automaticamente é só a data no campo, sem texto nem Corrigir', async () => {
     const pendente = (dtAcasalamento: string) =>
       parto({
         id: 11,
@@ -1224,7 +1225,7 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
     expect((within(ninhada).getByLabelText('Data do acasalamento') as HTMLInputElement).value).toBe(
       '30/09/2026',
     )
-    expect(within(ninhada).queryByText(/Aberto sozinho/)).toBeNull()
+    expect(within(ninhada).queryByText(/Aberto automaticamente/)).toBeNull()
     expect(talvezBotao('Corrigir', secao('Acasalamento'))).toBeNull()
   })
 

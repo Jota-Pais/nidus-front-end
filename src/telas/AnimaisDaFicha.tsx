@@ -519,11 +519,7 @@ export function MudarAnimais({
           </div>
         )
       })}
-      <Form.Item
-        name="dtFato"
-        label="Data da mudança"
-        rules={[{ required: true, message: 'Data' }]}
-      >
+      <Form.Item name="dtFato" label="Data" rules={[{ required: true, message: 'Data' }]}>
         <CampoDeData min={maisTarde(desde, grupo.dtNascimento, grupo.dtChegada)} max={ateHoje()} />
       </Form.Item>
       <div className="ficha__botoes">

@@ -67,9 +67,9 @@ export function conferirIdadeMaxima(
   idadeMinima: number = IDADE.minima,
 ): string | null {
   if (maximo === null || maximo === undefined) {
-    return typeof minimo === 'number' ? 'Informe até que idade' : null
+    return typeof minimo === 'number' ? 'Informe a idade máxima' : null
   }
-  if (typeof minimo === 'number' && maximo < minimo) return 'Menor que a idade inicial'
+  if (typeof minimo === 'number' && maximo < minimo) return 'Menor que a idade mínima'
 
   const resultado = regraDeIdade(idadeMinima).safeParse(maximo)
   return resultado.success ? null : (resultado.error.issues[0]?.message ?? null)

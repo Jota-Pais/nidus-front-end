@@ -143,7 +143,7 @@ export function destinoDoLugar(lugar: LugarNaEstante): Destino {
 const POR_QUE_LIBEROU: Record<MotivoDaLiberacao, string> = {
   entrega: 'a entrega levou os últimos animais',
   baixa: 'a baixa dos últimos animais a esvaziou',
-  mudanca: 'os últimos animais mudaram de caixa',
+  mudanca: 'os últimos animais passaram para outra caixa',
   casal_encerrado: 'o casal encerrou sem animais nela',
 }
 
@@ -201,7 +201,7 @@ export function descreverFalta(faltas: FaltaDoPedido[]): string | null {
   const quem = faltas.length === 1 ? 'O pedido ficou' : 'Os pedidos ficaram'
 
   return (
-    `${quem} com menos animais do que o reservado: ${cada}. ` +
+    `${quem} com animais a menos que a reserva (reserva em falta): ${cada}. ` +
     'Em Pedidos, a reserva em falta pode ser completada com outros animais ou desfeita.'
   )
 }

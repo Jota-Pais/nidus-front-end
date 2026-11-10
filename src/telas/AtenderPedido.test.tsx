@@ -269,7 +269,7 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
       { target: { value: '1' } },
     )
 
-    expect(await screen.findByText('Há 1 macho a mais nos lugares marcados.')).toBeTruthy()
+    expect(await screen.findByText('Há 1 macho a mais nas caixas marcadas.')).toBeTruthy()
     expect(reservar()).toHaveProperty('disabled', true)
   })
 
@@ -416,7 +416,7 @@ describe('completar a reserva em falta', { timeout: 30_000 }, () => {
     expect(screen.getByText('Completar a reserva do pedido #12')).toBeTruthy()
     expect(
       screen.getByText(
-        'A reserva deste pedido perdeu animais: faltam 1 macho e 1 fêmea. Os que continuam reservados ficam; marque de onde completar.',
+        'A reserva deste pedido está em falta: faltam 1 macho e 1 fêmea. Os que continuam reservados ficam; marque de qual caixa completar.',
       ),
     ).toBeTruthy()
     expect(placar('Machos').textContent).toBe('1 de 1')
@@ -460,7 +460,7 @@ describe('completar a reserva em falta', { timeout: 30_000 }, () => {
     )
 
     await waitFor(() => expect(botao('Completar')).toHaveProperty('disabled', true))
-    expect(screen.getByText('Há 1 macho a mais nos lugares marcados.')).toBeTruthy()
+    expect(screen.getByText('Há 1 macho a mais nas caixas marcadas.')).toBeTruthy()
   })
 
   it('completo, diz que a reserva está completa', async () => {

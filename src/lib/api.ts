@@ -42,8 +42,8 @@ export class ErroDeApi extends Error {
 export class ErroDeRede extends Error {
   constructor(causa: unknown) {
     super(
-      'Não foi possível falar com o servidor. Verifique a conexão — se for a primeira ' +
-        'requisição do dia, a API pode levar até um minuto para acordar.',
+      'Não foi possível falar com o servidor. Verifique a conexão — se for o primeiro ' +
+        'acesso do dia, o servidor pode levar até um minuto para acordar.',
     )
     this.name = 'ErroDeRede'
     this.cause = causa

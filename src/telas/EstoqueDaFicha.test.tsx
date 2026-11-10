@@ -135,7 +135,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
       screen.getByText(/^Caixa liberada em 08\/11\/2026: a entrega levou os últimos animais/),
     ).toBeTruthy()
     expect(talvezBotao('Baixa')).toBeNull()
-    expect(talvezBotao('Mudar animais')).toBeNull()
+    expect(talvezBotao('Passar para outra caixa')).toBeNull()
   })
 
   it('a baixa pede de qual idade e manda os machos dela', async () => {
@@ -157,7 +157,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
   it('mudar animais leva para outra caixa de machos da linhagem, ou para uma posição vazia', async () => {
     renderizar(<FichaDoEstoque ficha={fichaDeEstoque()} />)
 
-    fireEvent.click(botao('Mudar animais'))
+    fireEvent.click(botao('Passar para outra caixa'))
     const machos = grupo('Machos')
 
     // a própria F1C não recebe; a de fêmeas e a de outra linhagem ficam apagadas
@@ -168,7 +168,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
 
     fireEvent.change(within(machos).getByLabelText('Quantos machos'), { target: { value: '3' } })
     fireEvent.click(celula(/^F1D: posição vazia/, machos))
-    fireEvent.click(botao('Mudar animais'))
+    fireEvent.click(botao('Passar para outra caixa'))
 
     await waitFor(() => expect(api.mudanca).toHaveBeenCalled(), DEMORA)
     expect(api.mudanca).toHaveBeenCalledWith({
@@ -185,7 +185,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
   it('levar só os reservados de um pedido vale na idade que os tem', async () => {
     renderizar(<FichaDoEstoque ficha={comDuasIdades} />)
 
-    fireEvent.click(botao('Mudar animais'))
+    fireEvent.click(botao('Passar para outra caixa'))
     // os 2 reservados do #12 são de 24/09, a idade que a mudança abre
     fireEvent.mouseDown(selecao('Quais machos'))
     fireEvent.click(await screen.findByTitle('Só os reservados do pedido #12'))
@@ -219,7 +219,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
       />,
     )
 
-    fireEvent.click(botao('Mudar animais'))
+    fireEvent.click(botao('Passar para outra caixa'))
     fireEvent.mouseDown(selecao('Quais machos'))
     expect(await screen.findByTitle('Só os reservados do pedido #12')).toBeTruthy()
     expect(screen.queryByTitle('Só os reservados do pedido #15')).toBeNull()
@@ -259,8 +259,8 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
       />,
     )
 
-    fireEvent.click(botao('Mudar animais'))
-    fireEvent.click(screen.getByLabelText('Data da mudança'))
+    fireEvent.click(botao('Passar para outra caixa'))
+    fireEvent.click(screen.getByLabelText('Data'))
     await waitFor(() => expect(diaNoCalendario('2026-10-16')).not.toBe('(sem dia)'))
     expect(diaNoCalendario('2026-10-15')).toContain(APAGADO)
     expect(diaNoCalendario('2026-10-16')).not.toContain(APAGADO)
@@ -378,7 +378,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
       screen.getByText(/^Caixa liberada em 20\/10\/2026: a baixa dos últimos animais/),
     ).toBeTruthy()
     expect(talvezBotao('Baixa')).toBeNull()
-    expect(talvezBotao('Mudar animais')).toBeNull()
+    expect(talvezBotao('Passar para outra caixa')).toBeNull()
     fireEvent.click(aba('Eventos'))
     expect(await screen.findByText('Baixa de 6 machos nesta caixa.')).toBeTruthy()
     expect(botao('Anular')).toBeTruthy()

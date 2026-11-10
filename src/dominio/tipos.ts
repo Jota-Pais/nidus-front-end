@@ -592,6 +592,8 @@ export interface RegistroDoHistorico {
   usuario: string
   entidade: string
   idEntidade: number
+  /** onde foi, em palavras ("Caixa F1A", "Casal AB (F1A)", "Pedido #3"); null quando a API não diz */
+  onde: string | null
   /** na trilha, o tipo da ocorrência: nascimento, baixa, mudanca, reserva, entrega... */
   acao: string
   /** na trilha começa com a data do fato: 'Em aaaa-mm-dd: ' */

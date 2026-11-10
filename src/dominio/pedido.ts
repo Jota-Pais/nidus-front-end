@@ -195,13 +195,13 @@ export const SITUACAO_DO_PEDIDO: Record<
   enviado: { rotulo: 'Aguardando análise', tom: 'atencao' },
   aprovado: {
     rotulo: 'Aguardando animais',
-    paraQuemPediu: 'Aceito, em andamento',
+    paraQuemPediu: 'Aprovado, em andamento',
     tom: 'informacao',
   },
   reservado: {
     rotulo: 'Animais reservados',
     // quem pediu vê o mesmo "Aceito, em andamento" do aprovado, então na mesma cor
-    paraQuemPediu: 'Aceito, em andamento',
+    paraQuemPediu: 'Aprovado, em andamento',
     tomParaQuemPediu: 'informacao',
     tom: 'sucesso',
   },
@@ -261,8 +261,8 @@ export type FiltroDePedido = 'todos' | 'pendentes' | 'aceitos' | 'entregues' | '
 
 export const FILTROS_DE_PEDIDO: { valor: FiltroDePedido; rotulo: string }[] = [
   { valor: 'todos', rotulo: 'Todos' },
-  { valor: 'pendentes', rotulo: 'Pendentes' },
-  { valor: 'aceitos', rotulo: 'Aceitos' },
+  { valor: 'pendentes', rotulo: 'Aguardando análise' },
+  { valor: 'aceitos', rotulo: 'Aprovados' },
   { valor: 'entregues', rotulo: 'Entregues' },
   { valor: 'recusados', rotulo: 'Recusados' },
 ]

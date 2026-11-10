@@ -204,8 +204,8 @@ describe('entraNoFiltro', () => {
 describe('situação do pedido', () => {
   it('toda situação tem rótulo; aprovado e reservado, para quem pediu, são o mesmo aceito', () => {
     for (const status of STATUS) expect(SITUACAO_DO_PEDIDO[status].rotulo).not.toBe('')
-    expect(SITUACAO_DO_PEDIDO.aprovado.paraQuemPediu).toBe('Aceito, em andamento')
-    expect(SITUACAO_DO_PEDIDO.reservado.paraQuemPediu).toBe('Aceito, em andamento')
+    expect(SITUACAO_DO_PEDIDO.aprovado.paraQuemPediu).toBe('Aprovado, em andamento')
+    expect(SITUACAO_DO_PEDIDO.reservado.paraQuemPediu).toBe('Aprovado, em andamento')
   })
 
   it('o aprovado está sem os animais e o reservado, com eles: as duas palavras não se confundem', () => {

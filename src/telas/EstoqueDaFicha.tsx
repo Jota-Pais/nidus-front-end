@@ -90,7 +90,7 @@ function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDa
     <div className="ficha__aba">
       <div className="ficha__casal">
         {ativa
-          ? `Caixa de estoque. Os animais saem dela pela entrega, pela baixa ou mudando de caixa; quando ela esvaziar, a posição fica livre.`
+          ? `Caixa de estoque. Os animais saem dela pela entrega, pela baixa ou passando para outra caixa; quando ela esvaziar, a posição fica vazia.`
           : descreverLiberacao(ficha.caixa.dtLiberacao, ficha.caixa.motivoLiberacao)}
       </div>
 
@@ -117,14 +117,14 @@ function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDa
         <MudarAnimais
           caixa={caixa}
           grupos={grupos}
-          botao="Mudar animais"
+          botao="Passar para outra caixa"
           aoTerminar={() => setAcao(null)}
         />
       )}
       {acao === null && ativa && ficha.total > 0 && (
         <div className="ficha__botoes">
           <Botao variante="primario" onClick={() => setAcao('mudanca')}>
-            Mudar animais
+            Passar para outra caixa
           </Botao>
           <Botao variante="perigo" onClick={() => setAcao('baixa')}>
             Baixa
@@ -199,7 +199,7 @@ function CasaisAnteriores({ casais }: { casais: CasalComPartos[] }) {
             Casal {casal.identificacao} · {casal.linhagem}
           </h3>
           <p className="ficha__dica">
-            Formado em {formatarData(casal.dtFormacao)}
+            Acasalado em {formatarData(casal.dtFormacao)}
             {casal.dtEncerramento ? `, encerrado em ${formatarData(casal.dtEncerramento)}` : ''}.
           </p>
           <ul className="ficha__lista">
