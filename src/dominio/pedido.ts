@@ -190,7 +190,7 @@ export function reservaPodeIr(
  */
 export const SITUACAO_DO_PEDIDO: Record<
   StatusDoPedido,
-  { rotulo: string; paraQuemPediu?: string; tom: TomDeEtiqueta }
+  { rotulo: string; paraQuemPediu?: string; tomParaQuemPediu?: TomDeEtiqueta; tom: TomDeEtiqueta }
 > = {
   enviado: { rotulo: 'Aguardando análise', tom: 'atencao' },
   aprovado: {
@@ -200,7 +200,9 @@ export const SITUACAO_DO_PEDIDO: Record<
   },
   reservado: {
     rotulo: 'Animais reservados',
+    // quem pediu vê o mesmo "Aceito, em andamento" do aprovado, então na mesma cor
     paraQuemPediu: 'Aceito, em andamento',
+    tomParaQuemPediu: 'informacao',
     tom: 'sucesso',
   },
   entregue: { rotulo: 'Entregue', tom: 'neutro' },

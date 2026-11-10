@@ -559,6 +559,7 @@ function Situacao({
 }) {
   const situacao = SITUACAO_DO_PEDIDO[p.status]
   const rotulo = (paraQuemPediu && situacao.paraQuemPediu) || situacao.rotulo
+  const tom = (paraQuemPediu && situacao.tomParaQuemPediu) || situacao.tom
   // na lista da equipe, a entrega no lugar do prazo e da data da decisão
   const listaDaEquipe = naLista && !paraQuemPediu
   const entrega = !listaDaEquipe
@@ -578,7 +579,7 @@ function Situacao({
 
   return (
     <div className="pedidos__duasLinhas">
-      <Etiqueta tom={situacao.tom} grande>
+      <Etiqueta tom={tom} grande>
         {rotulo}
       </Etiqueta>
       {entrega && <Texto className="pedidos__entrega">{entrega}</Texto>}
@@ -722,6 +723,7 @@ function CartaoDoPedido({
 }) {
   const situacao = SITUACAO_DO_PEDIDO[p.status]
   const rotulo = (paraQuemPediu && situacao.paraQuemPediu) || situacao.rotulo
+  const tom = (paraQuemPediu && situacao.tomParaQuemPediu) || situacao.tom
   const alertas = paraQuemPediu
     ? []
     : [reservaEmFalta(p), avisoDeEntregaSemReserva(p)].filter((alerta) => alerta !== null)
@@ -736,7 +738,7 @@ function CartaoDoPedido({
   return (
     <div className="pedidos__cartao" onClick={aoAbrir}>
       <div className="pedidos__cartaoTopo">
-        <Etiqueta tom={situacao.tom} grande>
+        <Etiqueta tom={tom} grande>
           {rotulo}
         </Etiqueta>
         <button

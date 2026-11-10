@@ -130,7 +130,7 @@ describe('Visão geral no celular', { timeout: 20_000 }, () => {
       expect(dado('Livres')).toBe('♂ 6♀ 5')
       expect(
         [...cartao.querySelectorAll('.visao__faixa')].map((faixa) => faixa.textContent),
-      ).toEqual(['até 21 d♂ 3♀ 3', '22–35 d♂ 3♀ 2', '36–60 d–', 'mais de 60 d–'])
+      ).toEqual(['até 21 d♂ 3♀ 3', '22–35 d♂ 3♀ 2', '36–60 d–', '> 60 d–'])
     } finally {
       voltar()
     }
