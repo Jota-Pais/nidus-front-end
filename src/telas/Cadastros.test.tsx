@@ -72,6 +72,17 @@ function linha(texto: string, botao: string): HTMLElement {
   return achada
 }
 
+describe('abas', () => {
+  it('os projetos CEUA ficam ocultos: só linhagens e salas e estantes', () => {
+    renderizar(<Cadastros />, 'gestor')
+
+    expect(screen.getAllByRole('tab').map((aba) => aba.textContent)).toEqual([
+      'Linhagens',
+      'Salas e estantes',
+    ])
+  })
+})
+
 // A aba monta duas tabelas do antd, e o formulário da estante tem dois Select: no jsdom cada
 // caso leva de 15 a 30 s, como na busca de atendimento, e os 5 s padrão falham à toa
 describe('salas', { timeout: 60_000 }, () => {
