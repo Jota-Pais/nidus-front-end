@@ -7,12 +7,11 @@ const HISTORICO = [...chaves.historico, { entidade: null, idEntidade: null, busc
 
 /** Uma consulta de cada tela, como estariam no cache com a colônia aberta */
 const DA_COLONIA = [
-  chaves.quadro('rato'),
+  chaves.visaoGeral,
   chaves.grade(1),
   chaves.grade(2),
   chaves.caixa(812),
   chaves.caixa(813),
-  chaves.estoque('camundongo'),
   chaves.pedidos,
   chaves.atendimento(7),
   chaves.retirada(7),
@@ -59,7 +58,7 @@ function naTela(cliente: QueryClient, consultas: readonly (readonly unknown[])[]
 }
 
 describe('invalidarColonia', () => {
-  it('recarrega de uma vez kanban, grades, fichas, estoque, busca, pedidos, retirada e histórico', async () => {
+  it('recarrega de uma vez visão geral, grades, fichas, busca, pedidos, retirada e histórico', async () => {
     const cliente = cacheCheio()
     const sair = naTela(cliente, DA_COLONIA)
 
@@ -73,14 +72,14 @@ describe('invalidarColonia', () => {
 
   it('tira do cache o que não está na tela: aberto depois, não mostra as caixas de antes', async () => {
     const cliente = cacheCheio()
-    // a ficha aberta na estante; a retirada, a janela de reservar e o kanban, fechados
+    // a ficha aberta na estante; a retirada, a janela de reservar e a visão geral, fechadas
     const sair = naTela(cliente, [chaves.grade(1), chaves.caixa(812)])
 
     await invalidarColonia(cliente)
 
     expect(cliente.getQueryData(chaves.retirada(7))).toBeUndefined()
     expect(cliente.getQueryData(chaves.atendimento(7))).toBeUndefined()
-    expect(cliente.getQueryData(chaves.quadro('rato'))).toBeUndefined()
+    expect(cliente.getQueryData(chaves.visaoGeral)).toBeUndefined()
     expect(cliente.getQueryData(chaves.grade(1))).toEqual({ recarregada: true })
     expect(cliente.getQueryData(chaves.caixa(812))).toEqual({ recarregada: true })
     sair()

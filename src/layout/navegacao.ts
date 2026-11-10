@@ -8,11 +8,10 @@ interface ItemDeMenu {
 }
 
 const ITENS_DE_MENU: ItemDeMenu[] = [
-  { rotulo: 'Kanban', caminho: '/kanban', perfis: ['tecnico', 'gestor'] },
+  { rotulo: 'Visão geral', caminho: '/visao-geral', perfis: ['tecnico', 'gestor'] },
   { rotulo: 'Estantes', caminho: '/estantes', perfis: ['tecnico', 'gestor'] },
   { rotulo: 'Solicitar animais', caminho: '/solicitar', perfis: ['pesquisador'] },
   { rotulo: 'Pedidos', caminho: '/solicitar', perfis: ['tecnico', 'gestor'] },
-  { rotulo: 'Estoque', caminho: '/estoque', perfis: ['tecnico', 'gestor'] },
 ]
 
 /** O que fica em Configurações, no menu da conta do cabeçalho, fora do menu do dia a dia */
@@ -38,5 +37,5 @@ export function mostraBarraLateral(perfil: Perfil): boolean {
 
 /** Onde cada perfil cai depois do login */
 export function rotaInicial(perfil: Perfil): string {
-  return perfil === 'pesquisador' ? '/solicitar' : '/kanban'
+  return perfil === 'pesquisador' ? '/solicitar' : '/visao-geral'
 }

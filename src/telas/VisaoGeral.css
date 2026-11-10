@@ -1,0 +1,82 @@
+/* A Visão geral: por espécie, o placar com os totais e, embaixo, as linhagens */
+
+/* Os totais da espécie, cada um sob o seu rótulo, como o placar da janela de reservar. Os números
+   vêm grandes, que são o que se lê primeiro; sem largura, o que não cabe desce */
+.visao__placar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 40px;
+  margin: 0 0 20px;
+  padding: 16px;
+  border-radius: var(--raio-md);
+  background: var(--cor-suave);
+}
+
+.visao__dado dd {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-weight: 600;
+}
+
+.visao__valor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  line-height: 36px;
+}
+
+.visao__sexo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.visao__simbolo {
+  font-size: 16px;
+  color: var(--cor-suave-frente);
+}
+
+.visao__numero {
+  font-family: var(--fonte-titulo);
+  font-size: 28px;
+  font-weight: var(--peso-titulo);
+}
+
+.visao__dado .visao__nota {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+/* "Livres por idade", entre as duas tabelas */
+.visao__subtitulo {
+  margin: 24px 0 8px;
+  font-size: 15px;
+}
+
+/* A tabela rola dentro dela no celular; a página não */
+.visao__tabela {
+  max-width: 100%;
+}
+
+.visao__celula {
+  display: inline-flex;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.visao__celula--forte {
+  font-weight: 600;
+}
+
+.visao__nenhum {
+  color: var(--cor-suave-frente);
+}
+
+.visao__linhagem {
+  font-weight: 600;
+  white-space: nowrap;
+}

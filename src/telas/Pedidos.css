@@ -101,7 +101,7 @@
 }
 
 /* O aviso para a equipe do pedido aprovado sem reserva com a entrega perto, e o da reserva em
-   falta: na cor de atenção, como o "Último parto" do kanban */
+   falta: na cor de atenção */
 .pedidos__duasLinhas > .pedidos__alerta {
   color: var(--cor-aviso);
   font-weight: 600;

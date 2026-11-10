@@ -100,8 +100,8 @@ export const SUPERFICIE_DE_RETORNO = {
 } as const
 
 /**
- * Superfície de cada coluna do kanban, que a grade de estantes repete. Só a Reserva tem cor
- * própria: as outras usam o tom de retorno, a ação ou o neutro que já diz a mesma coisa.
+ * Superfície de cada estado da caixa na grade de estantes. Só a Reserva tem cor própria: as outras
+ * usam o tom de retorno, a ação ou o neutro que já diz a mesma coisa.
  */
 export const ESTADO = {
   livresFundo: SUPERFICIE_DE_RETORNO.sucessoFundo,

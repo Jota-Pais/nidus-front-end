@@ -7,14 +7,14 @@ describe('menu por perfil', () => {
     expect(caminhos).toEqual(['/solicitar'])
   })
 
-  it('o técnico vê as telas da colônia e o estoque', () => {
+  it('o técnico vê a visão geral, as estantes e os pedidos', () => {
     const caminhos = menuDoPerfil('tecnico').map((item) => item.caminho)
-    expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/estoque'])
+    expect(caminhos).toEqual(['/visao-geral', '/estantes', '/solicitar'])
   })
 
   it('o gestor vê as mesmas telas do dia a dia que o técnico', () => {
     const caminhos = menuDoPerfil('gestor').map((item) => item.caminho)
-    expect(caminhos).toEqual(['/kanban', '/estantes', '/solicitar', '/estoque'])
+    expect(caminhos).toEqual(['/visao-geral', '/estantes', '/solicitar'])
   })
 })
 
@@ -52,9 +52,9 @@ describe('mostraBarraLateral', () => {
 })
 
 describe('rotaInicial', () => {
-  it('o kanban é a tela inicial de quem opera a colônia', () => {
-    expect(rotaInicial('tecnico')).toBe('/kanban')
-    expect(rotaInicial('gestor')).toBe('/kanban')
+  it('a visão geral é a tela inicial de quem opera a colônia', () => {
+    expect(rotaInicial('tecnico')).toBe('/visao-geral')
+    expect(rotaInicial('gestor')).toBe('/visao-geral')
   })
 
   it('o pesquisador começa pelo pedido de animais', () => {

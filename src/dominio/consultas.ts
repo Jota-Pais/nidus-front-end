@@ -7,15 +7,12 @@ import { alvoDaReserva } from './pedido'
 import type {
   Casal,
   Catalogo,
-  CodigoEspecie,
   DataISO,
   Destino,
   Estante,
-  Estoque,
   FaltaDoPedido,
   FichaDaCaixa,
   Grade,
-  Kanban,
   LugarDaRetirada,
   Parto,
   Pedido,
@@ -36,14 +33,16 @@ import type {
   SituacaoDoProjeto,
   Usuario,
   Viabilidade,
+  VisaoGeral,
 } from './tipos'
 
 // ------------------------------------------------------------ estantes e caixas
 
-export function useKanban(especie: CodigoEspecie) {
+/** Quantos animais cada linhagem tem, reservados e livres: a Visão geral */
+export function useVisaoGeral() {
   return useQuery({
-    queryKey: chaves.quadro(especie),
-    queryFn: () => api<Kanban>(`/api/quadro?especie=${especie}`),
+    queryKey: chaves.visaoGeral,
+    queryFn: () => api<VisaoGeral>('/api/visao-geral'),
     refetchInterval: 30_000,
   })
 }
@@ -57,7 +56,7 @@ export function useMudarDePosicao() {
         `/api/caixas/${idCaixa}/posicao`,
         { metodo: 'PATCH', corpo: posicao },
       ),
-    // os animais vão junto com a caixa: o endereço muda na grade, no kanban e nas fichas
+    // os animais vão junto com a caixa: o endereço muda na grade e nas fichas
     onSuccess: () => invalidarColonia(cliente),
   })
 }
@@ -549,21 +548,13 @@ export function useRegistrarEntrega() {
   })
 }
 
-// ------------------------------------------------------------ catálogo, estoque e histórico
+// ------------------------------------------------------------ catálogo e histórico
 
 export function useCatalogo() {
   return useQuery({
     queryKey: chaves.catalogo,
     queryFn: () => api<Catalogo>('/api/catalogo'),
     staleTime: 60 * 60_000,
-  })
-}
-
-export function useEstoque(especie: CodigoEspecie | undefined) {
-  return useQuery({
-    queryKey: chaves.estoque(especie ?? 'rato'),
-    queryFn: () => api<Estoque>(`/api/estoque?especie=${especie}`),
-    enabled: especie !== undefined,
   })
 }
 

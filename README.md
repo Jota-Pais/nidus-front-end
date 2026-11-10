@@ -16,9 +16,9 @@ README). A referência de requisitos é a spec dele, o `instructions.md` v2.7, d
 
 | Tela | Quem usa | O que faz |
 |---|---|---|
-| Kanban | Técnico, gestor | Um quadro por espécie, só de leitura, colunas Livres, Estoque, Reserva e Enviado. A caixa do casal fica em Livres e diz quantos reservados tem; a de estoque muda de coluna sozinha |
-| Estantes | Técnico, gestor | As estantes de cada sala, faces frontal e traseira lado a lado, cada caixa na cor da coluna do kanban |
-| Ficha da caixa | Técnico, gestor | Abre pelo card ou pela célula. Forma o casal e registra parto, eutanásia de seleção e desmame, do 1º ao 5º parto |
+| Visão geral | Técnico, gestor | Ratos e camundongos, um embaixo do outro: vivos, mamando, reservados, livres e casais ativos de cada linhagem, e os livres por faixa de idade. A linhagem abre as estantes só com as caixas dela acesas |
+| Estantes | Técnico, gestor | As estantes de cada sala, faces frontal e traseira lado a lado, cada caixa na cor do estado dela |
+| Ficha da caixa | Técnico, gestor | Abre pela célula da grade. Forma o casal e registra parto, eutanásia de seleção e desmame, do 1º ao 5º parto |
 | Solicitar animais | Todos | O pedido do pesquisador: nome, protocolo CEUA, linhagem, machos, fêmeas ou qualquer sexo, faixa de idade, data de entrega e observações |
 | Busca de atendimento | Técnico, gestor | Quais caixas atendem um pedido e quantos casais novos faltam. Aloca as caixas sugeridas |
 
@@ -50,8 +50,8 @@ JetBrains Mono nos códigos. Cor, raio, sombra e fonte saem de
 `src/app/tokens.ts` (tema do Ant Design) e `src/app/tokens.css` (CSS das telas).
 Não são espelho: o CSS tem tokens que o tema não usa, e o `tokens.ts` guarda
 também chaves que só o CSS usa. O `tokens.test.ts` confere que o valor
-presente nos dois é o mesmo. A cor de cada coluna do kanban também é token
-(`--estado-livres-fundo` e companhia), e a grade de estantes usa a mesma.
+presente nos dois é o mesmo. A cor de cada estado da caixa também é token
+(`--estado-livres-fundo` e companhia), e a grade de estantes pinta com ela.
 
 A paleta tem uma cor de ação, o azul da UFSC: botão, link, foco, item ativo.
 Os estados dela (passar o mouse, clicar) e os tons claros (fundo e contorno de
@@ -77,7 +77,7 @@ src/
   auth/      sessão do usuário
   componentes/ cabeçalho de tela, seção, botão, etiqueta, aviso e o resto do visual
   layout/    casca com a barra lateral, menu por perfil, rota protegida, carregamento e erro
-  dominio/   tipos da API, colunas do kanban, cores dos partos e as consultas (useKanban, useFicha...)
+  dominio/   tipos da API, estados da caixa, cores dos partos e as consultas (useVisaoGeral, useFicha...)
   lib/       chamada à API, mensagens de erro e datas (sempre dd/mm/aaaa)
   telas/     uma tela por arquivo, com o CSS ao lado
 ```

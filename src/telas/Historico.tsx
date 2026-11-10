@@ -31,7 +31,7 @@ const ondeFoi = (r: RegistroDoHistorico) =>
 /**
  * Quem fez cada operação, quando e o que mudou: o histórico das operações junto com a trilha dos
  * animais, do registro mais novo para o mais velho. Só leitura: nada aqui se apaga. A linha de uma
- * caixa abre a ficha dela, também a da caixa liberada, que já saiu do kanban e das estantes: é por
+ * caixa abre a ficha dela, também a da caixa liberada, que já saiu das estantes: é por
  * ali que se anula a baixa que a esvaziou
  */
 export function Historico() {
