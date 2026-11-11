@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import type { DataISO } from '@/dominio/tipos'
+import { hojeDoRelogio } from './relogio'
 
 dayjs.extend(customParseFormat)
 // o calendário dos campos de data com os meses e os dias da semana em português
@@ -42,9 +43,9 @@ export function descreverDias(dias: number): string {
   return dias === 1 ? '1 dia' : `${dias} dias`
 }
 
-/** hoje em 'aaaa-mm-dd', o valor padrão dos campos de data */
+/** hoje do servidor em 'aaaa-mm-dd', o valor padrão dos campos de data */
 export function hoje(): DataISO {
-  return dayjs().format(FORMATO_DA_API)
+  return hojeDoRelogio()
 }
 
 const existentes = (datas: (DataISO | null | undefined)[]) =>

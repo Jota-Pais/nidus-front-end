@@ -220,3 +220,14 @@
 .casca__aba--ativa .casca__abaIcone {
   background: var(--cor-acao-fundo);
 }
+
+/* Faixa fina do relógio de teste: só existe fora de produção */
+.casca__relogio {
+  padding: 2px 16px;
+  background: var(--superficie-aviso-fundo);
+  border-bottom: 1px solid var(--superficie-aviso-borda);
+  color: var(--cor-aviso);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}

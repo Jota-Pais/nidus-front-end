@@ -5,7 +5,7 @@ import type { AriaAttributes } from 'react'
 import type { DataISO } from '@/dominio/tipos'
 import { useTelaEstreita } from '@/layout/useTelaEstreita'
 // '@/lib/data' também deixa o dayjs em português, para o calendário
-import { FORMATO_DA_API } from '@/lib/data'
+import { FORMATO_DA_API, hoje } from '@/lib/data'
 
 /** O primeiro é o que aparece; os outros só valem para digitar, com ou sem as barras */
 const FORMATOS = ['DD/MM/YYYY', 'DDMMYYYY', 'D/M/YYYY']
@@ -41,6 +41,7 @@ export function CampoDeData({ value, onChange, min, max, ...resto }: Props) {
       {...resto}
       inputReadOnly={estreita}
       value={value ? paraDia(value) : null}
+      defaultPickerValue={paraDia(hoje())}
       onChange={(dia: Dayjs | null) => onChange?.(dia ? dia.format(FORMATO_DA_API) : undefined)}
       format={FORMATOS}
       placeholder="dd/mm/aaaa"

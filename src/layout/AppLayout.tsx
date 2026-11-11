@@ -15,6 +15,8 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Botao, Etiqueta, Linha } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
 import { usePerfil } from '@/auth/contexto'
+import { formatarData } from '@/lib/data'
+import { useRelogioDeTeste } from '@/lib/relogio'
 import { Carregando } from './Carregando'
 import { configuracoesDoPerfil, menuDoPerfil, mostraBarraLateral } from './navegacao'
 import { useTelaEstreita } from './useTelaEstreita'
@@ -43,6 +45,7 @@ export function AppLayout() {
   const celular = useTelaEstreita()
   const [estreita, setEstreita] = useState(false)
   const [menuAberto, setMenuAberto] = useState(false)
+  const relogio = useRelogioDeTeste()
 
   if (!perfil || !usuario) return null
 
@@ -104,6 +107,13 @@ export function AppLayout() {
 
   return (
     <Layout className={comBarraEmbaixo ? 'casca casca--comBarra' : 'casca'}>
+      {relogio && (
+        <div className="casca__relogio" role="status">
+          Relógio de teste: hoje é {formatarData(relogio.hoje)} (
+          {relogio.deslocamentoDias >= 0 ? '+' : ''}
+          {relogio.deslocamentoDias} dias)
+        </div>
+      )}
       <Header className="casca__topo">
         {/* A marca não encolhe: no celular, quem cede espaço é o nome de quem entrou */}
         <Linha espaco={12} estilo={{ flexShrink: 0 }}>
