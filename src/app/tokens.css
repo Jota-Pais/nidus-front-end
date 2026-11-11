@@ -94,6 +94,23 @@
   --sombra-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   --sombra-md: 0 4px 6px rgba(0, 0, 0, 0.07);
   --sombra-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
+  --sombra-barra: 0 -2px 8px rgba(0, 0, 0, 0.04);
+
+  /* Cores dos gráficos, com significado fixo e iguais nos dois temas */
+  --grafico-livres: #22C55E;
+  --grafico-reservados: #3B82F6;
+  --grafico-machos: #06B6D4;
+  --grafico-femeas: #A855F7;
+
+  /* A dica dos gráficos (tooltip) é escura nos dois temas */
+  --dica-fundo: #1B1F28;
+  --dica-borda: rgba(255, 255, 255, 0.14);
+  --dica-frente: #EEF1F5;
+  --dica-titulo: #FFFFFF;
+  --dica-sombra: 0 12px 32px rgba(0, 0, 0, 0.4);
+
+  /* O nome da logo sobre o fundo da página: a marca no claro, a ação clara no escuro */
+  --cor-logo-nome: var(--cor-marca);
 
   /* Métrica: a altura de campos e botões, a mesma do tema do Ant Design. O pedido
      alinha o total ao lado dos números ("= 5 animais") por ela */
@@ -121,6 +138,59 @@
   --fase-estoque-fundo: var(--cor-acao-fundo);
   --fase-estoque-borda: var(--cor-acao-borda);
   --fase-estoque-texto: var(--cor-acao);
+}
+
+/* ------------------------------------------------------------------------ *
+ * Tema escuro
+ * ------------------------------------------------------------------------ *
+ * Escolhido nas configurações da conta e guardado em `data-tema` no <html>. O que sai de uma
+ * cor por `color-mix` (hover, tons claros) se recalcula sozinho a partir das cores daqui. A marca
+ * (o azul do cabeçalho e do login) e as cores dos gráficos ficam como no claro.
+ */
+:root[data-tema='escuro'] {
+  color-scheme: dark;
+
+  --cor-fundo: #0F1318;
+  --cor-frente: #E8ECF1;
+  --cor-suave: #1F252D;
+  --cor-suave-frente: #9DA8B4;
+  --cor-borda: #2F3742;
+  --cor-cartao: #181D24;
+
+  --cor-acao: #7AA7FF;
+  --cor-acao-frente: #08111F;
+
+  --cor-marca: #003893;
+  --cor-logo-nome: var(--cor-acao);
+
+  --cor-institucional-texto: #5BD16E;
+
+  --cor-sucesso: #5BD16E;
+  --cor-aviso: #E8C547;
+  --cor-erro: #FF7A80;
+
+  --superficie-sucesso-fundo: #12281A;
+  --superficie-sucesso-borda: #1F4A2E;
+  --superficie-aviso-fundo: #2B2410;
+  --superficie-aviso-borda: #5A4A12;
+  --superficie-erro-fundo: #2E1517;
+  --superficie-erro-borda: #6B2A2D;
+
+  --fase-acasalado-fundo: #231D36;
+  --fase-acasalado-borda: #43396B;
+  --fase-acasalado-texto: #C9BAF7;
+
+  --fase-mamando-fundo: #33220F;
+  --fase-mamando-borda: #6B4520;
+  --fase-mamando-texto: #F5B67A;
+
+  --sombra-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --sombra-md: 0 4px 6px rgba(0, 0, 0, 0.45);
+  --sombra-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --sombra-barra: 0 -2px 8px rgba(0, 0, 0, 0.4);
+
+  --dica-fundo: #2A313C;
+  --dica-sombra: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
 /* ------------------------------------------------------------------------ *

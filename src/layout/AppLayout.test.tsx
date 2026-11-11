@@ -108,13 +108,16 @@ describe('menu da conta', () => {
     expect(gatilho().getAttribute('aria-expanded')).toBe('true')
   })
 
-  it('quem não tem nada a configurar abre o menu só com o Sair', async () => {
+  it('quem não tem nada a configurar abre o menu só com o tema e o Sair', async () => {
     abrirCasca('pesquisador')
 
     fireEvent.click(gatilho())
 
     expect(await screen.findByRole('menuitem', { name: /Sair/ })).toBeTruthy()
-    expect(screen.getAllByRole('menuitem')).toHaveLength(1)
+    expect(screen.getAllByRole('menuitem').map((i) => i.textContent)).toEqual([
+      'Tema escuro',
+      'Sair',
+    ])
     expect(screen.queryByText('Configurações')).toBeNull()
   })
 

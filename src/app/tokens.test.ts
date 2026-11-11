@@ -5,13 +5,19 @@ import {
   ALTURA_DE_CONTROLE,
   COR,
   COR_DE_RETORNO,
+  COR_DE_RETORNO_ESCURO,
   COR_DO_PARTO,
+  COR_ESCURO,
   FASE,
+  FASE_ESCURO,
   FONTE,
+  GRAFICO,
   MOVIMENTO,
   RAIO,
   SOMBRA,
+  SOMBRA_ESCURO,
   SUPERFICIE_DE_RETORNO,
+  SUPERFICIE_DE_RETORNO_ESCURO,
 } from './tokens'
 
 // O mesmo valor pode morar em dois arquivos - 'tokens.ts' para o Ant Design, 'tokens.css' para o
@@ -19,17 +25,26 @@ import {
 // acaba com a cor da semana passada enquanto a do lado já mudou
 
 /** O CSS é lido do disco e o caminho é relativo à raiz do projeto - que é onde o Vitest roda */
-const css = readFileSync('src/app/tokens.css', 'utf8')
+const cssTodo = readFileSync('src/app/tokens.css', 'utf8')
+
+/** O bloco do tema escuro, e o resto do arquivo, que é o tema claro */
+const BLOCO_ESCURO = /:root\[data-tema='escuro'\]\s*\{([^}]*)\}/
+const cssEscuro = BLOCO_ESCURO.exec(cssTodo)?.[1] ?? ''
+const css = cssTodo.replace(BLOCO_ESCURO, '')
 
 /**
  * Cada variável do CSS com o valor que ela chega a ter: `var(--x)` vira o valor de `--x`, e
  * `color-mix(in srgb, ...)` vira o hex que a conta dá. Assim o CSS pode escrever a regra, e o
  * teste compara o resultado com o hex que o `tokens.ts` calculou
  */
-function variaveis(): Map<string, string> {
+function variaveis(escuro = false): Map<string, string> {
   const cruas = new Map<string, string>()
   // sem âncora de linha: o arquivo pode estar com CRLF, e aí $ não casa logo depois do ';'
-  for (const [, nome, valor] of css.matchAll(/(--[a-z0-9-_]+):\s*([^;]+);/g)) {
+  // O escuro herda tudo do claro e troca só o que declara, como no navegador
+  const blocos = escuro ? [css, cssEscuro] : [css]
+  for (const [, nome, valor] of blocos.flatMap((b) => [
+    ...b.matchAll(/(--[a-z0-9-_]+):\s*([^;]+);/g),
+  ])) {
     if (nome && valor) cruas.set(nome, valor.replace(/\s+/g, ' ').trim())
   }
 
@@ -56,21 +71,26 @@ function kebab(nome: string): string {
 }
 
 /** Cada constante de 'tokens.ts' com o nome que ela tem em 'tokens.css' */
-function doTypeScript(): Map<string, string> {
+function doTypeScript(escuro = false): Map<string, string> {
   const mapa = new Map<string, string>()
   const por = (prefixo: string, objeto: Record<string, string | number>, unidade = '') => {
     for (const [chave, valor] of Object.entries(objeto)) {
-      mapa.set(`--${prefixo}-${kebab(chave)}`, `${valor}${typeof valor === 'number' ? unidade : ''}`)
+      mapa.set(
+        `--${prefixo}-${kebab(chave)}`,
+        `${valor}${typeof valor === 'number' ? unidade : ''}`,
+      )
     }
   }
 
-  por('cor', COR)
-  por('cor', COR_DE_RETORNO)
-  por('superficie', SUPERFICIE_DE_RETORNO)
-  por('fase', FASE)
+  por('cor', escuro ? COR_ESCURO : COR)
+  por('cor', escuro ? COR_DE_RETORNO_ESCURO : COR_DE_RETORNO)
+  por('superficie', escuro ? SUPERFICIE_DE_RETORNO_ESCURO : SUPERFICIE_DE_RETORNO)
+  por('fase', escuro ? FASE_ESCURO : FASE)
+  por('grafico', GRAFICO)
+  por('sombra', escuro ? SOMBRA_ESCURO : SOMBRA)
+  if (escuro) return mapa
   por('fonte', FONTE)
   por('raio', RAIO, 'px')
-  por('sombra', SOMBRA)
   por('movimento', MOVIMENTO)
   mapa.set('--altura-de-controle', `${ALTURA_DE_CONTROLE}px`)
 
@@ -99,59 +119,89 @@ describe('tokens.ts e tokens.css dizem a mesma coisa', () => {
   })
 })
 
-describe('contraste da paleta', () => {
-  const TEXTO = 4.5
-  const ELEMENTO_GRAFICO = 3
-
-  const textoSobreFundo: [string, string, string][] = [
-    ['texto sobre o fundo', COR.frente, COR.fundo],
-    ['texto secundário sobre o fundo', COR.suaveFrente, COR.fundo],
-    ['texto secundário sobre o suave', COR.suaveFrente, COR.suave],
-    ['texto sobre a ação', COR.acaoFrente, COR.acao],
-    ['texto sobre a ação com o mouse em cima', COR.acaoFrente, COR.acaoHover],
-    ['texto sobre a ação pressionada', COR.acaoFrente, COR.acaoPressionada],
-    ['ação sobre o fundo de ação', COR.acao, COR.acaoFundo],
-    ['ação sobre o fundo de ação com o mouse em cima', COR.acao, COR.acaoFundoHover],
-    ['link com o mouse em cima, sobre o cartão', COR.acaoHover, COR.cartao],
-    ['texto sobre a marca', COR.marcaFrente, COR.marca],
-    ['texto de apoio sobre a marca', COR.marcaFrenteSuave, COR.marca],
-    ['texto sobre a marca com o mouse em cima', COR.marcaFrente, COR.marcaHover],
-    ['verde institucional sobre o fundo dele', COR.institucionalTexto, COR.institucionalFundo],
-    ['sucesso sobre a superfície dele', COR_DE_RETORNO.sucesso, SUPERFICIE_DE_RETORNO.sucessoFundo],
-    ['aviso sobre a superfície dele', COR_DE_RETORNO.aviso, SUPERFICIE_DE_RETORNO.avisoFundo],
-    ['erro sobre a superfície dele', COR_DE_RETORNO.erro, SUPERFICIE_DE_RETORNO.erroFundo],
-    [
-      'informação sobre a superfície dela',
-      COR_DE_RETORNO.informacao,
-      SUPERFICIE_DE_RETORNO.informacaoFundo,
-    ],
-    ...(['acasalado', 'mamando', 'prontoEstoque', 'estoque'] as const).map(
-      (fase): [string, string, string] => [
-        `texto da fase ${fase}`,
-        FASE[`${fase}Texto`],
-        FASE[`${fase}Fundo`],
-      ],
-    ),
-    ...COR_DO_PARTO.map(({ cor, frente }, i): [string, string, string] => [
-      `número sobre a cor do ${i + 1}º parto`,
-      frente,
-      cor,
-    ]),
-  ]
-
-  it.each(textoSobreFundo)(`%s passa de ${TEXTO}:1`, (_, frente, fundo) => {
-    expect(contraste(frente, fundo)).toBeGreaterThanOrEqual(TEXTO)
+describe('o tema escuro diz o mesmo no tokens.ts e no tokens.css', () => {
+  it('cada cor e sombra escuras do tokens.ts tem o mesmo valor no CSS escuro', () => {
+    const doCss = variaveis(true)
+    const doTs = doTypeScript(true)
+    expect(cssEscuro).not.toBe('')
+    for (const [nome, valor] of doTs) {
+      expect(doCss.get(nome), `${nome} diferente em tokens.ts e tokens.css (escuro)`).toBe(valor)
+    }
   })
 
-  // O anel de foco é navegação de teclado: abaixo de 3:1 ninguém vê onde está
-  it.each([
-    ['fundo', COR.fundo],
-    ['cartão', COR.cartao],
-    ['suave', COR.suave],
-  ])(`o anel de foco (a ação) passa de ${ELEMENTO_GRAFICO}:1 sobre o %s`, (_, fundo) => {
-    expect(contraste(COR.acao, fundo)).toBeGreaterThanOrEqual(ELEMENTO_GRAFICO)
+  it('a marca e os gráficos ficam iguais ao claro', () => {
+    expect(COR_ESCURO.marca).toBe(COR.marca)
+    expect(COR_ESCURO.marcaFrente).toBe(COR.marcaFrente)
+    expect(variaveis(true).get('--cor-marca')).toBe(variaveis().get('--cor-marca'))
+    for (const nome of ['livres', 'reservados', 'machos', 'femeas']) {
+      expect(variaveis(true).get(`--grafico-${nome}`)).toBe(variaveis().get(`--grafico-${nome}`))
+    }
   })
 })
+
+describe.each([
+  ['claro', COR, COR_DE_RETORNO, SUPERFICIE_DE_RETORNO, FASE],
+  ['escuro', COR_ESCURO, COR_DE_RETORNO_ESCURO, SUPERFICIE_DE_RETORNO_ESCURO, FASE_ESCURO],
+] as const)(
+  'contraste da paleta, tema %s',
+  (_tema, COR, COR_DE_RETORNO, SUPERFICIE_DE_RETORNO, FASE) => {
+    const TEXTO = 4.5
+    const ELEMENTO_GRAFICO = 3
+
+    const textoSobreFundo: [string, string, string][] = [
+      ['texto sobre o fundo', COR.frente, COR.fundo],
+      ['texto secundário sobre o fundo', COR.suaveFrente, COR.fundo],
+      ['texto secundário sobre o suave', COR.suaveFrente, COR.suave],
+      ['texto sobre a ação', COR.acaoFrente, COR.acao],
+      ['texto sobre a ação com o mouse em cima', COR.acaoFrente, COR.acaoHover],
+      ['texto sobre a ação pressionada', COR.acaoFrente, COR.acaoPressionada],
+      ['ação sobre o fundo de ação', COR.acao, COR.acaoFundo],
+      ['ação sobre o fundo de ação com o mouse em cima', COR.acao, COR.acaoFundoHover],
+      ['link com o mouse em cima, sobre o cartão', COR.acaoHover, COR.cartao],
+      ['texto sobre a marca', COR.marcaFrente, COR.marca],
+      ['texto de apoio sobre a marca', COR.marcaFrenteSuave, COR.marca],
+      ['texto sobre a marca com o mouse em cima', COR.marcaFrente, COR.marcaHover],
+      ['verde institucional sobre o fundo dele', COR.institucionalTexto, COR.institucionalFundo],
+      [
+        'sucesso sobre a superfície dele',
+        COR_DE_RETORNO.sucesso,
+        SUPERFICIE_DE_RETORNO.sucessoFundo,
+      ],
+      ['aviso sobre a superfície dele', COR_DE_RETORNO.aviso, SUPERFICIE_DE_RETORNO.avisoFundo],
+      ['erro sobre a superfície dele', COR_DE_RETORNO.erro, SUPERFICIE_DE_RETORNO.erroFundo],
+      [
+        'informação sobre a superfície dela',
+        COR_DE_RETORNO.informacao,
+        SUPERFICIE_DE_RETORNO.informacaoFundo,
+      ],
+      ...(['acasalado', 'mamando', 'prontoEstoque', 'estoque'] as const).map(
+        (fase): [string, string, string] => [
+          `texto da fase ${fase}`,
+          FASE[`${fase}Texto`],
+          FASE[`${fase}Fundo`],
+        ],
+      ),
+      ...COR_DO_PARTO.map(({ cor, frente }, i): [string, string, string] => [
+        `número sobre a cor do ${i + 1}º parto`,
+        frente,
+        cor,
+      ]),
+    ]
+
+    it.each(textoSobreFundo)(`%s passa de ${TEXTO}:1`, (_, frente, fundo) => {
+      expect(contraste(frente, fundo)).toBeGreaterThanOrEqual(TEXTO)
+    })
+
+    // O anel de foco é navegação de teclado: abaixo de 3:1 ninguém vê onde está
+    it.each([
+      ['fundo', COR.fundo],
+      ['cartão', COR.cartao],
+      ['suave', COR.suave],
+    ])(`o anel de foco (a ação) passa de ${ELEMENTO_GRAFICO}:1 sobre o %s`, (_, fundo) => {
+      expect(contraste(COR.acao, fundo)).toBeGreaterThanOrEqual(ELEMENTO_GRAFICO)
+    })
+  },
+)
 
 describe('cor só nos tokens', () => {
   // A regra e os valores moram em três arquivos. Cor escrita em qualquer outro lugar é o começo

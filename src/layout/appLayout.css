@@ -167,7 +167,7 @@
     max(4px, env(safe-area-inset-left));
   border-top: 1px solid var(--cor-borda);
   background: var(--cor-cartao);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--sombra-barra);
 }
 
 .casca__aba {
@@ -230,4 +230,12 @@
   font-size: 13px;
   font-weight: 600;
   text-align: center;
+}
+
+/* A linha do Tema escuro no menu da conta: o nome à esquerda e o interruptor à direita */
+.casca__tema {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
 }

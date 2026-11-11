@@ -7,13 +7,14 @@ import {
   MenuOutlined,
   PieChartOutlined,
 } from '@ant-design/icons'
-import { Dropdown, Layout, Menu } from 'antd'
+import { Dropdown, Layout, Menu, Switch } from 'antd'
 import type { DropdownProps, MenuProps } from 'antd'
 import { Suspense, useState } from 'react'
 import type { ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Botao, Etiqueta, Linha } from '@/componentes'
 import { config, mostrarRotuloDeAmbiente } from '@/app/config'
+import { useEsquema } from '@/app/esquema'
 import { usePerfil } from '@/auth/contexto'
 import { formatarData } from '@/lib/data'
 import { useRelogioDeTeste } from '@/lib/relogio'
@@ -26,6 +27,8 @@ const { Header, Content, Sider } = Layout
 
 /** A chave do Sair no menu da conta. As outras opções usam o caminho da tela como chave */
 const SAIR = 'sair'
+/** A chave do Tema escuro, também no menu da conta */
+const TEMA = 'tema'
 
 /** O ícone de cada tela na barra de baixo do celular, pelo caminho dela */
 const ICONE_DA_TELA: Record<string, ReactNode> = {
@@ -46,6 +49,8 @@ export function AppLayout() {
   const [estreita, setEstreita] = useState(false)
   const [menuAberto, setMenuAberto] = useState(false)
   const relogio = useRelogioDeTeste()
+  const [esquema, escolherEsquema] = useEsquema()
+  const escuro = esquema === 'escuro'
 
   if (!perfil || !usuario) return null
 
@@ -69,16 +74,37 @@ export function AppLayout() {
     disabled: saindo,
   }
 
-  // As configurações do perfil vêm agrupadas e separadas do Sair. Quem não tem nada a
-  // configurar abre o menu só com o Sair
+  // O Switch é só o mostrador: o clique na linha toda troca o tema (o do próprio Switch também
+  // chega ao item, e `onClick` o segura aqui para não trocar duas vezes). Fora da ordem do Tab, que
+  // anda pelas opções do menu
+  const opcaoDoTema = {
+    key: TEMA,
+    label: (
+      <span className="casca__tema">
+        Tema escuro
+        <Switch
+          size="small"
+          checked={escuro}
+          tabIndex={-1}
+          aria-label="Tema escuro"
+          onChange={(ligado) => escolherEsquema(ligado ? 'escuro' : 'claro')}
+          onClick={(_, evento) => evento.stopPropagation()}
+        />
+      </span>
+    ),
+  }
+
+  // As configurações do perfil vêm agrupadas e separadas do tema e do Sair. Quem não tem nada a
+  // configurar abre o menu só com o tema e o Sair
   const opcoesDaConta: MenuProps['items'] =
     configuracoes.length > 0
       ? [
           { type: 'group', label: 'Configurações', children: configuracoes },
+          opcaoDoTema,
           { type: 'divider' },
           opcaoDeSair,
         ]
-      : [opcaoDeSair]
+      : [opcaoDoTema, opcaoDeSair]
 
   // O menu abre e fecha pelo nome, pelo clique fora e pelo Esc. Escolher uma opção só fecha o
   // menu quando ela leva a outra tela: no Sair ele fica aberto, mostrando o "Saindo…" até a
@@ -88,6 +114,10 @@ export function AppLayout() {
   }
 
   const aoEscolher: MenuProps['onClick'] = ({ key }) => {
+    if (key === TEMA) {
+      escolherEsquema(escuro ? 'claro' : 'escuro')
+      return
+    }
     if (key === SAIR) {
       sair()
       return
