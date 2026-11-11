@@ -27,6 +27,22 @@ type Props = AriaAttributes & {
 const paraDia = (data: DataISO): Dayjs => dayjs(data, FORMATO_DA_API, true)
 
 /**
+ * O mês em que o calendário abre: o do valor, se já há um; senão o de hoje (o do servidor), se hoje
+ * cabe entre os limites; senão o do limite mais próximo
+ */
+function mesDeAbertura(
+  valor: DataISO | null | undefined,
+  min: DataISO | undefined,
+  max: DataISO | undefined,
+): Dayjs {
+  if (valor) return paraDia(valor)
+  const agora = paraDia(hoje())
+  if (min !== undefined && agora.isBefore(paraDia(min), 'day')) return paraDia(min)
+  if (max !== undefined && agora.isAfter(paraDia(max), 'day')) return paraDia(max)
+  return agora
+}
+
+/**
  * Campo de data sempre em dd/mm/aaaa. O campo nativo do navegador segue o idioma do navegador,
  * e num navegador em inglês aparecia mm/dd/aaaa. O valor continua 'aaaa-mm-dd', como a API e
  * as regras do formulário esperam.
@@ -41,7 +57,7 @@ export function CampoDeData({ value, onChange, min, max, ...resto }: Props) {
       {...resto}
       inputReadOnly={estreita}
       value={value ? paraDia(value) : null}
-      defaultPickerValue={paraDia(hoje())}
+      defaultPickerValue={mesDeAbertura(value, min, max)}
       onChange={(dia: Dayjs | null) => onChange?.(dia ? dia.format(FORMATO_DA_API) : undefined)}
       format={FORMATOS}
       placeholder="dd/mm/aaaa"
