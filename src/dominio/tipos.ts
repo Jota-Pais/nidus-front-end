@@ -538,6 +538,11 @@ export interface FaixaDeIdade extends PorSexo {
   ate: number | null
 }
 
+/** Os livres de uma idade em dias */
+export interface IdadeNaVisaoGeral extends PorSexo {
+  idade: number
+}
+
 export interface LinhagemNaVisaoGeral {
   idLinhagem: number
   linhagem: string
@@ -553,6 +558,8 @@ export interface LinhagemNaVisaoGeral {
   livres: PorSexo
   /** os livres por idade de hoje, sempre nas mesmas 4 faixas e na mesma ordem */
   livresPorIdade: FaixaDeIdade[]
+  /** os livres por idade em dias, crescente */
+  livresPorIdadeDias?: IdadeNaVisaoGeral[]
 }
 
 export interface EspecieNaVisaoGeral {
