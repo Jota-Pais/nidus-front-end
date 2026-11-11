@@ -1,7 +1,5 @@
 // As fases da caixa e os partos. As cores vêm dos tokens: a de cada fase é
-// --fase-<fase>-fundo/borda/texto, com que a grade de estantes e a ficha pintam a caixa; a de cada
-// parto é COR_DO_PARTO
-import { COR_DO_PARTO } from '@/app/tokens'
+// --fase-<fase>-fundo/borda/texto, com que a grade de estantes e a ficha pintam a caixa
 import { formatarData, formatarDataCurta, hoje } from '@/lib/data'
 import { descreverQuantos } from './pedido'
 import type {
@@ -79,11 +77,6 @@ export function motivoDoAtraso(
 }
 
 export const MAX_PARTOS_POR_CASAL = 5
-
-/** A cor do parto, do 1º ao 5º: a bolinha do card e da grade é o parto atual do casal */
-export function corDoParto(parto: number): (typeof COR_DO_PARTO)[number] {
-  return COR_DO_PARTO[Math.min(Math.max(parto, 1), COR_DO_PARTO.length) - 1]!
-}
 
 export const SIMBOLO_DO_SEXO: Record<Sexo, string> = { M: '♂', F: '♀' }
 

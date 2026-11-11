@@ -4,7 +4,7 @@
  * caixa é a da fase dela (--fase-<fase>-*), e a borda vermelha é o atraso
  */
 
-/* As legendas das fases e dos partos, lado a lado; sem largura, uma desce */
+/* A legenda das fases */
 .estantes__legendas {
   display: flex;
   flex-wrap: wrap;
@@ -90,6 +90,8 @@
   text-align: left;
   cursor: pointer;
   overflow: hidden;
+  /* a célula é o contêiner: o "parto" da previsão some quando a data não cabe com ele */
+  container-type: inline-size;
   transition:
     box-shadow var(--movimento-rapido) var(--movimento-curva),
     transform var(--movimento-rapido) var(--movimento-curva);
@@ -118,12 +120,16 @@
 }
 
 .posicao__codigo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--fonte-mono);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-/* a caixa de estoque: o sexo e quantos animais tem, no lugar da bolinha do parto */
+/* a caixa de estoque: o sexo e quantos animais tem, no lugar do parto */
 .posicao__sexo {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -227,7 +233,7 @@
   }
 }
 
-/* A previsão do parto da caixa acasalada. Na tela estreita a célula só cabe a data: o "parto"
+/* A previsão do parto da caixa acasalada. Quando a célula é estreita só cabe a data: o "parto"
    sai, e o título da célula continua dizendo que ela espera o parto */
 .posicao__previsto {
   font-family: var(--fonte-mono);
@@ -236,7 +242,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 600px) {
+@container (max-width: 76px) {
   .posicao__previstoRotulo {
     display: none;
   }

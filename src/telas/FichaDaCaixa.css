@@ -20,6 +20,12 @@
   cursor: pointer;
 }
 
+.ficha__parto[aria-pressed='true'] {
+  border-color: var(--cor-acao);
+  background: var(--cor-acao);
+  color: var(--cor-acao-frente);
+}
+
 .ficha__aba {
   display: flex;
   flex-direction: column;

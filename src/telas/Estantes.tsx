@@ -4,13 +4,7 @@ import { createContext, useContext, useState } from 'react'
 import type { DragEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Botao, CabecalhoDaTela, Linha, Pilha, Secao, Texto, Vazio } from '@/componentes'
-import {
-  corDoParto,
-  descreverEstoque,
-  FASE,
-  motivoDoAtraso,
-  SIMBOLO_DO_SEXO,
-} from '@/dominio/caixa'
+import { descreverEstoque, FASE, motivoDoAtraso, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import { useCatalogo, useEstantes, useGrade, useMudarDePosicao } from '@/dominio/consultas'
 import type { CaixaNaGrade, Estante, EstoqueNoCard, Grade, Posicao } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
@@ -20,7 +14,6 @@ import { descreverDias, formatarDataCurta } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import type { PosicaoVazia } from './FichaDaCaixa'
 import { LegendaDasFases } from './FaseDaCaixa'
-import { LegendaDosPartos } from './LegendaDosPartos'
 import './Estantes.css'
 
 /** O que a ficha abre: uma caixa, ou uma posição vazia onde a caixa vai nascer */
@@ -203,12 +196,11 @@ export function Estantes() {
   )
 }
 
-/** O que é cada cor de fundo, a borda vermelha e a bolinha do parto */
+/** O que é cada cor de fundo e a borda vermelha */
 function Legendas() {
   return (
     <div className="estantes__legendas">
       <LegendaDasFases />
-      <LegendaDosPartos />
     </div>
   )
 }
@@ -423,10 +415,6 @@ function Celula({
         <span className="posicao__codigo">{posicao.codigo}</span>
         {caixa.casal && (
           <span className="parto" title={`Parto atual: ${caixa.casal.partoAtual}º`}>
-            <span
-              className="bolinhaDeParto"
-              style={{ backgroundColor: corDoParto(caixa.casal.partoAtual).cor }}
-            />
             {caixa.casal.partoAtual}º
           </span>
         )}

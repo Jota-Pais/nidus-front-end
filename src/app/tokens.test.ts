@@ -6,7 +6,6 @@ import {
   COR,
   COR_DE_RETORNO,
   COR_DE_RETORNO_ESCURO,
-  COR_DO_PARTO,
   COR_ESCURO,
   FASE,
   FASE_ESCURO,
@@ -181,11 +180,6 @@ describe.each([
           FASE[`${fase}Fundo`],
         ],
       ),
-      ...COR_DO_PARTO.map(({ cor, frente }, i): [string, string, string] => [
-        `número sobre a cor do ${i + 1}º parto`,
-        frente,
-        cor,
-      ]),
     ]
 
     it.each(textoSobreFundo)(`%s passa de ${TEXTO}:1`, (_, frente, fundo) => {

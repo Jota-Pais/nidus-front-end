@@ -1,9 +1,7 @@
 import { App, Form, Input, Select, Tabs } from 'antd'
 import { useState } from 'react'
 import { Aviso, Botao, CampoDeData, Etiqueta, Janela, Linha, Texto } from '@/componentes'
-import { COR_DO_PARTO } from '@/app/tokens'
 import {
-  corDoParto,
   descreverLiberacao,
   doSexo,
   MAX_PARTOS_POR_CASAL,
@@ -77,11 +75,8 @@ export function FichaDaCaixa({
       destroyOnHidden
       styles={{
         header: {
-          background: deEstoque
-            ? deEstoque.caixa.fase === 'estoque'
-              ? 'var(--fase-estoque-fundo)'
-              : 'var(--cor-suave)'
-            : corDoParto(escolha.ordem).fundo,
+          background:
+            deEstoque?.caixa.fase === 'estoque' ? 'var(--fase-estoque-fundo)' : 'var(--cor-suave)',
           margin: '-20px -24px 0',
           padding: '16px 24px',
         },
@@ -207,20 +202,8 @@ function BotaoDoParto({
   ativo: boolean
   aoEscolher: () => void
 }) {
-  const { cor, frente } = corDoParto(ordem)
-
   return (
-    <button
-      type="button"
-      className="ficha__parto"
-      aria-pressed={ativo}
-      style={
-        ativo
-          ? { backgroundColor: cor, borderColor: cor, color: frente }
-          : { borderLeftColor: cor, borderLeftWidth: 4 }
-      }
-      onClick={aoEscolher}
-    >
+    <button type="button" className="ficha__parto" aria-pressed={ativo} onClick={aoEscolher}>
       {ordem}º
     </button>
   )
@@ -249,9 +232,9 @@ function FichaDoCasal({
     <>
       <div className="ficha__partos">
         <Texto tom="rotulo">Parto</Texto>
-        {COR_DO_PARTO.map(({ cor }, indice) => (
+        {Array.from({ length: MAX_PARTOS_POR_CASAL }, (_, indice) => (
           <BotaoDoParto
-            key={cor}
+            key={indice}
             ordem={indice + 1}
             ativo={escolha.idCasal === null && indice + 1 === ordem}
             aoEscolher={() => setEscolhido({ idCasal: null, ordem: indice + 1 })}
@@ -411,7 +394,6 @@ function AbaReproducao({
       )}
 
       <h3>
-        <span className="bolinhaDeParto" style={{ backgroundColor: corDoParto(ordem).cor }} />{' '}
         {ordem}º parto
         {casalDeAntes && ` do casal ${casalDeAntes.identificacao}`}
       </h3>

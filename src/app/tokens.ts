@@ -1,6 +1,6 @@
 // tokens do design system, lado TypeScript: o que o tema do Ant Design lê, mais
 // algumas chaves que só o CSS usa e que o tokens.test.ts confere com o tokens.css.
-import { frenteLegivel, HOVER, misturar, PRESSIONADO, TOM } from './cor'
+import { HOVER, misturar, PRESSIONADO, TOM } from './cor'
 
 /** Marca institucional da UFSC. Vermelho e amarelo ficam de referência para os tons de retorno */
 const UFSC = {
@@ -101,7 +101,7 @@ export const SUPERFICIE_DE_RETORNO = {
 
 /**
  * Superfície de cada fase da caixa, na grade de estantes e na ficha. Fundos claros, cada um de um
- * matiz, e nenhum no tom de uma bolinha de parto. Pronto para o estoque repete o sucesso (é a
+ * matiz. Pronto para o estoque repete o sucesso (é a
  * caixa pronta para o próximo passo) e o estoque repete a ação, como antes; o acasalado (lilás) e
  * o mamando (pêssego) têm cor própria.
  */
@@ -196,20 +196,6 @@ export const FASE_ESCURO: Record<keyof typeof FASE, string> = {
   estoqueBorda: COR_ESCURO.acaoBorda,
   estoqueTexto: COR_ESCURO.acao,
 }
-
-/**
- * Do 1º ao 5º parto, como na spec do cliente (seção 5.2): não coincidem com as cores das
- * fases, para a bolinha nunca se confundir com o fundo da caixa. O texto em cima de cada
- * uma é o preto ou o branco, o que contrastar mais, e o fundo é o do cabeçalho da ficha.
- */
-export const COR_DO_PARTO = (['#EC4899', '#FACC15', '#22D3EE', '#A3E635', '#6366F1'] as const).map(
-  (cor) => ({
-    cor,
-    frente: frenteLegivel(cor, [COR.frente, BRANCO]),
-    // 20% da cor sobre o cartão do tema: pastel no claro, tom escuro no escuro
-    fundo: `color-mix(in srgb, ${cor} 20%, var(--cor-cartao))`,
-  }),
-)
 
 /** Tipografia de dois tempos */
 export const FONTE = {
