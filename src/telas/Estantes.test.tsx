@@ -78,6 +78,7 @@ const grade: Grade = {
             casal: {
               identificacao: 'AB',
               partoAtual: 2,
+              partoDaFase: 2,
               partoPrevisto: '2026-11-20',
               encerrado: false,
               aguardandoDesmame: false,
@@ -115,6 +116,7 @@ const grade: Grade = {
             casal: {
               identificacao: 'CD',
               partoAtual: 1,
+              partoDaFase: 1,
               partoPrevisto: '2026-11-01',
               encerrado: false,
               aguardandoDesmame: false,

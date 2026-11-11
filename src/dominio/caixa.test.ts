@@ -43,6 +43,7 @@ describe('motivoDoAtraso', () => {
   const casal = (parcial: Partial<CasalNoCard>): CasalNoCard => ({
     identificacao: 'AB',
     partoAtual: 2,
+    partoDaFase: 2,
     partoPrevisto: null,
     encerrado: false,
     aguardandoDesmame: false,
