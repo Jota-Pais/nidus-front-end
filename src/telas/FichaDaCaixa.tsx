@@ -15,8 +15,8 @@ import type { CasalNovo } from '@/dominio/consultas'
 import type { Casal, CodigoEspecie, DataISO, FichaDeCasal, Parto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
+import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { ateHoje, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
-import { BaixasLancadas } from './AnimaisDaFicha'
 import { Campo, LadoALado } from './CamposDaFicha'
 import { FichaDoEstoque, VirarCaixaDeEstoque } from './EstoqueDaFicha'
 import { EtiquetaDaFase } from './FaseDaCaixa'
@@ -58,6 +58,8 @@ export function FichaDaCaixa({
   const escolha = escolhido ?? escolhaInicial(deCasal)
   const endereco = ficha.data?.caixa.endereco ?? posicaoVazia
   const caixa = ficha.data?.caixa
+  // no computador a caixa muda de lugar arrastada na grade; no toque não há arrastar
+  const mudaDeLugar = useTelaEstreita() && caixa?.ativa === true
   const atraso = deCasal ? atrasoDaFicha(deCasal) : null
 
   function fechar() {
@@ -117,11 +119,11 @@ export function FichaDaCaixa({
         </div>
       ) : (
         <EstadoDaConsulta consulta={ficha}>
-          {(atraso || caixa?.ativa) && (
+          {(atraso || mudaDeLugar) && (
             <div className="ficha__topo">
               {/* o motivo que a grade só dava no título da célula, que no toque não aparece */}
               {atraso && <Aviso tom="erro" titulo={`${atraso}.`} />}
-              {caixa?.ativa && <MudarDeLugar key={caixa.id} caixa={caixa} />}
+              {caixa && mudaDeLugar && <MudarDeLugar key={caixa.id} caixa={caixa} />}
             </div>
           )}
           {deEstoque && <FichaDoEstoque ficha={deEstoque} />}
@@ -283,7 +285,6 @@ function FichaDoCasal({
                   partos={partos}
                   ordem={ordem}
                 />
-                <BaixasLancadas baixas={ficha.baixas} caixa={ficha.caixa} />
               </>
             ),
           },

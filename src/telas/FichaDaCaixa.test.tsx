@@ -18,7 +18,6 @@ import {
   diaNoCalendario,
   erroDaApi,
   estanteE01,
-  eventoDeBaixa,
   fichaDeCasal,
   gradeE01,
   grupo,
@@ -71,7 +70,10 @@ beforeEach(() => {
   api.acasalamento.mockReset().mockResolvedValue(parto())
   api.semNinhada.mockReset().mockResolvedValue(parto())
   api.mudanca.mockReset().mockResolvedValue({ caixas: [], liberada: false })
-  api.baixa.mockReset().mockResolvedValue({ baixas: { m: 0, f: 0 }, liberada: false, faltas: [] })
+  api.baixa
+    .mockReset()
+    .mockResolvedValue({ idOcorrencia: 41, baixas: { m: 0, f: 0 }, liberada: false, faltas: [] })
+  api.anulacao.mockReset().mockResolvedValue({ voltaram: [], soltos: { m: 0, f: 0 } })
   api.virar.mockReset().mockResolvedValue({ idCaixa: 7, sexo: 'F' })
   api.mover.mockReset()
 })
@@ -120,31 +122,51 @@ function corrigir(titulo: string) {
 }
 
 describe('mudar a caixa de lugar e o atraso, na ficha', { timeout: 40_000 }, () => {
-  it('a caixa muda de lugar pela ficha: toca a posição vazia e confirma o destino', async () => {
-    abrirFicha()
+  it('no celular, a caixa muda de lugar pela ficha: toca a posição vazia e confirma o destino', async () => {
+    const voltar = larguraDaTela(390)
 
-    fireEvent.click(await acharBotao('Mudar de lugar'))
-    // só a posição vazia serve; a caixa ocupada fica apagada, e a própria caixa diz onde está
-    expect(celula('F1C: ocupada').disabled).toBe(true)
-    expect(celula('F1A: onde a caixa está').disabled).toBe(true)
-    expect(botao('Mudar').disabled).toBe(true)
+    try {
+      abrirFicha()
 
-    fireEvent.click(celula('F1B: posição vazia, a caixa vai para cá'))
-    fireEvent.click(botao('Mudar para F1B'))
+      fireEvent.click(await acharBotao('Mudar de lugar'))
+      // só a posição vazia serve; a caixa ocupada fica apagada, e a própria caixa diz onde está
+      expect(celula('F1C: ocupada').disabled).toBe(true)
+      expect(celula('F1A: onde a caixa está').disabled).toBe(true)
+      expect(botao('Mudar').disabled).toBe(true)
 
-    expect(api.mover).toHaveBeenCalledWith(
-      { idCaixa: 7, idEstante: 1, face: 'frontal', linha: 1, coluna: 2 },
-      expect.anything(),
-    )
+      fireEvent.click(celula('F1B: posição vazia, a caixa vai para cá'))
+      fireEvent.click(botao('Mudar para F1B'))
+
+      expect(api.mover).toHaveBeenCalledWith(
+        { idCaixa: 7, idEstante: 1, face: 'frontal', linha: 1, coluna: 2 },
+        expect.anything(),
+      )
+    } finally {
+      voltar()
+    }
   })
 
-  it('a caixa liberada não muda de lugar', () => {
-    api.ficha = fichaDeCasal({
-      caixa: { ...fichaDeCasal().caixa, ativa: false, dtLiberacao: '2026-10-20', fase: null },
-    })
+  it('no computador não há Mudar de lugar: a caixa se arrasta na grade', async () => {
     abrirFicha()
 
+    await abaAberta()
     expect(talvezBotao('Mudar de lugar')).toBeNull()
+  })
+
+  it('a caixa liberada não muda de lugar, nem no celular', async () => {
+    const voltar = larguraDaTela(390)
+
+    try {
+      api.ficha = fichaDeCasal({
+        caixa: { ...fichaDeCasal().caixa, ativa: false, dtLiberacao: '2026-10-20', fase: null },
+      })
+      abrirFicha()
+
+      await abaAberta()
+      expect(talvezBotao('Mudar de lugar')).toBeNull()
+    } finally {
+      voltar()
+    }
   })
 
   it('a caixa atrasada diz na ficha por quê: no toque, o título da célula não aparece', async () => {
@@ -169,10 +191,10 @@ describe('a aba Ninhada no celular', { timeout: 40_000 }, () => {
       expect(within(painel).queryByLabelText('Machos')).toBeNull()
       expect(within(painel).queryByLabelText('Machos desmamados')).toBeNull()
 
-      fireEvent.click(botao('Registrar eutanásia', painel))
+      fireEvent.click(botao('Registrar baixa', painel))
       await waitFor(() => expect(within(painel).getByLabelText('Machos')).toBeTruthy(), DEMORA)
 
-      // abrir o desmame fecha a seleção
+      // abrir o desmame fecha a baixa
       fireEvent.click(botao('Registrar desmame', painel))
       await waitFor(
         () => expect(within(painel).getByLabelText('Machos desmamados')).toBeTruthy(),
@@ -191,10 +213,9 @@ describe('a aba Ninhada no celular', { timeout: 40_000 }, () => {
     }
   })
 
-  it('no computador, os formulários continuam abertos como sempre', async () => {
+  it('no computador, o formulário do desmame continua aberto como sempre', async () => {
     const painel = await abrirNinhada()
 
-    expect(within(painel).getByLabelText('Machos')).toBeTruthy()
     expect(within(painel).getByLabelText('Machos desmamados')).toBeTruthy()
   })
 })
@@ -349,65 +370,53 @@ describe('desmame', { timeout: 40_000 }, () => {
   })
 })
 
-describe('eutanásia de seleção', { timeout: 40_000 }, () => {
-  it('é repetível: cada rodada vai sozinha, e o formulário volta ao começo', async () => {
+describe('baixa da ninhada', { timeout: 40_000 }, () => {
+  it('o resumo mostra as baixas do parto, sem a eutanásia de seleção à parte', async () => {
     await abrirNinhada()
 
-    expect(within(secao('Eutanásia de seleção')).getByText('1 M · 1 F')).toBeTruthy()
-    fireEvent.change(screen.getByLabelText('Machos'), { target: { value: '1' } })
-    fireEvent.click(botao('Registrar eutanásia'))
-
-    await waitFor(() => expect(api.registrar).toHaveBeenCalled(), DEMORA)
-    expect(api.registrar).toHaveBeenCalledWith({
-      caminho: '/api/partos/10/selecao',
-      corpo: { dtSelecao: hoje(), eutanasiadoM: 1, eutanasiadoF: 0 },
-    })
-    await waitFor(() => expect(screen.getByLabelText('Machos')).toHaveProperty('value', '0'))
+    expect(within(secao('Baixas')).getByText('1 M · 1 F')).toBeTruthy()
+    expect(screen.queryByText('Eutanásia de seleção')).toBeNull()
+    expect(talvezBotao('Registrar eutanásia')).toBeNull()
+    expect(screen.queryByText('Baixas até agora')).toBeNull()
   })
 
-  it('com reservados de mais de um pedido, pede de qual, com os pedidos do parto', async () => {
-    api.ficha = fichaDeCasal({
-      partos: [
-        parto({
-          reservados: [
-            { idPedido: 7, m: 2, f: 0 },
-            { idPedido: 9, m: 2, f: 0 },
-          ],
-        }),
-      ],
-    })
-    api.registrar.mockRejectedValueOnce(
-      erroDaApi(409, 'PEDIDO_NAO_INDICADO', 'Os livres nao bastam.', {
-        idPedido: 'Escolha um dos pedidos: #7, #9.',
-      }),
-    )
+  it('antes do desmame a ação única vem com Eutanásia e vale para o parto escolhido', async () => {
     await abrirNinhada()
 
-    fireEvent.change(screen.getByLabelText('Machos'), { target: { value: '4' } })
-    fireEvent.click(botao('Registrar eutanásia'))
+    fireEvent.click(botao('Registrar baixa'))
+    expect(screen.getByLabelText('Eutanásia')).toHaveProperty('checked', true)
+    fireEvent.change(screen.getByLabelText('Machos'), { target: { value: '1' } })
+    fireEvent.click(botao('Registrar baixa'))
 
-    expect(await screen.findByText('Escolha um dos pedidos: #7, #9.', {}, DEMORA)).toBeTruthy()
-    fireEvent.mouseDown(selecao(/de qual pedido saem os animais reservados/))
-    fireEvent.click(await screen.findByTitle('Pedido #9'))
-    fireEvent.click(botao('Registrar eutanásia'))
-
-    await waitFor(() => expect(api.registrar).toHaveBeenCalledTimes(2), DEMORA)
-    expect(api.registrar).toHaveBeenLastCalledWith({
-      caminho: '/api/partos/10/selecao',
-      corpo: { dtSelecao: hoje(), eutanasiadoM: 4, eutanasiadoF: 0, idPedido: 9 },
+    await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
+    expect(api.baixa).toHaveBeenCalledWith({
+      idCaixa: 7,
+      dtFato: hoje(),
+      tipo: 'eutanasia',
+      idParto: 10,
+      itens: [{ sexo: 'M', qtd: 1, dtNascimento: '2026-09-24' }],
     })
-
-    // a rodada seguinte começa sem o pedido: os livres podem bastar, e a API pede de novo se não
-    await waitFor(() => expect(screen.getByLabelText('Machos')).toHaveProperty('value', '0'))
-    expect(screen.queryAllByLabelText(/de qual pedido saem os animais reservados/)).toHaveLength(0)
-    fireEvent.change(screen.getByLabelText('Fêmeas'), { target: { value: '1' } })
-    fireEvent.click(botao('Registrar eutanásia'))
-
-    await waitFor(() => expect(api.registrar).toHaveBeenCalledTimes(3), DEMORA)
-    expect(api.registrar).toHaveBeenLastCalledWith({
-      caminho: '/api/partos/10/selecao',
-      corpo: { dtSelecao: hoje(), eutanasiadoM: 0, eutanasiadoF: 1 },
+    // a mensagem de sucesso traz o Desfazer, que anula a baixa recém-criada
+    fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }, DEMORA))
+    await waitFor(() => expect(api.anulacao).toHaveBeenCalled(), DEMORA)
+    expect(api.anulacao).toHaveBeenCalledWith({
+      idOcorrencia: 41,
+      motivo: expect.stringContaining('Desfeita'),
     })
+  })
+
+  it('depois do desmame o padrão é Morte, e a baixa não é mais seleção do parto', async () => {
+    api.ficha = fichaDeCasal({ partos: [desmamado()] })
+    await abrirNinhada()
+
+    fireEvent.click(botao('Registrar baixa'))
+    expect(screen.getByLabelText('Morte')).toHaveProperty('checked', true)
+    fireEvent.change(screen.getByLabelText('Machos'), { target: { value: '1' } })
+    fireEvent.click(botao('Registrar baixa'))
+
+    await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
+    expect(api.baixa.mock.calls[0]?.[0]).toMatchObject({ tipo: 'morte' })
+    expect(api.baixa.mock.calls[0]?.[0]).not.toHaveProperty('idParto')
   })
 })
 
@@ -794,7 +803,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
     expect(screen.getByText('F1C (E-01), estoque: 2 machos, 2 reservados')).toBeTruthy()
     expect(screen.getByText(/2 machos reservados/)).toBeTruthy()
     expect(botao('Passar para o estoque')).toBeTruthy()
-    expect(botao('Baixa')).toBeTruthy()
+    expect(botao('Registrar baixa')).toBeTruthy()
   })
 
   it('os reservados que já foram para o estoque não viram "só os do pedido" na caixa do casal', async () => {
@@ -931,8 +940,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
     await abrirNinhada()
 
     expect(talvezBotao('Passar para o estoque')).toBeNull()
-    fireEvent.click(botao('Baixa'))
-    // a seleção, que também pede machos e fêmeas, continua na aba: os campos são os da baixa
+    fireEvent.click(botao('Registrar baixa'))
     const baixa = botao('Registrar baixa').closest('form') as HTMLElement
     fireEvent.change(within(baixa).getByLabelText('Fêmeas'), { target: { value: '1' } })
     fireEvent.click(botao('Registrar baixa', baixa))
@@ -941,6 +949,8 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
     expect(api.baixa).toHaveBeenCalledWith({
       idCaixa: 7,
       dtFato: hoje(),
+      tipo: 'eutanasia',
+      idParto: 10,
       itens: [{ sexo: 'F', qtd: 1, dtNascimento: '2026-09-24' }],
     })
   })
@@ -978,7 +988,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
 
     expect(screen.getByText('F2C (E-01), estoque: 4 machos')).toBeTruthy()
     expect(talvezBotao('Passar para o estoque')).toBeNull()
-    expect(talvezBotao('Baixa')).toBeNull()
+    expect(talvezBotao('Registrar baixa')).toBeNull()
   })
 })
 
@@ -989,80 +999,13 @@ describe('abas da ficha do casal', { timeout: 20_000 }, () => {
     expect(await waitFor(() => nomesDasAbas().filter(Boolean))).toEqual(['Reprodução', 'Ninhada'])
   })
 
-  it('as Baixas lançadas, no fim da aba Ninhada, têm o Anular', async () => {
-    api.ficha = fichaDeCasal({
-      baixas: [
-        eventoDeBaixa(
-          40,
-          'Eutanasia de selecao do 1o parto do casal AB: 1 macho e 1 femea.',
-          { sexos: { m: 1, f: 1 }, idLinhagem: 1, voltaNaOrigem: true },
-          '2026-09-24T00:00:00.000Z',
-        ),
-      ],
-    })
-    abrirFicha()
-    fireEvent.click(aba('Ninhada'))
-
-    expect(await screen.findByText(/Eutanasia de selecao do 1o parto/)).toBeTruthy()
-    expect(screen.getByText('Baixas lançadas')).toBeTruthy()
-    expect(botao('Anular')).toBeTruthy()
-  })
-
-  it('sem baixa anulável, não há Baixas lançadas', async () => {
-    api.ficha = fichaDeCasal({ baixas: [] })
+  it('a aba Ninhada não tem a lista Baixas lançadas', async () => {
     abrirFicha()
     fireEvent.click(aba('Ninhada'))
     await abaAberta()
 
     expect(screen.queryByText('Baixas lançadas')).toBeNull()
-  })
-
-  it('a baixa da ninhada de um casal de antes volta para o estoque da linhagem dele, que a baixa diz', async () => {
-    api.ficha = fichaDeCasal({
-      casal: { ...casal(2, 'CD', true), dtFormacao: '2026-11-01' },
-      partos: [],
-      anteriores: [
-        // a ninhada dele saiu da caixa antes de o casal CD ser formado
-        {
-          casal: { ...casal(1, 'AB', false), linhagem: 'Swiss', idLinhagem: 2 },
-          partos: [desmamado({ vivos: { m: 0, f: 0 }, onde: [] })],
-        },
-      ],
-      baixas: [
-        eventoDeBaixa(41, 'Baixa de 2 machos nesta caixa.', {
-          sexos: { m: 2, f: 0 },
-          idLinhagem: 2,
-          voltaNaOrigem: false,
-        }),
-      ],
-    })
-    api.anulacao.mockReset().mockResolvedValueOnce({
-      voltaram: [{ sexo: 'M', qtd: 2, idCaixa: 32, codigo: 'F1F' }],
-      soltos: { m: 0, f: 0 },
-    })
-    abrirFicha()
-    fireEvent.click(aba('Ninhada'))
-    const linha = (await screen.findByText('Baixa de 2 machos nesta caixa.')).closest(
-      'li',
-    ) as HTMLElement
-
-    fireEvent.click(botao('Anular', linha))
-    fireEvent.change(within(linha).getByLabelText('Por que a baixa foi um engano'), {
-      target: { value: 'contada duas vezes' },
-    })
-
-    // F1F é de machos Swiss, a linhagem da baixa; F1C, de machos Wistar, a do casal de agora
-    expect(celula(/^F1F: caixa de estoque com 2 machos/, linha)).toHaveProperty('disabled', false)
-    expect(celula('F1C: ocupada', linha)).toHaveProperty('disabled', true)
-    fireEvent.click(celula(/^F1F: caixa de estoque/, linha))
-    fireEvent.click(botao('Anular baixa', linha))
-
-    await waitFor(() => expect(api.anulacao).toHaveBeenCalled(), DEMORA)
-    expect(api.anulacao).toHaveBeenCalledWith({
-      idOcorrencia: 41,
-      motivo: 'contada duas vezes',
-      idCaixaMachos: 32,
-    })
+    expect(talvezBotao('Anular')).toBeNull()
   })
 })
 
@@ -1072,13 +1015,6 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     const ficha = fichaDeCasal({
       casal: casal(1, 'AB', false),
       partos: [parto({ vivos: { m: 0, f: 0 }, onde: [], baixasAntesDoDesmame: { m: 5, f: 5 } })],
-      baixas: [
-        eventoDeBaixa(60, 'Baixa de 4 machos e 4 femeas nesta caixa.', {
-          sexos: { m: 4, f: 4 },
-          idLinhagem: 1,
-          voltaNaOrigem: false,
-        }),
-      ],
     })
     return {
       ...ficha,
@@ -1106,9 +1042,8 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     fireEvent.click(aba('Ninhada'))
     const ninhada = await abaAberta()
     expect(within(ninhada).getByText('Data do acasalamento')).toBeTruthy()
-    expect(talvezBotao('Registrar eutanásia', ninhada)).toBeNull()
     expect(talvezBotao('Registrar desmame', ninhada)).toBeNull()
-    expect(talvezBotao('Baixa', ninhada)).toBeNull()
+    expect(talvezBotao('Registrar baixa', ninhada)).toBeNull()
     expect(within(ninhada).getByText('A ninhada não chegou ao desmame.')).toBeTruthy()
     // o nascimento; a data do acasalamento se edita direto no campo
     expect(botoes('Corrigir', ninhada)).toHaveLength(1)
@@ -1126,23 +1061,13 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     expect(await screen.findByText(/em qual caixa de estoque entram os machos a mais/)).toBeTruthy()
   })
 
-  it('o Anular da baixa que a esvaziou continua em Baixas lançadas', async () => {
-    api.ficha = liberada()
-    abrirFicha()
-
-    fireEvent.click(aba('Ninhada'))
-    const linha = (await screen.findByText('Baixa de 4 machos e 4 femeas nesta caixa.')).closest(
-      'li',
-    ) as HTMLElement
-    fireEvent.click(botao('Anular', linha))
-
-    // a caixa liberada não recebe ninguém de volta: uma estante por sexo
-    expect(within(linha).getByText(/voltam os machos/)).toBeTruthy()
-    expect(within(linha).getByText(/voltam as fêmeas/)).toBeTruthy()
-  })
-
-  it('depois da baixa que libera a caixa, a ficha continua aberta, agora liberada, com o Anular', async () => {
-    api.baixa.mockResolvedValueOnce({ baixas: { m: 4, f: 4 }, liberada: true, faltas: [] })
+  it('depois da baixa que libera a caixa, a ficha continua aberta, agora liberada, sem Desfazer', async () => {
+    api.baixa.mockResolvedValueOnce({
+      idOcorrencia: 42,
+      baixas: { m: 4, f: 4 },
+      liberada: true,
+      faltas: [],
+    })
     // a ficha desenhada de novo com o que a API devolver, sem desmontar: como depois de recarregar
     function FichaQueRecarrega() {
       const [, setVezes] = useState(0)
@@ -1159,7 +1084,7 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     fireEvent.click(aba('Ninhada'))
     await abaAberta()
 
-    fireEvent.click(botao('Baixa'))
+    fireEvent.click(botao('Registrar baixa'))
     const baixa = botao('Registrar baixa').closest('form') as HTMLElement
     fireEvent.change(within(baixa).getByLabelText('Machos'), { target: { value: '4' } })
     fireEvent.change(within(baixa).getByLabelText('Fêmeas'), { target: { value: '4' } })
@@ -1171,9 +1096,8 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     fireEvent.click(screen.getByText('recarregar'))
 
     expect(await screen.findByText('Liberada')).toBeTruthy()
-    fireEvent.click(aba('Ninhada'))
-    expect(await screen.findByText('Baixa de 4 machos e 4 femeas nesta caixa.')).toBeTruthy()
-    expect(botao('Anular')).toBeTruthy()
+    // a baixa que esvaziou a caixa pediria caixa para voltar: a mensagem não oferece o Desfazer
+    expect(screen.queryByRole('button', { name: 'Desfazer' })).toBeNull()
   })
 })
 
@@ -1248,7 +1172,13 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
 
   it('parto ainda não nascido mostra a previsão do parto e do desmame', async () => {
     api.ficha = fichaDeCasal({
-      partos: [parto({ dtPartoReal: null, dtPartoPrevisto: '2026-09-25', dtDesmamePrevisto: '2026-10-17' })],
+      partos: [
+        parto({
+          dtPartoReal: null,
+          dtPartoPrevisto: '2026-09-25',
+          dtDesmamePrevisto: '2026-10-17',
+        }),
+      ],
     })
     abrirFicha()
 

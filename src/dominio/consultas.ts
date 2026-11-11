@@ -292,10 +292,14 @@ export interface ItemDaBaixa {
   idPedido?: number
 }
 
+export type TipoDaBaixa = 'morte' | 'eutanasia'
+
 export interface Baixa {
   idCaixa: number
   dtFato: DataISO
-  motivo?: string
+  tipo: TipoDaBaixa
+  /** só na eutanásia da ninhada: a baixa é a seleção deste parto */
+  idParto?: number
   itens: ItemDaBaixa[]
 }
 

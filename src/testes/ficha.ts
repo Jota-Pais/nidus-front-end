@@ -6,7 +6,6 @@ import type {
   Casal,
   Catalogo,
   Estante,
-  EventoDaFicha,
   FichaDeCasal,
   FichaDeEstoque,
   Grade,
@@ -53,22 +52,6 @@ export const lugar = (parcial: Partial<OndeEstao> & Pick<OndeEstao, 'idCaixa'>):
   ...parcial,
 })
 
-/** Uma baixa anulável nas baixas lançadas da caixa */
-export const eventoDeBaixa = (
-  idOcorrencia: number,
-  descricao: string,
-  baixa: EventoDaFicha['baixa'],
-  dataHora = '2026-10-20T00:00:00.000Z',
-): EventoDaFicha => ({
-  dataHora,
-  tipo: 'baixa',
-  descricao,
-  autor: 'Ana Souza',
-  idOcorrencia,
-  anulavel: baixa !== null,
-  baixa,
-})
-
 /** O mesmo parto já desmamado em 16/10, com os 4 M e 4 F ainda na caixa do casal */
 export const desmamado = (parcial: Partial<Parto> = {}): Parto =>
   parto({ dtDesmameReal: '2026-10-16', desmamadoM: 4, desmamadoF: 4, ...parcial })
@@ -104,7 +87,6 @@ export const fichaDeCasal = (parcial: Partial<FichaDeCasal> = {}): FichaDeCasal 
   casal: casal(1, 'AB', true),
   partos: [parto()],
   anteriores: [],
-  baixas: [],
   ...parcial,
 })
 
@@ -151,7 +133,6 @@ export const fichaDeEstoque = (parcial: Partial<FichaDeEstoque> = {}): FichaDeEs
     },
   ],
   pedidos: [{ idPedido: 12, qtd: 2 }],
-  baixas: [],
   casaisAnteriores: [],
   ...parcial,
 })

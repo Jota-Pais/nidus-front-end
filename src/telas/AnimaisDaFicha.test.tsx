@@ -1,24 +1,20 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { BaixaAnulavel, EventoDaFicha } from '@/dominio/tipos'
 import { hoje } from '@/lib/data'
 import {
   APAGADO,
   botao,
-  botoes,
   celula,
   diaNoCalendario,
   erroDaApi,
   estanteE01,
-  eventoDeBaixa,
   gradeE01,
   grupo,
   mutacaoComResposta,
   selecao,
-  talvezBotao,
 } from '@/testes/ficha'
 import { consulta, renderizar } from '@/testes/renderizar'
-import { BaixaNaCaixa, BaixasLancadas, MudarAnimais } from './AnimaisDaFicha'
+import { BaixaNaCaixa, MudarAnimais } from './AnimaisDaFicha'
 import type { CaixaDaAcao, GrupoDaCaixa } from './AnimaisDaFicha'
 
 /** o que cada ação manda para a API */
@@ -47,7 +43,9 @@ const ninhadaCom = (reservas: GrupoDaCaixa['reservas'] = []): GrupoDaCaixa[] => 
 const ninhada = ninhadaCom()
 
 beforeEach(() => {
-  api.baixa.mockReset().mockResolvedValue({ baixas: { m: 0, f: 0 }, liberada: false, faltas: [] })
+  api.baixa
+    .mockReset()
+    .mockResolvedValue({ idOcorrencia: 41, baixas: { m: 0, f: 0 }, liberada: false, faltas: [] })
   api.mudanca.mockReset().mockResolvedValue({ caixas: [], liberada: false })
   api.anulacao.mockReset().mockResolvedValue({ voltaram: [], soltos: { m: 0, f: 0 } })
 })
@@ -73,26 +71,85 @@ async function escolher(rotulo: string | RegExp, opcao: string) {
 }
 
 describe('baixa', { timeout: 30_000 }, () => {
-  it('manda quantos de cada sexo, da idade da caixa, com a data e o motivo', async () => {
+  it('manda quantos de cada sexo, da idade da caixa, com a data e o tipo Morte', async () => {
     const terminou = vi.fn()
     renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={terminou} />)
 
     digitar('Machos', '2')
     digitar('Fêmeas', '1')
-    digitar('Motivo (opcional)', 'morte')
     fireEvent.click(botao('Registrar baixa'))
 
     await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
     expect(api.baixa).toHaveBeenCalledWith({
       idCaixa: 7,
       dtFato: hoje(),
-      motivo: 'morte',
+      tipo: 'morte',
       itens: [
         { sexo: 'M', qtd: 2, dtNascimento: '2026-09-24' },
         { sexo: 'F', qtd: 1, dtNascimento: '2026-09-24' },
       ],
     })
     await waitFor(() => expect(terminou).toHaveBeenCalled())
+  })
+
+  it('o tipo Eutanásia vai com o parto da ninhada, e é o padrão quando a ação pede', async () => {
+    renderizar(
+      <BaixaNaCaixa
+        caixa={caixaDoCasal}
+        grupos={ninhada}
+        aoTerminar={() => {}}
+        idParto={20}
+        tipoInicial="eutanasia"
+      />,
+    )
+
+    expect(screen.getByLabelText('Eutanásia')).toHaveProperty('checked', true)
+    digitar('Machos', '1')
+    fireEvent.click(botao('Registrar baixa'))
+
+    await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
+    expect(api.baixa).toHaveBeenCalledWith(
+      expect.objectContaining({ tipo: 'eutanasia', idParto: 20 }),
+    )
+
+    // trocando para Morte, a baixa deixa de ser a seleção do parto
+    fireEvent.click(screen.getByLabelText('Morte'))
+    fireEvent.click(botao('Registrar baixa'))
+    await waitFor(() => expect(api.baixa).toHaveBeenCalledTimes(2), DEMORA)
+    expect(api.baixa.mock.calls[1]?.[0]).toEqual(expect.objectContaining({ tipo: 'morte' }))
+    expect(api.baixa.mock.calls[1]?.[0]).not.toHaveProperty('idParto')
+  })
+
+  it('a mensagem de sucesso traz o Desfazer, que anula a baixa recém-criada', async () => {
+    renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} />)
+
+    digitar('Machos', '1')
+    fireEvent.click(botao('Registrar baixa'))
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }, DEMORA))
+
+    await waitFor(() => expect(api.anulacao).toHaveBeenCalled(), DEMORA)
+    expect(api.anulacao).toHaveBeenCalledWith({
+      idOcorrencia: 41,
+      motivo: expect.stringContaining('Desfeita'),
+    })
+    expect(await screen.findByText('Baixa desfeita.', {}, DEMORA)).toBeTruthy()
+  })
+
+  it('a baixa que libera a caixa não oferece o Desfazer', async () => {
+    api.baixa.mockResolvedValueOnce({
+      idOcorrencia: 42,
+      baixas: { m: 1, f: 0 },
+      liberada: true,
+      faltas: [],
+    })
+    renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} />)
+
+    digitar('Machos', '1')
+    fireEvent.click(botao('Registrar baixa'))
+
+    expect(await screen.findByText(/A caixa ficou vazia e foi liberada/, {}, DEMORA)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Desfazer' })).toBeNull()
   })
 
   it('sem nenhum animal, não registra', () => {
@@ -182,6 +239,7 @@ describe('baixa', { timeout: 30_000 }, () => {
 
   it('mostra a falta que a baixa abriu nos pedidos', async () => {
     api.baixa.mockResolvedValueOnce({
+      idOcorrencia: 43,
       baixas: { m: 1, f: 0 },
       liberada: false,
       faltas: [{ idPedido: 12, m: 1, f: 0, qualquer: 0 }],
@@ -385,149 +443,5 @@ describe('passagem para outra caixa', { timeout: 30_000 }, () => {
     expect(diaNoCalendario('2026-10-16')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-10-20')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-10-21')).toContain(APAGADO)
-  })
-})
-
-/** A baixa de 2 machos e 1 fêmea Wistar (linhagem 1); a anulada não traz mais a baixa */
-const baixa = (
-  idOcorrencia: number,
-  anulavel: boolean,
-  parcial: Partial<BaixaAnulavel> = {},
-): EventoDaFicha =>
-  eventoDeBaixa(
-    idOcorrencia,
-    `Baixa de 2 machos e 1 fêmea nesta caixa${anulavel ? '' : ' (anulada)'}.`,
-    anulavel ? { sexos: { m: 2, f: 1 }, idLinhagem: 1, voltaNaOrigem: true, ...parcial } : null,
-  )
-
-describe('Baixas lançadas e anulação da baixa', { timeout: 30_000 }, () => {
-  /** abre o Anular da baixa anulável, com o que a baixa diz */
-  function anular(parcial: Partial<BaixaAnulavel> = {}) {
-    renderizar(<BaixasLancadas baixas={[baixa(41, true, parcial)]} caixa={caixaDoCasal} />)
-    const linha = screen
-      .getByText(/^Baixa de 2 machos e 1 fêmea nesta caixa\.$/)
-      .closest('li') as HTMLElement
-    fireEvent.click(botao('Anular', linha))
-    digitar('Por que a baixa foi um engano', 'contada duas vezes', linha)
-    return linha
-  }
-
-  /** a estante de um sexo, pelo rótulo do campo */
-  const estanteDas = (linha: HTMLElement, quem: RegExp) =>
-    within(linha).getByText(quem).closest('.ant-form-item') as HTMLElement
-
-  it('lista a baixa anulável, com o Anular', () => {
-    renderizar(<BaixasLancadas baixas={[baixa(41, true)]} caixa={caixaDoCasal} />)
-
-    expect(screen.getByText('Baixas lançadas')).toBeTruthy()
-    expect(screen.getByText('20/10/2026')).toBeTruthy()
-    expect(botoes('Anular')).toHaveLength(1)
-  })
-
-  it('some quando nenhuma baixa pode mais ser anulada', () => {
-    renderizar(<BaixasLancadas baixas={[baixa(40, false)]} caixa={caixaDoCasal} />)
-
-    expect(screen.queryByText('Baixas lançadas')).toBeNull()
-    expect(talvezBotao('Anular')).toBeNull()
-    expect(screen.queryByText(/\(anulada\)/)).toBeNull()
-  })
-
-  it('os animais voltam para a caixa da baixa: só o motivo, sem estante', async () => {
-    api.anulacao.mockResolvedValueOnce({
-      voltaram: [
-        { sexo: 'M', qtd: 2, idCaixa: 7, codigo: 'F1A' },
-        { sexo: 'F', qtd: 1, idCaixa: 7, codigo: 'F1A' },
-      ],
-      soltos: { m: 0, f: 0 },
-    })
-    const linha = anular()
-
-    expect(within(linha).queryByText(/Para qual caixa de estoque/)).toBeNull()
-    fireEvent.click(botao('Anular baixa', linha))
-
-    await waitFor(() => expect(api.anulacao).toHaveBeenCalled(), DEMORA)
-    expect(api.anulacao).toHaveBeenCalledWith({ idOcorrencia: 41, motivo: 'contada duas vezes' })
-    expect(
-      await screen.findByText('Baixa anulada: 2 machos para a F1A e 1 fêmea para a F1A.'),
-    ).toBeTruthy()
-  })
-
-  it('a caixa da baixa não serve mais: uma estante por sexo, só com o estoque do sexo e da linhagem', async () => {
-    api.anulacao.mockResolvedValueOnce({
-      voltaram: [
-        { sexo: 'M', qtd: 2, idCaixa: 30, codigo: 'F1C' },
-        { sexo: 'F', qtd: 1, idCaixa: 31, codigo: 'F1E' },
-      ],
-      soltos: { m: 0, f: 0 },
-    })
-    const linha = anular({ voltaNaOrigem: false })
-
-    // F1C é de machos Wistar, F1E de fêmeas Wistar, F1F de machos Swiss; a volta não cria caixa
-    const machos = estanteDas(linha, /voltam os machos/)
-    expect(celula(/^F1C: caixa de estoque com 6 machos/, machos)).toHaveProperty('disabled', false)
-    expect(celula('F1F: ocupada', machos)).toHaveProperty('disabled', true)
-    expect(celula('F1E: ocupada', machos)).toHaveProperty('disabled', true)
-    expect(celula('F1B: posição vazia', machos)).toHaveProperty('disabled', true)
-    const femeas = estanteDas(linha, /voltam as fêmeas/)
-    expect(celula(/^F1E: caixa de estoque com 3 fêmeas/, femeas)).toHaveProperty('disabled', false)
-    expect(celula('F1C: ocupada', femeas)).toHaveProperty('disabled', true)
-
-    // sem clicar nas duas, não vai
-    fireEvent.click(celula(/^F1C: caixa de estoque/, machos))
-    fireEvent.click(botao('Anular baixa', linha))
-    expect(await within(femeas).findByText('Clique na caixa de estoque', {}, DEMORA)).toBeTruthy()
-    expect(api.anulacao).not.toHaveBeenCalled()
-
-    fireEvent.click(celula(/^F1E: caixa de estoque/, femeas))
-    fireEvent.click(botao('Anular baixa', linha))
-    await waitFor(() => expect(api.anulacao).toHaveBeenCalled(), DEMORA)
-    expect(api.anulacao).toHaveBeenCalledWith({
-      idOcorrencia: 41,
-      motivo: 'contada duas vezes',
-      idCaixaMachos: 30,
-      idCaixaFemeas: 31,
-    })
-    expect(
-      await screen.findByText('Baixa anulada: 2 machos para a F1C e 1 fêmea para a F1E.'),
-    ).toBeTruthy()
-  })
-
-  it('a estante é só dos sexos da baixa e da linhagem dela, mesmo que a caixa seja de outra', () => {
-    // 2 machos Swiss (linhagem 2), da ninhada de um casal de antes
-    const linha = anular({ voltaNaOrigem: false, sexos: { m: 2, f: 0 }, idLinhagem: 2 })
-
-    expect(within(linha).queryByText(/voltam as fêmeas/)).toBeNull()
-    const machos = estanteDas(linha, /voltam os machos/)
-    expect(celula(/^F1F: caixa de estoque com 2 machos/, machos)).toHaveProperty('disabled', false)
-    expect(celula('F1C: ocupada', machos)).toHaveProperty('disabled', true)
-  })
-
-  it('a caixa que deixou de servir depois de a ficha carregar: a API pede a estante do sexo', async () => {
-    api.anulacao.mockRejectedValueOnce(
-      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
-        idCaixaMachos:
-          'A caixa F1A ja foi liberada: diga para qual caixa de estoque voltam 2 machos.',
-      }),
-    )
-    const linha = anular()
-    fireEvent.click(botao('Anular baixa', linha))
-
-    expect(
-      await within(linha).findByText(
-        'A caixa F1A ja foi liberada: diga para qual caixa de estoque voltam 2 machos.',
-        {},
-        DEMORA,
-      ),
-    ).toBeTruthy()
-    const machos = estanteDas(linha, /voltam os machos/)
-    fireEvent.click(celula(/^F1C: caixa de estoque com 6 machos/, machos))
-    fireEvent.click(botao('Anular baixa', linha))
-
-    await waitFor(() => expect(api.anulacao).toHaveBeenCalledTimes(2), DEMORA)
-    expect(api.anulacao).toHaveBeenLastCalledWith({
-      idOcorrencia: 41,
-      motivo: 'contada duas vezes',
-      idCaixaMachos: 30,
-    })
   })
 })

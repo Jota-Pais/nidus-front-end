@@ -1,7 +1,7 @@
 // A ficha da caixa de estoque: os vivos dela por data de nascimento (dentro da caixa, só a idade
 // os separa), de onde vieram, o que cada pedido tem reservado nela, o que aconteceu com eles e os
 // casais da caixa, se ela foi de casal antes de virar de estoque. As ações são as de qualquer
-// caixa: baixa, mudar animais de caixa e, em Baixas lançadas, anular a baixa. Aqui fica também a caixa do
+// caixa: baixa e mudar animais de caixa. Aqui fica também a caixa do
 // casal encerrado que vira de estoque no lugar
 import { App, Tabs } from 'antd'
 import { useState } from 'react'
@@ -16,7 +16,7 @@ import {
 import { useVirarCaixaDeEstoque } from '@/dominio/consultas'
 import type { CasalComPartos, FichaDeEstoque, Parto, Sexo } from '@/dominio/tipos'
 import { descreverDias, formatarData, idadeEmDias } from '@/lib/data'
-import { BaixaNaCaixa, BaixasLancadas, MudarAnimais } from './AnimaisDaFicha'
+import { BaixaNaCaixa, MudarAnimais } from './AnimaisDaFicha'
 import type { CaixaDaAcao, GrupoDaCaixa } from './AnimaisDaFicha'
 import { Campo, LadoALado } from './CamposDaFicha'
 import './EstoqueDaFicha.css'
@@ -122,12 +122,10 @@ function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDa
             Passar para outra caixa
           </Botao>
           <Botao variante="perigo" onClick={() => setAcao('baixa')}>
-            Baixa
+            Registrar baixa
           </Botao>
         </div>
       )}
-
-      <BaixasLancadas baixas={ficha.baixas} caixa={caixa} />
 
       <h3>Por idade</h3>
       {ficha.grupos.length === 0 ? (

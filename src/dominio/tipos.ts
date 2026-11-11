@@ -233,48 +233,6 @@ export interface Parto {
   dtPrimeiroFato: DataISO | null
 }
 
-export type TipoDeEvento =
-  | 'acasalamento'
-  | 'nascimento'
-  | 'baixa'
-  | 'anulacao'
-  | 'desmame'
-  | 'mudanca'
-  | 'entrega'
-  | 'virar_estoque'
-  | 'encerramento'
-  | 'sem_ninhada'
-  | 'liberacao'
-  | 'correcao'
-  | 'posicao'
-
-/** Uma baixa lançada que ainda pode ser anulada (o item da lista "Baixas lançadas") */
-export interface EventoDaFicha {
-  /** o dia do fato, 'aaaa-mm-ddT00:00:00.000Z' */
-  dataHora: string
-  tipo: TipoDeEvento
-  descricao: string
-  /** 'Sistema' quando ninguém registrou */
-  autor: string
-  /** só nos fatos dos animais (nascimento, baixa, anulação, mudança, entrega) */
-  idOcorrencia: number | null
-  /** a baixa que ainda pode ser anulada */
-  anulavel: boolean
-  /** só na baixa anulável: quantos de cada sexo, de qual linhagem e se voltam para a caixa dela */
-  baixa: BaixaAnulavel | null
-}
-
-/** A baixa que ainda pode ser anulada, como o evento dela conta */
-export interface BaixaAnulavel {
-  sexos: PorSexo
-  idLinhagem: number
-  /**
-   * a caixa da baixa ainda recebe os animais de volta. Senão, cada sexo da baixa volta para uma
-   * caixa de estoque dele e da linhagem dela, clicada na estante
-   */
-  voltaNaOrigem: boolean
-}
-
 export interface CasalComPartos {
   casal: Casal
   partos: Parto[]
@@ -295,8 +253,6 @@ export interface FichaDeCasal {
   partos: Parto[]
   /** os casais que vieram antes nesta caixa, com os partos deles */
   anteriores: CasalComPartos[]
-  /** as baixas que ainda podem ser anuladas, da mais recente para a mais antiga */
-  baixas: EventoDaFicha[]
 }
 
 /** De qual parto vieram os vivos de um grupo da caixa de estoque */
@@ -336,8 +292,6 @@ export interface FichaDeEstoque {
   grupos: GrupoDoEstoque[]
   /** o que cada pedido tem reservado nesta caixa */
   pedidos: { idPedido: number; qtd: number }[]
-  /** as baixas que ainda podem ser anuladas, da mais recente para a mais antiga */
-  baixas: EventoDaFicha[]
   /** os casais da caixa, se ela foi de casal antes de virar de estoque */
   casaisAnteriores: CasalComPartos[]
 }
@@ -348,6 +302,8 @@ export type FichaDaCaixa = FichaDeCasal | FichaDeEstoque
 
 /** POST /api/caixas/:id/baixa */
 export interface RespostaDaBaixa {
+  /** a baixa lançada: é o que o Desfazer anula */
+  idOcorrencia: number
   baixas: PorSexo
   /** a caixa ficou vazia e foi liberada */
   liberada: boolean
