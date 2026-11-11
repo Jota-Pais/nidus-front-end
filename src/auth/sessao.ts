@@ -5,6 +5,8 @@ import { chaves } from '@/app/chaves'
 import type { Perfil } from '@/dominio/tipos'
 import { ErroDeApi, api } from '@/lib/api'
 import { CREDENCIAL_INVALIDA } from '@/lib/erros'
+import { atualizarRelogio, zerarRelogio } from '@/lib/relogio'
+import type { RelogioDeTeste } from '@/lib/relogio'
 
 export interface Usuario {
   id: number
@@ -24,8 +26,13 @@ export function useSessao(): UseQueryResult<Usuario | null> {
     queryKey: chaves.sessao,
     queryFn: async () => {
       try {
-        const { usuario } = await api<{ usuario: Usuario }>('/api/sessao')
-        return usuario
+        const dados = await api<{
+          usuario: Usuario
+          hoje?: string
+          relogioDeTeste?: RelogioDeTeste | null
+        }>('/api/sessao')
+        atualizarRelogio(dados)
+        return dados.usuario
       } catch (erro) {
         if (erro instanceof ErroDeApi && erro.ehNaoAutenticado) return null
         throw erro
@@ -81,6 +88,7 @@ export function useLogout(): UseMutationResult<void, Error, void> {
     mutationFn: () => api<void>('/api/sessao', { metodo: 'DELETE' }),
     onSettled: () => {
       cliente.setQueryData(chaves.sessao, null)
+      zerarRelogio()
       cliente.clear()
     },
   })
