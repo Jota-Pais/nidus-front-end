@@ -1,126 +1,245 @@
-/* A Visão geral: por espécie, o placar com os totais e, embaixo, as linhagens */
+/* A Visão geral: por espécie, os cartões de número, um gráfico por linhagem e o resumo da colônia */
 
-/* Os totais da espécie, cada um sob o seu rótulo, como o placar da janela de reservar. Os números
-   vêm grandes, que são o que se lê primeiro; sem largura, o que não cabe desce */
-.visao__placar {
+.visao__especie {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 40px;
-  margin: 0 0 20px;
-  padding: 16px;
-  border-radius: var(--raio-md);
-  background: var(--cor-suave);
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
 }
 
-.visao__dado dd {
+/* ------------------------------------------------------------------ cartões de número */
+
+.visao__cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.visao__cartao {
+  padding: 12px 16px;
+  border: 1px solid var(--cor-borda);
+  border-top: 3px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-cartao);
+}
+
+.visao__cartao dd {
   display: flex;
   flex-direction: column;
   margin: 0;
-  font-weight: 600;
-}
-
-.visao__valor {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 16px;
-  line-height: 36px;
-}
-
-.visao__sexo {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.visao__simbolo {
-  font-size: 16px;
-  color: var(--cor-suave-frente);
 }
 
 .visao__numero {
   font-family: var(--fonte-titulo);
-  font-size: 28px;
+  font-size: 32px;
   font-weight: var(--peso-titulo);
-}
-
-.visao__dado .visao__nota {
-  font-size: 13px;
-  font-weight: 400;
   line-height: 1.2;
 }
 
-/* "Livres por idade", entre as duas tabelas */
-.visao__subtitulo {
-  margin: 24px 0 8px;
-  font-size: 15px;
-}
-
-/* A tabela rola dentro dela no celular; a página não */
-.visao__tabela {
-  max-width: 100%;
-}
-
-.visao__celula {
-  display: inline-flex;
+.visao__sexos {
+  display: flex;
   gap: 12px;
-  white-space: nowrap;
-}
-
-.visao__celula--forte {
-  font-weight: 600;
-}
-
-.visao__nenhum {
+  font-size: 13px;
   color: var(--cor-suave-frente);
 }
 
+/* ------------------------------------------------------------------ painéis e gráficos */
+
+.visao__painel {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-cartao);
+  list-style: none;
+}
+
+/* Um cartão por linhagem: um por linha no celular, vários lado a lado no computador */
+.visao__linhagens {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+}
+
+.visao__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+
 .visao__linhagem {
+  font-family: var(--fonte-titulo);
+  font-size: 17px;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.visao__livres {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.visao__vazio {
+  margin: 0;
+  padding: 24px 0;
+  text-align: center;
+  color: var(--cor-suave-frente);
+}
+
+.visao__resumos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.visao__tituloDoGrafico {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.visao__grafico {
+  min-width: 0;
+}
+
+/* Grade só horizontal e leve, eixos baixos, números em tinta de texto */
+.visao__grafico .recharts-cartesian-grid line {
+  stroke: var(--cor-borda);
+}
+
+.visao__grafico .recharts-cartesian-axis-line {
+  stroke: var(--cor-borda);
+}
+
+.visao__grafico .recharts-cartesian-axis-tick-value {
+  fill: var(--cor-suave-frente);
+  font-size: 12px;
+}
+
+.visao__grafico .recharts-yAxis .recharts-cartesian-axis-tick-value {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.visao__valorDaBarra {
+  fill: var(--cor-frente);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.visao__legenda {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--cor-suave-frente);
+}
+
+.visao__legenda li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.visao__legendaCor {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+/* ------------------------------------------------------------------ rosca */
+
+.visao__roscaAro {
+  position: relative;
+}
+
+.visao__roscaCentro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.visao__roscaValor {
+  font-family: var(--fonte-titulo);
+  font-size: 28px;
+  font-weight: var(--peso-titulo);
+  line-height: 1.1;
+}
+
+.visao__roscaRotulo {
+  margin-top: 2px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--cor-suave-frente);
+}
+
+.visao__roscaPorcento {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ tooltip (o único escuro) */
+
+.visao__dica {
+  min-width: 150px;
+  padding: 9px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: #1b1f28;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  color: #eef1f5;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.visao__dicaTitulo {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #fff;
+}
+
+.visao__dicaLinha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.visao__dicaBolinha {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
 }
 
 /* ------------------------------------------------------------------ celular (abaixo de 768 px) */
 
-/* Os sexos um embaixo do outro, na faixa de idade estreita */
-.visao__celula--empilhada {
-  flex-direction: column;
-  gap: 0;
-}
+@media (max-width: 767px) {
+  .visao__resumos {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-/* O nome da linhagem no cartão: alvo do tamanho do dedo */
-.cartoes__titulo .visao__linhagem {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin: -10px 0;
-  font-size: 17px;
-}
-
-/* Os livres de cada faixa de idade, numa linha de quatro colunas */
-.visao__faixas {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-top: 12px;
-  border-top: 1px solid var(--cor-borda);
-}
-
-.visao__faixasDados {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin: 0;
-}
-
-.visao__faixa dt {
-  font-size: 12px;
-  color: var(--cor-suave-frente);
-  white-space: nowrap;
-}
-
-.visao__faixa dd {
-  margin: 0;
-  font-weight: 600;
+  /* O nome da linhagem: alvo do tamanho do dedo */
+  .visao__linhagem {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin: -10px 0;
+  }
 }

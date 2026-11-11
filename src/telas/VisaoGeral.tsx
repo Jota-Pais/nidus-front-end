@@ -1,21 +1,19 @@
-import { Table } from 'antd'
-import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { CabecalhoDaTela, ListaDeCartoes, Pilha, Secao, Texto, Vazio } from '@/componentes'
+import { CabecalhoDaTela, Pilha, Secao, Texto, Vazio } from '@/componentes'
 import { SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import { useVisaoGeral } from '@/dominio/consultas'
 import type {
   CodigoEspecie,
   EspecieNaVisaoGeral,
-  FaixaDeIdade,
   LinhagemNaVisaoGeral,
   PorSexo,
 } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
-import { useTelaEstreita } from '@/layout/useTelaEstreita'
+import { COR, LEGENDA_SEXOS } from './coresDaVisao'
+import { BarrasDeVivos, BarrasPorIdade, LegendaDeCores, RoscaDeSituacao } from './graficosDaVisao'
 import './VisaoGeral.css'
 
-/** A colônia de relance: quantos animais cada espécie e linhagem tem, reservados e livres */
+/** A colônia de relance: o estoque livre de cada linhagem por sexo e idade, e o resto da situação */
 export function VisaoGeral() {
   const visao = useVisaoGeral()
 
@@ -24,7 +22,7 @@ export function VisaoGeral() {
       <CabecalhoDaTela
         rotulo="Colônia"
         titulo="Visão geral"
-        descricao="Quantos animais vivos cada linhagem tem, quantos estão reservados e quantos estão livres."
+        descricao="Quantos animais livres cada linhagem tem, de cada sexo e de cada idade, para atender os pedidos."
       />
 
       <EstadoDaConsulta consulta={visao} rotulo="Contando os animais…">
@@ -43,30 +41,22 @@ const somar = (a: PorSexo, b: PorSexo): PorSexo => ({ m: a.m + b.m, f: a.f + b.f
 
 const NADA: PorSexo = { m: 0, f: 0 }
 
+const quantos = ({ m, f }: PorSexo) => m + f
+
 /** Os números da espécie: a soma das linhagens */
 function totalDaEspecie(linhagens: LinhagemNaVisaoGeral[]) {
   return linhagens.reduce(
     (total, l) => ({
       casais: total.casais + l.casais,
-      vivos: somar(total.vivos, l.vivos),
       mamando: somar(total.mamando, l.mamando),
       reservados: somar(total.reservados, l.reservados),
       livres: somar(total.livres, l.livres),
     }),
-    { casais: 0, vivos: NADA, mamando: NADA, reservados: NADA, livres: NADA },
+    { casais: 0, mamando: NADA, reservados: NADA, livres: NADA },
   )
 }
 
-/** "até 21 d", "22–35 d", "mais de 60 d": o rótulo da faixa, das pontas que a API manda */
-function rotuloDaFaixa({ de, ate }: Pick<FaixaDeIdade, 'de' | 'ate'>, curto = false): string {
-  // no cartão do celular a coluna é estreita: "> 60 d" cabe onde "mais de 60 d" não cabe
-  if (ate === null) return curto ? `> ${de - 1} d` : `mais de ${de - 1} d`
-  if (de === 0) return `até ${ate} d`
-  return `${de}–${ate} d`
-}
-
 function Especie({ especie }: { especie: EspecieNaVisaoGeral }) {
-  const estreita = useTelaEstreita()
   const { linhagens } = especie
   const titulo = TITULO[especie.codigo] ?? especie.nome
 
@@ -79,211 +69,125 @@ function Especie({ especie }: { especie: EspecieNaVisaoGeral }) {
   }
 
   const total = totalDaEspecie(linhagens)
-  const mamando = total.mamando.m + total.mamando.f
-  // as faixas são sempre as mesmas: as colunas saem da primeira linhagem
-  const faixas = linhagens[0]!.livresPorIdade
+  const reservados = quantos(total.reservados)
+  const livres = quantos(total.livres)
 
   return (
     <Secao titulo={titulo}>
-      <dl className="visao__placar" aria-label={`Totais de ${titulo}`}>
-        <Dado rotulo="Vivos" nota={`${mamando} em aleitamento`}>
-          <Sexos {...total.vivos} />
-        </Dado>
-        <Dado rotulo="Reservados">
-          <Sexos {...total.reservados} />
-        </Dado>
-        <Dado rotulo="Livres">
-          <Sexos {...total.livres} />
-        </Dado>
-        <Dado rotulo="Casais">
-          <span className="visao__numero">{total.casais}</span>{' '}
-          {total.casais === 1 ? 'ativo' : 'ativos'}
-        </Dado>
-      </dl>
-
-      {estreita ? (
-        // no celular, um cartão por linhagem no lugar das duas tabelas, que rolariam de lado
-        <ListaDeCartoes
-          itens={linhagens}
-          chave={(l) => l.idLinhagem}
-          rotulo={`Linhagens de ${titulo}`}
-          vazio="Nenhuma linhagem nesta espécie."
-          renderizar={(l) => <CartaoDaLinhagem linhagem={l} />}
-        />
-      ) : (
-        <>
-          <Table<LinhagemNaVisaoGeral>
-            className="visao__tabela"
-            aria-label={`Linhagens de ${titulo}`}
-            rowKey="idLinhagem"
-            dataSource={linhagens}
-            pagination={false}
-            size="middle"
-            scroll={{ x: 'max-content' }}
-            columns={[
-              {
-                title: 'Linhagem',
-                render: (_, l) => <NomeDaLinhagem linhagem={l} />,
-              },
-              { title: 'Casais', render: (_, l) => (l.casais === 0 ? '–' : l.casais) },
-              { title: 'Vivos', render: (_, l) => <Pouco {...l.vivos} /> },
-              { title: 'Em aleitamento', render: (_, l) => <Pouco {...l.mamando} /> },
-              { title: 'Reservados', render: (_, l) => <Pouco {...l.reservados} /> },
-              { title: 'Livres', render: (_, l) => <Pouco {...l.livres} forte /> },
-            ]}
+      <div className="visao__especie">
+        <dl className="visao__cartoes" aria-label={`Totais de ${titulo}`}>
+          <CartaoDeNumero rotulo="Livres" cor={COR.livres} numero={livres} sexos={total.livres} />
+          <CartaoDeNumero
+            rotulo="Reservados"
+            cor={COR.reservados}
+            numero={reservados}
+            sexos={total.reservados}
           />
-
-          <h4 className="visao__subtitulo">Livres por idade</h4>
-          <Table<LinhagemNaVisaoGeral>
-            className="visao__tabela"
-            aria-label={`Livres por idade de ${titulo}`}
-            rowKey="idLinhagem"
-            dataSource={linhagens}
-            pagination={false}
-            size="middle"
-            scroll={{ x: 'max-content' }}
-            columns={[
-              {
-                title: 'Linhagem',
-                render: (_, l) => <NomeDaLinhagem linhagem={l} />,
-              },
-              ...faixas.map((faixa, indice) => ({
-                title: rotuloDaFaixa(faixa),
-                key: rotuloDaFaixa(faixa),
-                render: (_: unknown, l: LinhagemNaVisaoGeral) => {
-                  const daFaixa = l.livresPorIdade[indice] ?? NADA
-                  return <Pouco m={daFaixa.m} f={daFaixa.f} />
-                },
-              })),
-            ]}
+          <CartaoDeNumero
+            rotulo="Em aleitamento"
+            cor="var(--fase-mamando-texto)"
+            numero={quantos(total.mamando)}
+            sexos={total.mamando}
           />
-        </>
-      )}
+          <CartaoDeNumero rotulo="Casais ativos" numero={total.casais} />
+        </dl>
+
+        <ul className="visao__linhagens" aria-label={`Linhagens de ${titulo}`}>
+          {linhagens.map((l) => (
+            <li key={l.idLinhagem} className="visao__painel">
+              <CartaoDaLinhagem linhagem={l} />
+            </li>
+          ))}
+        </ul>
+
+        <div className="visao__resumos">
+          <section className="visao__painel" aria-label={`Situação dos vivos de ${titulo}`}>
+            <h4 className="visao__tituloDoGrafico">Situação dos vivos</h4>
+            <RoscaDeSituacao
+              total={reservados + livres}
+              fatias={[
+                { nome: 'Reservados', valor: reservados, cor: COR.reservados },
+                { nome: 'Livres', valor: livres, cor: COR.livres },
+              ]}
+            />
+          </section>
+          <section className="visao__painel" aria-label={`Vivos por linhagem de ${titulo}`}>
+            <h4 className="visao__tituloDoGrafico">Vivos por linhagem</h4>
+            <BarrasDeVivos
+              linhagens={linhagens.map((l) => ({
+                linhagem: l.linhagem,
+                reservados: quantos(l.reservados),
+                livres: quantos(l.livres),
+                total: quantos(l.reservados) + quantos(l.livres),
+              }))}
+            />
+          </section>
+        </div>
+      </div>
     </Secao>
   )
 }
 
-/**
- * A linhagem no celular: o nome leva às estantes; embaixo, os números em duas colunas, com os
- * livres em destaque, e os livres de cada faixa de idade numa linha de quatro
- */
-function CartaoDaLinhagem({ linhagem: l }: { linhagem: LinhagemNaVisaoGeral }) {
+/** Um número do topo: o rótulo pequeno em maiúsculas, o total grande e, se houver, ♂ e ♀ embaixo */
+function CartaoDeNumero({
+  rotulo,
+  numero,
+  sexos,
+  cor,
+}: {
+  rotulo: string
+  numero: number
+  sexos?: PorSexo
+  cor?: string
+}) {
   return (
-    <>
-      <ListaDeCartoes.Topo
-        lado={
-          <Texto tom="secundario">
-            {l.casais === 0 ? 'sem casal' : `${l.casais} ${l.casais === 1 ? 'casal' : 'casais'}`}
-          </Texto>
-        }
-      >
-        <NomeDaLinhagem linhagem={l} />
-      </ListaDeCartoes.Topo>
-      <ListaDeCartoes.Dados>
-        <ListaDeCartoes.Dado rotulo="Vivos">
-          <Pouco {...l.vivos} />
-        </ListaDeCartoes.Dado>
-        <ListaDeCartoes.Dado rotulo="Em aleitamento">
-          <Pouco {...l.mamando} />
-        </ListaDeCartoes.Dado>
-        <ListaDeCartoes.Dado rotulo="Reservados">
-          <Pouco {...l.reservados} />
-        </ListaDeCartoes.Dado>
-        <ListaDeCartoes.Dado rotulo="Livres">
-          <Pouco {...l.livres} forte />
-        </ListaDeCartoes.Dado>
-      </ListaDeCartoes.Dados>
-      <div className="visao__faixas">
-        <Texto tom="rotulo">Livres por idade</Texto>
-        <dl className="visao__faixasDados">
-          {l.livresPorIdade.map((faixa) => (
-            <div key={rotuloDaFaixa(faixa)} className="visao__faixa">
-              <dt>{rotuloDaFaixa(faixa, true)}</dt>
-              <dd>
-                <Pouco m={faixa.m} f={faixa.f} empilhado />
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </>
-  )
-}
-
-/** Um bloco do placar: o rótulo em cima, os números grandes e, se houver, uma nota embaixo */
-function Dado({ rotulo, nota, children }: { rotulo: string; nota?: string; children: ReactNode }) {
-  return (
-    <div className="visao__dado">
+    <div className="visao__cartao" style={cor ? { borderTopColor: cor } : undefined}>
       <dt>
         <Texto tom="rotulo">{rotulo}</Texto>
       </dt>
       <dd>
-        <span className="visao__valor">{children}</span>
-        {nota && (
-          <Texto tom="secundario" className="visao__nota">
-            {nota}
-          </Texto>
+        <span className="visao__numero">{numero}</span>
+        {sexos && (
+          <span className="visao__sexos">
+            <span>
+              {SIMBOLO_DO_SEXO.M} {sexos.m}
+            </span>
+            <span>
+              {SIMBOLO_DO_SEXO.F} {sexos.f}
+            </span>
+          </span>
         )}
       </dd>
     </div>
   )
 }
 
-/** "♂ 21  ♀ 21" com os números grandes, para o placar */
-function Sexos({ m, f }: PorSexo) {
+/** A linhagem: o nome (link para as estantes), os livres de cada sexo e o gráfico por idade */
+function CartaoDaLinhagem({ linhagem: l }: { linhagem: LinhagemNaVisaoGeral }) {
+  const idades = l.livresPorIdadeDias ?? []
+
   return (
     <>
-      <span className="visao__sexo">
-        <span className="visao__simbolo">{SIMBOLO_DO_SEXO.M}</span>
-        <span className="visao__numero">{m}</span>
-      </span>
-      <span className="visao__sexo">
-        <span className="visao__simbolo">{SIMBOLO_DO_SEXO.F}</span>
-        <span className="visao__numero">{f}</span>
-      </span>
+      <header className="visao__topo">
+        <Link
+          className="visao__linhagem"
+          to={`/estantes?linhagem=${l.idLinhagem}`}
+          title={`Ver nas estantes onde estão as caixas da ${l.linhagem}`}
+        >
+          {l.linhagem}
+        </Link>
+        <span className="visao__livres">
+          Livres {SIMBOLO_DO_SEXO.M} {l.livres.m} {SIMBOLO_DO_SEXO.F} {l.livres.f}
+        </span>
+      </header>
+      {idades.length === 0 ? (
+        <p className="visao__vazio">Sem animais livres.</p>
+      ) : (
+        <>
+          <BarrasPorIdade idades={idades} linhagem={l.linhagem} />
+          <LegendaDeCores itens={LEGENDA_SEXOS} />
+        </>
+      )}
     </>
-  )
-}
-
-/**
- * "♂ 3  ♀ 2" na tabela, ou "–" quando não há nenhum dos dois. Empilhado, um sexo embaixo do
- * outro, para caber na faixa de idade do cartão do celular
- */
-function Pouco({
-  m,
-  f,
-  forte = false,
-  empilhado = false,
-}: PorSexo & { forte?: boolean; empilhado?: boolean }) {
-  if (m + f === 0) return <span className="visao__nenhum">–</span>
-
-  const classes = [
-    'visao__celula',
-    forte ? 'visao__celula--forte' : '',
-    empilhado ? 'visao__celula--empilhada' : '',
-  ].filter(Boolean)
-
-  return (
-    <span className={classes.join(' ')}>
-      <span>
-        {SIMBOLO_DO_SEXO.M} {m}
-      </span>
-      <span>
-        {SIMBOLO_DO_SEXO.F} {f}
-      </span>
-    </span>
-  )
-}
-
-/** O nome leva à grade das estantes com só esta linhagem acesa */
-function NomeDaLinhagem({ linhagem }: { linhagem: LinhagemNaVisaoGeral }) {
-  return (
-    <Link
-      className="visao__linhagem"
-      to={`/estantes?linhagem=${linhagem.idLinhagem}`}
-      title={`Ver nas estantes onde estão as caixas da ${linhagem.linhagem}`}
-    >
-      {linhagem.linhagem}
-    </Link>
   )
 }

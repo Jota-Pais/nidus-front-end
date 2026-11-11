@@ -5,13 +5,9 @@ import { consulta, renderizar } from '@/testes/renderizar'
 import { larguraDaTela } from '@/testes/tela'
 import { VisaoGeral } from './VisaoGeral'
 
-const faixas = (...livres: [number, number][]): LinhagemNaVisaoGeral['livresPorIdade'] =>
-  [
-    { de: 0, ate: 21 },
-    { de: 22, ate: 35 },
-    { de: 36, ate: 60 },
-    { de: 61, ate: null },
-  ].map((faixa, indice) => ({ ...faixa, m: livres[indice]![0], f: livres[indice]![1] }))
+const faixas: LinhagemNaVisaoGeral['livresPorIdade'] = []
+
+const nada = { m: 0, f: 0 }
 
 const dados: DadosDaVisao = {
   especies: [
@@ -27,7 +23,14 @@ const dados: DadosDaVisao = {
           mamando: { m: 3, f: 2 },
           reservados: { m: 4, f: 3 },
           livres: { m: 11, f: 13 },
-          livresPorIdade: faixas([3, 2], [5, 6], [3, 5], [0, 0]),
+          livresPorIdade: faixas,
+          livresPorIdadeDias: [
+            { idade: 0, m: 3, f: 2 },
+            { idade: 14, m: 4, f: 5 },
+            { idade: 38, m: 5, f: 4 },
+            { idade: 60, m: 3, f: 5 },
+            { idade: 75, m: 1, f: 1 },
+          ],
         },
         {
           idLinhagem: 2,
@@ -35,9 +38,36 @@ const dados: DadosDaVisao = {
           casais: 1,
           vivos: { m: 6, f: 5 },
           mamando: { m: 3, f: 3 },
-          reservados: { m: 0, f: 0 },
+          reservados: nada,
           livres: { m: 6, f: 5 },
-          livresPorIdade: faixas([3, 3], [3, 2], [0, 0], [0, 0]),
+          livresPorIdade: faixas,
+          livresPorIdadeDias: [
+            { idade: 21, m: 3, f: 3 },
+            { idade: 40, m: 3, f: 2 },
+          ],
+        },
+        {
+          // 10 idades distintas: o gráfico agrupa por semana
+          idLinhagem: 3,
+          linhagem: 'LEW',
+          casais: 1,
+          vivos: { m: 10, f: 20 },
+          mamando: nada,
+          reservados: nada,
+          livres: { m: 10, f: 20 },
+          livresPorIdade: faixas,
+          livresPorIdadeDias: Array.from({ length: 10 }, (_, i) => ({ idade: i + 1, m: 1, f: 2 })),
+        },
+        {
+          // a API antiga não manda o campo novo: conta como sem livres
+          idLinhagem: 4,
+          linhagem: 'Sprague',
+          casais: 0,
+          vivos: nada,
+          mamando: nada,
+          reservados: nada,
+          livres: nada,
+          livresPorIdade: faixas,
         },
       ],
     },
@@ -47,51 +77,96 @@ const dados: DadosDaVisao = {
 
 vi.mock('@/dominio/consultas', () => ({ useVisaoGeral: () => consulta(dados) }))
 
-/** O valor de um dado do placar da espécie, pelo rótulo */
-const noPlacar = (especie: string, rotulo: string) => {
+/** O valor de um cartão de número da espécie, pelo rótulo */
+const noCartao = (especie: string, rotulo: string) => {
   const dt = within(screen.getByLabelText(`Totais de ${especie}`)).getByText(rotulo)
-  return dt.closest('.visao__dado')!.querySelector('dd')!.textContent
+  return dt.closest('.visao__cartao')!.querySelector('dd')!.textContent
 }
 
+/** O cartão de uma linhagem, pelo link do nome */
+const cartaoDa = (nome: string) =>
+  within(screen.getByRole('list', { name: 'Linhagens de Ratos' }))
+    .getByRole('link', { name: nome })
+    .closest('li')!
+
+/** Os números em cima das barras do cartão, na ordem em que o gráfico os desenha */
+const rotulosDeValor = (cartao: HTMLElement) =>
+  [...cartao.querySelectorAll('.visao__valorDaBarra')].map((texto) => texto.textContent)
+
 describe('Visão geral', { timeout: 20_000 }, () => {
-  it('soma as linhagens no placar da espécie', () => {
+  it('mostra os cartões de número da espécie, somando as linhagens', () => {
     renderizar(<VisaoGeral />)
 
-    expect(noPlacar('Ratos', 'Vivos')).toBe('♂21♀2111 em aleitamento')
-    expect(noPlacar('Ratos', 'Reservados')).toBe('♂4♀3')
-    expect(noPlacar('Ratos', 'Livres')).toBe('♂17♀18')
-    expect(noPlacar('Ratos', 'Casais')).toBe('3 ativos')
+    expect(noCartao('Ratos', 'Livres')).toBe('65♂ 27♀ 38')
+    expect(noCartao('Ratos', 'Reservados')).toBe('7♂ 4♀ 3')
+    expect(noCartao('Ratos', 'Em aleitamento')).toBe('11♂ 6♀ 5')
+    expect(noCartao('Ratos', 'Casais ativos')).toBe('4')
   })
 
-  it('mostra cada linhagem com o nome levando às estantes, e "–" onde não há nenhum', () => {
+  it('faz um cartão por linhagem, com o nome levando às estantes e o total de livres ao lado', () => {
     renderizar(<VisaoGeral />)
 
-    const tabela = screen.getByRole('table', { name: 'Linhagens de Ratos' })
-    const shr = within(tabela).getByRole('link', { name: 'SHR' })
-    expect(shr.getAttribute('href')).toBe('/estantes?linhagem=2')
+    const lista = screen.getByRole('list', { name: 'Linhagens de Ratos' })
+    expect(lista.querySelectorAll(':scope > li')).toHaveLength(4)
 
-    const linha = shr.closest('tr')!
-    const celulas = [...linha.querySelectorAll('td')].map((td) => td.textContent)
-    expect(celulas).toEqual(['SHR', '1', '♂ 6♀ 5', '♂ 3♀ 3', '–', '♂ 6♀ 5'])
+    const wistar = cartaoDa('Wistar')
+    expect(within(wistar).getByRole('link', { name: 'Wistar' }).getAttribute('href')).toBe(
+      '/estantes?linhagem=1',
+    )
+    expect(wistar.querySelector('.visao__livres')!.textContent).toBe('Livres ♂ 11 ♀ 13')
   })
 
-  it('separa os livres pelas faixas de idade', () => {
+  it('escreve em cima de cada barra o número de machos e de fêmeas de cada idade', () => {
     renderizar(<VisaoGeral />)
 
-    const tabela = screen.getByRole('table', { name: 'Livres por idade de Ratos' })
-    // o antd repete o cabeçalho numa linha escondida, só para medir a largura: vale o visível
-    const cabecalho = within(tabela)
-      .getAllByRole('columnheader')
-      .map((th) => th.textContent)
-    expect(cabecalho).toEqual(['Linhagem', 'até 21 d', '22–35 d', '36–60 d', 'mais de 60 d'])
-    const wistar = within(tabela).getByRole('link', { name: 'Wistar' }).closest('tr')!
-    expect([...wistar.querySelectorAll('td')].map((td) => td.textContent)).toEqual([
-      'Wistar',
-      '♂ 3♀ 2',
-      '♂ 5♀ 6',
-      '♂ 3♀ 5',
-      '–',
-    ])
+    const wistar = cartaoDa('Wistar')
+    // as barras dos machos e depois as das fêmeas, uma por idade (0, 14, 38, 60 e 75 dias)
+    expect(rotulosDeValor(wistar)).toEqual(['3', '4', '5', '3', '1', '2', '5', '4', '5', '1'])
+
+    const grafico = within(wistar).getByRole('img')
+    const descricao = grafico.getAttribute('aria-label')!
+    expect(descricao).toContain('0 dias: 3 machos, 2 fêmeas')
+    expect(descricao).toContain('38 dias: 5 machos, 4 fêmeas')
+    expect(descricao).toContain('75 dias: 1 macho, 1 fêmea')
+    for (const idade of ['0 d', '14 d', '38 d', '60 d', '75 d']) {
+      expect(within(wistar).getByText(idade)).toBeTruthy()
+    }
+  })
+
+  it('agrupa por semana quando a linhagem tem mais de 8 idades', () => {
+    renderizar(<VisaoGeral />)
+
+    const lew = cartaoDa('LEW')
+    expect(within(lew).getByText('0–6 d')).toBeTruthy()
+    expect(within(lew).getByText('7–13 d')).toBeTruthy()
+    expect(within(lew).getByRole('img').getAttribute('aria-label')).toContain(
+      '0–6 dias: 6 machos, 12 fêmeas; 7–13 dias: 4 machos, 8 fêmeas',
+    )
+    // a SHR, com 2 idades, fica nas idades de verdade
+    expect(within(cartaoDa('SHR')).getByText('21 d')).toBeTruthy()
+  })
+
+  it('a linhagem sem livres mostra um vazio curto no lugar do gráfico', () => {
+    renderizar(<VisaoGeral />)
+
+    const sprague = cartaoDa('Sprague')
+    expect(within(sprague).getByText('Sem animais livres.')).toBeTruthy()
+    expect(within(sprague).queryByRole('img')).toBeNull()
+  })
+
+  it('mostra a rosca da situação e as barras de vivos por linhagem', () => {
+    renderizar(<VisaoGeral />)
+
+    const rosca = screen.getByRole('region', { name: 'Situação dos vivos de Ratos' })
+    expect(within(rosca).getByRole('img').getAttribute('aria-label')).toBe(
+      'Situação dos vivos: 7 reservados, 65 livres',
+    )
+    expect(within(rosca).getByText('72')).toBeTruthy()
+
+    const barras = screen.getByRole('region', { name: 'Vivos por linhagem de Ratos' })
+    expect(within(barras).getByRole('img').getAttribute('aria-label')).toContain(
+      'Wistar 31 (7 reservados, 24 livres)',
+    )
   })
 
   it('a espécie sem linhagem aparece, só com o aviso', () => {
@@ -101,36 +176,31 @@ describe('Visão geral', { timeout: 20_000 }, () => {
     expect(screen.getByText('Nenhuma linhagem nesta espécie.')).toBeTruthy()
     expect(screen.queryByLabelText('Totais de Camundongos')).toBeNull()
   })
+
+  it('não tem mais tabelas', () => {
+    renderizar(<VisaoGeral />)
+
+    expect(screen.queryByRole('table')).toBeNull()
+  })
 })
 
 describe('Visão geral no celular', { timeout: 20_000 }, () => {
-  it('cada linhagem vira um cartão: o nome leva às estantes, os números em duas colunas e os livres por idade em quatro', () => {
+  it('mantém os cartões, os gráficos e o link de cada linhagem, sem tabelas', () => {
     const voltar = larguraDaTela(390)
     try {
       renderizar(<VisaoGeral />)
 
-      // sem as tabelas, que rolariam de lado
       expect(screen.queryByRole('table')).toBeNull()
-      // o placar continua
-      expect(noPlacar('Ratos', 'Livres')).toBe('♂17♀18')
+      expect(noCartao('Ratos', 'Livres')).toBe('65♂ 27♀ 38')
 
-      const lista = screen.getByRole('list', { name: 'Linhagens de Ratos' })
-      expect(within(lista).getAllByRole('listitem')).toHaveLength(2)
-      const shr = within(lista).getByRole('link', { name: 'SHR' })
-      expect(shr.getAttribute('href')).toBe('/estantes?linhagem=2')
-
-      const cartao = shr.closest('li')!
-      expect(within(cartao).getByText('1 casal')).toBeTruthy()
-      const dado = (rotulo: string) =>
-        within(cartao).getByText(rotulo, { selector: 'dt' }).parentElement!.querySelector('dd')!
-          .textContent
-      expect(dado('Vivos')).toBe('♂ 6♀ 5')
-      expect(dado('Em aleitamento')).toBe('♂ 3♀ 3')
-      expect(dado('Reservados')).toBe('–')
-      expect(dado('Livres')).toBe('♂ 6♀ 5')
-      expect(
-        [...cartao.querySelectorAll('.visao__faixa')].map((faixa) => faixa.textContent),
-      ).toEqual(['até 21 d♂ 3♀ 3', '22–35 d♂ 3♀ 2', '36–60 d–', '> 60 d–'])
+      const shr = cartaoDa('SHR')
+      expect(within(shr).getByRole('link', { name: 'SHR' }).getAttribute('href')).toBe(
+        '/estantes?linhagem=2',
+      )
+      expect(rotulosDeValor(shr)).toEqual(['3', '3', '3', '2'])
+      expect(within(shr).getByRole('img').getAttribute('aria-label')).toContain(
+        '40 dias: 3 machos, 2 fêmeas',
+      )
     } finally {
       voltar()
     }
