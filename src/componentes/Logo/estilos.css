@@ -25,7 +25,7 @@
 }
 
 .logo--sobreClaro .logo__nome {
-  color: var(--cor-marca);
+  color: var(--cor-logo-nome);
 }
 
 .logo--sobreAzul .logo__nome {

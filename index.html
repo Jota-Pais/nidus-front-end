@@ -29,6 +29,19 @@
       rel="stylesheet"
     />
 
+    <!--
+      Tema escolhido nas configurações da conta. Roda antes do primeiro desenho para a página
+      não abrir clara e piscar no escuro. A chave é a de `src/app/esquema.ts`.
+    -->
+    <script>
+      try {
+        document.documentElement.dataset.tema =
+          localStorage.getItem('nidus.tema') === 'escuro' ? 'escuro' : 'claro'
+      } catch (e) {
+        document.documentElement.dataset.tema = 'claro'
+      }
+    </script>
+
     <title>Nidus</title>
   </head>
   <body>

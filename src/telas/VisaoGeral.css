@@ -194,16 +194,16 @@
   font-weight: 600;
 }
 
-/* ------------------------------------------------------------------ tooltip (o único escuro) */
+/* ------------------------------------------------------------------ tooltip (escuro nos dois temas) */
 
 .visao__dica {
   min-width: 150px;
   padding: 9px 13px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--dica-borda);
   border-radius: 12px;
-  background: #1b1f28;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-  color: #eef1f5;
+  background: var(--dica-fundo);
+  box-shadow: var(--dica-sombra);
+  color: var(--dica-frente);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
@@ -212,7 +212,7 @@
   display: block;
   margin-bottom: 4px;
   font-size: 13px;
-  color: #fff;
+  color: var(--dica-titulo);
 }
 
 .visao__dicaLinha {
