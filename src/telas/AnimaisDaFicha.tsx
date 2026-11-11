@@ -1,11 +1,10 @@
 // As ações sobre os animais de uma caixa, de casal ou de estoque: a baixa (morte ou eutanásia, uma
-// ação só), a mudança para outra caixa (a passagem para o estoque é uma delas) e, em Baixas lançadas, a
-// anulação da baixa lançada por engano. Cada ação pede o mínimo: quantos, de qual idade quando a
+// ação só, com o Desfazer na mensagem) e a mudança para outra caixa (a passagem para o estoque é
+// uma delas). Cada ação pede o mínimo: quantos, de qual idade quando a
 // caixa tem mais de uma, a data do fato e um clique na estante. Dentro da caixa, só a idade separa
 // os animais, e quem escolhe quais saem é a API: os livres primeiro. De qual pedido saem os
 // reservados só aparece quando a API pede
-import { App, Form, Input, InputNumber, Radio, Select } from 'antd'
-import { useState } from 'react'
+import { App, Form, InputNumber, Radio, Select } from 'antd'
 import { Aviso, Botao, CampoDeData } from '@/componentes'
 import {
   CAMPO_DO_SEXO,
@@ -19,19 +18,11 @@ import {
 } from '@/dominio/caixa'
 import type { LugarNaEstante } from '@/dominio/caixa'
 import { useAnularBaixa, useBaixa, useMudanca } from '@/dominio/consultas'
-import type { GrupoQueMuda, ItemDaBaixa } from '@/dominio/consultas'
+import type { GrupoQueMuda, ItemDaBaixa, TipoDaBaixa } from '@/dominio/consultas'
 import { descreverQuantos } from '@/dominio/pedido'
-import type {
-  BaixaAnulavel,
-  DataISO,
-  EventoDaFicha,
-  PorSexo,
-  ReservaDoPedido,
-  Sexo,
-} from '@/dominio/tipos'
+import type { DataISO, PorSexo, ReservaDoPedido, Sexo } from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import type { NomeNoFormulario } from '@/layout/useFalhaDoFormulario'
-import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { ateHoje, descreverDias, formatarData, idadeEmDias, maisTarde } from '@/lib/data'
 import { LadoALado } from './CamposDaFicha'
 import { EscolherCaixa } from './EscolherCaixa'
@@ -136,7 +127,7 @@ interface QuantosDoSexo {
 
 interface CamposDaBaixa {
   dtFato: DataISO
-  motivo?: string
+  tipo: TipoDaBaixa
   dtNascimento?: DataISO
   machos?: QuantosDoSexo
   femeas?: QuantosDoSexo
@@ -146,7 +137,7 @@ const CAMPOS_DA_BAIXA = [
   'machos.qtd',
   'femeas.qtd',
   'dtFato',
-  'motivo',
+  'tipo',
   'dtNascimento',
   'machos.idPedido',
   'femeas.idPedido',
@@ -167,19 +158,25 @@ function nomeDoItem(itens: Pick<ItemDaBaixa, 'sexo'>[]): NomeNoFormulario {
 
 /**
  * Morte ou eutanásia, uma ação só, em qualquer caixa: quantos de cada sexo, de qual idade, a data
- * e, se quiser, o motivo. Saem primeiro os livres; a resposta diz que pedidos ficaram em falta
+ * e o tipo. Saem primeiro os livres; a resposta diz que pedidos ficaram em falta. Com 'idParto',
+ * a baixa é de um parto (a eutanásia dele é a seleção). A mensagem de sucesso traz o Desfazer
  */
 export function BaixaNaCaixa({
   caixa,
   grupos,
   aoTerminar,
+  idParto,
+  tipoInicial = 'morte',
 }: {
   caixa: CaixaDaAcao
   grupos: GrupoDaCaixa[]
   aoTerminar: () => void
+  idParto?: number
+  tipoInicial?: TipoDaBaixa
 }) {
   const { message, modal } = App.useApp()
   const baixa = useBaixa()
+  const anular = useAnularBaixa()
   const [form] = Form.useForm<CamposDaBaixa>()
   const falha = useFalhaDoFormulario(form, CAMPOS_DA_BAIXA)
   const grupo = grupoEscolhido(grupos, Form.useWatch('dtNascimento', form))
@@ -189,6 +186,32 @@ export function BaixaNaCaixa({
   if (!grupo) return null
 
   const sexos = SEXOS.filter((sexo) => doSexo(grupo.vivos, sexo) > 0)
+
+  /** A mensagem de sucesso com o Desfazer, que fica 8 segundos e anula a baixa recém-criada */
+  function desfazivel(idOcorrencia: number, texto: string) {
+    const key = `baixa-${idOcorrencia}`
+
+    function desfazer() {
+      void message.open({ key, type: 'loading', content: 'Desfazendo a baixa…', duration: 0 })
+      anular.mutateAsync({ idOcorrencia, motivo: 'Desfeita logo após o registro.' }).then(
+        () => void message.success({ key, content: 'Baixa desfeita.' }),
+        (erro: Error) => void message.error({ key, content: erro.message }),
+      )
+    }
+
+    void message.success({
+      key,
+      duration: 8,
+      content: (
+        <span>
+          {texto}{' '}
+          <Botao variante="fantasma" size="small" onClick={desfazer}>
+            Desfazer
+          </Botao>
+        </span>
+      ),
+    })
+  }
 
   function registrar(campos: CamposDaBaixa) {
     if (!grupo) return
@@ -208,22 +231,25 @@ export function BaixaNaCaixa({
         },
       ]
     })
-    const motivo = campos.motivo?.trim()
-
     // mutateAsync: a baixa que esvazia a caixa recarrega a ficha, e este formulário pode sair da
     // tela antes de a resposta chegar
     baixa
       .mutateAsync({
         idCaixa: caixa.id,
         dtFato: campos.dtFato,
+        tipo: campos.tipo,
+        ...(idParto !== undefined && campos.tipo === 'eutanasia' ? { idParto } : {}),
         itens,
-        ...(motivo ? { motivo } : {}),
       })
       .then(
         (resposta) => {
           const quantos = descreverQuantos({ ...resposta.baixas, qualquer: 0 })
           const liberada = resposta.liberada ? ' A caixa ficou vazia e foi liberada.' : ''
-          void message.success(`Baixa de ${quantos} registrada.${liberada}`)
+          const texto = `Baixa de ${quantos} registrada.${liberada}`
+
+          // a baixa que esvaziou e liberou a caixa pediria caixa para voltar: sem Desfazer
+          if (resposta.liberada) void message.success(texto)
+          else desfazivel(resposta.idOcorrencia, texto)
 
           const falta = descreverFalta(resposta.faltas)
           if (falta) modal.warning({ title: 'Reserva em falta', content: falta })
@@ -241,6 +267,7 @@ export function BaixaNaCaixa({
       className="ficha__formulario"
       initialValues={{
         dtFato: ateHoje(),
+        tipo: tipoInicial,
         dtNascimento: grupo.dtNascimento,
         machos: { qtd: 0 },
         femeas: { qtd: 0 },
@@ -280,8 +307,14 @@ export function BaixaNaCaixa({
         <Form.Item name="dtFato" label="Data" rules={[{ required: true, message: 'Data' }]}>
           <CampoDeData min={maisTarde(grupo.dtNascimento, grupo.dtChegada)} max={ateHoje()} />
         </Form.Item>
-        <Form.Item name="motivo" label="Motivo (opcional)">
-          <Input maxLength={200} placeholder="ex: morte, eutanásia por doença" />
+        <Form.Item name="tipo" label="Tipo">
+          <Radio.Group
+            optionType="button"
+            options={[
+              { value: 'morte', label: 'Morte' },
+              { value: 'eutanasia', label: 'Eutanásia' },
+            ]}
+          />
         </Form.Item>
       </LadoALado>
       <div className="ficha__botoes">
@@ -526,192 +559,6 @@ export function MudarAnimais({
       <div className="ficha__botoes">
         <Botao variante="primario" htmlType="submit" loading={mudar.isPending} disabled={nenhum}>
           {botao}
-        </Botao>
-        <Botao variante="fantasma" onClick={aoTerminar}>
-          Cancelar
-        </Botao>
-      </div>
-    </Form>
-  )
-}
-
-// ------------------------------------------------------------ baixas lançadas e anulação
-
-/**
- * A caixa das baixas: onde a estante da anulação abre e qual caixa não recebe a si mesma. A
- * linhagem não vai junto: a da baixa vem no item dela, e pode ser de animais que já não estão nela
- */
-type CaixaDasBaixas = Pick<CaixaDaAcao, 'id' | 'endereco'>
-
-/**
- * As baixas lançadas que ainda podem ser anuladas, da mais recente para a mais antiga, cada uma
- * com o Anular (também na caixa liberada: é a única ação que a ficha dela oferece). Sem baixa
- * anulável, a lista não aparece
- */
-export function BaixasLancadas({
-  baixas,
-  caixa,
-}: {
-  baixas: EventoDaFicha[]
-  caixa: CaixaDasBaixas
-}) {
-  const [anulando, setAnulando] = useState<number | null>(null)
-  const estreita = useTelaEstreita()
-
-  const anulaveis = baixas.filter(
-    (item) => item.anulavel && item.idOcorrencia !== null && item.baixa !== null,
-  )
-  if (anulaveis.length === 0) return null
-
-  return (
-    <section className="ficha__baixas">
-      <h3>Baixas lançadas</h3>
-      <ul className="ficha__baixasLista">
-        {anulaveis.map((item) => {
-          const { idOcorrencia, baixa } = item
-          if (idOcorrencia === null || baixa === null) return null
-
-          return (
-            <li key={idOcorrencia} className="ficha__baixa">
-              <div className="ficha__baixaLinha">
-                <span className="ficha__baixaData">{formatarData(item.dataHora.slice(0, 10))}</span>
-                <span className="ficha__baixaTexto">{item.descricao}</span>
-                {anulando !== idOcorrencia && (
-                  <Botao
-                    variante="fantasma"
-                    size={estreita ? 'middle' : 'small'}
-                    onClick={() => setAnulando(idOcorrencia)}
-                  >
-                    Anular
-                  </Botao>
-                )}
-              </div>
-              {anulando === idOcorrencia && (
-                <AnularBaixa
-                  idOcorrencia={idOcorrencia}
-                  baixa={baixa}
-                  caixa={caixa}
-                  aoTerminar={() => setAnulando(null)}
-                />
-              )}
-            </li>
-          )
-        })}
-      </ul>
-    </section>
-  )
-}
-
-/** O campo da caixa de cada sexo na anulação */
-const CAMPO_DA_VOLTA: Record<Sexo, 'idCaixaMachos' | 'idCaixaFemeas'> = {
-  M: 'idCaixaMachos',
-  F: 'idCaixaFemeas',
-}
-
-interface CamposDaAnulacao {
-  motivo: string
-  idCaixaMachos?: LugarNaEstante
-  idCaixaFemeas?: LugarNaEstante
-}
-
-/** "2 machos voltaram para a F1A e 1 fêmea para a F2C" */
-function descreverVolta(voltaram: { sexo: Sexo; qtd: number; codigo: string }[]): string {
-  return voltaram
-    .map((volta) => `${contarDoSexo(volta.qtd, volta.sexo)} para a ${volta.codigo}`)
-    .join(' e ')
-}
-
-/**
- * A baixa lançada por engano: os animais voltam a viver na caixa dela, e aí basta o motivo. Quando
- * ela não serve mais (foi liberada, tem outra ninhada, virou estoque de outro sexo), cada sexo da
- * baixa volta para uma caixa de estoque, clicada na estante: só as do sexo e da linhagem da baixa
- * podem ser clicadas. Se a caixa deixou de servir depois de a ficha carregar, a API pede a estante
- */
-function AnularBaixa({
-  idOcorrencia,
-  baixa,
-  caixa,
-  aoTerminar,
-}: {
-  idOcorrencia: number
-  baixa: BaixaAnulavel
-  caixa: CaixaDasBaixas
-  aoTerminar: () => void
-}) {
-  const { message } = App.useApp()
-  const anular = useAnularBaixa()
-  const [form] = Form.useForm<CamposDaAnulacao>()
-  const falha = useFalhaDoFormulario(form, ['motivo', ...SEXOS.map((sexo) => CAMPO_DA_VOLTA[sexo])])
-  // a estante de cada sexo que está na baixa, quando a caixa dela não recebe os animais de volta
-  const voltaEm = SEXOS.filter(
-    (sexo) =>
-      doSexo(baixa.sexos, sexo) > 0 && (!baixa.voltaNaOrigem || falha.pediu(CAMPO_DA_VOLTA[sexo])),
-  )
-
-  function anularAgora(campos: CamposDaAnulacao) {
-    falha.limpar()
-
-    // a caixa de cada sexo só vai quando a API pediu e alguém clicou nela
-    const machos = campos.idCaixaMachos?.idCaixa ?? null
-    const femeas = campos.idCaixaFemeas?.idCaixa ?? null
-
-    anular
-      .mutateAsync({
-        idOcorrencia,
-        motivo: campos.motivo.trim(),
-        ...(machos === null ? {} : { idCaixaMachos: machos }),
-        ...(femeas === null ? {} : { idCaixaFemeas: femeas }),
-      })
-      .then(
-        ({ voltaram, soltos }) => {
-          const livres = soltos.m + soltos.f
-          const semReserva =
-            livres === 0
-              ? ''
-              : ` Voltaram sem a reserva, porque o pedido não comporta mais: ${descreverQuantos({ ...soltos, qualquer: 0 })}.`
-          void message.success(`Baixa anulada: ${descreverVolta(voltaram)}.${semReserva}`)
-          aoTerminar()
-        },
-        (erro: Error) => falha.mostrar(erro),
-      )
-  }
-
-  return (
-    <Form
-      name={`anulacao-${idOcorrencia}`}
-      form={form}
-      layout="vertical"
-      className="ficha__formulario"
-      onFinish={anularAgora}
-    >
-      {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
-      <Form.Item
-        name="motivo"
-        label="Por que a baixa foi um engano"
-        rules={[{ required: true, whitespace: true, message: 'Diga o motivo' }]}
-      >
-        <Input maxLength={200} placeholder="ex: animal contado duas vezes" />
-      </Form.Item>
-      {voltaEm.map((sexo) => (
-        <Form.Item
-          key={sexo}
-          name={CAMPO_DA_VOLTA[sexo]}
-          label={`Para qual caixa de estoque voltam ${OS_DO_SEXO[sexo]}`}
-          rules={[{ required: true, message: 'Clique na caixa de estoque' }]}
-        >
-          <EscolherCaixa
-            sala={caixa.endereco.sala}
-            numeroVisivel={caixa.endereco.numeroVisivel}
-            sexo={sexo}
-            idLinhagem={baixa.idLinhagem}
-            aceitaVazia={false}
-            idOrigem={caixa.id}
-          />
-        </Form.Item>
-      ))}
-      <div className="ficha__botoes">
-        <Botao variante="perigo" htmlType="submit" loading={anular.isPending}>
-          Anular baixa
         </Botao>
         <Botao variante="fantasma" onClick={aoTerminar}>
           Cancelar

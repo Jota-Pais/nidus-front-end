@@ -12,7 +12,6 @@ import {
   desmamado,
   diaNoCalendario,
   estanteE01,
-  eventoDeBaixa,
   fichaDeEstoque,
   gradeE01,
   grupo,
@@ -38,7 +37,9 @@ vi.mock('@/dominio/consultas', () => ({
 }))
 
 beforeEach(() => {
-  api.baixa.mockReset().mockResolvedValue({ baixas: { m: 1, f: 0 }, liberada: false, faltas: [] })
+  api.baixa
+    .mockReset()
+    .mockResolvedValue({ idOcorrencia: 60, baixas: { m: 1, f: 0 }, liberada: false, faltas: [] })
   api.mudanca.mockReset().mockResolvedValue({ caixas: [], liberada: false })
   api.anulacao.mockReset()
 })
@@ -134,14 +135,14 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     expect(
       screen.getByText(/^Caixa liberada em 08\/11\/2026: a entrega levou os últimos animais/),
     ).toBeTruthy()
-    expect(talvezBotao('Baixa')).toBeNull()
+    expect(talvezBotao('Registrar baixa')).toBeNull()
     expect(talvezBotao('Passar para outra caixa')).toBeNull()
   })
 
   it('a baixa pede de qual idade e manda os machos dela', async () => {
     renderizar(<FichaDoEstoque ficha={comDuasIdades} />)
 
-    fireEvent.click(botao('Baixa'))
+    fireEvent.click(botao('Registrar baixa'))
     fireEvent.click(screen.getByLabelText(/^nascidos em 02\/10\/2026/))
     fireEvent.change(screen.getByLabelText('Machos'), { target: { value: '1' } })
     fireEvent.click(botao('Registrar baixa'))
@@ -150,6 +151,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     expect(api.baixa).toHaveBeenCalledWith({
       idCaixa: 30,
       dtFato: hoje(),
+      tipo: 'morte',
       itens: [{ sexo: 'M', qtd: 1, dtNascimento: '2026-10-02' }],
     })
   })
@@ -237,7 +239,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     fingirHoje('2026-10-25')
     renderizar(<FichaDoEstoque ficha={comDuasIdades} />)
 
-    fireEvent.click(botao('Baixa'))
+    fireEvent.click(botao('Registrar baixa'))
     // os de 24/09 chegaram em 16/10
     fireEvent.click(screen.getByLabelText('Data'))
     await waitFor(() => expect(diaNoCalendario('2026-10-16')).not.toBe('(sem dia)'))
@@ -271,96 +273,32 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     expect(diaNoCalendario('2026-10-02')).not.toContain(APAGADO)
   })
 
-  it('as baixas lançadas ficam no fim da aba dos animais, com o Anular', async () => {
-    renderizar(
-      <FichaDoEstoque
-        ficha={fichaDeEstoque({
-          baixas: [
-            eventoDeBaixa(50, 'Baixa de 1 macho nesta caixa.', {
-              sexos: { m: 1, f: 0 },
-              idLinhagem: 1,
-              voltaNaOrigem: true,
-            }),
-          ],
-        })}
-      />,
-    )
-
-    expect(await screen.findByText('Baixa de 1 macho nesta caixa.')).toBeTruthy()
-    expect(screen.getByText('Baixas lançadas')).toBeTruthy()
-    expect(botao('Anular')).toBeTruthy()
-  })
-
-  it('sem baixa anulável, não há Baixas lançadas', () => {
-    renderizar(<FichaDoEstoque ficha={fichaDeEstoque({ baixas: [] })} />)
+  it('não há lista de baixas lançadas: a baixa registrada se desfaz na mensagem', async () => {
+    api.anulacao.mockResolvedValueOnce({ voltaram: [], soltos: { m: 0, f: 0 } })
+    renderizar(<FichaDoEstoque ficha={fichaDeEstoque()} />)
 
     expect(screen.queryByText('Baixas lançadas')).toBeNull()
-  })
+    expect(talvezBotao('Anular')).toBeNull()
 
-  it('a baixa de quando a caixa era de casal volta para o estoque da linhagem que a baixa diz', async () => {
-    api.anulacao.mockResolvedValueOnce({
-      voltaram: [{ sexo: 'M', qtd: 2, idCaixa: 32, codigo: 'F1F' }],
-      soltos: { m: 0, f: 0 },
-    })
-    renderizar(
-      <FichaDoEstoque
-        ficha={fichaDeEstoque({
-          // o AB, Swiss, teve a ninhada aqui antes de a caixa virar estoque de machos Wistar
-          casaisAnteriores: [
-            {
-              casal: { ...casal(1, 'AB', false), linhagem: 'Swiss', idLinhagem: 2 },
-              partos: [desmamado()],
-            },
-          ],
-          baixas: [
-            eventoDeBaixa(
-              51,
-              'Baixa de 2 machos nesta caixa.',
-              { sexos: { m: 2, f: 0 }, idLinhagem: 2, voltaNaOrigem: false },
-              '2026-10-01T00:00:00.000Z',
-            ),
-          ],
-        })}
-      />,
-    )
-    const linha = (await screen.findByText('Baixa de 2 machos nesta caixa.')).closest(
-      'li',
-    ) as HTMLElement
+    fireEvent.click(botao('Registrar baixa'))
+    fireEvent.change(screen.getByLabelText('Machos'), { target: { value: '1' } })
+    fireEvent.click(botao('Registrar baixa'))
 
-    fireEvent.click(botao('Anular', linha))
-    fireEvent.change(within(linha).getByLabelText('Por que a baixa foi um engano'), {
-      target: { value: 'contada duas vezes' },
-    })
-
-    // a própria F1C não recebe a si mesma; a F1F, de machos Swiss como a baixa, recebe
-    expect(within(linha).queryByText(/voltam as fêmeas/)).toBeNull()
-    expect(celula(/^F1C: a caixa de onde/, linha)).toHaveProperty('disabled', true)
-    expect(celula(/^F1F: caixa de estoque com 2 machos/, linha)).toHaveProperty('disabled', false)
-    fireEvent.click(celula(/^F1F: caixa de estoque/, linha))
-    fireEvent.click(botao('Anular baixa', linha))
-
+    fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }, DEMORA))
     await waitFor(() => expect(api.anulacao).toHaveBeenCalled(), DEMORA)
     expect(api.anulacao).toHaveBeenCalledWith({
-      idOcorrencia: 51,
-      motivo: 'contada duas vezes',
-      idCaixaMachos: 32,
+      idOcorrencia: 60,
+      motivo: expect.stringContaining('Desfeita'),
     })
   })
 
-  it('a caixa liberada por uma baixa mostra a baixa com o Anular, e mais nenhuma ação', async () => {
+  it('a caixa liberada por uma baixa mostra só o aviso, sem nenhuma ação', () => {
     const liberada = fichaDeEstoque({
       total: 0,
       reservado: 0,
       livre: 0,
       grupos: [],
       pedidos: [],
-      baixas: [
-        eventoDeBaixa(52, 'Baixa de 6 machos nesta caixa.', {
-          sexos: { m: 6, f: 0 },
-          idLinhagem: 1,
-          voltaNaOrigem: false,
-        }),
-      ],
     })
     renderizar(
       <FichaDoEstoque
@@ -381,9 +319,8 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     expect(
       screen.getByText(/^Caixa liberada em 20\/10\/2026: a baixa dos últimos animais/),
     ).toBeTruthy()
-    expect(talvezBotao('Baixa')).toBeNull()
+    expect(talvezBotao('Registrar baixa')).toBeNull()
     expect(talvezBotao('Passar para outra caixa')).toBeNull()
-    expect(await screen.findByText('Baixa de 6 machos nesta caixa.')).toBeTruthy()
-    expect(botao('Anular')).toBeTruthy()
+    expect(talvezBotao('Anular')).toBeNull()
   })
 })

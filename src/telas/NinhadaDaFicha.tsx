@@ -6,7 +6,7 @@
 import { App, Form, Input, InputNumber } from 'antd'
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Aviso, Botao, CampoDeData, Texto } from '@/componentes'
+import { Aviso, Botao, CampoDeData } from '@/componentes'
 import {
   aMaisNaCorrecao,
   descreverFalta,
@@ -119,9 +119,9 @@ function CamposDoEvento({ campos }: { campos: CampoDoEvento[] }) {
 }
 
 /**
- * Formulário de um registro do parto: nascimento, eutanásia de seleção ou desmame. Quando o
+ * Formulário de um registro do parto: nascimento ou desmame. Quando o
  * registro tira animais reservados e há mais de um pedido, a API pede de qual
- * deles, e o campo aparece com os pedidos do parto. A seleção se repete: depois de registrar, o
+ * deles, e o campo aparece com os pedidos do parto. Com 'repetir', depois de registrar o
  * formulário volta ao começo, sem o pedido da rodada anterior
  */
 function RegistrarEvento({
@@ -332,8 +332,8 @@ function DataDoAcasalamento({
 }
 
 /**
- * A correção da data do desmame, com motivo. A contagem do desmame não se corrige aqui: anula-se a
- * baixa "não chegou ao desmame" em Baixas lançadas, ou lança-se outra
+ * A correção da data do desmame, com motivo. A contagem do desmame não se corrige aqui: lança-se
+ * uma baixa
  */
 function CorrigirDesmame({
   idParto,
@@ -760,7 +760,17 @@ function OndeEstaoOsVivos({
         </ul>
       )}
 
-      {baixa && <BaixaNaCaixa caixa={caixa} grupos={grupos} aoTerminar={() => abrirBaixa(false)} />}
+      {baixa && (
+        <BaixaNaCaixa
+          caixa={caixa}
+          grupos={grupos}
+          aoTerminar={() => abrirBaixa(false)}
+          // antes do desmame é a seleção do parto, e a eutanásia é o que se espera dela
+          {...(parto.dtDesmameReal === null
+            ? { idParto: parto.id, tipoInicial: 'eutanasia' as const }
+            : {})}
+        />
+      )}
       {passagem && (
         <MudarAnimais
           caixa={caixa}
@@ -778,7 +788,7 @@ function OndeEstaoOsVivos({
             </Botao>
           )}
           <Botao variante="perigo" onClick={() => abrirBaixa(true)}>
-            Baixa
+            Registrar baixa
           </Botao>
         </div>
       )}
@@ -830,8 +840,8 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
     idLinhagem: casal?.idLinhagem ?? ficha.caixa.idLinhagem,
   }
   const pedidos = pedidosDoParto(parto)
-  // na caixa liberada não se lança fato novo (parto, seleção, desmame); corrigir o que já foi
-  // registrado continua, e a baixa se anula em Baixas lançadas
+  // na caixa liberada não se lança fato novo (parto, baixa, desmame); corrigir o que já foi
+  // registrado continua
   const semFatoNovo = !ficha.caixa.ativa
 
   return (
@@ -901,45 +911,11 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
 
       {nasceu && (
         <>
-          <h3>Eutanásia de seleção</h3>
+          <h3>Baixas</h3>
           <LadoALado>
-            <Campo rotulo={desmamou ? 'Baixas antes do desmame' : 'Baixas até agora'}>
-              {porSexo(parto.baixasAntesDoDesmame)}
-            </Campo>
+            <Campo rotulo="Baixas">{porSexo(parto.baixasAntesDoDesmame)}</Campo>
             {!desmamou && <Campo rotulo="Vivos">{porSexo(parto.vivos)}</Campo>}
           </LadoALado>
-          {desmamou || semFatoNovo ? (
-            <Texto tom="secundario">
-              Seleção lançada errada se desfaz em Baixas lançadas, com Anular.
-            </Texto>
-          ) : (
-            <RegistrarEvento
-              nome="selecao"
-              caminho={`/api/partos/${parto.id}/selecao`}
-              campos={[
-                { nome: 'dtSelecao', rotulo: 'Data', tipo: 'data', desde: [parto.dtPartoReal] },
-                { nome: 'eutanasiadoM', rotulo: 'Machos', tipo: 'numero', maximo: parto.vivos.m },
-                { nome: 'eutanasiadoF', rotulo: 'Fêmeas', tipo: 'numero', maximo: parto.vivos.f },
-              ]}
-              inicial={{
-                // a primeira rodada costuma ser no dia do parto
-                dtSelecao:
-                  parto.baixasAntesDoDesmame.m + parto.baixasAntesDoDesmame.f === 0
-                    ? parto.dtPartoReal
-                    : hoje(),
-                eutanasiadoM: 0,
-                eutanasiadoF: 0,
-              }}
-              botao="Registrar eutanásia"
-              pedidos={pedidos}
-              repetir
-              variante="secundario"
-            >
-              <p className="ficha__dica">
-                Cada rodada vira uma baixa. Se foi lançada errada, anule em Baixas lançadas.
-              </p>
-            </RegistrarEvento>
-          )}
 
           <h3>Desmame</h3>
           {desmamou ? (
@@ -956,10 +932,7 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
                 desde={[parto.dtPartoReal, parto.dtUltimaSelecao]}
                 ate={[parto.dtPrimeiraSaida]}
               />
-              <p className="ficha__dica">
-                A contagem do desmame se corrige em Baixas lançadas, anulando a baixa &quot;não
-                chegou ao desmame&quot;, ou lançando outra baixa.
-              </p>
+              <p className="ficha__dica">A contagem do desmame se corrige lançando outra baixa.</p>
             </>
           ) : semFatoNovo ? (
             <p className="ficha__vazio">A ninhada não chegou ao desmame.</p>

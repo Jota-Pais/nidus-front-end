@@ -160,62 +160,6 @@
   gap: 8px;
 }
 
-.ficha__baixas {
-  margin-top: 16px;
-}
-
-.ficha__baixasLista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-/* a baixa é uma linha; a baixa que se anula abre o formulário embaixo dela */
-.ficha__baixa {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--cor-borda);
-}
-
-.ficha__baixaLinha {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.ficha__baixaData {
-  min-width: 90px;
-  font-family: var(--fonte-mono);
-  font-size: 12px;
-  color: var(--cor-suave-frente);
-}
-
-.ficha__baixaTexto {
-  flex: 1;
-}
-
-/* No celular, a data e o Anular ficam em cima, e o texto da baixa ganha a largura toda:
-   numa linha só, ele ficava espremido numa coluna de uma palavra */
-@media (max-width: 600px) {
-  .ficha__baixaLinha {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    gap: 4px 12px;
-  }
-
-  .ficha__baixaData {
-    min-width: 0;
-  }
-
-  .ficha__baixaTexto {
-    grid-row: 2;
-    grid-column: 1 / -1;
-  }
-}
-
 /* O topo da ficha: o motivo do atraso e o Mudar de lugar, antes das abas */
 .ficha__topo {
   display: flex;
@@ -283,11 +227,5 @@
 
   .ficha__botoes {
     flex-direction: column;
-  }
-
-  /* o Anular da baixa: pequeno no computador, alvo de dedo no celular */
-  .ficha__baixaLinha .ant-btn {
-    min-height: 40px;
-    padding: 0 14px;
   }
 }
