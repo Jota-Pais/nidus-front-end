@@ -24,7 +24,7 @@ export function Janela(props: ModalProps) {
       style={{ ...style, top: 0, maxWidth: '100vw', margin: 0, paddingBottom: 0 }}
       styles={{
         ...styles,
-        // quem chama pode pintar o título (a ficha pinta na cor do parto); o espaço em volta é da
+        // quem chama pode pintar o título; o espaço em volta é da
         // tela cheia, que ocupa a largura toda e deixa lugar para o X
         header: {
           ...styles?.header,

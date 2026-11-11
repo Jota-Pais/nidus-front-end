@@ -121,8 +121,8 @@
   --movimento-rapido: 200ms;
   --movimento-normal: 300ms;
 
-  /* Superfície por fase da caixa, na grade de estantes e na ficha. Nenhuma no tom
-     de uma bolinha de parto; pronto para o estoque repete o sucesso e o estoque, a ação */
+  /* Superfície por fase da caixa, na grade de estantes e na ficha. Pronto para o
+     estoque repete o sucesso e o estoque, a ação */
   --fase-acasalado-fundo: #F1EDFB;
   --fase-acasalado-borda: #D5C8F2;
   --fase-acasalado-texto: #5B3E9E;

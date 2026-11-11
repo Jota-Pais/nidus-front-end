@@ -46,10 +46,3 @@ export function contraste(a: string, b: string): number {
   const [clara, escura] = [luminancia(a), luminancia(b)].sort((x, y) => y - x) as [number, number]
   return (clara + 0.05) / (escura + 0.05)
 }
-
-/** Das cores de texto possíveis, a que mais contrasta com o fundo */
-export function frenteLegivel(fundo: string, opcoes: readonly string[]): string {
-  return opcoes.reduce((melhor, cor) =>
-    contraste(cor, fundo) > contraste(melhor, fundo) ? cor : melhor,
-  )
-}

@@ -67,7 +67,7 @@ export interface NinhadaNoCard extends PorSexo {
 export interface CasalNoCard {
   /** dupla de grupos genéticos, macho primeiro. ex: AB */
   identificacao: string
-  /** o parto em curso, 1 a 5: a cor da bolinha */
+  /** o parto em curso, 1 a 5 */
   partoAtual: number
   /** a previsão do parto pendente; vale também com o casal encerrado */
   partoPrevisto: DataISO | null
