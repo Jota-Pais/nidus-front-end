@@ -1235,14 +1235,37 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
     expect(talvezBotao('Corrigir', secao('Acasalamento'))).toBeNull()
   })
 
-  it('mostra o parto e o desmame previstos do parto escolhido', async () => {
+  it('parto nascido mostra "Parto" com a data real; o desmame segue previsto', async () => {
+    abrirFicha()
+
+    const aba = await abaAberta()
+    expect(within(aba).getByText('Parto')).toBeTruthy()
+    expect(within(aba).queryByText('Parto previsto')).toBeNull()
+    expect(within(aba).getByText('24/09/2026')).toBeTruthy()
+    expect(within(aba).getByText('Desmame previsto')).toBeTruthy()
+    expect(within(aba).getByText('16/10/2026')).toBeTruthy()
+  })
+
+  it('parto ainda não nascido mostra a previsão do parto e do desmame', async () => {
+    api.ficha = fichaDeCasal({
+      partos: [parto({ dtPartoReal: null, dtPartoPrevisto: '2026-09-25', dtDesmamePrevisto: '2026-10-17' })],
+    })
     abrirFicha()
 
     const aba = await abaAberta()
     expect(within(aba).getByText('Parto previsto')).toBeTruthy()
-    expect(within(aba).getByText('24/09/2026')).toBeTruthy()
+    expect(within(aba).getByText('25/09/2026')).toBeTruthy()
     expect(within(aba).getByText('Desmame previsto')).toBeTruthy()
-    expect(within(aba).getByText('16/10/2026')).toBeTruthy()
+  })
+
+  it('desmame registrado mostra "Desmame" com a data real', async () => {
+    api.ficha = fichaDeCasal({ partos: [desmamado({ dtDesmameReal: '2026-10-18' })] })
+    abrirFicha()
+
+    const aba = await abaAberta()
+    expect(within(aba).getByText('Desmame')).toBeTruthy()
+    expect(within(aba).queryByText('Desmame previsto')).toBeNull()
+    expect(within(aba).getByText('18/10/2026')).toBeTruthy()
   })
 
   it('casal encerrado diz quando encerrou', async () => {

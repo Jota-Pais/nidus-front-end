@@ -69,6 +69,8 @@ export interface CasalNoCard {
   identificacao: string
   /** o parto em curso, 1 a 5 */
   partoAtual: number
+  /** o número do parto na célula: acompanha a fase da caixa (ninhada que mama, desmamada ou parto pendente) */
+  partoDaFase: number
   /** a previsão do parto pendente; vale também com o casal encerrado */
   partoPrevisto: DataISO | null
   encerrado: boolean

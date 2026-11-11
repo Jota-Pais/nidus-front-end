@@ -414,8 +414,8 @@ function Celula({
       <span className="posicao__topo">
         <span className="posicao__codigo">{posicao.codigo}</span>
         {caixa.casal && (
-          <span className="parto" title={`Parto atual: ${caixa.casal.partoAtual}º`}>
-            {caixa.casal.partoAtual}º
+          <span className="parto" title={`Parto: ${caixa.casal.partoDaFase}º`}>
+            {caixa.casal.partoDaFase}º
           </span>
         )}
         {caixa.estoque && (

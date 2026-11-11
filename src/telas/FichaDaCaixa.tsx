@@ -403,11 +403,11 @@ function AbaReproducao({
           <Campo rotulo="Acasalamento" destaque>
             {formatarData(parto.dtAcasalamento)}
           </Campo>
-          <Campo rotulo="Parto previsto" destaque>
-            {formatarData(parto.dtPartoPrevisto)}
+          <Campo rotulo={parto.dtPartoReal ? 'Parto' : 'Parto previsto'} destaque>
+            {formatarData(parto.dtPartoReal ?? parto.dtPartoPrevisto)}
           </Campo>
-          <Campo rotulo="Desmame previsto" destaque>
-            {formatarData(parto.dtDesmamePrevisto)}
+          <Campo rotulo={parto.dtDesmameReal ? 'Desmame' : 'Desmame previsto'} destaque>
+            {formatarData(parto.dtDesmameReal ?? parto.dtDesmamePrevisto)}
           </Campo>
         </LadoALado>
       ) : (
