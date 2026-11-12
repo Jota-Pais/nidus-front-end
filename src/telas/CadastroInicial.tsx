@@ -110,10 +110,10 @@ export function NovaCaixaDeEstoque({
           placeholder="Selecione a linhagem"
         />
       </Form.Item>
+      <Form.Item name="sexo" label="Sexo" rules={[{ required: true, message: 'Sexo' }]}>
+        <Segmented<Sexo> block options={OPCOES_DE_SEXO} />
+      </Form.Item>
       <LadoALado>
-        <Form.Item name="sexo" label="Sexo" rules={[{ required: true, message: 'Sexo' }]}>
-          <Segmented<Sexo> options={OPCOES_DE_SEXO} />
-        </Form.Item>
         <Form.Item
           name="quantidade"
           label="Quantidade"
