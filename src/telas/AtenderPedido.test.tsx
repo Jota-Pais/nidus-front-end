@@ -155,6 +155,26 @@ beforeEach(() => {
 })
 
 describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
+  it('a ninhada do cadastro inicial aparece como Cadastro inicial, sem casal nem parto', () => {
+    estado.busca = resultado([
+      lugar({
+        idCaixa: 8,
+        codigo: 'F3A',
+        tipo: 'estoque',
+        dtNascimento: '2026-10-05',
+        origem: 'de_fato',
+        sugerida: true,
+        alocar: { m: 2, f: 2 },
+        partos: [{ ordem: null, casal: null }],
+      }),
+    ])
+    abrir()
+
+    expect(screen.getByText('Cadastro inicial · nascidos em 05/10/2026')).toBeTruthy()
+    expect(screen.queryByText(/parto do casal/)).toBeNull()
+    expect(screen.getByLabelText('Reservar da caixa F3A, nascimento em 05/10/2026')).toBeTruthy()
+  })
+
   it('com a sugestão cobrindo o pedido, reserva o lugar marcado: a caixa e a data de nascimento', () => {
     abrir()
 

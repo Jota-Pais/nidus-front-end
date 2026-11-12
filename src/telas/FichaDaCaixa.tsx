@@ -1,8 +1,9 @@
-import { App, Form, Input, Select, Tabs } from 'antd'
+import { App, Form, Input, Segmented, Select, Tabs } from 'antd'
 import { useState } from 'react'
 import { Aviso, Botao, CampoDeData, Etiqueta, Janela, Linha, Texto } from '@/componentes'
 import {
   descreverLiberacao,
+  descreverPartosAntesDoNidus,
   doSexo,
   MAX_PARTOS_POR_CASAL,
   motivoDoAtraso,
@@ -17,6 +18,7 @@ import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { ateHoje, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
+import { NovaCaixaDeEstoque } from './CadastroInicial'
 import { Campo, LadoALado } from './CamposDaFicha'
 import { FichaDoEstoque, VirarCaixaDeEstoque } from './EstoqueDaFicha'
 import { EtiquetaDaFase } from './FaseDaCaixa'
@@ -35,6 +37,16 @@ export interface PosicaoVazia {
   numeroVisivel: string
 }
 
+type ModoDaPosicao = 'casal' | 'estoque'
+
+/** O endereço da posição vazia, no corpo que a API espera */
+const daPosicao = ({ idEstante, face, linha, coluna }: PosicaoVazia) => ({
+  idEstante,
+  face,
+  linha,
+  coluna,
+})
+
 const ROTULO_ESPECIE = { rato: 'Rato', camundongo: 'Camundongo' } as const
 
 /** A ficha da caixa, aberta pela célula da grade e pelo histórico */
@@ -52,6 +64,7 @@ export function FichaDaCaixa({
   const id = idCaixa ?? idCriado
   const ficha = useFicha(id)
   const [escolhido, setEscolhido] = useState<Escolha | null>(null)
+  const [modo, setModo] = useState<ModoDaPosicao>('casal')
   // a caixa de estoque tem a ficha dela, sem casal nem parto
   const deCasal = ficha.data?.tipo === 'casal' ? ficha.data : undefined
   const deEstoque = ficha.data?.tipo === 'estoque' ? ficha.data : undefined
@@ -64,6 +77,7 @@ export function FichaDaCaixa({
 
   function fechar() {
     setEscolhido(null)
+    setModo('casal')
     setIdCriado(null)
     aoFechar()
   }
@@ -103,19 +117,29 @@ export function FichaDaCaixa({
     >
       {id === null && posicaoVazia ? (
         <div className="ficha__aba">
-          <p className="ficha__vazio">Posição vazia. Forme um casal para ocupar a caixa.</p>
-          <FormarCasal
-            alvo={{
-              posicao: {
-                idEstante: posicaoVazia.idEstante,
-                face: posicaoVazia.face,
-                linha: posicaoVazia.linha,
-                coluna: posicaoVazia.coluna,
-              },
-            }}
-            especie={null}
-            aoFormar={setIdCriado}
+          <Segmented<ModoDaPosicao>
+            block
+            value={modo}
+            onChange={setModo}
+            options={[
+              { value: 'casal', label: 'Formar casal' },
+              { value: 'estoque', label: 'Nova caixa de estoque' },
+            ]}
           />
+          <p className="ficha__vazio">
+            {modo === 'casal'
+              ? 'Posição vazia. Forme um casal para ocupar a caixa.'
+              : 'Posição vazia. Cadastre uma caixa de estoque: animais de idade conhecida e casal desconhecido.'}
+          </p>
+          {modo === 'casal' ? (
+            <FormarCasal
+              alvo={{ posicao: daPosicao(posicaoVazia) }}
+              especie={null}
+              aoFormar={setIdCriado}
+            />
+          ) : (
+            <NovaCaixaDeEstoque posicao={daPosicao(posicaoVazia)} aoCriar={setIdCriado} />
+          )}
         </div>
       ) : (
         <EstadoDaConsulta consulta={ficha}>
@@ -192,20 +216,29 @@ function escolhaInicial(ficha: FichaDeCasal | undefined): Escolha {
     if (andando) return { idCasal, ordem: andando.ordem }
   }
 
-  return { idCasal: null, ordem: ficha?.partos.at(-1)?.ordem ?? 1 }
+  return { idCasal: null, ordem: ficha?.partos.at(-1)?.ordem ?? ficha?.casal?.partoInicial ?? 1 }
 }
 
 function BotaoDoParto({
   ordem,
   ativo,
   aoEscolher,
+  antesDoNidus = false,
 }: {
   ordem: number
   ativo: boolean
   aoEscolher: () => void
+  /** parto do cadastro inicial: sem registro, a pílula fica apagada e sem clique */
+  antesDoNidus?: boolean
 }) {
   return (
-    <button type="button" className="ficha__parto" aria-pressed={ativo} onClick={aoEscolher}>
+    <button
+      type="button"
+      className="ficha__parto"
+      aria-pressed={ativo}
+      disabled={antesDoNidus}
+      onClick={aoEscolher}
+    >
       {ordem}º
     </button>
   )
@@ -229,6 +262,7 @@ function FichaDoCasal({
   const anterior = ficha.anteriores.find((a) => a.casal.id === escolha.idCasal)
   const casal = anterior?.casal ?? ficha.casal
   const partos = anterior?.partos ?? ficha.partos
+  const antesDoNidus = ficha.casal ? descreverPartosAntesDoNidus(ficha.casal.partoInicial) : null
 
   return (
     <>
@@ -239,10 +273,12 @@ function FichaDoCasal({
             key={indice}
             ordem={indice + 1}
             ativo={escolha.idCasal === null && indice + 1 === ordem}
+            antesDoNidus={indice + 1 < (ficha.casal?.partoInicial ?? 1)}
             aoEscolher={() => setEscolhido({ idCasal: null, ordem: indice + 1 })}
           />
         ))}
       </div>
+      {antesDoNidus && <p className="ficha__dica">{antesDoNidus}</p>}
       {/* os casais que vieram antes nesta caixa: a história, e a ninhada que um deles deixou nela */}
       {ficha.anteriores.map(({ casal: deAntes, partos: dele }) => (
         <div key={deAntes.id} className="ficha__partos">
@@ -418,6 +454,11 @@ function AbaReproducao({
   )
 }
 
+const PARTOS_ATUAIS = Array.from({ length: MAX_PARTOS_POR_CASAL }, (_, i) => ({
+  value: i + 1,
+  label: `${i + 1}º`,
+}))
+
 const GRUPOS = ['A', 'B', 'C', 'D', 'E'].map((grupo) => ({ value: grupo, label: grupo }))
 
 interface CamposDoCasal {
@@ -425,6 +466,7 @@ interface CamposDoCasal {
   grupoMacho: string
   grupoFemea: string
   dtFormacao: string
+  partoAtual: number
 }
 
 /** Onde a API pode apontar erro na formação do casal */
@@ -433,6 +475,7 @@ const CAMPOS_DO_CASAL: (keyof CamposDoCasal)[] = [
   'grupoMacho',
   'grupoFemea',
   'dtFormacao',
+  'partoAtual',
 ]
 
 function FormarCasal({
@@ -483,7 +526,7 @@ function FormarCasal({
       form={form}
       layout="vertical"
       onFinish={salvar}
-      initialValues={{ dtFormacao: hoje() }}
+      initialValues={{ dtFormacao: hoje(), partoAtual: 1 }}
       className="ficha__formulario"
     >
       {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
@@ -521,6 +564,13 @@ function FormarCasal({
           <CampoDeData max={ateHoje()} />
         </Form.Item>
       </LadoALado>
+      <Form.Item
+        name="partoAtual"
+        label="Parto atual"
+        extra="Se o casal já teve partos antes do Nidus, escolha em qual ele está"
+      >
+        <Segmented<number> options={PARTOS_ATUAIS} />
+      </Form.Item>
       <Botao variante="primario" htmlType="submit" loading={formar.isPending}>
         Formar casal
       </Botao>

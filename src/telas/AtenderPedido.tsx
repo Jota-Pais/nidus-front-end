@@ -1,7 +1,7 @@
 import { App, Checkbox, InputNumber } from 'antd'
 import { useState } from 'react'
 import { Aviso, Botao, Etiqueta, Janela, Texto } from '@/componentes'
-import { SIMBOLO_DO_SEXO } from '@/dominio/caixa'
+import { descreverOrigens, ehCadastroInicial, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import { useAlocar, useAtendimento } from '@/dominio/consultas'
 import type { ItemDaReserva } from '@/dominio/consultas'
 import {
@@ -332,7 +332,7 @@ function Lugar({
   const nome = `caixa ${l.codigo}, nascimento em ${formatarData(l.dtNascimento)}`
   // o sexo que perdeu os livres depois de recarregar continua, para tirar o que passou
   const sexos = SEXOS.filter(({ chave }) => l.livres[chave] > 0 || (reserva?.[chave] ?? 0) > 0)
-  const partos = l.partos.map((p) => `${p.ordem}º parto do casal ${p.casal}`).join(', ')
+  const inicial = ehCadastroInicial(l.partos)
 
   return (
     <li className={reserva ? 'atender__lugar atender__lugar--marcado' : 'atender__lugar'}>
@@ -352,7 +352,9 @@ function Lugar({
           {l.origem === 'previsao' && <Etiqueta tom="atencao">Desmama até a entrega</Etiqueta>}
         </div>
         <Texto tom="secundario" className="atender__origem">
-          Nascimento em {formatarData(l.dtNascimento)} · {partos}
+          {inicial
+            ? `Cadastro inicial · nascidos em ${formatarData(l.dtNascimento)}`
+            : `Nascimento em ${formatarData(l.dtNascimento)} · ${descreverOrigens(l.partos)}`}
         </Texto>
       </div>
 

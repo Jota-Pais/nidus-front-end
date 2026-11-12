@@ -12,6 +12,7 @@ import type {
   FichaDeCasal,
   MotivoDaLiberacao,
   OndeEstao,
+  OrigemNaBusca,
   Parto,
   PorSexo,
   Sexo,
@@ -108,6 +109,38 @@ export function aMaisNaCorrecao(atual: PorSexo, nova: PorSexo): PorSexo {
 /** Os vivos do parto que estão na caixa; nenhum, undefined */
 export function vivosNaCaixa(parto: Pick<Parto, 'onde'>, idCaixa: number): OndeEstao | undefined {
   return parto.onde.find((lugar) => lugar.idCaixa === idCaixa && lugar.m + lugar.f > 0)
+}
+
+/** Os números dos partos antes do primeiro registrado: o cadastro inicial, de antes do Nidus */
+export function partosAntesDoNidus(partoInicial: number): number[] {
+  return Array.from({ length: Math.max(partoInicial - 1, 0) }, (_, i) => i + 1)
+}
+
+/** "1º parto antes do Nidus", "1º e 2º partos antes do Nidus", "1º, 2º e 3º partos antes do Nidus" */
+export function descreverPartosAntesDoNidus(partoInicial: number): string | null {
+  const ordens = partosAntesDoNidus(partoInicial).map((n) => `${n}º`)
+  if (ordens.length === 0) return null
+
+  const lista =
+    ordens.length === 1 ? ordens[0] : `${ordens.slice(0, -1).join(', ')} e ${ordens.at(-1)}`
+  return `${lista} ${ordens.length === 1 ? 'parto' : 'partos'} antes do Nidus`
+}
+
+/** De onde vieram os animais: "2º parto do casal AB", ou "cadastro inicial" sem casal nem parto */
+export function descreverOrigem(origem: OrigemNaBusca): string {
+  return origem.ordem === null || origem.casal === null
+    ? 'cadastro inicial'
+    : `${origem.ordem}º parto do casal ${origem.casal}`
+}
+
+/** Os animais são todos do cadastro inicial: nenhuma origem tem casal nem parto */
+export function ehCadastroInicial(origens: OrigemNaBusca[]): boolean {
+  return origens.length > 0 && origens.every((o) => o.ordem === null || o.casal === null)
+}
+
+/** As origens sem repetir o cadastro inicial: "2º parto do casal AB, cadastro inicial" */
+export function descreverOrigens(origens: OrigemNaBusca[]): string {
+  return [...new Set(origens.map(descreverOrigem))].join(', ')
 }
 
 /** Todos os partos que passaram pela caixa de casal: os do casal dela e os dos casais de antes */

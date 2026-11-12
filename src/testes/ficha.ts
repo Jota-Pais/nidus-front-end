@@ -66,6 +66,7 @@ export const casal = (id: number, identificacao: string, ativo: boolean): Casal 
   dtFormacao: '2026-09-01',
   ativo,
   dtEncerramento: ativo ? null : '2026-10-27',
+  partoInicial: 1,
 })
 
 /** A caixa F1A, de casal, com o casal AB ativo no 1º parto */

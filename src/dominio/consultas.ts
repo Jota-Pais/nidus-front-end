@@ -171,6 +171,45 @@ export function useVirarCaixaDeEstoque() {
 
 // ------------------------------------------------------------ casais e partos
 
+/** Caixa de estoque nova numa posição vazia, com animais de idade conhecida e casal desconhecido */
+export interface EstoqueNovo {
+  posicao: PosicaoNaEstante
+  idLinhagem: number
+  sexo: Sexo
+  quantidade: number
+  dtNascimento: DataISO
+}
+
+export function useNovaCaixaDeEstoque() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (estoque: EstoqueNovo) =>
+      api<{ idCaixa: number; codigo: string }>('/api/caixas/estoque', {
+        metodo: 'POST',
+        corpo: estoque,
+      }),
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
+/** Acrescenta animais do cadastro inicial a uma caixa de estoque: sexo e linhagem são os dela */
+export function useEntradaNaCaixa() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      idCaixa,
+      ...corpo
+    }: {
+      idCaixa: number
+      quantidade: number
+      dtNascimento: DataISO
+    }) => api<unknown>(`/api/caixas/${idCaixa}/entrada`, { metodo: 'POST', corpo }),
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
 export interface CasalNovo {
   /** caixa que já existe, ou ... */
   idCaixa?: number
@@ -180,6 +219,8 @@ export interface CasalNovo {
   grupoMacho: string
   grupoFemea: string
   dtFormacao: DataISO
+  /** o parto em que o casal está; 1 a 5. Depois do 1º, os de antes são do cadastro inicial */
+  partoAtual: number
 }
 
 export function useFormarCasal() {

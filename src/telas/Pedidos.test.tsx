@@ -551,6 +551,31 @@ describe('registrar a entrega', { timeout: 40_000 }, () => {
     ).toBeTruthy()
   })
 
+  it('a retirada do cadastro inicial não tem casal nem parto: diz Cadastro inicial', async () => {
+    acoes.retirada = {
+      data: [
+        {
+          tipo: 'estoque',
+          codigo: 'F2A',
+          numeroVisivel: 'E-01',
+          sexo: 'M',
+          dtNascimento: '2026-10-01',
+          qtd: 2,
+          partos: [{ ordem: null, casal: null }],
+        },
+      ],
+      isPending: false,
+      isError: false,
+      error: null,
+    }
+    const entrega = await abrirEntrega()
+
+    expect(
+      within(entrega).getByText(/^Cadastro inicial · nascidos em 01\/10\/2026 \(\d+ dias hoje\)$/),
+    ).toBeTruthy()
+    expect(within(entrega).queryByText(/parto do casal/)).toBeNull()
+  })
+
   it('sem conseguir ler a retirada, avisa, e a entrega continua possível', async () => {
     acoes.retirada = {
       data: undefined,

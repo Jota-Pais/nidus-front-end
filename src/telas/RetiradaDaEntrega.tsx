@@ -2,7 +2,7 @@
 // equipe juntou os reservados numa caixa, é ela que aparece. Dentro da caixa só a idade distingue
 // os ratos, então cada linha diz também quando eles nasceram
 import { Aviso, Texto } from '@/componentes'
-import { contarDoSexo, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
+import { contarDoSexo, descreverOrigens, ehCadastroInicial, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
 import { useRetirada } from '@/dominio/consultas'
 import type { LugarDaRetirada } from '@/dominio/tipos'
 import { descreverDias, formatarData, idadeEmDias } from '@/lib/data'
@@ -44,8 +44,9 @@ export function RetiradaDaEntrega({ idPedido }: { idPedido: number }) {
               {lugar.numeroVisivel})
             </span>
             <span className="retirada__origem">
-              {`Nascimento em ${formatarData(lugar.dtNascimento)} (${descreverDias(idadeEmDias(lugar.dtNascimento))} hoje) · `}
-              {lugar.partos.map((p) => `${p.ordem}º parto do casal ${p.casal}`).join(', ')}
+              {ehCadastroInicial(lugar.partos)
+                ? `Cadastro inicial · nascidos em ${formatarData(lugar.dtNascimento)} (${descreverDias(idadeEmDias(lugar.dtNascimento))} hoje)`
+                : `Nascimento em ${formatarData(lugar.dtNascimento)} (${descreverDias(idadeEmDias(lugar.dtNascimento))} hoje) · ${descreverOrigens(lugar.partos)}`}
             </span>
           </li>
         ))}
