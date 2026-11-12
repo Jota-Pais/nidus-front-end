@@ -119,6 +119,7 @@ export function FichaDaCaixa({
         <div className="ficha__aba">
           <Segmented<ModoDaPosicao>
             block
+            className="ficha__modo"
             value={modo}
             onChange={setModo}
             options={[

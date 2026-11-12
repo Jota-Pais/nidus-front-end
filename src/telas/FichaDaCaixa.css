@@ -20,6 +20,27 @@
   cursor: pointer;
 }
 
+/* parto de antes do Nidus: sem registro, apagado e sem clique */
+.ficha__parto:disabled {
+  border-style: dashed;
+  background: transparent;
+  color: var(--cor-suave-frente);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* a escolha entre formar casal e caixa de estoque, no alto da posição vazia */
+.ficha__modo {
+  margin-top: 4px;
+}
+
+.ficha__modo .ant-segmented-item-label {
+  white-space: normal;
+  line-height: 1.25;
+  min-height: 0;
+  padding: 6px 4px;
+}
+
 .ficha__parto[aria-pressed='true'] {
   border-color: var(--cor-acao);
   background: var(--cor-acao);
