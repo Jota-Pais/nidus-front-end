@@ -368,7 +368,9 @@ function AbaReproducao({
 }) {
   const { caixa, casal } = ficha
   const parto = partos.find((p) => p.ordem === ordem)
-  const confirmados = ficha.partos.filter((p) => p.dtPartoReal !== null).length
+  // os partos que já nasceram, contando os de antes do Nidus (o casal formado no 3º já teve dois)
+  const confirmados =
+    (casal?.partoInicial ?? 1) - 1 + ficha.partos.filter((p) => p.dtPartoReal !== null).length
   const naoRecebe = casal?.ativo ? null : porQueNaoRecebeCasal(ficha)
   // os vivos da caixa que viram estoque no lugar: os do sexo que sobrou
   const quantosViram = ficha.virarEstoque

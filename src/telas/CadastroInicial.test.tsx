@@ -142,6 +142,8 @@ describe('formar casal no Nº parto', { timeout: 40_000 }, () => {
     expect(pilula('3º').disabled).toBe(false)
     expect(pilula('3º').getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByText('1º e 2º partos antes do Nidus')).toBeTruthy()
+    // o contador conta os dois partos de antes do Nidus
+    expect(screen.getByText('2/5')).toBeTruthy()
 
     fireEvent.click(pilula('1º'))
     expect(pilula('3º').getAttribute('aria-pressed')).toBe('true')
