@@ -43,6 +43,11 @@ export function descreverDias(dias: number): string {
   return dias === 1 ? '1 dia' : `${dias} dias`
 }
 
+/** A data de N dias antes de hoje, em 'aaaa-mm-dd' */
+export function haDias(dias: number, hojeEm: DataISO = hoje()): DataISO {
+  return dayjs(hojeEm, FORMATO_DA_API, true).subtract(dias, 'day').format(FORMATO_DA_API)
+}
+
 /** hoje do servidor em 'aaaa-mm-dd', o valor padrão dos campos de data */
 export function hoje(): DataISO {
   return hojeDoRelogio()

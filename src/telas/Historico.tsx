@@ -105,7 +105,7 @@ export function Historico() {
       <CabecalhoDaTela
         rotulo="Configurações"
         titulo="Histórico"
-        descricao="Quem fez cada registro dos animais e das operações (nascimento, baixa, mudança, reserva, entrega), quando e o quê. Mostra os 300 registros mais recentes do filtro escolhido."
+        descricao="Quem fez cada registro dos animais e das operações (nascimento, baixa, entrada, mudança, reserva, entrega), quando e o quê. Mostra os 300 registros mais recentes do filtro escolhido."
       />
 
       <Secao semPreenchimento titulo={filtros}>

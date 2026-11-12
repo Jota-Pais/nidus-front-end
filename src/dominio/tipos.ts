@@ -175,6 +175,8 @@ export interface Casal {
   dtFormacao: DataISO
   ativo: boolean
   dtEncerramento: DataISO | null
+  /** o primeiro parto registrado: os de antes são do cadastro inicial, de antes do Nidus */
+  partoInicial: number
 }
 
 /** O que um pedido tem reservado, por sexo */
@@ -258,11 +260,12 @@ export interface FichaDeCasal {
 /** De qual parto vieram os vivos de um grupo da caixa de estoque */
 export interface OrigemDoGrupo {
   idParto: number
-  ordem: number
-  casal: string
+  /** null nos animais do cadastro inicial: nasceram de casal desconhecido */
+  ordem: number | null
+  casal: string | null
   /** a caixa do casal */
-  codigoOrigem: string
-  numeroVisivelOrigem: string
+  codigoOrigem: string | null
+  numeroVisivelOrigem: string | null
   qtd: number
 }
 
@@ -433,6 +436,12 @@ export interface RespostaDaEntrega {
   caixasLiberadas: string[]
 }
 
+/** De qual parto vieram os animais de um lugar; sem ordem e sem casal, é do cadastro inicial */
+export interface OrigemNaBusca {
+  ordem: number | null
+  casal: string | null
+}
+
 /** GET /api/pedidos/:id/retirada: onde estão de fato os reservados vivos, na ordem da estante */
 export interface LugarDaRetirada {
   tipo: TipoDeCaixa
@@ -441,8 +450,8 @@ export interface LugarDaRetirada {
   sexo: Sexo
   dtNascimento: DataISO
   qtd: number
-  /** os partos de onde vieram */
-  partos: { ordem: number; casal: string }[]
+  /** os partos de onde vieram; ordem e casal nulos: cadastro inicial */
+  partos: OrigemNaBusca[]
 }
 
 /** 'de_fato': todos do lugar já desmamaram; 'previsao': desmamam até a entrega */
@@ -458,8 +467,8 @@ export interface LugarCandidato {
   idadeNaEntrega: number
   origem: Origem
   livres: PorSexo
-  /** os partos de onde vieram, só para mostrar */
-  partos: { ordem: number; casal: string }[]
+  /** os partos de onde vieram, só para mostrar; ordem e casal nulos: cadastro inicial */
+  partos: OrigemNaBusca[]
   /** quanto o motor sugere tirar deste lugar */
   alocar: PorSexo
   sugerida: boolean
@@ -561,7 +570,7 @@ export interface RegistroDoHistorico {
   idEntidade: number
   /** onde foi, em palavras ("Caixa F1A", "Casal AB (F1A)", "Pedido #3"); null quando a API não diz */
   onde: string | null
-  /** na trilha, o tipo da ocorrência: nascimento, baixa, mudanca, reserva, entrega... */
+  /** na trilha, o tipo da ocorrência: nascimento, baixa, entrada, mudanca, reserva, entrega... */
   acao: string
   /** na trilha começa com a data do fato: 'Em aaaa-mm-dd: ' */
   descricao: string

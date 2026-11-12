@@ -17,6 +17,7 @@ import { useVirarCaixaDeEstoque } from '@/dominio/consultas'
 import type { CasalComPartos, FichaDeEstoque, Parto, Sexo } from '@/dominio/tipos'
 import { descreverDias, formatarData, idadeEmDias } from '@/lib/data'
 import { BaixaNaCaixa, MudarAnimais } from './AnimaisDaFicha'
+import { AcrescentarAnimais } from './CadastroInicial'
 import type { CaixaDaAcao, GrupoDaCaixa } from './AnimaisDaFicha'
 import { Campo, LadoALado } from './CamposDaFicha'
 import './EstoqueDaFicha.css'
@@ -68,7 +69,7 @@ export function FichaDoEstoque({ ficha }: { ficha: FichaDeEstoque }) {
 }
 
 function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDaAcao }) {
-  const [acao, setAcao] = useState<'baixa' | 'mudanca' | null>(null)
+  const [acao, setAcao] = useState<'baixa' | 'mudanca' | 'entrada' | null>(null)
   const { sexo, ativa } = ficha.caixa
   // a API diz o que cada pedido tem reservado em cada idade e quando os vivos dela chegaram
   const grupos: GrupoDaCaixa[] = ficha.grupos.map((grupo) => ({
@@ -116,14 +117,22 @@ function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDa
           aoTerminar={() => setAcao(null)}
         />
       )}
-      {acao === null && ativa && ficha.total > 0 && (
+      {acao === 'entrada' && (
+        <AcrescentarAnimais idCaixa={caixa.id} sexo={sexo} aoTerminar={() => setAcao(null)} />
+      )}
+      {acao === null && ativa && (
         <div className="ficha__botoes">
-          <Botao variante="primario" onClick={() => setAcao('mudanca')}>
-            Passar para outra caixa
-          </Botao>
-          <Botao variante="perigo" onClick={() => setAcao('baixa')}>
-            Registrar baixa
-          </Botao>
+          {ficha.total > 0 && (
+            <Botao variante="primario" onClick={() => setAcao('mudanca')}>
+              Passar para outra caixa
+            </Botao>
+          )}
+          <Botao onClick={() => setAcao('entrada')}>Acrescentar animais (cadastro inicial)</Botao>
+          {ficha.total > 0 && (
+            <Botao variante="perigo" onClick={() => setAcao('baixa')}>
+              Registrar baixa
+            </Botao>
+          )}
         </div>
       )}
 
@@ -144,8 +153,9 @@ function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDa
               <ul className="fichaDoEstoque__origens">
                 {grupo.origens.map((origem) => (
                   <li key={origem.idParto}>
-                    {origem.qtd} do {origem.ordem}º parto do casal {origem.casal}, caixa{' '}
-                    {origem.codigoOrigem} ({origem.numeroVisivelOrigem})
+                    {origem.ordem === null || origem.casal === null
+                      ? `Cadastro inicial: ${origem.qtd} ${origem.qtd === 1 ? 'animal' : 'animais'}`
+                      : `${origem.qtd} do ${origem.ordem}º parto do casal ${origem.casal}, caixa ${origem.codigoOrigem ?? '—'} (${origem.numeroVisivelOrigem ?? '—'})`}
                   </li>
                 ))}
               </ul>
