@@ -3,9 +3,16 @@ import { App, Segmented } from 'antd'
 import { createContext, useContext, useState } from 'react'
 import type { DragEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { usePerfil } from '@/auth/contexto'
 import { Botao, CabecalhoDaTela, Linha, Pilha, Secao, Texto, Vazio } from '@/componentes'
 import { descreverEstoque, FASE, motivoDoAtraso, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
-import { useCatalogo, useEstantes, useGrade, useMudarDePosicao } from '@/dominio/consultas'
+import {
+  useCatalogo,
+  useEstantes,
+  useGrade,
+  useMudarDePosicao,
+  useSalas,
+} from '@/dominio/consultas'
 import type { CaixaNaGrade, Estante, EstoqueNoCard, Grade, Posicao } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
@@ -14,6 +21,7 @@ import { descreverDias, formatarDataCurta } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import type { PosicaoVazia } from './FichaDaCaixa'
 import { LegendaDasFases } from './FaseDaCaixa'
+import { FormularioDaEstante } from './FormularioDaEstante'
 import './Estantes.css'
 
 /** O que a ficha abre: uma caixa, ou uma posição vazia onde a caixa vai nascer */
@@ -67,7 +75,10 @@ const chaveDaPosicao = (idEstante: number, codigo: string) => `${idEstante}:${co
 /** As estantes de cada sala, com as faces frontal e traseira lado a lado */
 export function Estantes() {
   const { message } = App.useApp()
+  const { perfil } = usePerfil()
   const estantes = useEstantes()
+  const salasCadastradas = useSalas()
+  const [cadastrando, setCadastrando] = useState(false)
   const mover = useMudarDePosicao()
   const [sala, setSala] = useState<string | null>(null)
   const [aberta, setAberta] = useState<Alvo | null>(null)
@@ -125,10 +136,16 @@ export function Estantes() {
       <CabecalhoDaTela
         rotulo="Infraestrutura"
         titulo="Estantes"
-        descricao={
-          estreita
-            ? 'As duas faces de cada estante, como estão na sala. Toque numa caixa para abrir a ficha, ou numa posição vazia para formar um casal.'
-            : 'As duas faces de cada estante, como estão na sala. Clique numa caixa para abrir a ficha, ou arraste para uma posição vazia para mudar de lugar. Numa posição vazia, clique para formar um casal.'
+        acoes={
+          perfil === 'gestor' ? (
+            <Botao
+              variante="primario"
+              onClick={() => setCadastrando(true)}
+              disabled={salasCadastradas.data === undefined || estantes.data === undefined}
+            >
+              Nova estante
+            </Botao>
+          ) : undefined
         }
       />
 
@@ -192,6 +209,7 @@ export function Estantes() {
         posicaoVazia={aberta && 'vazia' in aberta ? aberta.vazia : null}
         aoFechar={() => setAberta(null)}
       />
+      {cadastrando && <FormularioDaEstante estante={null} aoFechar={() => setCadastrando(false)} />}
     </Pilha>
   )
 }

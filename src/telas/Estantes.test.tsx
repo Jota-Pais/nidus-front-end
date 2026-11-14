@@ -151,6 +151,8 @@ vi.mock('@/dominio/consultas', () => ({
   useEstantes: () => consulta([estante(1, 'Sala 1', 'E-01'), estante(2, 'Sala 2', 'E-03')]),
   useGrade: () => consulta(grade),
   useMudarDePosicao: () => ({ mutate: mover, isPending: false }),
+  useSalas: () => consulta([{ id: 1, nome: 'Sala 1', estantes: 1 }]),
+  useSalvarEstante: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
 // a ficha tem as consultas dela; aqui ela fica fechada e não importa
@@ -181,10 +183,24 @@ function arrastarF1AParaF1B() {
 }
 
 describe('tela Estantes', { timeout: 20_000 }, () => {
-  it('não cadastra estante: o cadastro é só nos Cadastros, nem o gestor vê o botão', () => {
+  it('o gestor cadastra estante pela grade, no mesmo formulário dos Cadastros', async () => {
     renderizar(<Estantes />, 'gestor')
 
+    fireEvent.click(screen.getByRole('button', { name: 'Nova estante' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Nova estante' })).toBeTruthy()
+  })
+
+  it('o técnico não vê o botão Nova estante', () => {
+    renderizar(<Estantes />, 'tecnico')
+
     expect(screen.queryByRole('button', { name: 'Nova estante' })).toBeNull()
+  })
+
+  it('não tem a descrição embaixo do título', () => {
+    renderizar(<Estantes />, 'tecnico')
+
+    expect(screen.queryByText(/As duas faces de cada estante/)).toBeNull()
   })
 
   it('continua separando as estantes por sala, pelo nome que vem na estante', () => {
