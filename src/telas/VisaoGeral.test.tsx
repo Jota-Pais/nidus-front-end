@@ -81,40 +81,59 @@ const dados: DadosDaVisao = {
 
 vi.mock('@/dominio/consultas', () => ({ useVisaoGeral: () => consulta(dados) }))
 
-/** O valor de um cartão de número da espécie, pelo rótulo */
-const noCartao = (especie: string, rotulo: string) => {
-  const dt = within(screen.getByLabelText(`Totais de ${especie}`)).getByText(rotulo)
-  return dt.closest('.visao__cartao')!.querySelector('dd')!.textContent
-}
+/** A tabela de números de uma espécie */
+const tabelaDe = (especie: string) =>
+  screen.getByRole('table', { name: `Números de ${especie} por linhagem` })
 
-/** O cartão de uma linhagem, pelo link do nome */
+/** As células de uma linha da tabela (casais, em aleitamento, reservados, livres) */
+const celulas = (linha: Element) => [...linha.querySelectorAll('td')].map((td) => td.textContent)
+
+/** A linha de uma linhagem na tabela, pelo link do nome */
+const linhaDa = (nome: string) =>
+  within(tabelaDe('Ratos')).getByRole('link', { name: nome }).closest('tr')!
+
+/** O cartão do gráfico de uma linhagem, pelo link do nome */
 const cartaoDa = (nome: string) =>
   within(screen.getByRole('list', { name: 'Linhagens de Ratos' }))
     .getByRole('link', { name: nome })
     .closest('li')!
-
-/** Os 4 números de uma linhagem, rótulo → valor, na ordem da tela */
-const numerosDa = (nome: string) =>
-  [...within(cartaoDa(nome)).getByLabelText(`Números da ${nome}`).children].map((item) => [
-    item.querySelector('dt')!.textContent,
-    item.querySelector('dd')!.textContent,
-  ])
 
 /** Os números em cima das barras do cartão, na ordem em que o gráfico os desenha */
 const rotulosDeValor = (cartao: HTMLElement) =>
   [...cartao.querySelectorAll('.visao__valorDaBarra')].map((texto) => texto.textContent)
 
 describe('Visão geral', { timeout: 20_000 }, () => {
-  it('mostra os cartões de número da espécie, somando as linhagens', () => {
+  it('mostra os números numa tabela: uma linha por linhagem e o total da espécie', () => {
     renderizar(<VisaoGeral />)
 
-    expect(noCartao('Ratos', 'Livres')).toBe('65♂ 27♀ 38')
-    expect(noCartao('Ratos', 'Reservados')).toBe('7♂ 4♀ 3')
-    expect(noCartao('Ratos', 'Em aleitamento')).toBe('11♂ 6♀ 5')
-    expect(noCartao('Ratos', 'Casais ativos')).toBe('4')
+    const tabela = tabelaDe('Ratos')
+    expect([...tabela.querySelectorAll('thead th')].map((th) => th.textContent)).toEqual([
+      'Linhagem',
+      'Casais ativos',
+      'Em aleitamento',
+      'Reservados',
+      'Livres',
+    ])
+    expect(celulas(linhaDa('Wistar'))).toEqual(['2', '♂ 3♀ 2', '♂ 4♀ 3', '♂ 11♀ 13'])
+    expect(celulas(linhaDa('SHR'))).toEqual(['1', '♂ 3♀ 3', '♂ 0♀ 0', '♂ 6♀ 5'])
+    // a linhagem sem nada aparece zerada
+    expect(celulas(linhaDa('Sprague'))).toEqual(['0', '♂ 0♀ 0', '♂ 0♀ 0', '♂ 0♀ 0'])
+
+    // o total soma as linhagens
+    const total = tabela.querySelector('tfoot tr')!
+    expect(total.querySelector('th')!.textContent).toBe('Total')
+    expect(celulas(total)).toEqual(['4', '♂ 6♀ 5', '♂ 4♀ 3', '♂ 27♀ 38'])
   })
 
-  it('faz um cartão por linhagem, com o nome levando às estantes', () => {
+  it('o nome da linhagem na tabela leva às estantes', () => {
+    renderizar(<VisaoGeral />)
+
+    expect(
+      within(linhaDa('Wistar')).getByRole('link', { name: 'Wistar' }).getAttribute('href'),
+    ).toBe('/estantes?linhagem=1')
+  })
+
+  it('faz um gráfico de livres por idade por linhagem, com o nome levando às estantes', () => {
     renderizar(<VisaoGeral />)
 
     const lista = screen.getByRole('list', { name: 'Linhagens de Ratos' })
@@ -124,25 +143,9 @@ describe('Visão geral', { timeout: 20_000 }, () => {
     expect(within(wistar).getByRole('link', { name: 'Wistar' }).getAttribute('href')).toBe(
       '/estantes?linhagem=1',
     )
-  })
-
-  it('mostra em cada linhagem os casais e os animais em aleitamento, reservados e livres', () => {
-    renderizar(<VisaoGeral />)
-
-    expect(numerosDa('Wistar')).toEqual([
-      ['Casais', '2'],
-      ['Em aleitamento', '♂ 3♀ 2'],
-      ['Reservados', '♂ 4♀ 3'],
-      ['Livres', '♂ 11♀ 13'],
-    ])
-    expect(numerosDa('SHR')).toEqual([
-      ['Casais', '1'],
-      ['Em aleitamento', '♂ 3♀ 3'],
-      ['Reservados', '♂ 0♀ 0'],
-      ['Livres', '♂ 6♀ 5'],
-    ])
-    // o total de livres não fica mais no cabeçalho do cartão
-    expect(cartaoDa('Wistar').querySelector('header')!.textContent).toBe('Wistar')
+    // os números ficam na tabela: o cartão tem só o nome e o gráfico
+    expect(wistar.querySelector('header')!.textContent).toBe('Wistar')
+    expect(wistar.querySelector('dl')).toBeNull()
   })
 
   it('escreve em cima de cada barra o número de machos e de fêmeas de cada idade', () => {
@@ -180,29 +183,20 @@ describe('Visão geral', { timeout: 20_000 }, () => {
 
     const sprague = cartaoDa('Sprague')
     expect(within(sprague).getByText('Sem animais livres.')).toBeTruthy()
-    // os 4 números aparecem mesmo assim, zerados
-    expect(numerosDa('Sprague')).toEqual([
-      ['Casais', '0'],
-      ['Em aleitamento', '♂ 0♀ 0'],
-      ['Reservados', '♂ 0♀ 0'],
-      ['Livres', '♂ 0♀ 0'],
-    ])
     expect(within(sprague).queryByRole('img')).toBeNull()
   })
 
-  it('mostra as baixas do aleitamento desde o início, com a porcentagem sobre os nascidos', () => {
+  it('mostra embaixo da tabela as baixas do aleitamento desde o início, sobre os nascidos', () => {
     renderizar(<VisaoGeral />)
 
-    const linha = (cartao: HTMLElement) => cartao.querySelector('.visao__aleitamento')?.textContent
-
-    // o cartão da linhagem não repete a linha: ela fica só no total da espécie
-    expect(linha(cartaoDa('Wistar'))).toBeUndefined()
-
+    // uma linha só, a da espécie: os cartões das linhagens não a repetem
+    const linhas = document.querySelectorAll('.visao__aleitamento')
+    expect(linhas).toHaveLength(1)
     // os totais da espécie somam as linhagens: 6 e 4 em 275 nascidos
-    const especie = screen.getByLabelText('Totais de Ratos').parentElement!
-    expect(especie.querySelector(':scope > .visao__aleitamento')?.textContent).toBe(
+    expect(linhas[0]!.textContent).toBe(
       'Desde o início: Ajuste de ninhada 6 (2% dos nascidos) · Mortes no aleitamento 4 (1% dos nascidos) · 275 nascidos em partos registrados',
     )
+    expect(cartaoDa('Wistar').querySelector('.visao__aleitamento')).toBeNull()
   })
 
   it('mostra a rosca da situação e as barras de vivos por linhagem', () => {
@@ -225,31 +219,23 @@ describe('Visão geral', { timeout: 20_000 }, () => {
 
     expect(screen.getByText('Camundongos')).toBeTruthy()
     expect(screen.getByText('Nenhuma linhagem nesta espécie.')).toBeTruthy()
-    expect(screen.queryByLabelText('Totais de Camundongos')).toBeNull()
-  })
-
-  it('não tem mais tabelas', () => {
-    renderizar(<VisaoGeral />)
-
-    expect(screen.queryByRole('table')).toBeNull()
+    expect(screen.queryByRole('table', { name: 'Números de Camundongos por linhagem' })).toBeNull()
   })
 })
 
 describe('Visão geral no celular', { timeout: 20_000 }, () => {
-  it('mantém os cartões, os gráficos e o link de cada linhagem, sem tabelas', () => {
+  it('mantém a tabela, os gráficos e o link de cada linhagem', () => {
     const voltar = larguraDaTela(390)
     try {
       renderizar(<VisaoGeral />)
 
-      expect(screen.queryByRole('table')).toBeNull()
-      expect(noCartao('Ratos', 'Livres')).toBe('65♂ 27♀ 38')
+      expect(celulas(linhaDa('SHR'))).toEqual(['1', '♂ 3♀ 3', '♂ 0♀ 0', '♂ 6♀ 5'])
 
       const shr = cartaoDa('SHR')
       expect(within(shr).getByRole('link', { name: 'SHR' }).getAttribute('href')).toBe(
         '/estantes?linhagem=2',
       )
       expect(rotulosDeValor(shr)).toEqual(['3', '3', '3', '2'])
-      expect(numerosDa('SHR')[3]).toEqual(['Livres', '♂ 6♀ 5'])
       expect(within(shr).getByRole('img').getAttribute('aria-label')).toContain(
         '40 dias: 3 machos, 2 fêmeas',
       )
