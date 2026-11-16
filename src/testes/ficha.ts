@@ -150,7 +150,6 @@ export const catalogo: Catalogo = {
       ],
     },
   ],
-  paresGeneticos: [],
 }
 
 // a estante E-01 da sala 1: a F1A com o casal, a F1B e a F1D vazias, a F1C uma caixa de estoque

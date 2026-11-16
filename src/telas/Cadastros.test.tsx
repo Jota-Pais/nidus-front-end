@@ -33,7 +33,7 @@ const estantes: Estante[] = [
 vi.mock('@/dominio/consultas', () => ({
   useProjetos: () => consulta([]),
   useUsuarios: () => consulta([]),
-  useCatalogo: () => consulta({ especies: [], paresGeneticos: [] }),
+  useCatalogo: () => consulta({ especies: [] }),
   useSalvarProjeto: mutacao,
   useSalvarLinhagem: mutacao,
   useSalas: () => consulta(salas),

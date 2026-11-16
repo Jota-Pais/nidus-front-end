@@ -50,7 +50,7 @@ const acoes = vi.hoisted(() => ({
 }))
 
 vi.mock('@/dominio/consultas', () => ({
-  useCatalogo: () => consulta({ especies: [], paresGeneticos: [] }),
+  useCatalogo: () => consulta({ especies: [] }),
   useConferirViabilidade: mutacao,
   usePedidos: () =>
     consulta([

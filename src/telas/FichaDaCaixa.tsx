@@ -505,12 +505,6 @@ function FormarCasal({
     options: e.linhagens.filter((l) => l.ativa).map((l) => ({ value: l.id, label: l.nome })),
   }))
 
-  // cruzamento rotacional: cada macho tem uma fêmea certa (AB, BC, CD, DE, EA)
-  function escolherMacho(grupoMacho: string) {
-    const par = catalogo.data?.paresGeneticos.find((p) => p.grupoMacho === grupoMacho)
-    if (par) form.setFieldValue('grupoFemea', par.grupoFemea)
-  }
-
   function salvar(campos: CamposDoCasal) {
     falha.limpar()
     // mutateAsync: na caixa que já existe, a ficha recarregada troca este formulário pelo do casal
@@ -550,7 +544,7 @@ function FormarCasal({
           label="Grupo do macho (A-E)"
           rules={[{ required: true, message: 'Grupo do macho' }]}
         >
-          <Select options={GRUPOS} onChange={escolherMacho} />
+          <Select options={GRUPOS} />
         </Form.Item>
         <Form.Item
           name="grupoFemea"
@@ -559,14 +553,18 @@ function FormarCasal({
         >
           <Select options={GRUPOS} />
         </Form.Item>
-        <Form.Item
-          name="dtFormacao"
-          label="Acasalamento"
-          rules={[{ required: true, message: 'Data' }]}
-        >
-          <CampoDeData max={ateHoje()} />
-        </Form.Item>
       </LadoALado>
+      <p className="ficha__dica">
+        Heterogênicas (Wistar, Swiss): rodízio AB, BC, CD, DE, EA. Isogênicas (SHR, Kyoto,
+        C57BL/6J): macho e fêmea da mesma letra.
+      </p>
+      <Form.Item
+        name="dtFormacao"
+        label="Acasalamento"
+        rules={[{ required: true, message: 'Data' }]}
+      >
+        <CampoDeData max={ateHoje()} />
+      </Form.Item>
       <Form.Item
         name="partoAtual"
         label="Parto atual"
