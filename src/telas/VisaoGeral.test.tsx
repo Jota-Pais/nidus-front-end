@@ -195,14 +195,14 @@ describe('Visão geral', { timeout: 20_000 }, () => {
 
     const linha = (cartao: HTMLElement) => cartao.querySelector('.visao__aleitamento')?.textContent
 
-    expect(linha(cartaoDa('Wistar'))).toBe(
-      'Desde o início: Ajuste de ninhada 6 (8% dos nascidos) · Mortes no aleitamento 3 (4% dos nascidos) · 75 nascidos em partos registrados',
+    expect(linha(cartaoDa('Wistar'))).toBe('Ajuste de ninhada 6 (8%) · Mortes no aleitamento 3 (4%)')
+    // o "desde o início" e a base da porcentagem ficam na dica, para caber no cartão
+    expect(cartaoDa('Wistar').querySelector('.visao__aleitamento')?.getAttribute('title')).toBe(
+      'Desde o início, sobre 75 nascidos em partos registrados',
     )
-    expect(linha(cartaoDa('SHR'))).toContain('Mortes no aleitamento 1 (menos de 1% dos nascidos)')
+    expect(linha(cartaoDa('SHR'))).toContain('Mortes no aleitamento 1 (<1%)')
     // sem nascidos, sem porcentagem
-    expect(linha(cartaoDa('LEW'))).toBe(
-      'Desde o início: Ajuste de ninhada 0 · Mortes no aleitamento 0 · 0 nascidos em partos registrados',
-    )
+    expect(linha(cartaoDa('LEW'))).toBe('Ajuste de ninhada 0 · Mortes no aleitamento 0')
     // a API antiga não manda o aleitamento: a linha não aparece
     expect(linha(cartaoDa('Sprague'))).toBeUndefined()
 

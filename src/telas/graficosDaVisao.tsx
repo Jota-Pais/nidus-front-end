@@ -61,6 +61,9 @@ export function LegendaDeCores({ itens }: { itens: { cor: string; nome: string }
   )
 }
 
+/** Até quantos grupos de idade o rótulo do eixo cabe reto; acima disso, inclina para não encavalar */
+const MAX_ROTULOS_RETOS = 6
+
 /** O gráfico principal: barras ♂ e ♀ lado a lado, um grupo por idade, com o número em cima */
 export function BarrasPorIdade({
   idades,
@@ -70,6 +73,8 @@ export function BarrasPorIdade({
   linhagem: string
 }) {
   const grupos = agruparPorIdade(idades)
+  // muitas faixas: o eixo inclina e o número sai de cima da barra (fica na dica do mouse)
+  const poucos = grupos.length <= MAX_ROTULOS_RETOS
   const resumo = `${linhagem}, livres por idade: ${grupos
     .map((g) => `${g.nome}: ${frasePorSexo(g)}`)
     .join('; ')}`
@@ -79,7 +84,12 @@ export function BarrasPorIdade({
       <ResponsiveContainer width="100%" height={200} initialDimension={MEDIDA_INICIAL}>
         <BarChart data={grupos} margin={{ top: 20, right: 4, left: 0, bottom: 0 }} barGap={2}>
           <CartesianGrid strokeDasharray="4 4" vertical={false} />
-          <XAxis dataKey="rotulo" tickLine={false} interval={0} />
+          <XAxis
+            dataKey="rotulo"
+            tickLine={false}
+            interval={0}
+            {...(poucos ? {} : { angle: -40, textAnchor: 'end', height: 52, fontSize: 11 })}
+          />
           <YAxis tickLine={false} axisLine={false} allowDecimals={false} width={28} />
           <Tooltip
             cursor={{ fill: 'transparent' }}
@@ -106,7 +116,7 @@ export function BarrasPorIdade({
             maxBarSize={22}
             isAnimationActive={false}
           >
-            <LabelList position="top" className="visao__valorDaBarra" />
+            {poucos && <LabelList position="top" className="visao__valorDaBarra" />}
           </Bar>
           <Bar
             dataKey="f"
@@ -116,7 +126,7 @@ export function BarrasPorIdade({
             maxBarSize={22}
             isAnimationActive={false}
           >
-            <LabelList position="top" className="visao__valorDaBarra" />
+            {poucos && <LabelList position="top" className="visao__valorDaBarra" />}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

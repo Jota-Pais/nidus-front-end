@@ -114,6 +114,35 @@ function LinhaDoAleitamento({ aleitamento }: { aleitamento: AleitamentoNaVisaoGe
   )
 }
 
+/** "21 (8%)"; sem nascidos, só o número. Abaixo de 1%, "<1%" */
+function comPorcentagemCurta(qtd: number, nascidos: number): string {
+  if (nascidos === 0) return String(qtd)
+
+  const porcento = (qtd * 100) / nascidos
+  const texto = qtd > 0 && porcento < 1 ? '<1' : String(Math.round(porcento))
+
+  return `${qtd} (${texto}%)`
+}
+
+/**
+ * A mesma conta no cartão da linhagem, curta para caber numa linha: o "desde o início" e a base da
+ * porcentagem ficam na dica do mouse
+ */
+function AleitamentoDaLinhagem({ aleitamento }: { aleitamento: AleitamentoNaVisaoGeral }) {
+  const { nascidos } = aleitamento
+  const dica = `Desde o início, sobre ${nascidos} ${nascidos === 1 ? 'nascido' : 'nascidos'} em partos registrados`
+
+  return (
+    <p className="visao__aleitamento" title={dica}>
+      <span>Ajuste de ninhada {comPorcentagemCurta(aleitamento.ajusteDeNinhada, nascidos)}</span>
+      <span aria-hidden="true"> · </span>
+      <span>
+        Mortes no aleitamento {comPorcentagemCurta(aleitamento.mortesNoAleitamento, nascidos)}
+      </span>
+    </p>
+  )
+}
+
 function Especie({ especie }: { especie: EspecieNaVisaoGeral }) {
   const { linhagens } = especie
   const titulo = TITULO[especie.codigo] ?? especie.nome
@@ -278,7 +307,7 @@ function CartaoDaLinhagem({ linhagem: l }: { linhagem: LinhagemNaVisaoGeral }) {
           <Sexos sexos={l.livres} className="visao__contagemValor" />
         </NumeroDaLinhagem>
       </dl>
-      {l.aleitamento && <LinhaDoAleitamento aleitamento={l.aleitamento} />}
+      {l.aleitamento && <AleitamentoDaLinhagem aleitamento={l.aleitamento} />}
       {idades.length === 0 ? (
         <p className="visao__vazio">Sem animais livres.</p>
       ) : (
