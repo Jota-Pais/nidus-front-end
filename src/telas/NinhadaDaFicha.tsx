@@ -331,28 +331,38 @@ function DataDoAcasalamento({
   )
 }
 
-/**
- * A correção da data do desmame, com motivo. A contagem do desmame não se corrige aqui: lança-se
- * uma baixa
- */
-function CorrigirDesmame({
-  idParto,
-  atual,
-  desde,
-  ate,
-}: {
+interface PropsDaCorrecaoDoDesmame {
   idParto: number
   atual: DataISO
   desde: (DataISO | null | undefined)[]
   ate: (DataISO | null | undefined)[]
-}) {
-  const { message } = App.useApp()
-  const corrigir = useCorrigirEvento()
+}
+
+/**
+ * A correção da data do desmame, com motivo. A contagem do desmame não se corrige aqui: lança-se
+ * uma baixa
+ */
+function CorrigirDesmame(props: PropsDaCorrecaoDoDesmame) {
   const [aberto, setAberto] = useAcao('corrigir-desmame')
-  const [form] = Form.useForm<{ data: DataISO; motivo: string }>()
-  const falha = useFalhaDoFormulario(form, ['data', 'motivo'])
 
   if (!aberto) return <BotaoCorrigir aoAbrir={() => setAberto(true)} />
+
+  // o formulário nasce a cada abertura: começa sempre com a data registrada, e não com o que ficou
+  // no campo da vez anterior (apagado, ao cancelar)
+  return <FormularioDoDesmame {...props} aoFechar={() => setAberto(false)} />
+}
+
+function FormularioDoDesmame({
+  idParto,
+  atual,
+  desde,
+  ate,
+  aoFechar,
+}: PropsDaCorrecaoDoDesmame & { aoFechar: () => void }) {
+  const { message } = App.useApp()
+  const corrigir = useCorrigirEvento()
+  const [form] = Form.useForm<{ data: DataISO; motivo: string }>()
+  const falha = useFalhaDoFormulario(form, ['data', 'motivo'])
 
   function salvar({ data, motivo }: { data: DataISO; motivo: string }) {
     falha.limpar()
@@ -361,7 +371,7 @@ function CorrigirDesmame({
       .then(
         () => {
           void message.success('Correção registrada.')
-          setAberto(false)
+          aoFechar()
         },
         // a API aponta a data pelo nome dela no corpo
         (erro: Error) =>
@@ -383,7 +393,7 @@ function CorrigirDesmame({
         campos={[{ nome: 'data', rotulo: 'Data do desmame', tipo: 'data', desde, ate }]}
       />
       <CampoDoMotivo />
-      <BotoesDaCorrecao salvando={corrigir.isPending} aoCancelar={() => setAberto(false)} />
+      <BotoesDaCorrecao salvando={corrigir.isPending} aoCancelar={aoFechar} />
     </Form>
   )
 }
