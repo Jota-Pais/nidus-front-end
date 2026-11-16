@@ -24,7 +24,6 @@ export type CodigoDeErro =
   | 'CAIXA_JA_TEM_CASAL_ATIVO'
   | 'POSICAO_OCUPADA'
   | 'TOPOLOGIA'
-  | 'PAR_GENETICO_INVALIDO'
   // os animais: a baixa, a mudança e a reserva acharam menos vivos; o pedido dos reservados
   | 'SEM_ANIMAIS'
   | 'PEDIDO_NAO_INDICADO'

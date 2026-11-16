@@ -340,7 +340,6 @@ export interface Catalogo {
     nome: string
     linhagens: { id: number; nome: string; ativa: boolean }[]
   }[]
-  paresGeneticos: { grupoMacho: string; grupoFemea: string }[]
 }
 
 export type SituacaoDoProjeto = 'vigente' | 'vencido' | 'suspenso'

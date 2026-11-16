@@ -15,11 +15,13 @@ import {
 } from '@/testes/ficha'
 import { consulta, renderizar } from '@/testes/renderizar'
 import { larguraDaTela } from '@/testes/tela'
+import type { Catalogo } from '@/dominio/tipos'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import type { PosicaoVazia } from './FichaDaCaixa'
 
 const api = vi.hoisted(() => ({
   ficha: undefined as unknown,
+  catalogo: undefined as unknown,
   formar: vi.fn(),
   criar: vi.fn(),
   entrada: vi.fn(),
@@ -27,7 +29,7 @@ const api = vi.hoisted(() => ({
 
 vi.mock('@/dominio/consultas', () => ({
   useFicha: () => consulta(api.ficha),
-  useCatalogo: () => consulta(catalogo),
+  useCatalogo: () => consulta(api.catalogo),
   useFormarCasal: () => mutacaoComResposta(api.formar),
   useNovaCaixaDeEstoque: () => mutacaoComResposta(api.criar),
   useEntradaNaCaixa: () => mutacaoComResposta(api.entrada),
@@ -63,6 +65,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-10-30T12:00:00'))
   api.ficha = undefined
+  api.catalogo = catalogo
   api.formar.mockReset().mockResolvedValue({ idCaixa: 50 })
   api.criar.mockReset().mockResolvedValue({ idCaixa: 51, codigo: 'F1B' })
   api.entrada.mockReset().mockResolvedValue({})
@@ -159,6 +162,48 @@ describe('formar casal no Nº parto', { timeout: 40_000 }, () => {
       ),
     ).toBe(false)
     expect(screen.queryByText(/antes do Nidus$/)).toBeNull()
+  })
+})
+
+const AVISO_DOS_GRUPOS =
+  'Heterogênicas (Wistar, Swiss): rodízio AB, BC, CD, DE, EA. Isogênicas (SHR, Kyoto, C57BL/6J): macho e fêmea da mesma letra.'
+
+describe('grupos do casal', { timeout: 40_000 }, () => {
+  it('forma o casal C57BL/6J com A e A: qualquer par passa, e o aviso diz como cruza cada linhagem', async () => {
+    const comCamundongo: Catalogo = {
+      especies: [
+        ...catalogo.especies,
+        {
+          id: 2,
+          codigo: 'camundongo',
+          nome: 'Camundongo',
+          linhagens: [{ id: 5, nome: 'C57BL/6J', ativa: true }],
+        },
+      ],
+    }
+    api.catalogo = comCamundongo
+    abrirPosicaoVazia()
+
+    expect(screen.getByText(AVISO_DOS_GRUPOS)).toBeTruthy()
+
+    await escolher('Linhagem', 'C57BL/6J')
+    await escolher('Grupo do macho (A-E)', 'A')
+    // a fêmea não se preenche pelo macho
+    const femea = selecao('Grupo da fêmea (A-E)').closest('.ant-select')
+    expect(femea?.querySelector('.ant-select-selection-item')).toBeNull()
+    await escolher('Grupo da fêmea (A-E)', 'A')
+    fireEvent.click(botao('Formar casal', document.body))
+
+    await waitFor(() => expect(api.formar).toHaveBeenCalled(), DEMORA)
+    expect(api.formar).toHaveBeenCalledWith({
+      posicao: POSICAO,
+      idLinhagem: 5,
+      grupoMacho: 'A',
+      grupoFemea: 'A',
+      dtFormacao: '2026-10-30',
+      partoAtual: 1,
+    })
+    expect(document.querySelector('.ant-form-item-explain-error, .ant-alert-error')).toBeNull()
   })
 })
 

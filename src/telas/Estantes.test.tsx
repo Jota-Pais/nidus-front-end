@@ -143,7 +143,6 @@ const catalogo: Catalogo = {
       ],
     },
   ],
-  paresGeneticos: [],
 }
 
 vi.mock('@/dominio/consultas', () => ({
