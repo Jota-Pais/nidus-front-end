@@ -1,4 +1,4 @@
-/* A Visão geral: por espécie, os cartões de número, um gráfico por linhagem e o resumo da colônia */
+/* A Visão geral: por espécie, os cartões de número, um cartão por linhagem e o resumo da colônia */
 
 .visao__especie {
   display: flex;
@@ -80,10 +80,46 @@
   white-space: nowrap;
 }
 
-.visao__livres {
-  font-size: 14px;
+/* Os 4 números da linhagem numa linha; no cartão estreito (o do celular), 2 por linha */
+.visao__linhagens > .visao__painel {
+  container-type: inline-size;
+}
+
+/* Colunas iguais, mas nunca menores que o conteúdo: "Em aleitamento" cabe numa linha só */
+.visao__contagem {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(max-content, 1fr));
+  gap: 12px;
+  margin: 0 0 12px;
+}
+
+.visao__contagemItem {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2px;
+  padding-top: 6px;
+  border-top: 3px solid var(--cor-borda);
+}
+
+.visao__contagemItem dd {
+  margin: 0;
+}
+
+.visao__contagemValor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  font-size: 15px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+@container (max-width: 399px) {
+  .visao__contagem {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .visao__vazio {
