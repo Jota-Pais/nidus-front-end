@@ -706,34 +706,79 @@ function descreverLugar(lugar: OndeEstao, idCaixa: number): string {
 }
 
 /**
+ * Os vivos do parto que ainda estão nesta caixa, como grupo das ações da caixa (a baixa e a
+ * passagem para o estoque). Na caixa liberada, ou sem vivos dele aqui, nenhum. As ações oferecem só
+ * os pedidos com reservados nesta caixa, como a API conta em cada uma
+ */
+function gruposDaNinhada(parto: Parto, idCaixa: number, ativa: boolean): GrupoDaCaixa[] {
+  const aqui = ativa ? vivosNaCaixa(parto, idCaixa) : undefined
+  if (!aqui || !parto.dtPartoReal) return []
+
+  return [
+    {
+      dtNascimento: parto.dtPartoReal,
+      vivos: { m: aqui.m, f: aqui.f },
+      reservas: aqui.pedidos,
+      // a ninhada nasceu na caixa do casal: basta o nascimento
+      dtChegada: null,
+    },
+  ]
+}
+
+/**
+ * A baixa dos vivos do parto que estão nesta caixa, logo abaixo da contagem das baixas: o botão
+ * abre o formulário ali mesmo. Antes do desmame é a seleção do parto, e a eutanásia é o que se
+ * espera dela
+ */
+function BaixaDaNinhada({
+  parto,
+  caixa,
+  grupos,
+}: {
+  parto: Parto
+  caixa: CaixaDaAcao
+  grupos: GrupoDaCaixa[]
+}) {
+  const [aberta, abrir] = useAcao('baixa')
+
+  if (aberta) {
+    return (
+      <BaixaNaCaixa
+        caixa={caixa}
+        grupos={grupos}
+        aoTerminar={() => abrir(false)}
+        {...(parto.dtDesmameReal === null
+          ? { idParto: parto.id, tipoInicial: 'eutanasia' as const }
+          : {})}
+      />
+    )
+  }
+
+  if (grupos.length === 0) return null
+
+  return (
+    <div className="ficha__botoes">
+      <Botao variante="perigo" onClick={() => abrir(true)}>
+        Registrar baixa
+      </Botao>
+    </div>
+  )
+}
+
+/**
  * Onde estão os vivos do parto, de fato, e quantos estão reservados para cada pedido. Os que ainda
- * estão nesta caixa podem sair por baixa e, depois do desmame, passar para o estoque. A ação
- * oferece só os pedidos com reservados nesta caixa, como a API conta em cada uma
+ * estão nesta caixa podem, depois do desmame, passar para o estoque (a baixa fica na seção Baixas)
  */
 function OndeEstaoOsVivos({
   parto,
   caixa,
-  ativa,
+  grupos,
 }: {
   parto: Parto
   caixa: CaixaDaAcao
-  ativa: boolean
+  grupos: GrupoDaCaixa[]
 }) {
-  const [baixa, abrirBaixa] = useAcao('baixa')
   const [passagem, abrirPassagem] = useAcao('passagem')
-  const aqui = ativa ? vivosNaCaixa(parto, caixa.id) : undefined
-  const grupos: GrupoDaCaixa[] =
-    aqui && parto.dtPartoReal
-      ? [
-          {
-            dtNascimento: parto.dtPartoReal,
-            vivos: { m: aqui.m, f: aqui.f },
-            reservas: aqui.pedidos,
-            // a ninhada nasceu na caixa do casal: basta o nascimento
-            dtChegada: null,
-          },
-        ]
-      : []
   const reservas = parto.reservados
 
   return (
@@ -760,18 +805,7 @@ function OndeEstaoOsVivos({
         </ul>
       )}
 
-      {baixa && (
-        <BaixaNaCaixa
-          caixa={caixa}
-          grupos={grupos}
-          aoTerminar={() => abrirBaixa(false)}
-          // antes do desmame é a seleção do parto, e a eutanásia é o que se espera dela
-          {...(parto.dtDesmameReal === null
-            ? { idParto: parto.id, tipoInicial: 'eutanasia' as const }
-            : {})}
-        />
-      )}
-      {passagem && (
+      {passagem ? (
         <MudarAnimais
           caixa={caixa}
           grupos={grupos}
@@ -779,18 +813,15 @@ function OndeEstaoOsVivos({
           botao="Passar para o estoque"
           aoTerminar={() => abrirPassagem(false)}
         />
-      )}
-      {!baixa && !passagem && grupos.length > 0 && (
-        <div className="ficha__botoes">
-          {parto.dtDesmameReal && (
+      ) : (
+        parto.dtDesmameReal &&
+        grupos.length > 0 && (
+          <div className="ficha__botoes">
             <Botao variante="primario" onClick={() => abrirPassagem(true)}>
               Passar para o estoque
             </Botao>
-          )}
-          <Botao variante="perigo" onClick={() => abrirBaixa(true)}>
-            Registrar baixa
-          </Botao>
-        </div>
+          </div>
+        )
       )}
     </>
   )
@@ -840,6 +871,8 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
     idLinhagem: casal?.idLinhagem ?? ficha.caixa.idLinhagem,
   }
   const pedidos = pedidosDoParto(parto)
+  // os vivos dele nesta caixa: a baixa (na seção Baixas) e a passagem (em Onde estão) agem neles
+  const grupos = gruposDaNinhada(parto, ficha.caixa.id, ficha.caixa.ativa)
   // na caixa liberada não se lança fato novo (parto, baixa, desmame); corrigir o que já foi
   // registrado continua
   const semFatoNovo = !ficha.caixa.ativa
@@ -916,6 +949,7 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
             <Campo rotulo="Baixas">{porSexo(parto.baixasAntesDoDesmame)}</Campo>
             {!desmamou && <Campo rotulo="Vivos">{porSexo(parto.vivos)}</Campo>}
           </LadoALado>
+          <BaixaDaNinhada parto={parto} caixa={caixa} grupos={grupos} />
 
           <h3>Desmame</h3>
           {desmamou ? (
@@ -967,7 +1001,7 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
             </RegistrarEvento>
           )}
 
-          <OndeEstaoOsVivos parto={parto} caixa={caixa} ativa={ficha.caixa.ativa} />
+          <OndeEstaoOsVivos parto={parto} caixa={caixa} grupos={grupos} />
         </>
       )}
     </div>
