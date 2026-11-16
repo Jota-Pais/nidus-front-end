@@ -372,6 +372,26 @@ describe('desmame', { timeout: 40_000 }, () => {
       corpo: { dtDesmameReal: '2026-10-16', motivo: 'data errada' },
     })
   })
+
+  it('a correção do desmame reaberta começa de novo com a data registrada, e não com o campo apagado', async () => {
+    api.ficha = fichaDeCasal({ partos: [desmamado()] })
+    await abrirNinhada()
+
+    corrigir('Desmame')
+    const campo = () => screen.getByLabelText('Data do desmame') as HTMLInputElement
+    expect(campo().value).toBe('16/10/2026')
+
+    // apagar a data e cancelar: o campo vazio não fica guardado para a próxima vez
+    const limpar = campo().closest('.ant-picker')?.querySelector('.ant-picker-clear') as HTMLElement
+    fireEvent.mouseDown(limpar)
+    fireEvent.mouseUp(limpar)
+    fireEvent.click(limpar)
+    await waitFor(() => expect(campo().value).toBe(''), DEMORA)
+    fireEvent.click(botao('Cancelar', campo().closest('form') as HTMLElement))
+
+    corrigir('Desmame')
+    expect(campo().value).toBe('16/10/2026')
+  })
 })
 
 describe('baixa da ninhada', { timeout: 40_000 }, () => {
@@ -521,6 +541,32 @@ describe('as datas da ninhada seguem a ordem dos eventos', { timeout: 40_000 }, 
     expect(diaNoCalendario('2026-09-26')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-09-30')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-10-01')).toContain(APAGADO)
+  })
+
+  it('com a seleção lançada hoje, o desmame corrigido não volta para antes de hoje', async () => {
+    // o caso da ninhada antiga: nasceu em 28/02, a seleção e o desmame foram lançados hoje (16/11)
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-16T12:00:00'))
+    api.ficha = fichaDeCasal({
+      partos: [
+        desmamado({
+          ordem: 2,
+          dtPartoReal: '2026-02-28',
+          dtDesmameReal: '2026-11-16',
+          dtUltimaSelecao: '2026-11-16',
+        }),
+      ],
+    })
+    await abrirNinhada()
+
+    corrigir('Desmame')
+    expect((screen.getByLabelText('Data do desmame') as HTMLInputElement).value).toBe('16/11/2026')
+    fireEvent.click(screen.getByLabelText('Data do desmame'))
+    await waitFor(() => expect(diaNoCalendario('2026-11-16')).not.toBe('(sem dia)'))
+    // só o próprio dia 16/11 fica: antes dele, a seleção; depois, o futuro
+    expect(diaNoCalendario('2026-11-15')).toContain(APAGADO)
+    expect(diaNoCalendario('2026-11-16')).not.toContain(APAGADO)
+    expect(diaNoCalendario('2026-11-17')).toContain(APAGADO)
   })
 
   it('o desmame registrado não fica antes da última seleção', async () => {
