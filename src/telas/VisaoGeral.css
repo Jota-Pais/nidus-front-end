@@ -1,4 +1,4 @@
-/* A Visão geral: por espécie, os cartões de número, um cartão por linhagem e o resumo da colônia */
+/* A Visão geral: por espécie, a tabela por linhagem, um gráfico por linhagem e o resumo da colônia */
 
 .visao__especie {
   display: flex;
@@ -7,41 +7,71 @@
   min-width: 0;
 }
 
-/* ------------------------------------------------------------------ cartões de número */
+/* ------------------------------------------------------------------ tabela por linhagem */
 
-.visao__cartoes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
-  gap: 12px;
-  margin: 0;
-}
-
-.visao__cartao {
-  padding: 12px 16px;
+/* No celular a tabela rola de lado dentro da moldura, sem empurrar a página */
+.visao__rolagem {
+  overflow-x: auto;
   border: 1px solid var(--cor-borda);
-  border-top: 3px solid var(--cor-borda);
   border-radius: var(--raio-md);
   background: var(--cor-cartao);
 }
 
-.visao__cartao dd {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
+.visao__tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
 }
 
-.visao__numero {
-  font-family: var(--fonte-titulo);
-  font-size: 32px;
-  font-weight: var(--peso-titulo);
-  line-height: 1.2;
+.visao__tabela th,
+.visao__tabela td {
+  padding: 10px 16px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* O cabeçalho no mesmo estilo dos rótulos do resto do sistema */
+.visao__tabela thead th {
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cor-suave-frente);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.visao__tabela tbody tr + tr {
+  border-top: 1px solid var(--cor-borda);
+}
+
+.visao__tabela td {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.visao__tabela tfoot th,
+.visao__tabela tfoot td {
+  border-top: 2px solid var(--cor-borda);
+  background: var(--cor-suave);
+}
+
+.visao__tabela tfoot th {
+  font-weight: 600;
+}
+
+.visao__bolinha {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: 1px;
 }
 
 .visao__sexos {
-  display: flex;
-  gap: 12px;
-  font-size: 13px;
-  color: var(--cor-suave-frente);
+  display: inline-flex;
+  gap: 14px;
 }
 
 /* ------------------------------------------------------------------ painéis e gráficos */
@@ -78,48 +108,6 @@
   font-size: 17px;
   font-weight: 600;
   white-space: nowrap;
-}
-
-/* Os 4 números da linhagem numa linha; no cartão estreito (o do celular), 2 por linha */
-.visao__linhagens > .visao__painel {
-  container-type: inline-size;
-}
-
-/* Colunas iguais, mas nunca menores que o conteúdo: "Em aleitamento" cabe numa linha só */
-.visao__contagem {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(max-content, 1fr));
-  gap: 12px;
-  margin: 0 0 12px;
-}
-
-.visao__contagemItem {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 2px;
-  padding-top: 6px;
-  border-top: 3px solid var(--cor-borda);
-}
-
-.visao__contagemItem dd {
-  margin: 0;
-}
-
-.visao__contagemValor {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 8px;
-  font-size: 15px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-@container (max-width: 399px) {
-  .visao__contagem {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 .visao__vazio {
@@ -278,11 +266,39 @@
     min-height: 44px;
     margin: -10px 0;
   }
+
+  /* A tabela não cabe inteira: rola de lado com o nome da linhagem parado na esquerda, e ♂ em cima
+     de ♀ para cada coluna ocupar menos */
+  .visao__tabela th,
+  .visao__tabela td {
+    padding: 8px 10px;
+  }
+
+  .visao__tabela thead th {
+    white-space: normal;
+  }
+
+  .visao__tabela tr > :first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--cor-cartao);
+    box-shadow: 1px 0 0 var(--cor-borda);
+  }
+
+  .visao__tabela tfoot tr > :first-child {
+    background: var(--cor-suave);
+  }
+
+  .visao__sexos {
+    flex-direction: column;
+    gap: 0;
+  }
 }
 
-/* As baixas do aleitamento desde o início: uma linha discreta, embaixo dos números */
+/* As baixas do aleitamento desde o início: uma linha discreta, embaixo da tabela */
 .visao__aleitamento {
-  margin: 0 0 12px;
+  margin: 8px 0 0;
   font-size: 12px;
   color: var(--cor-suave-frente);
 }
