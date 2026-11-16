@@ -67,6 +67,7 @@ const comDuasIdades = fichaDeEstoque({
           codigoOrigem: 'F2A',
           numeroVisivelOrigem: 'E-02',
           qtd: 3,
+          dtEntrada: null,
         },
       ],
       pedidos: [],

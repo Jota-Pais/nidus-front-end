@@ -24,6 +24,7 @@ import { ateHoje, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
 import { NovaCaixaDeEstoque } from './CadastroInicial'
 import { Campo, LadoALado } from './CamposDaFicha'
 import { EditarCasal } from './EditarCasal'
+import { EditarEstoque } from './EditarEstoque'
 import { FichaDoEstoque, VirarCaixaDeEstoque } from './EstoqueDaFicha'
 import { EtiquetaDaFase } from './FaseDaCaixa'
 import { MudarDeLugar } from './MudarDeLugar'
@@ -78,7 +79,8 @@ export function FichaDaCaixa({
   // no computador a caixa muda de lugar arrastada na grade; no toque não há arrastar
   const mudaDeLugar = useTelaEstreita() && caixa?.ativa === true
   const atraso = deCasal ? atrasoDaFicha(deCasal) : null
-  // quem opera a colônia corrige o casal digitado errado; o casal encerrado também
+  // quem opera a colônia corrige o casal digitado errado, o casal encerrado também, e a caixa de
+  // estoque ativa (o cadastro inicial lançado errado)
   const { perfil } = usePerfil()
   const operaAColonia = perfil === 'tecnico' || perfil === 'gestor'
 
@@ -122,6 +124,7 @@ export function FichaDaCaixa({
           {operaAColonia && deCasal?.casal && (
             <EditarCasal casal={deCasal.casal} especie={deCasal.caixa.especie} />
           )}
+          {operaAColonia && deEstoque?.caixa.ativa && <EditarEstoque ficha={deEstoque} />}
         </Linha>
       }
     >

@@ -267,6 +267,11 @@ export interface OrigemDoGrupo {
   codigoOrigem: string | null
   numeroVisivelOrigem: string | null
   qtd: number
+  /**
+   * a entrada no estoque da ninhada do cadastro inicial: o nascimento corrigido não passa dela.
+   * Null na origem de casal
+   */
+  dtEntrada: DataISO | null
 }
 
 /** Os vivos da caixa de estoque que nasceram no mesmo dia: dentro da caixa, só a idade os separa */

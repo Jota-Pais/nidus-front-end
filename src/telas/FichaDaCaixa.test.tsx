@@ -46,6 +46,7 @@ const api = vi.hoisted(() => ({
   virar: vi.fn(),
   mover: vi.fn(),
   editar: vi.fn(),
+  editarEstoque: vi.fn(),
 }))
 
 vi.mock('@/dominio/consultas', () => ({
@@ -56,6 +57,7 @@ vi.mock('@/dominio/consultas', () => ({
   useCorrigirEvento: () => mutacaoComResposta(api.corrigir),
   useCorrigirAcasalamento: () => mutacaoComResposta(api.acasalamento),
   useEditarCasal: () => mutacaoComResposta(api.editar),
+  useEditarCaixaDeEstoque: () => mutacaoComResposta(api.editarEstoque),
   useSemNinhada: () => mutacaoComResposta(api.semNinhada),
   useMudanca: () => mutacaoComResposta(api.mudanca),
   useBaixa: () => mutacaoComResposta(api.baixa),
@@ -80,6 +82,7 @@ beforeEach(() => {
   api.virar.mockReset().mockResolvedValue({ idCaixa: 7, sexo: 'F' })
   api.mover.mockReset()
   api.editar.mockReset().mockResolvedValue(casal(1, 'AA', true))
+  api.editarEstoque.mockReset().mockResolvedValue(fichaDeEstoque())
 })
 
 afterEach(() => vi.useRealTimers())
@@ -1541,5 +1544,177 @@ describe('editar o casal pelo lápis', { timeout: 30_000 }, () => {
       ),
     ).toBeTruthy()
     expect(screen.getByText('Editar casal AB')).toBeTruthy()
+  })
+})
+
+describe('editar a caixa de estoque pelo lápis', { timeout: 30_000 }, () => {
+  const lapis = () =>
+    document.querySelector<HTMLButtonElement>('button[aria-label="Editar caixa de estoque"]')
+
+  /**
+   * A F1C de machos Wistar com duas idades: a de 24/09 com 4 do cadastro inicial (entraram em
+   * 10/11) e 2 do 1º parto do casal AB; a de 01/10, com 3 de outro cadastro (entraram em 12/11)
+   */
+  function estoqueDoCadastro() {
+    const base = fichaDeEstoque()
+    const grupo = base.grupos[0] as (typeof base.grupos)[number]
+    return fichaDeEstoque({
+      grupos: [
+        {
+          ...grupo,
+          origens: [
+            {
+              idParto: 40,
+              ordem: null,
+              casal: null,
+              codigoOrigem: null,
+              numeroVisivelOrigem: null,
+              qtd: 4,
+              dtEntrada: '2026-11-10',
+            },
+            { ...(grupo.origens[0] as (typeof grupo.origens)[number]), qtd: 2 },
+          ],
+        },
+        {
+          ...grupo,
+          dtNascimento: '2026-10-01',
+          origens: [
+            {
+              idParto: 41,
+              ordem: null,
+              casal: null,
+              codigoOrigem: null,
+              numeroVisivelOrigem: null,
+              qtd: 3,
+              dtEntrada: '2026-11-12',
+            },
+          ],
+        },
+      ],
+    })
+  }
+
+  async function abrirEdicao() {
+    api.ficha = estoqueDoCadastro()
+    abrirFicha()
+    fireEvent.click(lapis() as HTMLButtonElement)
+    return screen.findByText('Editar caixa de estoque F1C')
+  }
+
+  /** Digita o dia (dd/mm/aaaa) no campo dado e confirma */
+  function digitarData(campo: HTMLElement, dia: string) {
+    fireEvent.mouseDown(campo)
+    fireEvent.change(campo, { target: { value: dia } })
+    fireEvent.keyDown(campo, { key: 'Enter', code: 'Enter' })
+  }
+
+  const camposDeNascimento = () =>
+    screen.getAllByLabelText(/Nascimento do cadastro inicial/) as HTMLInputElement[]
+
+  it('o técnico e o gestor veem o lápis na caixa de estoque; o pesquisador e a caixa liberada, não', () => {
+    api.ficha = fichaDeEstoque()
+    abrirFicha()
+    expect(lapis()).not.toBeNull()
+    cleanup()
+
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />, 'gestor')
+    expect(lapis()).not.toBeNull()
+    cleanup()
+
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />, 'pesquisador')
+    expect(lapis()).toBeNull()
+    cleanup()
+
+    const liberada = fichaDeEstoque()
+    api.ficha = { ...liberada, caixa: { ...liberada.caixa, ativa: false } }
+    abrirFicha()
+    expect(lapis()).toBeNull()
+  })
+
+  it('a caixa de casal não tem o lápis do estoque', () => {
+    abrirFicha()
+    expect(lapis()).toBeNull()
+  })
+
+  it('abre preenchida, com um nascimento por ninhada do cadastro e o de casal só como texto', async () => {
+    await abrirEdicao()
+
+    expect(selecao('Linhagem').closest('.ant-select')?.textContent).toContain('Wistar')
+    expect(camposDeNascimento().map((campo) => campo.value)).toEqual(['24/09/2026', '01/10/2026'])
+    expect(
+      screen.getByText('Entraram no estoque em 10/11/2026: o nascimento não passa disso.'),
+    ).toBeTruthy()
+    expect(
+      screen.getByText('2 do 1º parto do casal AB, caixa F1A: corrija pela ficha do casal.'),
+    ).toBeTruthy()
+  })
+
+  it('manda só o que mudou: o sexo, e o nascimento da ninhada com o id do parto dela', async () => {
+    await abrirEdicao()
+
+    fireEvent.click(screen.getByText('♀ Fêmeas', { selector: '.ant-segmented-item-label' }))
+    digitarData(camposDeNascimento()[1] as HTMLElement, '28/09/2026')
+    fireEvent.click(botao('Salvar'))
+
+    await waitFor(() => expect(api.editarEstoque).toHaveBeenCalled(), DEMORA)
+    expect(api.editarEstoque).toHaveBeenCalledWith({
+      idCaixa: 30,
+      sexo: 'F',
+      nascimentos: [{ idParto: 41, dtNascimento: '2026-09-28' }],
+    })
+  })
+
+  it('sem mudança nenhuma, fecha sem chamar a API', async () => {
+    await abrirEdicao()
+
+    fireEvent.click(botao('Salvar'))
+
+    await waitFor(
+      () => expect(screen.queryByText('Editar caixa de estoque F1C')).toBeNull(),
+      DEMORA,
+    )
+    expect(api.editarEstoque).not.toHaveBeenCalled()
+  })
+
+  it('a recusa da API aparece no campo que ela apontou, e a janela fica aberta', async () => {
+    api.editarEstoque.mockReset().mockRejectedValue(
+      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
+        sexo: '2 machos desta caixa estão reservados (pedido #12), e o pedido conta pelo sexo.',
+      }),
+    )
+    await abrirEdicao()
+
+    fireEvent.click(screen.getByText('♀ Fêmeas', { selector: '.ant-segmented-item-label' }))
+    fireEvent.click(botao('Salvar'))
+
+    expect(
+      await screen.findByText(
+        '2 machos desta caixa estão reservados (pedido #12), e o pedido conta pelo sexo.',
+        {},
+        DEMORA,
+      ),
+    ).toBeTruthy()
+    expect(screen.getByText('Editar caixa de estoque F1C')).toBeTruthy()
+  })
+
+  it('a recusa do nascimento vai para o campo da ninhada certa, mesmo com só ela no corpo', async () => {
+    api.editarEstoque.mockReset().mockRejectedValue(
+      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
+        'nascimentos.0.dtNascimento': 'Não pode ser depois da entrada no estoque (12/11/2026).',
+      }),
+    )
+    await abrirEdicao()
+
+    digitarData(camposDeNascimento()[1] as HTMLElement, '28/09/2026')
+    fireEvent.click(botao('Salvar'))
+
+    const mensagem = await screen.findByText(
+      'Não pode ser depois da entrada no estoque (12/11/2026).',
+      {},
+      DEMORA,
+    )
+    // no segundo campo de nascimento, o que mudou, e não no primeiro
+    const doCampo = mensagem.closest('.ant-form-item')
+    expect(doCampo?.textContent).toContain('3 animais')
   })
 })
