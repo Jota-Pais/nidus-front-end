@@ -127,7 +127,8 @@ interface QuantosDoSexo {
 
 interface CamposDaBaixa {
   dtFato: DataISO
-  tipo: TipoDaBaixa
+  /** sem padrão: quem registra escolhe a causa */
+  tipo?: TipoDaBaixa
   dtNascimento?: DataISO
   machos?: QuantosDoSexo
   femeas?: QuantosDoSexo
@@ -157,22 +158,37 @@ function nomeDoItem(itens: Pick<ItemDaBaixa, 'sexo'>[]): NomeNoFormulario {
 }
 
 /**
+ * As causas da baixa como o formulário as mostra. Antes do desmame elas são os índices do
+ * aleitamento: a eutanásia é o ajuste de ninhada (a seleção) e a morte é a morte no aleitamento
+ */
+const CAUSAS_DA_BAIXA: Record<'aleitamento' | 'depois', { value: TipoDaBaixa; label: string }[]> = {
+  aleitamento: [
+    { value: 'morte', label: 'Morte no aleitamento' },
+    { value: 'eutanasia', label: 'Eutanásia (ajuste de ninhada)' },
+  ],
+  depois: [
+    { value: 'morte', label: 'Morte' },
+    { value: 'eutanasia', label: 'Eutanásia' },
+  ],
+}
+
+/**
  * Morte ou eutanásia, uma ação só, em qualquer caixa: quantos de cada sexo, de qual idade, a data
- * e o tipo. Saem primeiro os livres; a resposta diz que pedidos ficaram em falta. Com 'idParto',
- * a baixa é de um parto (a eutanásia dele é a seleção). A mensagem de sucesso traz o Desfazer
+ * e a causa, que quem registra escolhe (sem padrão). Saem primeiro os livres; a resposta diz que
+ * pedidos ficaram em falta. Com 'idParto', a baixa é de um parto ainda em aleitamento (a eutanásia
+ * dele é a seleção), e as causas aparecem com o nome do aleitamento. A mensagem de sucesso traz o
+ * Desfazer
  */
 export function BaixaNaCaixa({
   caixa,
   grupos,
   aoTerminar,
   idParto,
-  tipoInicial = 'morte',
 }: {
   caixa: CaixaDaAcao
   grupos: GrupoDaCaixa[]
   aoTerminar: () => void
   idParto?: number
-  tipoInicial?: TipoDaBaixa
 }) {
   const { message, modal } = App.useApp()
   const baixa = useBaixa()
@@ -214,7 +230,9 @@ export function BaixaNaCaixa({
   }
 
   function registrar(campos: CamposDaBaixa) {
-    if (!grupo) return
+    // a causa é obrigatória no formulário: sem ela o antd nem chega aqui
+    const { tipo } = campos
+    if (!grupo || tipo === undefined) return
     falha.limpar()
 
     const itens: ItemDaBaixa[] = sexos.flatMap((sexo) => {
@@ -237,8 +255,8 @@ export function BaixaNaCaixa({
       .mutateAsync({
         idCaixa: caixa.id,
         dtFato: campos.dtFato,
-        tipo: campos.tipo,
-        ...(idParto !== undefined && campos.tipo === 'eutanasia' ? { idParto } : {}),
+        tipo,
+        ...(idParto !== undefined && tipo === 'eutanasia' ? { idParto } : {}),
         itens,
       })
       .then(
@@ -267,7 +285,6 @@ export function BaixaNaCaixa({
       className="ficha__formulario"
       initialValues={{
         dtFato: ateHoje(),
-        tipo: tipoInicial,
         dtNascimento: grupo.dtNascimento,
         machos: { qtd: 0 },
         femeas: { qtd: 0 },
@@ -307,13 +324,14 @@ export function BaixaNaCaixa({
         <Form.Item name="dtFato" label="Data" rules={[{ required: true, message: 'Data' }]}>
           <CampoDeData min={maisTarde(grupo.dtNascimento, grupo.dtChegada)} max={ateHoje()} />
         </Form.Item>
-        <Form.Item name="tipo" label="Tipo">
+        <Form.Item
+          name="tipo"
+          label="Causa"
+          rules={[{ required: true, message: 'Escolha a causa' }]}
+        >
+          {/* bolinhas, e não botões: o nome do aleitamento é longo e quebraria dentro do botão */}
           <Radio.Group
-            optionType="button"
-            options={[
-              { value: 'morte', label: 'Morte' },
-              { value: 'eutanasia', label: 'Eutanásia' },
-            ]}
+            options={CAUSAS_DA_BAIXA[idParto === undefined ? 'depois' : 'aleitamento']}
           />
         </Form.Item>
       </LadoALado>

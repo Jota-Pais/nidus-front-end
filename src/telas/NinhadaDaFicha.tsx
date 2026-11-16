@@ -784,9 +784,8 @@ function BaixaDaNinhada({
         caixa={caixa}
         grupos={grupos}
         aoTerminar={() => abrir(false)}
-        {...(parto.dtDesmameReal === null
-          ? { idParto: parto.id, tipoInicial: 'eutanasia' as const }
-          : {})}
+        // antes do desmame a baixa é do aleitamento, e a eutanásia é a seleção do parto
+        {...(parto.dtDesmameReal === null ? { idParto: parto.id } : {})}
       />
     )
   }
@@ -983,7 +982,8 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
         <>
           <h3>Baixas</h3>
           <LadoALado>
-            <Campo rotulo="Baixas">{porSexo(parto.baixasAntesDoDesmame)}</Campo>
+            <Campo rotulo="Ajuste de ninhada">{porSexo(parto.ajusteDeNinhada)}</Campo>
+            <Campo rotulo="Mortes no aleitamento">{porSexo(parto.mortesNoAleitamento)}</Campo>
             {!desmamou && <Campo rotulo="Vivos">{porSexo(parto.vivos)}</Campo>}
           </LadoALado>
           <BaixaDaNinhada parto={parto} caixa={caixa} grupos={grupos} />
