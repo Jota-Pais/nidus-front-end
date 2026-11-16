@@ -319,6 +319,28 @@ export type EdicaoDoCasal = Partial<
   }
 >
 
+/**
+ * O que muda na caixa de estoque lançada errada: só os campos alterados, ao menos um. O nascimento
+ * é o de cada ninhada do cadastro inicial (parto sem casal) com animais na caixa
+ */
+export interface EdicaoDoEstoque {
+  idLinhagem?: number
+  sexo?: Sexo
+  nascimentos?: { idParto: number; dtNascimento: DataISO }[]
+}
+
+/** O engano de digitação na caixa de estoque, sobretudo no cadastro inicial: sem motivo */
+export function useEditarCaixaDeEstoque() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idCaixa, ...corpo }: EdicaoDoEstoque & { idCaixa: number }) =>
+      api<FichaDaCaixa>(`/api/caixas/${idCaixa}`, { metodo: 'PATCH', corpo }),
+    // a linhagem e o nascimento levam a ninhada inteira, e o sexo, os animais da caixa
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
 /** O engano de digitação no casal, ativo ou encerrado: sem motivo, num formulário só */
 export function useEditarCasal() {
   const cliente = useQueryClient()

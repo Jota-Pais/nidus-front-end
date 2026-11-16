@@ -9,7 +9,7 @@ import type { Casal, CodigoEspecie, DataISO } from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { ateHoje } from '@/lib/data'
 import { LadoALado } from './CamposDaFicha'
-import './EditarCasal.css'
+import './LapisDaFicha.css'
 
 interface CamposDaEdicao {
   idLinhagem: number
@@ -50,7 +50,7 @@ export function EditarCasal({ casal, especie }: { casal: Casal; especie: CodigoE
       <Tooltip title="Editar casal">
         <Botao
           variante="fantasma"
-          className="editar-casal__lapis"
+          className="lapis-da-ficha"
           aria-label="Editar casal"
           icon={<EditOutlined aria-hidden="true" />}
           onClick={() => setAberto(true)}
@@ -124,7 +124,7 @@ function JanelaDoCasal({
         }}
       >
         {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
-        <p className="editar-casal__dica">
+        <p className="lapis-da-ficha__dica">
           Para corrigir o que foi digitado errado. A linhagem muda também nos partos e nos animais
           deste casal, a data de formação leva junto o acasalamento do 1º parto, e o parto em que
           ele entrou renumera os partos.

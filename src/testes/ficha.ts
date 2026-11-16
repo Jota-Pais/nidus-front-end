@@ -127,6 +127,7 @@ export const fichaDeEstoque = (parcial: Partial<FichaDeEstoque> = {}): FichaDeEs
           codigoOrigem: 'F1A',
           numeroVisivelOrigem: 'E-01',
           qtd: 6,
+          dtEntrada: null,
         },
       ],
       pedidos: [{ idPedido: 12, qtd: 2 }],

@@ -331,6 +331,7 @@ describe('acrescentar animais numa caixa de estoque', { timeout: 40_000 }, () =>
               codigoOrigem: null,
               numeroVisivelOrigem: null,
               qtd: 6,
+              dtEntrada: '2026-11-10',
             },
           ],
         },
