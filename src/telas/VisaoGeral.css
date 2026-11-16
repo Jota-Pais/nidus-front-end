@@ -279,3 +279,10 @@
     margin: -10px 0;
   }
 }
+
+/* As baixas do aleitamento desde o início: uma linha discreta, embaixo dos números */
+.visao__aleitamento {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--cor-suave-frente);
+}

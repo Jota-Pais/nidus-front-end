@@ -215,6 +215,10 @@ export interface Parto {
   nascidoF: number | null
   /** mortos até o dia do desmame, ou até agora se não desmamou: seleção, morte, "não chegou ao desmame" */
   baixasAntesDoDesmame: PorSexo
+  /** das baixas antes do desmame, as eutanásias: o ajuste de ninhada (a seleção) */
+  ajusteDeNinhada: PorSexo
+  /** das baixas antes do desmame, as mortes ("não chegou ao desmame" inclusive) */
+  mortesNoAleitamento: PorSexo
   /** nascidos menos as baixas antes do desmame; null enquanto não desmamou */
   desmamadoM: number | null
   desmamadoF: number | null
@@ -224,7 +228,7 @@ export interface Parto {
   /** os vivos reservados, por pedido, no parto todo */
   reservados: ReservaDoPedido[]
   entregues: PorSexo
-  /** a última baixa de seleção não anulada: o desmame não fica antes dela */
+  /** a última baixa de seleção não anulada; com o desmame antes dela, ela passa para a data dele */
   dtUltimaSelecao: DataISO | null
   /**
    * a primeira mudança ou entrega dos animais do parto, ou a primeira chegada deles numa caixa de
@@ -531,6 +535,20 @@ export interface LinhagemNaVisaoGeral {
   livresPorIdade: FaixaDeIdade[]
   /** os livres por idade em dias, crescente */
   livresPorIdadeDias?: IdadeNaVisaoGeral[]
+  /** desde o início, sem período: as baixas do aleitamento sobre os nascidos */
+  aleitamento?: AleitamentoNaVisaoGeral
+}
+
+/**
+ * As baixas do aleitamento de uma linhagem desde o início, e a base da porcentagem: os nascidos de
+ * partos registrados no Nidus (de casal; o cadastro inicial chegou desmamado e fica fora)
+ */
+export interface AleitamentoNaVisaoGeral {
+  nascidos: number
+  /** as eutanásias antes do desmame (a seleção) */
+  ajusteDeNinhada: number
+  /** as mortes antes do desmame ("não chegou ao desmame" inclusive) */
+  mortesNoAleitamento: number
 }
 
 export interface EspecieNaVisaoGeral {

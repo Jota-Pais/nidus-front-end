@@ -28,6 +28,8 @@ export const parto = (parcial: Partial<Parto> = {}): Parto => ({
   nascidoM: 5,
   nascidoF: 5,
   baixasAntesDoDesmame: { m: 1, f: 1 },
+  ajusteDeNinhada: { m: 1, f: 0 },
+  mortesNoAleitamento: { m: 0, f: 1 },
   desmamadoM: null,
   desmamadoF: null,
   vivos: { m: 4, f: 4 },

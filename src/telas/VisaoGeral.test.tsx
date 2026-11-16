@@ -31,6 +31,7 @@ const dados: DadosDaVisao = {
             { idade: 60, m: 3, f: 5 },
             { idade: 75, m: 1, f: 1 },
           ],
+          aleitamento: { nascidos: 75, ajusteDeNinhada: 6, mortesNoAleitamento: 3 },
         },
         {
           idLinhagem: 2,
@@ -45,6 +46,7 @@ const dados: DadosDaVisao = {
             { idade: 21, m: 3, f: 3 },
             { idade: 40, m: 3, f: 2 },
           ],
+          aleitamento: { nascidos: 200, ajusteDeNinhada: 0, mortesNoAleitamento: 1 },
         },
         {
           // 10 idades distintas: o gráfico agrupa por semana
@@ -57,6 +59,8 @@ const dados: DadosDaVisao = {
           livres: { m: 10, f: 20 },
           livresPorIdade: faixas,
           livresPorIdadeDias: Array.from({ length: 10 }, (_, i) => ({ idade: i + 1, m: 1, f: 2 })),
+          // só do cadastro inicial: nenhum nascido em parto registrado
+          aleitamento: { nascidos: 0, ajusteDeNinhada: 0, mortesNoAleitamento: 0 },
         },
         {
           // a API antiga não manda o campo novo: conta como sem livres
@@ -184,6 +188,29 @@ describe('Visão geral', { timeout: 20_000 }, () => {
       ['Livres', '♂ 0♀ 0'],
     ])
     expect(within(sprague).queryByRole('img')).toBeNull()
+  })
+
+  it('mostra as baixas do aleitamento desde o início, com a porcentagem sobre os nascidos', () => {
+    renderizar(<VisaoGeral />)
+
+    const linha = (cartao: HTMLElement) => cartao.querySelector('.visao__aleitamento')?.textContent
+
+    expect(linha(cartaoDa('Wistar'))).toBe(
+      'Desde o início: Ajuste de ninhada 6 (8% dos nascidos) · Mortes no aleitamento 3 (4% dos nascidos) · 75 nascidos em partos registrados',
+    )
+    expect(linha(cartaoDa('SHR'))).toContain('Mortes no aleitamento 1 (menos de 1% dos nascidos)')
+    // sem nascidos, sem porcentagem
+    expect(linha(cartaoDa('LEW'))).toBe(
+      'Desde o início: Ajuste de ninhada 0 · Mortes no aleitamento 0 · 0 nascidos em partos registrados',
+    )
+    // a API antiga não manda o aleitamento: a linha não aparece
+    expect(linha(cartaoDa('Sprague'))).toBeUndefined()
+
+    // os totais da espécie somam as linhagens: 6 e 4 em 275 nascidos
+    const especie = screen.getByLabelText('Totais de Ratos').parentElement!
+    expect(especie.querySelector(':scope > .visao__aleitamento')?.textContent).toBe(
+      'Desde o início: Ajuste de ninhada 6 (2% dos nascidos) · Mortes no aleitamento 4 (1% dos nascidos) · 275 nascidos em partos registrados',
+    )
   })
 
   it('mostra a rosca da situação e as barras de vivos por linhagem', () => {

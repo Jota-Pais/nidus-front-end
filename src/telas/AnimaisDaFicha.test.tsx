@@ -71,12 +71,13 @@ async function escolher(rotulo: string | RegExp, opcao: string) {
 }
 
 describe('baixa', { timeout: 30_000 }, () => {
-  it('manda quantos de cada sexo, da idade da caixa, com a data e o tipo Morte', async () => {
+  it('manda quantos de cada sexo, da idade da caixa, com a data e a causa Morte', async () => {
     const terminou = vi.fn()
     renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={terminou} />)
 
     digitar('Machos', '2')
     digitar('Fêmeas', '1')
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
 
     await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
@@ -92,19 +93,29 @@ describe('baixa', { timeout: 30_000 }, () => {
     await waitFor(() => expect(terminou).toHaveBeenCalled())
   })
 
-  it('o tipo Eutanásia vai com o parto da ninhada, e é o padrão quando a ação pede', async () => {
+  it('a causa não tem padrão: sem escolher, não registra e o campo pede', async () => {
+    renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} />)
+
+    expect(screen.getByLabelText('Morte')).toHaveProperty('checked', false)
+    expect(screen.getByLabelText('Eutanásia')).toHaveProperty('checked', false)
+    digitar('Machos', '1')
+    fireEvent.click(botao('Registrar baixa'))
+
+    expect(await screen.findByText('Escolha a causa', {}, DEMORA)).toBeTruthy()
+    expect(api.baixa).not.toHaveBeenCalled()
+  })
+
+  it('no aleitamento, a eutanásia é o ajuste de ninhada e vai com o parto; a morte é a do aleitamento', async () => {
     renderizar(
-      <BaixaNaCaixa
-        caixa={caixaDoCasal}
-        grupos={ninhada}
-        aoTerminar={() => {}}
-        idParto={20}
-        tipoInicial="eutanasia"
-      />,
+      <BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} idParto={20} />,
     )
 
-    expect(screen.getByLabelText('Eutanásia')).toHaveProperty('checked', true)
+    // sem padrão também aqui: antes vinha marcada a eutanásia
+    expect(screen.getByLabelText('Eutanásia (ajuste de ninhada)')).toHaveProperty('checked', false)
+    expect(screen.getByLabelText('Morte no aleitamento')).toHaveProperty('checked', false)
+    expect(screen.queryByLabelText('Morte')).toBeNull()
     digitar('Machos', '1')
+    fireEvent.click(screen.getByLabelText('Eutanásia (ajuste de ninhada)'))
     fireEvent.click(botao('Registrar baixa'))
 
     await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
@@ -112,8 +123,8 @@ describe('baixa', { timeout: 30_000 }, () => {
       expect.objectContaining({ tipo: 'eutanasia', idParto: 20 }),
     )
 
-    // trocando para Morte, a baixa deixa de ser a seleção do parto
-    fireEvent.click(screen.getByLabelText('Morte'))
+    // trocando para a morte no aleitamento, a baixa deixa de ser a seleção do parto
+    fireEvent.click(screen.getByLabelText('Morte no aleitamento'))
     fireEvent.click(botao('Registrar baixa'))
     await waitFor(() => expect(api.baixa).toHaveBeenCalledTimes(2), DEMORA)
     expect(api.baixa.mock.calls[1]?.[0]).toEqual(expect.objectContaining({ tipo: 'morte' }))
@@ -124,6 +135,7 @@ describe('baixa', { timeout: 30_000 }, () => {
     renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} />)
 
     digitar('Machos', '1')
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
 
     fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }, DEMORA))
@@ -146,6 +158,7 @@ describe('baixa', { timeout: 30_000 }, () => {
     renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} />)
 
     digitar('Machos', '1')
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
 
     expect(await screen.findByText(/A caixa ficou vazia e foi liberada/, {}, DEMORA)).toBeTruthy()
@@ -177,6 +190,7 @@ describe('baixa', { timeout: 30_000 }, () => {
     expect(diaNoCalendario('2026-10-02')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-10-06')).toContain(APAGADO)
 
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
     await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
     expect(api.baixa).toHaveBeenCalledWith(
@@ -203,6 +217,7 @@ describe('baixa', { timeout: 30_000 }, () => {
 
     // só as fêmeas: o item 0 que a API aponta é o delas
     digitar('Fêmeas', '4')
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
 
     expect(await screen.findByText('Escolha um dos pedidos: #7, #9.', {}, DEMORA)).toBeTruthy()
@@ -210,6 +225,7 @@ describe('baixa', { timeout: 30_000 }, () => {
     expect(screen.queryByText('Os livres nao bastam.')).toBeNull()
 
     await escolher(campo, 'Pedido #9')
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
 
     await waitFor(() => expect(api.baixa).toHaveBeenCalledTimes(2), DEMORA)
@@ -229,6 +245,7 @@ describe('baixa', { timeout: 30_000 }, () => {
     renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} />)
 
     digitar('Machos', '1')
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
 
     expect(
@@ -247,6 +264,7 @@ describe('baixa', { timeout: 30_000 }, () => {
     renderizar(<BaixaNaCaixa caixa={caixaDoCasal} grupos={ninhada} aoTerminar={() => {}} />)
 
     digitar('Machos', '1')
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
 
     expect(await screen.findAllByText('Reserva em falta', {}, DEMORA)).not.toHaveLength(0)

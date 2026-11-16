@@ -398,10 +398,16 @@ describe('desmame', { timeout: 40_000 }, () => {
 })
 
 describe('baixa da ninhada', { timeout: 40_000 }, () => {
-  it('o resumo mostra as baixas do parto, sem a eutanásia de seleção à parte', async () => {
+  it('o resumo separa o ajuste de ninhada das mortes no aleitamento, cada um por sexo', async () => {
     await abrirNinhada()
 
-    expect(within(secao('Baixas')).getByText('1 M · 1 F')).toBeTruthy()
+    const baixas = secao('Baixas')
+    expect(within(baixas).getByText('Ajuste de ninhada').parentElement?.textContent).toContain(
+      '1 M · 0 F',
+    )
+    expect(within(baixas).getByText('Mortes no aleitamento').parentElement?.textContent).toContain(
+      '0 M · 1 F',
+    )
     expect(screen.queryByText('Eutanásia de seleção')).toBeNull()
     expect(talvezBotao('Registrar eutanásia')).toBeNull()
     expect(screen.queryByText('Baixas até agora')).toBeNull()
@@ -447,12 +453,14 @@ describe('baixa da ninhada', { timeout: 40_000 }, () => {
     }
   })
 
-  it('antes do desmame a ação única vem com Eutanásia e vale para o parto escolhido', async () => {
+  it('antes do desmame a causa não tem padrão; o ajuste de ninhada vale para o parto escolhido', async () => {
     await abrirNinhada()
 
     fireEvent.click(botao('Registrar baixa'))
-    expect(screen.getByLabelText('Eutanásia')).toHaveProperty('checked', true)
+    expect(screen.getByLabelText('Eutanásia (ajuste de ninhada)')).toHaveProperty('checked', false)
+    expect(screen.getByLabelText('Morte no aleitamento')).toHaveProperty('checked', false)
     fireEvent.change(screen.getByLabelText('Machos'), { target: { value: '1' } })
+    fireEvent.click(screen.getByLabelText('Eutanásia (ajuste de ninhada)'))
     fireEvent.click(botao('Registrar baixa'))
 
     await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
@@ -472,13 +480,15 @@ describe('baixa da ninhada', { timeout: 40_000 }, () => {
     })
   })
 
-  it('depois do desmame o padrão é Morte, e a baixa não é mais seleção do parto', async () => {
+  it('depois do desmame as causas são as comuns, sem padrão, e a baixa não é mais seleção do parto', async () => {
     api.ficha = fichaDeCasal({ partos: [desmamado()] })
     await abrirNinhada()
 
     fireEvent.click(botao('Registrar baixa'))
-    expect(screen.getByLabelText('Morte')).toHaveProperty('checked', true)
+    expect(screen.getByLabelText('Morte')).toHaveProperty('checked', false)
+    expect(screen.queryByLabelText('Morte no aleitamento')).toBeNull()
     fireEvent.change(screen.getByLabelText('Machos'), { target: { value: '1' } })
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
 
     await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
@@ -1057,6 +1067,7 @@ describe('onde estão os animais do parto', { timeout: 40_000 }, () => {
     fireEvent.click(botao('Registrar baixa'))
     const baixa = botao('Registrar baixa').closest('form') as HTMLElement
     fireEvent.change(within(baixa).getByLabelText('Fêmeas'), { target: { value: '1' } })
+    fireEvent.click(within(baixa).getByLabelText('Eutanásia (ajuste de ninhada)'))
     fireEvent.click(botao('Registrar baixa', baixa))
 
     await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
@@ -1202,6 +1213,7 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     const baixa = botao('Registrar baixa').closest('form') as HTMLElement
     fireEvent.change(within(baixa).getByLabelText('Machos'), { target: { value: '4' } })
     fireEvent.change(within(baixa).getByLabelText('Fêmeas'), { target: { value: '4' } })
+    fireEvent.click(within(baixa).getByLabelText(/^Morte/))
     fireEvent.click(botao('Registrar baixa', baixa))
     expect(await screen.findByText(/A caixa ficou vazia e foi liberada\./, {}, DEMORA)).toBeTruthy()
 

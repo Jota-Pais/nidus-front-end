@@ -146,6 +146,8 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     fireEvent.click(botao('Registrar baixa'))
     fireEvent.click(screen.getByLabelText(/^nascidos em 02\/10\/2026/))
     fireEvent.change(screen.getByLabelText('Machos'), { target: { value: '1' } })
+    // depois do desmame, as causas comuns
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
 
     await waitFor(() => expect(api.baixa).toHaveBeenCalled(), DEMORA)
@@ -283,6 +285,7 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
 
     fireEvent.click(botao('Registrar baixa'))
     fireEvent.change(screen.getByLabelText('Machos'), { target: { value: '1' } })
+    fireEvent.click(screen.getByLabelText('Morte'))
     fireEvent.click(botao('Registrar baixa'))
 
     fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }, DEMORA))
