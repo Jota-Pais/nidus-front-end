@@ -525,7 +525,7 @@ describe('as datas da ninhada seguem a ordem dos eventos', { timeout: 40_000 }, 
     expect(diaNoCalendario('2026-09-27')).toContain(APAGADO)
   })
 
-  it('o desmame corrigido fica entre a última seleção e a primeira saída dos animais', async () => {
+  it('o desmame corrigido fica entre o parto e a primeira saída dos animais: a seleção não limita', async () => {
     api.ficha = fichaDeCasal({
       partos: [
         desmamado({
@@ -537,13 +537,14 @@ describe('as datas da ninhada seguem a ordem dos eventos', { timeout: 40_000 }, 
     })
     await abrirCalendario('Desmame', 'Data do desmame')
 
-    expect(diaNoCalendario('2026-09-25')).toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-26')).not.toContain(APAGADO)
+    expect(diaNoCalendario('2026-09-23')).toContain(APAGADO)
+    expect(diaNoCalendario('2026-09-24')).not.toContain(APAGADO)
+    expect(diaNoCalendario('2026-09-25')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-09-30')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-10-01')).toContain(APAGADO)
   })
 
-  it('com a seleção lançada hoje, o desmame corrigido não volta para antes de hoje', async () => {
+  it('com a seleção lançada hoje, o desmame corrigido volta para março, e o campo avisa que a seleção vai junto', async () => {
     // o caso da ninhada antiga: nasceu em 28/02, a seleção e o desmame foram lançados hoje (16/11)
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-11-16T12:00:00'))
@@ -563,23 +564,43 @@ describe('as datas da ninhada seguem a ordem dos eventos', { timeout: 40_000 }, 
     expect((screen.getByLabelText('Data do desmame') as HTMLInputElement).value).toBe('16/11/2026')
     fireEvent.click(screen.getByLabelText('Data do desmame'))
     await waitFor(() => expect(diaNoCalendario('2026-11-16')).not.toBe('(sem dia)'))
-    // só o próprio dia 16/11 fica: antes dele, a seleção; depois, o futuro
-    expect(diaNoCalendario('2026-11-15')).toContain(APAGADO)
+    // de 28/02 (o parto) até hoje; depois, o futuro
+    expect(diaNoCalendario('2026-11-15')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-11-16')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-11-17')).toContain(APAGADO)
+    expect(screen.queryByText(/passam para a data do desmame/)).toBeNull()
+
+    const campo = screen.getByLabelText('Data do desmame')
+    fireEvent.mouseDown(campo)
+    fireEvent.change(campo, { target: { value: '20/03/2026' } })
+    fireEvent.keyDown(campo, { key: 'Enter', code: 'Enter' })
+
+    await screen.findByText('As eutanásias de seleção de 16/11/2026 passam para a data do desmame.')
+    // o aviso não impede: o botão continua habilitado
+    const salvar = screen.getByRole('button', { name: 'Salvar correção' }) as HTMLButtonElement
+    expect(salvar.disabled).toBe(false)
   })
 
-  it('o desmame registrado não fica antes da última seleção', async () => {
+  it('o desmame registrado pode ficar antes da última seleção, com o aviso embaixo do campo', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-10-10T12:00:00'))
     api.ficha = fichaDeCasal({ partos: [parto({ dtUltimaSelecao: '2026-10-03' })] })
     await abrirNinhada()
 
-    fireEvent.click(screen.getByLabelText('Data do desmame'))
+    const campo = screen.getByLabelText('Data do desmame')
+    fireEvent.click(campo)
     await waitFor(() => expect(diaNoCalendario('2026-10-03')).not.toBe('(sem dia)'))
-    expect(diaNoCalendario('2026-10-02')).toContain(APAGADO)
+    expect(diaNoCalendario('2026-10-02')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-10-03')).not.toContain(APAGADO)
     expect(diaNoCalendario('2026-10-10')).not.toContain(APAGADO)
+    // com a data de hoje, depois da seleção, nenhum aviso
+    expect(screen.queryByText(/passam para a data do desmame/)).toBeNull()
+
+    fireEvent.mouseDown(campo)
+    fireEvent.change(campo, { target: { value: '02/10/2026' } })
+    fireEvent.keyDown(campo, { key: 'Enter', code: 'Enter' })
+
+    await screen.findByText('As eutanásias de seleção de 03/10/2026 passam para a data do desmame.')
   })
 
   it('a data do acasalamento fica entre a formação e o parto', async () => {
