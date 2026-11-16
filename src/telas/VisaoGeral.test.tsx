@@ -89,6 +89,13 @@ const cartaoDa = (nome: string) =>
     .getByRole('link', { name: nome })
     .closest('li')!
 
+/** Os 4 números de uma linhagem, rótulo → valor, na ordem da tela */
+const numerosDa = (nome: string) =>
+  [...within(cartaoDa(nome)).getByLabelText(`Números da ${nome}`).children].map((item) => [
+    item.querySelector('dt')!.textContent,
+    item.querySelector('dd')!.textContent,
+  ])
+
 /** Os números em cima das barras do cartão, na ordem em que o gráfico os desenha */
 const rotulosDeValor = (cartao: HTMLElement) =>
   [...cartao.querySelectorAll('.visao__valorDaBarra')].map((texto) => texto.textContent)
@@ -103,7 +110,7 @@ describe('Visão geral', { timeout: 20_000 }, () => {
     expect(noCartao('Ratos', 'Casais ativos')).toBe('4')
   })
 
-  it('faz um cartão por linhagem, com o nome levando às estantes e o total de livres ao lado', () => {
+  it('faz um cartão por linhagem, com o nome levando às estantes', () => {
     renderizar(<VisaoGeral />)
 
     const lista = screen.getByRole('list', { name: 'Linhagens de Ratos' })
@@ -113,7 +120,25 @@ describe('Visão geral', { timeout: 20_000 }, () => {
     expect(within(wistar).getByRole('link', { name: 'Wistar' }).getAttribute('href')).toBe(
       '/estantes?linhagem=1',
     )
-    expect(wistar.querySelector('.visao__livres')!.textContent).toBe('Livres ♂ 11 ♀ 13')
+  })
+
+  it('mostra em cada linhagem os casais e os animais em aleitamento, reservados e livres', () => {
+    renderizar(<VisaoGeral />)
+
+    expect(numerosDa('Wistar')).toEqual([
+      ['Casais', '2'],
+      ['Em aleitamento', '♂ 3♀ 2'],
+      ['Reservados', '♂ 4♀ 3'],
+      ['Livres', '♂ 11♀ 13'],
+    ])
+    expect(numerosDa('SHR')).toEqual([
+      ['Casais', '1'],
+      ['Em aleitamento', '♂ 3♀ 3'],
+      ['Reservados', '♂ 0♀ 0'],
+      ['Livres', '♂ 6♀ 5'],
+    ])
+    // o total de livres não fica mais no cabeçalho do cartão
+    expect(cartaoDa('Wistar').querySelector('header')!.textContent).toBe('Wistar')
   })
 
   it('escreve em cima de cada barra o número de machos e de fêmeas de cada idade', () => {
@@ -151,6 +176,13 @@ describe('Visão geral', { timeout: 20_000 }, () => {
 
     const sprague = cartaoDa('Sprague')
     expect(within(sprague).getByText('Sem animais livres.')).toBeTruthy()
+    // os 4 números aparecem mesmo assim, zerados
+    expect(numerosDa('Sprague')).toEqual([
+      ['Casais', '0'],
+      ['Em aleitamento', '♂ 0♀ 0'],
+      ['Reservados', '♂ 0♀ 0'],
+      ['Livres', '♂ 0♀ 0'],
+    ])
     expect(within(sprague).queryByRole('img')).toBeNull()
   })
 
@@ -198,6 +230,7 @@ describe('Visão geral no celular', { timeout: 20_000 }, () => {
         '/estantes?linhagem=2',
       )
       expect(rotulosDeValor(shr)).toEqual(['3', '3', '3', '2'])
+      expect(numerosDa('SHR')[3]).toEqual(['Livres', '♂ 6♀ 5'])
       expect(within(shr).getByRole('img').getAttribute('aria-label')).toContain(
         '40 dias: 3 machos, 2 fêmeas',
       )

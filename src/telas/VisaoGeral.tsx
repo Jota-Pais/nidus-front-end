@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { CabecalhoDaTela, Pilha, Secao, Texto, Vazio } from '@/componentes'
 import { SIMBOLO_DO_SEXO } from '@/dominio/caixa'
@@ -13,7 +14,7 @@ import { COR, LEGENDA_SEXOS } from './coresDaVisao'
 import { BarrasDeVivos, BarrasPorIdade, LegendaDeCores, RoscaDeSituacao } from './graficosDaVisao'
 import './VisaoGeral.css'
 
-/** A colônia de relance: o estoque livre de cada linhagem por sexo e idade, e o resto da situação */
+/** A colônia de relance: por linhagem, casais, em aleitamento, reservados e livres, e os livres por idade */
 export function VisaoGeral() {
   const visao = useVisaoGeral()
 
@@ -22,7 +23,7 @@ export function VisaoGeral() {
       <CabecalhoDaTela
         rotulo="Colônia"
         titulo="Visão geral"
-        descricao="Quantos animais livres cada linhagem tem, de cada sexo e de cada idade, para atender os pedidos."
+        descricao="Por linhagem: casais ativos, animais em aleitamento, reservados e livres, e os livres por idade."
       />
 
       <EstadoDaConsulta consulta={visao} rotulo="Contando os animais…">
@@ -147,22 +148,50 @@ function CartaoDeNumero({
       </dt>
       <dd>
         <span className="visao__numero">{numero}</span>
-        {sexos && (
-          <span className="visao__sexos">
-            <span>
-              {SIMBOLO_DO_SEXO.M} {sexos.m}
-            </span>
-            <span>
-              {SIMBOLO_DO_SEXO.F} {sexos.f}
-            </span>
-          </span>
-        )}
+        {sexos && <Sexos sexos={sexos} className="visao__sexos" />}
       </dd>
     </div>
   )
 }
 
-/** A linhagem: o nome (link para as estantes), os livres de cada sexo e o gráfico por idade */
+/** ♂ e ♀ lado a lado, cada um com o seu número */
+function Sexos({ sexos, className }: { sexos: PorSexo; className: string }) {
+  return (
+    <span className={className}>
+      <span>
+        {SIMBOLO_DO_SEXO.M} {sexos.m}
+      </span>
+      <span>
+        {SIMBOLO_DO_SEXO.F} {sexos.f}
+      </span>
+    </span>
+  )
+}
+
+/** Um número do cartão da linhagem: o rótulo em cima e o valor embaixo, com a cor da série no fio */
+function NumeroDaLinhagem({
+  rotulo,
+  cor,
+  children,
+}: {
+  rotulo: string
+  cor?: string
+  children: ReactNode
+}) {
+  return (
+    <div className="visao__contagemItem" style={cor ? { borderTopColor: cor } : undefined}>
+      <dt>
+        <Texto tom="rotulo">{rotulo}</Texto>
+      </dt>
+      <dd>{children}</dd>
+    </div>
+  )
+}
+
+/**
+ * A linhagem: o nome (link para as estantes), os casais e os animais em aleitamento, reservados e
+ * livres de cada sexo, e o gráfico dos livres por idade
+ */
 function CartaoDaLinhagem({ linhagem: l }: { linhagem: LinhagemNaVisaoGeral }) {
   const idades = l.livresPorIdadeDias ?? []
 
@@ -176,10 +205,21 @@ function CartaoDaLinhagem({ linhagem: l }: { linhagem: LinhagemNaVisaoGeral }) {
         >
           {l.linhagem}
         </Link>
-        <span className="visao__livres">
-          Livres {SIMBOLO_DO_SEXO.M} {l.livres.m} {SIMBOLO_DO_SEXO.F} {l.livres.f}
-        </span>
       </header>
+      <dl className="visao__contagem" aria-label={`Números da ${l.linhagem}`}>
+        <NumeroDaLinhagem rotulo="Casais">
+          <span className="visao__contagemValor">{l.casais}</span>
+        </NumeroDaLinhagem>
+        <NumeroDaLinhagem rotulo="Em aleitamento" cor="var(--fase-mamando-texto)">
+          <Sexos sexos={l.mamando} className="visao__contagemValor" />
+        </NumeroDaLinhagem>
+        <NumeroDaLinhagem rotulo="Reservados" cor={COR.reservados}>
+          <Sexos sexos={l.reservados} className="visao__contagemValor" />
+        </NumeroDaLinhagem>
+        <NumeroDaLinhagem rotulo="Livres" cor={COR.livres}>
+          <Sexos sexos={l.livres} className="visao__contagemValor" />
+        </NumeroDaLinhagem>
+      </dl>
       {idades.length === 0 ? (
         <p className="visao__vazio">Sem animais livres.</p>
       ) : (
