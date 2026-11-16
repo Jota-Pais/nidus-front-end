@@ -384,6 +384,46 @@ describe('baixa da ninhada', { timeout: 40_000 }, () => {
     expect(screen.queryByText('Baixas até agora')).toBeNull()
   })
 
+  it('o botão da baixa fica logo abaixo da contagem das baixas, e o formulário abre ali', async () => {
+    api.ficha = fichaDeCasal({ partos: [desmamado()] })
+    await abrirNinhada()
+
+    // na seção Baixas, e não mais em Onde estão, que fica com a passagem para o estoque
+    expect(talvezBotao('Registrar baixa', secao('Baixas'))).toBeTruthy()
+    expect(talvezBotao('Registrar baixa', secao('Onde estão'))).toBeNull()
+    expect(talvezBotao('Passar para o estoque', secao('Onde estão'))).toBeTruthy()
+
+    fireEvent.click(botao('Registrar baixa'))
+    expect(within(secao('Baixas')).getByLabelText('Machos')).toBeTruthy()
+    expect(within(secao('Onde estão')).queryByLabelText('Machos')).toBeNull()
+  })
+
+  it('no celular, o botão da baixa também fica na seção Baixas, uma ação aberta por vez', async () => {
+    const voltar = larguraDaTela(390)
+
+    try {
+      api.ficha = fichaDeCasal({ partos: [desmamado()] })
+      await abrirNinhada()
+
+      expect(talvezBotao('Registrar baixa', secao('Baixas'))).toBeTruthy()
+      fireEvent.click(botao('Registrar baixa'))
+      await waitFor(
+        () => expect(within(secao('Baixas')).getByLabelText('Machos')).toBeTruthy(),
+        DEMORA,
+      )
+
+      // abrir a passagem fecha a baixa, e o botão dela volta à seção Baixas
+      fireEvent.click(botao('Passar para o estoque'))
+      await waitFor(
+        () => expect(within(secao('Baixas')).queryByLabelText('Machos')).toBeNull(),
+        DEMORA,
+      )
+      expect(talvezBotao('Registrar baixa', secao('Baixas'))).toBeTruthy()
+    } finally {
+      voltar()
+    }
+  })
+
   it('antes do desmame a ação única vem com Eutanásia e vale para o parto escolhido', async () => {
     await abrirNinhada()
 
