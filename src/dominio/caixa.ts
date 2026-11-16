@@ -79,6 +79,18 @@ export function motivoDoAtraso(
 
 export const MAX_PARTOS_POR_CASAL = 5
 
+/** Os grupos genéticos do macho e da fêmea: A a E, em qualquer par (o cruzamento depende da linhagem) */
+export const OPCOES_DE_GRUPO = ['A', 'B', 'C', 'D', 'E'].map((grupo) => ({
+  value: grupo,
+  label: grupo,
+}))
+
+/** Os partos do casal, do 1º ao 5º: em qual ele está quando entra no Nidus */
+export const OPCOES_DE_PARTO = Array.from({ length: MAX_PARTOS_POR_CASAL }, (_, i) => ({
+  value: i + 1,
+  label: `${i + 1}º`,
+}))
+
 export const SIMBOLO_DO_SEXO: Record<Sexo, string> = { M: '♂', F: '♀' }
 
 export const SEXOS: readonly Sexo[] = ['M', 'F']
