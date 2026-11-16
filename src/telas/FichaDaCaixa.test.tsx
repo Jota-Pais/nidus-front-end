@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import dayjs from 'dayjs'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -19,6 +19,7 @@ import {
   erroDaApi,
   estanteE01,
   fichaDeCasal,
+  fichaDeEstoque,
   gradeE01,
   grupo,
   lugar,
@@ -44,6 +45,7 @@ const api = vi.hoisted(() => ({
   anulacao: vi.fn(),
   virar: vi.fn(),
   mover: vi.fn(),
+  editar: vi.fn(),
 }))
 
 vi.mock('@/dominio/consultas', () => ({
@@ -53,6 +55,7 @@ vi.mock('@/dominio/consultas', () => ({
   useRegistrarNaFicha: () => mutacaoComResposta(api.registrar),
   useCorrigirEvento: () => mutacaoComResposta(api.corrigir),
   useCorrigirAcasalamento: () => mutacaoComResposta(api.acasalamento),
+  useEditarCasal: () => mutacaoComResposta(api.editar),
   useSemNinhada: () => mutacaoComResposta(api.semNinhada),
   useMudanca: () => mutacaoComResposta(api.mudanca),
   useBaixa: () => mutacaoComResposta(api.baixa),
@@ -76,6 +79,7 @@ beforeEach(() => {
   api.anulacao.mockReset().mockResolvedValue({ voltaram: [], soltos: { m: 0, f: 0 } })
   api.virar.mockReset().mockResolvedValue({ idCaixa: 7, sexo: 'F' })
   api.mover.mockReset()
+  api.editar.mockReset().mockResolvedValue(casal(1, 'AA', true))
 })
 
 afterEach(() => vi.useRealTimers())
@@ -1346,5 +1350,89 @@ describe('casal novo na caixa', { timeout: 20_000 }, () => {
 
     await waitFor(() => expect(api.virar).toHaveBeenCalledWith(7), DEMORA)
     expect(await screen.findByText('A caixa virou caixa de estoque.')).toBeTruthy()
+  })
+})
+
+describe('editar o casal pelo lápis', { timeout: 30_000 }, () => {
+  const lapis = () => document.querySelector<HTMLButtonElement>('button[aria-label="Editar casal"]')
+
+  /** escolhe a opção no Select do rótulo: a da lista aberta por último, que é a deste campo */
+  async function escolher(rotulo: string, opcao: string) {
+    fireEvent.mouseDown(selecao(rotulo))
+    const opcoes = await screen.findAllByTitle(opcao)
+    fireEvent.click(opcoes[opcoes.length - 1] as HTMLElement)
+  }
+
+  async function abrirEdicao() {
+    abrirFicha()
+    fireEvent.click(lapis() as HTMLButtonElement)
+    return screen.findByText('Editar casal AB')
+  }
+
+  it('o técnico e o gestor veem o lápis no título da ficha; o pesquisador, não', () => {
+    abrirFicha()
+    expect(lapis()).not.toBeNull()
+    cleanup()
+
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />, 'gestor')
+    expect(lapis()).not.toBeNull()
+    cleanup()
+
+    renderizar(<FichaDaCaixa idCaixa={7} aoFechar={() => {}} />, 'pesquisador')
+    expect(lapis()).toBeNull()
+  })
+
+  it('a caixa de estoque não tem casal para editar', () => {
+    api.ficha = fichaDeEstoque()
+    abrirFicha()
+
+    expect(lapis()).toBeNull()
+  })
+
+  it('abre preenchido e manda só as letras que mudaram', async () => {
+    await abrirEdicao()
+
+    expect(selecao('Linhagem').closest('.ant-select')?.textContent).toContain('Wistar')
+    expect(selecao('Grupo do macho (A-E)').closest('.ant-select')?.textContent).toContain('A')
+    expect(selecao('Grupo da fêmea (A-E)').closest('.ant-select')?.textContent).toContain('B')
+
+    await escolher('Grupo da fêmea (A-E)', 'A')
+    fireEvent.click(botao('Salvar'))
+
+    await waitFor(() => expect(api.editar).toHaveBeenCalled(), DEMORA)
+    expect(api.editar).toHaveBeenCalledWith({ idCasal: 1, grupoFemea: 'A' })
+  })
+
+  it('o parto em que entrou e a linhagem vão juntos, com o nome dos campos da API', async () => {
+    await abrirEdicao()
+
+    await escolher('Linhagem', 'Swiss')
+    fireEvent.click(screen.getByText('3º', { selector: '.ant-segmented-item-label' }))
+    fireEvent.click(botao('Salvar'))
+
+    await waitFor(() => expect(api.editar).toHaveBeenCalled(), DEMORA)
+    expect(api.editar).toHaveBeenCalledWith({ idCasal: 1, idLinhagem: 2, partoInicial: 3 })
+  })
+
+  it('a recusa da API aparece no campo que ela apontou, e a janela fica aberta', async () => {
+    api.editar.mockReset().mockRejectedValue(
+      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
+        idLinhagem:
+          'A caixa de estoque F2C tem animais deste casal junto com animais de outra ninhada.',
+      }),
+    )
+    await abrirEdicao()
+
+    await escolher('Linhagem', 'Swiss')
+    fireEvent.click(botao('Salvar'))
+
+    expect(
+      await screen.findByText(
+        'A caixa de estoque F2C tem animais deste casal junto com animais de outra ninhada.',
+        {},
+        DEMORA,
+      ),
+    ).toBeTruthy()
+    expect(screen.getByText('Editar casal AB')).toBeTruthy()
   })
 })

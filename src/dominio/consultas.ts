@@ -309,6 +309,28 @@ export function useCorrigirEvento() {
   })
 }
 
+/**
+ * O que muda no casal digitado errado: só os campos alterados, ao menos um. `partoInicial` é o
+ * parto em que ele entrou no Nidus, e a API renumera os partos todos pelo mesmo deslocamento
+ */
+export type EdicaoDoCasal = Partial<
+  Pick<CasalNovo, 'idLinhagem' | 'grupoMacho' | 'grupoFemea' | 'dtFormacao'> & {
+    partoInicial: number
+  }
+>
+
+/** O engano de digitação no casal, ativo ou encerrado: sem motivo, num formulário só */
+export function useEditarCasal() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idCasal, ...corpo }: EdicaoDoCasal & { idCasal: number }) =>
+      api<Casal>(`/api/casais/${idCasal}`, { metodo: 'PATCH', corpo }),
+    // a linhagem leva junto os partos, os animais e as caixas de estoque deles
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
 /** A data do acasalamento digitada errada, ou a nova monta que não gasta um dos 5 partos */
 export function useCorrigirAcasalamento() {
   const cliente = useQueryClient()

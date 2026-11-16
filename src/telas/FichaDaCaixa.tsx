@@ -1,5 +1,6 @@
 import { App, Form, Input, Segmented, Select, Tabs } from 'antd'
 import { useState } from 'react'
+import { usePerfil } from '@/auth/contexto'
 import { Aviso, Botao, CampoDeData, Etiqueta, Janela, Linha, Texto } from '@/componentes'
 import {
   descreverLiberacao,
@@ -7,6 +8,8 @@ import {
   doSexo,
   MAX_PARTOS_POR_CASAL,
   motivoDoAtraso,
+  OPCOES_DE_GRUPO,
+  OPCOES_DE_PARTO,
   partosDaCaixa,
   SIMBOLO_DO_SEXO,
   vivosNaCaixa,
@@ -20,6 +23,7 @@ import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { ateHoje, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
 import { NovaCaixaDeEstoque } from './CadastroInicial'
 import { Campo, LadoALado } from './CamposDaFicha'
+import { EditarCasal } from './EditarCasal'
 import { FichaDoEstoque, VirarCaixaDeEstoque } from './EstoqueDaFicha'
 import { EtiquetaDaFase } from './FaseDaCaixa'
 import { MudarDeLugar } from './MudarDeLugar'
@@ -74,6 +78,9 @@ export function FichaDaCaixa({
   // no computador a caixa muda de lugar arrastada na grade; no toque não há arrastar
   const mudaDeLugar = useTelaEstreita() && caixa?.ativa === true
   const atraso = deCasal ? atrasoDaFicha(deCasal) : null
+  // quem opera a colônia corrige o casal digitado errado; o casal encerrado também
+  const { perfil } = usePerfil()
+  const operaAColonia = perfil === 'tecnico' || perfil === 'gestor'
 
   function fechar() {
     setEscolhido(null)
@@ -112,6 +119,9 @@ export function FichaDaCaixa({
           {deCasal && caixa?.fase && <EtiquetaDaFase fase={caixa.fase} />}
           {caixa?.atrasado && <Etiqueta tom="erro">Atrasado</Etiqueta>}
           {caixa && !caixa.ativa && <Etiqueta tom="atencao">Liberada</Etiqueta>}
+          {operaAColonia && deCasal?.casal && (
+            <EditarCasal casal={deCasal.casal} especie={deCasal.caixa.especie} />
+          )}
         </Linha>
       }
     >
@@ -457,13 +467,6 @@ function AbaReproducao({
   )
 }
 
-const PARTOS_ATUAIS = Array.from({ length: MAX_PARTOS_POR_CASAL }, (_, i) => ({
-  value: i + 1,
-  label: `${i + 1}º`,
-}))
-
-const GRUPOS = ['A', 'B', 'C', 'D', 'E'].map((grupo) => ({ value: grupo, label: grupo }))
-
 interface CamposDoCasal {
   idLinhagem: number
   grupoMacho: string
@@ -544,14 +547,14 @@ function FormarCasal({
           label="Grupo do macho (A-E)"
           rules={[{ required: true, message: 'Grupo do macho' }]}
         >
-          <Select options={GRUPOS} />
+          <Select options={OPCOES_DE_GRUPO} />
         </Form.Item>
         <Form.Item
           name="grupoFemea"
           label="Grupo da fêmea (A-E)"
           rules={[{ required: true, message: 'Grupo da fêmea' }]}
         >
-          <Select options={GRUPOS} />
+          <Select options={OPCOES_DE_GRUPO} />
         </Form.Item>
       </LadoALado>
       <p className="ficha__dica">
@@ -570,7 +573,7 @@ function FormarCasal({
         label="Parto atual"
         extra="Se o casal já teve partos antes do Nidus, escolha em qual ele está"
       >
-        <Segmented<number> options={PARTOS_ATUAIS} />
+        <Segmented<number> options={OPCOES_DE_PARTO} />
       </Form.Item>
       <Botao variante="primario" htmlType="submit" loading={formar.isPending}>
         Formar casal

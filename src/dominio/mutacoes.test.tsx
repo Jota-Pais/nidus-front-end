@@ -14,6 +14,7 @@ import {
   useCorrigirEvento,
   useCriarPedido,
   useDesfazerReserva,
+  useEditarCasal,
   useFormarCasal,
   useMudanca,
   useRecusarPedido,
@@ -103,6 +104,7 @@ const ACOES_DA_COLONIA: [string, () => { mutateAsync: (v: never) => Promise<unkn
       useCorrigirAcasalamento,
       { idParto: 9, dtAcasalamento: '2026-10-01' },
     ],
+    ['editar casal', useEditarCasal, { idCasal: 4, grupoFemea: 'A', idLinhagem: 2 }],
     ['baixa', useBaixa, { idCaixa: 3, dtFato: '2026-11-01', itens: [{ sexo: 'M', qtd: 1 }] }],
     [
       'mudança',
@@ -128,6 +130,21 @@ describe('as ações da colônia recarregam tudo o que mostra animais', () => {
     await mutacao.mutateAsync(variaveis as never)
 
     expect(invalidadas(cliente)).toEqual(QUE_MOSTRAM_ANIMAIS)
+  })
+})
+
+describe('a edição do casal', () => {
+  it('é um PATCH no casal, com só os campos que mudaram no corpo', async () => {
+    const { mutacao } = montar(useEditarCasal)
+
+    await mutacao.mutateAsync({ idCasal: 4, grupoFemea: 'A', partoInicial: 2 })
+
+    expect(chamadas).toEqual([
+      {
+        caminho: '/api/casais/4',
+        opcoes: { metodo: 'PATCH', corpo: { grupoFemea: 'A', partoInicial: 2 } },
+      },
+    ])
   })
 })
 
