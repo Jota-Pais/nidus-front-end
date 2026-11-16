@@ -131,6 +131,11 @@
   color: var(--cor-suave-frente);
 }
 
+/* O aviso que não impede, embaixo de um campo (a seleção que vai com o desmame) */
+.ficha__aviso-do-campo {
+  color: var(--cor-aviso);
+}
+
 .ficha__total {
   padding: 8px 12px;
   background: var(--superficie-sucesso-fundo);

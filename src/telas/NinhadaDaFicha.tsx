@@ -86,6 +86,8 @@ interface CampoDoEvento {
   ate?: (DataISO | null | undefined)[]
   /** número: o máximo; sem ele, 999 */
   maximo?: number
+  /** data: o aviso que não impede, embaixo do campo, para a data escolhida (null: nenhum) */
+  aviso?: (data: DataISO | undefined) => string | null
 }
 
 /** O campo de cada fato: a data, com os dias fora da ordem apagados no calendário, ou o número */
@@ -93,29 +95,42 @@ function CamposDoEvento({ campos }: { campos: CampoDoEvento[] }) {
   return (
     <LadoALado>
       {campos.map((campo) => (
-        <Form.Item
-          key={campo.nome}
-          name={campo.nome}
-          label={campo.rotulo}
-          rules={[{ required: true, message: 'Obrigatório' }]}
-        >
-          {campo.tipo === 'data' ? (
-            <CampoDeData
-              min={maisTarde(...(campo.desde ?? []))}
-              max={ateHoje(...(campo.ate ?? []))}
-            />
-          ) : (
-            <InputNumber
-              min={0}
-              max={campo.maximo ?? 999}
-              precision={0}
-              style={{ width: '100%' }}
-            />
-          )}
-        </Form.Item>
+        <CampoDoEventoItem key={campo.nome} campo={campo} />
       ))}
     </LadoALado>
   )
+}
+
+function CampoDoEventoItem({ campo }: { campo: CampoDoEvento }) {
+  const form = Form.useFormInstance()
+  const valor = Form.useWatch<DataISO | undefined>(campo.nome, form)
+  const aviso = campo.aviso?.(valor) ?? null
+
+  return (
+    <Form.Item
+      name={campo.nome}
+      label={campo.rotulo}
+      rules={[{ required: true, message: 'Obrigatório' }]}
+      extra={aviso && <span className="ficha__aviso-do-campo">{aviso}</span>}
+    >
+      {campo.tipo === 'data' ? (
+        <CampoDeData min={maisTarde(...(campo.desde ?? []))} max={ateHoje(...(campo.ate ?? []))} />
+      ) : (
+        <InputNumber min={0} max={campo.maximo ?? 999} precision={0} style={{ width: '100%' }} />
+      )}
+    </Form.Item>
+  )
+}
+
+/**
+ * A seleção é antes do desmame, e não limita a data dele: com o desmame antes da última seleção, as
+ * seleções depois da data passam para ela (a API leva). O aviso diz isso embaixo do campo
+ */
+function avisoDaSelecao(dtUltimaSelecao: DataISO | null) {
+  return (data: DataISO | undefined) =>
+    data && dtUltimaSelecao && data < dtUltimaSelecao
+      ? `As eutanásias de seleção de ${formatarData(dtUltimaSelecao)} passam para a data do desmame.`
+      : null
 }
 
 /**
@@ -336,6 +351,8 @@ interface PropsDaCorrecaoDoDesmame {
   atual: DataISO
   desde: (DataISO | null | undefined)[]
   ate: (DataISO | null | undefined)[]
+  /** a última seleção: não limita, e o campo avisa quando a data fica antes dela */
+  dtUltimaSelecao: DataISO | null
 }
 
 /**
@@ -357,6 +374,7 @@ function FormularioDoDesmame({
   atual,
   desde,
   ate,
+  dtUltimaSelecao,
   aoFechar,
 }: PropsDaCorrecaoDoDesmame & { aoFechar: () => void }) {
   const { message } = App.useApp()
@@ -390,7 +408,16 @@ function FormularioDoDesmame({
     >
       {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
       <CamposDoEvento
-        campos={[{ nome: 'data', rotulo: 'Data do desmame', tipo: 'data', desde, ate }]}
+        campos={[
+          {
+            nome: 'data',
+            rotulo: 'Data do desmame',
+            tipo: 'data',
+            desde,
+            ate,
+            aviso: avisoDaSelecao(dtUltimaSelecao),
+          },
+        ]}
       />
       <CampoDoMotivo />
       <BotoesDaCorrecao salvando={corrigir.isPending} aoCancelar={aoFechar} />
@@ -969,12 +996,13 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
                 <Campo rotulo="Machos desmamados">{parto.desmamadoM ?? '—'}</Campo>
                 <Campo rotulo="Fêmeas desmamadas">{parto.desmamadoF ?? '—'}</Campo>
               </LadoALado>
-              {/* nem antes da última rodada da seleção, nem depois da primeira saída dos animais */}
+              {/* nem antes do parto, nem depois da primeira saída dos animais; a seleção vai junto */}
               <CorrigirDesmame
                 idParto={parto.id}
                 atual={parto.dtDesmameReal ?? hoje()}
-                desde={[parto.dtPartoReal, parto.dtUltimaSelecao]}
+                desde={[parto.dtPartoReal]}
                 ate={[parto.dtPrimeiraSaida]}
+                dtUltimaSelecao={parto.dtUltimaSelecao}
               />
               <p className="ficha__dica">A contagem do desmame se corrige lançando outra baixa.</p>
             </>
@@ -992,8 +1020,9 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
                   nome: 'dtDesmameReal',
                   rotulo: 'Data do desmame',
                   tipo: 'data',
-                  // nem antes da última rodada da seleção
-                  desde: [parto.dtPartoReal, parto.dtUltimaSelecao],
+                  // a seleção não limita: a que ficar depois da data vai para ela
+                  desde: [parto.dtPartoReal],
+                  aviso: avisoDaSelecao(parto.dtUltimaSelecao),
                 },
                 { nome: 'desmamadoM', rotulo: 'Machos desmamados', tipo: 'numero' },
                 { nome: 'desmamadoF', rotulo: 'Fêmeas desmamadas', tipo: 'numero' },
