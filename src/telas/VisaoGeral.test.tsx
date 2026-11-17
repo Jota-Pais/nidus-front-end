@@ -186,17 +186,11 @@ describe('Visão geral', { timeout: 20_000 }, () => {
     expect(within(sprague).queryByRole('img')).toBeNull()
   })
 
-  it('mostra embaixo da tabela as baixas do aleitamento desde o início, sobre os nascidos', () => {
+  it('não tem mais a linha de rodapé com as baixas do aleitamento', () => {
     renderizar(<VisaoGeral />)
 
-    // uma linha só, a da espécie: os cartões das linhagens não a repetem
-    const linhas = document.querySelectorAll('.visao__aleitamento')
-    expect(linhas).toHaveLength(1)
-    // os totais da espécie somam as linhagens: 6 e 4 em 275 nascidos
-    expect(linhas[0]!.textContent).toBe(
-      'Desde o início: Ajuste de ninhada 6 (2% dos nascidos) · Mortes no aleitamento 4 (1% dos nascidos) · 275 nascidos em partos registrados',
-    )
-    expect(cartaoDa('Wistar').querySelector('.visao__aleitamento')).toBeNull()
+    expect(document.querySelector('.visao__aleitamento')).toBeNull()
+    expect(screen.queryByText(/Desde o início/)).toBeNull()
   })
 
   it('mostra a rosca da situação e as barras de vivos por linhagem', () => {
