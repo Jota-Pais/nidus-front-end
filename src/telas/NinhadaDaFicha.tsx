@@ -1,37 +1,23 @@
 // A aba Ninhada da ficha do casal: o ciclo de um parto, do acasalamento ao lugar onde os filhotes
-// estão. Cada passo mostra o que a API contou nos animais e o formulário do passo seguinte, e cada
-// registro tem a correção dele, com motivo. A data do acasalamento é a exceção: ninguém vê o casal
-// acasalar, e ela se edita ali mesmo, sem motivo. Nenhum número é contado aqui: nascidos, baixas,
-// desmamados, vivos, onde estão e reservados vêm prontos da API
+// estão. Cada passo mostra o que a API contou nos animais e o formulário do passo seguinte: a aba
+// lê e lança fato novo (parto, baixa, desmame, fechamento sem ninhada). O que já foi registrado se
+// corrige no lápis Editar, no título da ficha (EditarCasal), e não aqui; o Desfazer logo depois de
+// lançar a baixa fica. Nenhum número é contado aqui: nascidos, baixas, desmamados, vivos, onde
+// estão e reservados vêm prontos da API
 import { App, Form, Input, InputNumber } from 'antd'
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Aviso, Botao, CampoDeData } from '@/componentes'
-import {
-  aMaisNaCorrecao,
-  descreverFalta,
-  doSexo,
-  partosDaCaixa,
-  SEXOS,
-  vivosNaCaixa,
-} from '@/dominio/caixa'
-import type { LugarNaEstante } from '@/dominio/caixa'
-import {
-  useCorrigirAcasalamento,
-  useCorrigirEvento,
-  useRegistrarNaFicha,
-  useSemNinhada,
-} from '@/dominio/consultas'
+import { avisoDaSelecao, descreverFalta, pedidosDoParto, vivosNaCaixa } from '@/dominio/caixa'
+import { useRegistrarNaFicha, useSemNinhada } from '@/dominio/consultas'
 import { descreverQuantos, descreverReservados } from '@/dominio/pedido'
 import type { Casal, DataISO, FichaDeCasal, OndeEstao, Parto, PorSexo } from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { useTelaEstreita } from '@/layout/useTelaEstreita'
-import { ErroDeApi } from '@/lib/api'
 import { ateHoje, descreverDias, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
 import { BaixaNaCaixa, CampoDoPedido, MudarAnimais } from './AnimaisDaFicha'
 import type { CaixaDaAcao, GrupoDaCaixa } from './AnimaisDaFicha'
 import { Campo, LadoALado, Total } from './CamposDaFicha'
-import { EscolherCaixa } from './EscolherCaixa'
 
 /** "4 machos e 3 fêmeas" */
 const quantos = (porSexo: PorSexo) => descreverQuantos({ ...porSexo, qualquer: 0 })
@@ -44,12 +30,6 @@ const porSexo = (porSexo: PorSexo) => `${porSexo.m} M · ${porSexo.f} F`
  */
 const INTERVALO_ACASALAMENTO_DIAS = 6
 
-/**
- * Os pedidos com reservados do parto: as opções quando a API pede de qual pedido saem os animais
- * da seleção, do desmame ou da correção, que tiram do parto todo
- */
-const pedidosDoParto = (parto: Parto) => parto.reservados.map((reserva) => reserva.idPedido)
-
 // ------------------------------------------------------------ uma ação de cada vez
 
 /** A ação aberta na aba, e como abrir outra (ou fechar, com null) */
@@ -59,7 +39,7 @@ interface Acoes {
 }
 
 /**
- * No celular a aba tem uma ação aberta por vez: cada registro, correção, baixa ou passagem é um
+ * No celular a aba tem uma ação aberta por vez: cada registro, baixa ou passagem é um
  * botão largo, e abrir um fecha o outro, em vez de todos os formulários abertos em fila. Fora do
  * celular não há contexto, e cada formulário cuida de si como sempre
  */
@@ -74,9 +54,9 @@ function useAcao(nome: string): [boolean, (aberta: boolean) => void] {
   return [acoes.aberta === nome, (aberta) => acoes.abrir(aberta ? nome : null)]
 }
 
-// ------------------------------------------------------------ registrar e corrigir
+// ------------------------------------------------------------ registrar
 
-interface CampoDoEvento {
+export interface CampoDoEvento {
   nome: string
   rotulo: string
   tipo: 'data' | 'numero'
@@ -90,8 +70,11 @@ interface CampoDoEvento {
   aviso?: (data: DataISO | undefined) => string | null
 }
 
-/** O campo de cada fato: a data, com os dias fora da ordem apagados no calendário, ou o número */
-function CamposDoEvento({ campos }: { campos: CampoDoEvento[] }) {
+/**
+ * O campo de cada fato: a data, com os dias fora da ordem apagados no calendário, ou o número. O
+ * registro aqui e a correção no lápis Editar usam os mesmos
+ */
+export function CamposDoEvento({ campos }: { campos: CampoDoEvento[] }) {
   return (
     <LadoALado>
       {campos.map((campo) => (
@@ -120,17 +103,6 @@ function CampoDoEventoItem({ campo }: { campo: CampoDoEvento }) {
       )}
     </Form.Item>
   )
-}
-
-/**
- * A seleção é antes do desmame, e não limita a data dele: com o desmame antes da última seleção, as
- * seleções depois da data passam para ela (a API leva). O aviso diz isso embaixo do campo
- */
-function avisoDaSelecao(dtUltimaSelecao: DataISO | null) {
-  return (data: DataISO | undefined) =>
-    data && dtUltimaSelecao && data < dtUltimaSelecao
-      ? `As eutanásias de seleção de ${formatarData(dtUltimaSelecao)} passam para a data do desmame.`
-      : null
 }
 
 /**
@@ -233,360 +205,6 @@ function RegistrarEvento({
           {botao}
         </Botao>
       )}
-    </Form>
-  )
-}
-
-function CampoDoMotivo() {
-  return (
-    <Form.Item
-      name="motivo"
-      label="Motivo da correção"
-      rules={[{ required: true, whitespace: true, message: 'Diga o motivo' }]}
-    >
-      <Input placeholder="ex: data digitada errada" maxLength={200} />
-    </Form.Item>
-  )
-}
-
-function BotoesDaCorrecao({
-  salvando,
-  desabilitado = false,
-  aoCancelar,
-}: {
-  salvando: boolean
-  /** a correção como está a API recusa: o aviso diz por quê */
-  desabilitado?: boolean
-  aoCancelar: () => void
-}) {
-  return (
-    <div className="ficha__botoes">
-      <Botao variante="primario" htmlType="submit" loading={salvando} disabled={desabilitado}>
-        Salvar correção
-      </Botao>
-      <Botao variante="fantasma" onClick={aoCancelar}>
-        Cancelar
-      </Botao>
-    </div>
-  )
-}
-
-function BotaoCorrigir({ aoAbrir }: { aoAbrir: () => void }) {
-  // no celular, com cara de botão: o de texto parece link e fica solto na tela
-  const estreita = useTelaEstreita()
-
-  return (
-    <div>
-      <Botao variante={estreita ? 'secundario' : 'fantasma'} onClick={aoAbrir}>
-        Corrigir
-      </Botao>
-    </div>
-  )
-}
-
-/**
- * A data do acasalamento, editável ali mesmo: a que o sistema abriu, 6 dias depois do parto
- * anterior, ou a que alguém pôs. Escolher outro dia grava na hora, sem motivo e sem confirmar, e a
- * que vale é a última. Se a API recusa (fora da ordem dos fatos), o campo volta à data de antes e
- * diz por quê. O calendário apaga os dias fora da ordem, como os outros campos da ficha
- */
-function DataDoAcasalamento({
-  parto,
-  desde,
-  ate,
-}: {
-  parto: Parto
-  desde: (DataISO | null | undefined)[]
-  ate: (DataISO | null | undefined)[]
-}) {
-  const { message } = App.useApp()
-  const editar = useCorrigirAcasalamento()
-  // a data escolhida enquanto grava; a ficha recarrega com ela e o campo monta de novo (key)
-  const [escolhida, setEscolhida] = useState<DataISO | null>(null)
-  const [erro, setErro] = useState<string | null>(null)
-  const id = `acasalamento-${parto.id}`
-
-  function mudar(data: DataISO | undefined) {
-    // apagar o campo não grava nada: a data continua a de antes
-    if (!data || data === (escolhida ?? parto.dtAcasalamento)) return
-
-    setErro(null)
-    setEscolhida(data)
-    editar.mutateAsync({ idParto: parto.id, dtAcasalamento: data }).then(
-      () => void message.success('Registrado.'),
-      (falha: Error) => {
-        setEscolhida(null)
-        setErro(
-          falha instanceof ErroDeApi
-            ? (falha.campos.dtAcasalamento ?? falha.message)
-            : falha.message,
-        )
-      },
-    )
-  }
-
-  return (
-    <Form layout="vertical" component={false}>
-      <Form.Item
-        label="Data do acasalamento"
-        htmlFor={id}
-        validateStatus={erro ? 'error' : ''}
-        help={erro ?? undefined}
-      >
-        <CampoDeData
-          id={id}
-          value={escolhida ?? parto.dtAcasalamento}
-          onChange={mudar}
-          min={maisTarde(...desde)}
-          max={ateHoje(...ate)}
-          disabled={editar.isPending}
-        />
-      </Form.Item>
-    </Form>
-  )
-}
-
-interface PropsDaCorrecaoDoDesmame {
-  idParto: number
-  atual: DataISO
-  desde: (DataISO | null | undefined)[]
-  ate: (DataISO | null | undefined)[]
-  /** a última seleção: não limita, e o campo avisa quando a data fica antes dela */
-  dtUltimaSelecao: DataISO | null
-}
-
-/**
- * A correção da data do desmame, com motivo. A contagem do desmame não se corrige aqui: lança-se
- * uma baixa
- */
-function CorrigirDesmame(props: PropsDaCorrecaoDoDesmame) {
-  const [aberto, setAberto] = useAcao('corrigir-desmame')
-
-  if (!aberto) return <BotaoCorrigir aoAbrir={() => setAberto(true)} />
-
-  // o formulário nasce a cada abertura: começa sempre com a data registrada, e não com o que ficou
-  // no campo da vez anterior (apagado, ao cancelar)
-  return <FormularioDoDesmame {...props} aoFechar={() => setAberto(false)} />
-}
-
-function FormularioDoDesmame({
-  idParto,
-  atual,
-  desde,
-  ate,
-  dtUltimaSelecao,
-  aoFechar,
-}: PropsDaCorrecaoDoDesmame & { aoFechar: () => void }) {
-  const { message } = App.useApp()
-  const corrigir = useCorrigirEvento()
-  const [form] = Form.useForm<{ data: DataISO; motivo: string }>()
-  const falha = useFalhaDoFormulario(form, ['data', 'motivo'])
-
-  function salvar({ data, motivo }: { data: DataISO; motivo: string }) {
-    falha.limpar()
-    corrigir
-      .mutateAsync({ idParto, evento: 'desmame', corpo: { dtDesmameReal: data, motivo } })
-      .then(
-        () => {
-          void message.success('Correção registrada.')
-          aoFechar()
-        },
-        // a API aponta a data pelo nome dela no corpo
-        (erro: Error) =>
-          falha.mostrarComNomes(erro, (chave) => (chave === 'dtDesmameReal' ? 'data' : chave)),
-      )
-  }
-
-  return (
-    <Form
-      name="correcao-desmame"
-      form={form}
-      layout="vertical"
-      initialValues={{ data: atual }}
-      className="ficha__formulario"
-      onFinish={salvar}
-    >
-      {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
-      <CamposDoEvento
-        campos={[
-          {
-            nome: 'data',
-            rotulo: 'Data do desmame',
-            tipo: 'data',
-            desde,
-            ate,
-            aviso: avisoDaSelecao(dtUltimaSelecao),
-          },
-        ]}
-      />
-      <CampoDoMotivo />
-      <BotoesDaCorrecao salvando={corrigir.isPending} aoCancelar={aoFechar} />
-    </Form>
-  )
-}
-
-interface CamposDaCorrecaoDoNascimento {
-  dtPartoReal: DataISO
-  nascidoM: number
-  nascidoF: number
-  motivo: string
-  idCaixa?: LugarNaEstante
-  idPedido?: number
-}
-
-/**
- * A correção do nascimento: a data muda a idade de todos os animais do parto, e a contagem troca o
- * sexo, anula registros ou põe animais a mais onde a ninhada está. Se a caixa do casal já tem outra
- * ninhada, ou se ela foi liberada, os a mais vão para uma caixa de estoque do sexo deles, clicada na
- * estante, um sexo por vez
- */
-function CorrigirNascimento(props: {
-  ficha: FichaDeCasal
-  parto: Parto
-  caixa: CaixaDaAcao
-  /** o parto seguinte do casal: o acasalamento dele limita a data */
-  seguinte: Parto | undefined
-}) {
-  const [aberto, setAberto] = useAcao('corrigir-nascimento')
-
-  if (!aberto) return <BotaoCorrigir aoAbrir={() => setAberto(true)} />
-
-  return <FormularioDoNascimento {...props} aoFechar={() => setAberto(false)} />
-}
-
-function FormularioDoNascimento({
-  ficha,
-  parto,
-  caixa,
-  seguinte,
-  aoFechar,
-}: {
-  ficha: FichaDeCasal
-  parto: Parto
-  caixa: CaixaDaAcao
-  seguinte: Parto | undefined
-  aoFechar: () => void
-}) {
-  const { message, modal } = App.useApp()
-  const corrigir = useCorrigirEvento()
-  const [form] = Form.useForm<CamposDaCorrecaoDoNascimento>()
-  const falha = useFalhaDoFormulario(form, [
-    'dtPartoReal',
-    'nascidoM',
-    'nascidoF',
-    'motivo',
-    'idCaixa',
-    'idPedido',
-  ])
-  const nascidoM = Form.useWatch('nascidoM', form)
-  const nascidoF = Form.useWatch('nascidoF', form)
-
-  // a troca de sexo não cria animal: só o que sobra dela precisa de lugar
-  const novos = aMaisNaCorrecao(
-    { m: parto.nascidoM ?? 0, f: parto.nascidoF ?? 0 },
-    { m: nascidoM ?? 0, f: nascidoF ?? 0 },
-  )
-  const aMais = SEXOS.filter((sexo) => doSexo(novos, sexo) > 0)
-  // a caixa do casal recebe os a mais se continua ativa e sem outra ninhada
-  const outraNinhada = partosDaCaixa(ficha).some(
-    (outro) => outro.id !== parto.id && vivosNaCaixa(outro, ficha.caixa.id) !== undefined,
-  )
-  // a API também diz quando ela não serve e a ficha não sabia: algo mudou na caixa depois de a
-  // ficha carregar
-  const caixaNaoServe = !ficha.caixa.ativa || outraNinhada || falha.pediu('idCaixa')
-  // a caixa de estoque é de um sexo só: com a mais dos dois, a API recusa, e o envio fica preso
-  const umSexoPorVez = caixaNaoServe && aMais.length > 1
-  const sexoDaCaixa = aMais[0] ?? 'M'
-  const pedeCaixa = caixaNaoServe && aMais.length === 1
-
-  function salvar({ idCaixa, idPedido, ...corpo }: CamposDaCorrecaoDoNascimento) {
-    falha.limpar()
-    const lugar = pedeCaixa ? (idCaixa?.idCaixa ?? null) : null
-
-    corrigir
-      .mutateAsync({
-        idParto: parto.id,
-        evento: 'nascimento',
-        corpo: {
-          ...corpo,
-          ...(lugar === null ? {} : { idCaixa: lugar }),
-          ...(idPedido === undefined ? {} : { idPedido }),
-        },
-      })
-      .then(
-        ({ faltas }) => {
-          void message.success('Correção registrada.')
-          const falta = descreverFalta(faltas ?? [])
-          if (falta) modal.warning({ title: 'Reserva em falta', content: falta })
-          aoFechar()
-        },
-        (erro: Error) => falha.mostrar(erro),
-      )
-  }
-
-  return (
-    <Form
-      name="correcao-nascimento"
-      form={form}
-      layout="vertical"
-      initialValues={{
-        dtPartoReal: parto.dtPartoReal,
-        nascidoM: parto.nascidoM,
-        nascidoF: parto.nascidoF,
-      }}
-      className="ficha__formulario"
-      onFinish={salvar}
-    >
-      {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
-      <CamposDoEvento
-        campos={[
-          {
-            nome: 'dtPartoReal',
-            rotulo: 'Data do parto',
-            tipo: 'data',
-            desde: [parto.dtAcasalamento],
-            // nem depois do primeiro fato dos animais: a primeira baixa, mudança ou entrega
-            ate: [parto.dtDesmameReal, seguinte?.dtAcasalamento, parto.dtPrimeiroFato],
-          },
-          { nome: 'nascidoM', rotulo: 'Machos nascidos', tipo: 'numero' },
-          { nome: 'nascidoF', rotulo: 'Fêmeas nascidas', tipo: 'numero' },
-        ]}
-      />
-      {umSexoPorVez && (
-        <Aviso
-          tom="atencao"
-          titulo="A ninhada já não está na caixa do casal: os animais a mais vão para uma caixa de estoque, que é de um sexo só. Corrija um sexo de cada vez."
-        />
-      )}
-      {pedeCaixa && !umSexoPorVez && (
-        <Form.Item
-          name="idCaixa"
-          label={`A ninhada já não está na caixa do casal: em qual caixa de estoque entram ${sexoDaCaixa === 'M' ? 'os machos' : 'as fêmeas'} a mais`}
-          rules={[{ required: true, message: 'Clique na caixa de estoque' }]}
-        >
-          <EscolherCaixa
-            sala={caixa.endereco.sala}
-            numeroVisivel={caixa.endereco.numeroVisivel}
-            sexo={sexoDaCaixa}
-            idLinhagem={caixa.idLinhagem}
-            aceitaVazia={false}
-            idOrigem={caixa.id}
-          />
-        </Form.Item>
-      )}
-      {falha.pediu('idPedido') && (
-        <CampoDoPedido
-          nome={['idPedido']}
-          quem="os animais reservados"
-          pedidos={pedidosDoParto(parto)}
-        />
-      )}
-      <CampoDoMotivo />
-      <BotoesDaCorrecao
-        salvando={corrigir.isPending}
-        desabilitado={umSexoPorVez}
-        aoCancelar={aoFechar}
-      />
     </Form>
   )
 }
@@ -896,9 +514,6 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
     )
   }
 
-  const anterior = partos.find((p) => p.ordem === ordem - 1)
-  // o acasalamento do parto seguinte limita a correção da data deste parto
-  const seguinte = partos.find((p) => p.ordem === ordem + 1)
   const nasceu = parto.dtPartoReal !== null
   const desmamou = parto.dtDesmameReal !== null
   const caixa: CaixaDaAcao = {
@@ -910,21 +525,14 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
   // os vivos dele nesta caixa: a baixa (na seção Baixas) e a passagem (em Onde estão) agem neles
   const grupos = gruposDaNinhada(parto, ficha.caixa.id, ficha.caixa.ativa)
   // na caixa liberada não se lança fato novo (parto, baixa, desmame); corrigir o que já foi
-  // registrado continua
+  // registrado continua, no lápis Editar
   const semFatoNovo = !ficha.caixa.ativa
 
   return (
     <div className="ficha__aba">
       <h3>Acasalamento</h3>
-      <LadoALado>
-        <DataDoAcasalamento
-          // a ficha recarrega com a data gravada: o campo começa de novo com ela
-          key={`${parto.id}-${parto.dtAcasalamento}`}
-          parto={parto}
-          desde={[casal?.dtFormacao, anterior?.dtPartoReal]}
-          ate={[parto.dtPartoReal, parto.dtSemNinhada, casal?.dtEncerramento]}
-        />
-      </LadoALado>
+      {/* só a leitura: a data se corrige no lápis Editar, como os outros fatos do parto */}
+      <Campo rotulo="Data do acasalamento">{formatarData(parto.dtAcasalamento)}</Campo>
 
       <h3>Parto</h3>
       {nasceu ? (
@@ -942,7 +550,6 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
           <Total>
             Total nascidos: <strong>{(parto.nascidoM ?? 0) + (parto.nascidoF ?? 0)}</strong>
           </Total>
-          <CorrigirNascimento ficha={ficha} parto={parto} caixa={caixa} seguinte={seguinte} />
         </>
       ) : parto.dtSemNinhada ? (
         <p className="ficha__vazio">
@@ -996,15 +603,6 @@ function NinhadaDoParto({ ficha, casal, partos, ordem }: PropsDaNinhada) {
                 <Campo rotulo="Machos desmamados">{parto.desmamadoM ?? '—'}</Campo>
                 <Campo rotulo="Fêmeas desmamadas">{parto.desmamadoF ?? '—'}</Campo>
               </LadoALado>
-              {/* nem antes do parto, nem depois da primeira saída dos animais; a seleção vai junto */}
-              <CorrigirDesmame
-                idParto={parto.id}
-                atual={parto.dtDesmameReal ?? hoje()}
-                desde={[parto.dtPartoReal]}
-                ate={[parto.dtPrimeiraSaida]}
-                dtUltimaSelecao={parto.dtUltimaSelecao}
-              />
-              <p className="ficha__dica">A contagem do desmame se corrige lançando outra baixa.</p>
             </>
           ) : semFatoNovo ? (
             <p className="ficha__vazio">A ninhada não chegou ao desmame.</p>

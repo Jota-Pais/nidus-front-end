@@ -237,6 +237,24 @@ export interface Parto {
   dtPrimeiraSaida: DataISO | null
   /** a primeira baixa, mudança ou entrega não anulada dos animais do parto: a correção do nascimento não passa dela */
   dtPrimeiroFato: DataISO | null
+  /** as baixas não anuladas dos animais do parto, pela data: o lápis Editar corrige cada uma */
+  baixas: BaixaDoParto[]
+}
+
+/** Uma baixa dos animais do parto, como a API a lista */
+export interface BaixaDoParto {
+  idOcorrencia: number
+  dtFato: DataISO
+  causa: 'morte' | 'eutanasia'
+  /** a caixa onde a baixa aconteceu */
+  codigo: string
+  /** os animais deste parto na baixa */
+  m: number
+  f: number
+  /** a diferença do desmame ("não chegou ao desmame"): corrige-se pela contagem do desmame */
+  doDesmame: boolean
+  /** a baixa leva também animais de outra ninhada: não se corrige pela ficha deste parto */
+  comOutraNinhada: boolean
 }
 
 export interface CasalComPartos {

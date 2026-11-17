@@ -56,6 +56,7 @@ vi.mock('@/dominio/consultas', () => ({
   useRegistrarNaFicha: () => mutacaoComResposta(api.registrar),
   useCorrigirEvento: () => mutacaoComResposta(api.corrigir),
   useCorrigirAcasalamento: () => mutacaoComResposta(api.acasalamento),
+  useCorrigirBaixa: () => mutacaoComResposta(vi.fn()),
   useEditarCasal: () => mutacaoComResposta(api.editar),
   useEditarCaixaDeEstoque: () => mutacaoComResposta(api.editarEstoque),
   useSemNinhada: () => mutacaoComResposta(api.semNinhada),
@@ -112,20 +113,6 @@ function secao(titulo: string): HTMLElement {
     pedaco.appendChild(no.cloneNode(true))
   }
   return pedaco
-}
-
-/** O botão Corrigir logo abaixo do título da seção */
-function corrigir(titulo: string) {
-  const cabecalho = screen.getByText(titulo, { selector: 'h3' })
-  for (
-    let no = cabecalho.nextElementSibling;
-    no && no.tagName !== 'H3';
-    no = no.nextElementSibling
-  ) {
-    const achado = talvezBotao('Corrigir', no as HTMLElement)
-    if (achado) return fireEvent.click(achado)
-  }
-  throw new Error(`Sem Corrigir em ${titulo}`)
 }
 
 describe('mudar a caixa de lugar e o atraso, na ficha', { timeout: 40_000 }, () => {
@@ -353,47 +340,16 @@ describe('desmame', { timeout: 40_000 }, () => {
     ).toBeTruthy()
   })
 
-  it('o desmame registrado mostra os números da API e corrige só a data', async () => {
+  it('o desmame registrado só mostra os números da API: a correção fica no lápis Editar', async () => {
     api.ficha = fichaDeCasal({ partos: [desmamado()] })
     await abrirNinhada()
 
     const desmame = secao('Desmame')
     expect(within(desmame).getByText('Machos desmamados')).toBeTruthy()
     expect(within(desmame).queryByText(/Desmame total/)).toBeNull()
-
-    corrigir('Desmame')
-    expect(screen.queryByLabelText('Machos desmamados')).toBeNull()
-    fireEvent.change(screen.getByLabelText('Motivo da correção'), {
-      target: { value: 'data errada' },
-    })
-    fireEvent.click(botao('Salvar correção'))
-
-    await waitFor(() => expect(api.corrigir).toHaveBeenCalled(), DEMORA)
-    expect(api.corrigir).toHaveBeenCalledWith({
-      idParto: 10,
-      evento: 'desmame',
-      corpo: { dtDesmameReal: '2026-10-16', motivo: 'data errada' },
-    })
-  })
-
-  it('a correção do desmame reaberta começa de novo com a data registrada, e não com o campo apagado', async () => {
-    api.ficha = fichaDeCasal({ partos: [desmamado()] })
-    await abrirNinhada()
-
-    corrigir('Desmame')
-    const campo = () => screen.getByLabelText('Data do desmame') as HTMLInputElement
-    expect(campo().value).toBe('16/10/2026')
-
-    // apagar a data e cancelar: o campo vazio não fica guardado para a próxima vez
-    const limpar = campo().closest('.ant-picker')?.querySelector('.ant-picker-clear') as HTMLElement
-    fireEvent.mouseDown(limpar)
-    fireEvent.mouseUp(limpar)
-    fireEvent.click(limpar)
-    await waitFor(() => expect(campo().value).toBe(''), DEMORA)
-    fireEvent.click(botao('Cancelar', campo().closest('form') as HTMLElement))
-
-    corrigir('Desmame')
-    expect(campo().value).toBe('16/10/2026')
+    expect(talvezBotao('Corrigir', desmame)).toBeNull()
+    expect(screen.queryByText(/A contagem do desmame se corrige/)).toBeNull()
+    expect(screen.queryByLabelText('Data do desmame')).toBeNull()
   })
 })
 
@@ -498,102 +454,6 @@ describe('baixa da ninhada', { timeout: 40_000 }, () => {
 })
 
 describe('as datas da ninhada seguem a ordem dos eventos', { timeout: 40_000 }, () => {
-  // acasalou em 01/09, nasceu em 24/09 e desmamou em 28/09: o calendário abre em setembro de 2026,
-  // na data registrada
-  beforeEach(() => {
-    api.ficha = fichaDeCasal({ partos: [desmamado({ dtDesmameReal: '2026-09-28' })] })
-  })
-
-  /** 'titulo' nulo: o campo já está na tela, sem Corrigir (a data do acasalamento) */
-  async function abrirCalendario(titulo: string | null, rotulo: string) {
-    await abrirNinhada()
-    if (titulo) corrigir(titulo)
-    fireEvent.click(await screen.findByLabelText(rotulo))
-    await waitFor(() => expect(diaNoCalendario('2026-09-24')).not.toBe('(sem dia)'))
-  }
-
-  it('o parto corrigido fica entre o acasalamento e o desmame, os dois dias inclusive', async () => {
-    await abrirCalendario('Parto', 'Data do parto')
-
-    expect(diaNoCalendario('2026-08-31')).toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-01')).not.toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-28')).not.toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-29')).toContain(APAGADO)
-  })
-
-  it('o desmame corrigido não fica antes do parto', async () => {
-    await abrirCalendario('Desmame', 'Data do desmame')
-
-    expect(diaNoCalendario('2026-09-23')).toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-24')).not.toContain(APAGADO)
-  })
-
-  it('o parto corrigido não passa do primeiro fato dos animais', async () => {
-    api.ficha = fichaDeCasal({
-      partos: [desmamado({ dtDesmameReal: '2026-09-28', dtPrimeiroFato: '2026-09-26' })],
-    })
-    await abrirCalendario('Parto', 'Data do parto')
-
-    expect(diaNoCalendario('2026-09-26')).not.toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-27')).toContain(APAGADO)
-  })
-
-  it('o desmame corrigido fica entre o parto e a primeira saída dos animais: a seleção não limita', async () => {
-    api.ficha = fichaDeCasal({
-      partos: [
-        desmamado({
-          dtDesmameReal: '2026-09-28',
-          dtUltimaSelecao: '2026-09-26',
-          dtPrimeiraSaida: '2026-09-30',
-        }),
-      ],
-    })
-    await abrirCalendario('Desmame', 'Data do desmame')
-
-    expect(diaNoCalendario('2026-09-23')).toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-24')).not.toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-25')).not.toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-30')).not.toContain(APAGADO)
-    expect(diaNoCalendario('2026-10-01')).toContain(APAGADO)
-  })
-
-  it('com a seleção lançada hoje, o desmame corrigido volta para março, e o campo avisa que a seleção vai junto', async () => {
-    // o caso da ninhada antiga: nasceu em 28/02, a seleção e o desmame foram lançados hoje (16/11)
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-11-16T12:00:00'))
-    api.ficha = fichaDeCasal({
-      partos: [
-        desmamado({
-          ordem: 2,
-          dtPartoReal: '2026-02-28',
-          dtDesmameReal: '2026-11-16',
-          dtUltimaSelecao: '2026-11-16',
-        }),
-      ],
-    })
-    await abrirNinhada()
-
-    corrigir('Desmame')
-    expect((screen.getByLabelText('Data do desmame') as HTMLInputElement).value).toBe('16/11/2026')
-    fireEvent.click(screen.getByLabelText('Data do desmame'))
-    await waitFor(() => expect(diaNoCalendario('2026-11-16')).not.toBe('(sem dia)'))
-    // de 28/02 (o parto) até hoje; depois, o futuro
-    expect(diaNoCalendario('2026-11-15')).not.toContain(APAGADO)
-    expect(diaNoCalendario('2026-11-16')).not.toContain(APAGADO)
-    expect(diaNoCalendario('2026-11-17')).toContain(APAGADO)
-    expect(screen.queryByText(/passam para a data do desmame/)).toBeNull()
-
-    const campo = screen.getByLabelText('Data do desmame')
-    fireEvent.mouseDown(campo)
-    fireEvent.change(campo, { target: { value: '20/03/2026' } })
-    fireEvent.keyDown(campo, { key: 'Enter', code: 'Enter' })
-
-    await screen.findByText('As eutanásias de seleção de 16/11/2026 passam para a data do desmame.')
-    // o aviso não impede: o botão continua habilitado
-    const salvar = screen.getByRole('button', { name: 'Salvar correção' }) as HTMLButtonElement
-    expect(salvar.disabled).toBe(false)
-  })
-
   it('o desmame registrado pode ficar antes da última seleção, com o aviso embaixo do campo', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-10-10T12:00:00'))
@@ -615,210 +475,28 @@ describe('as datas da ninhada seguem a ordem dos eventos', { timeout: 40_000 }, 
 
     await screen.findByText('As eutanásias de seleção de 03/10/2026 passam para a data do desmame.')
   })
-
-  it('a data do acasalamento fica entre a formação e o parto', async () => {
-    await abrirCalendario(null, 'Data do acasalamento')
-
-    expect(diaNoCalendario('2026-08-31')).toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-01')).not.toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-24')).not.toContain(APAGADO)
-    expect(diaNoCalendario('2026-09-25')).toContain(APAGADO)
-  })
 })
 
-describe('correções do parto', { timeout: 40_000 }, () => {
-  /** Digita o dia (dd/mm/aaaa) na data do acasalamento da aba Ninhada já aberta */
-  async function escolherAcasalamento(dia: string) {
-    const campo = await screen.findByLabelText('Data do acasalamento')
-    fireEvent.mouseDown(campo)
-    fireEvent.change(campo, { target: { value: dia } })
-    fireEvent.keyDown(campo, { key: 'Enter', code: 'Enter' })
-  }
+// O que já foi registrado se corrige no lápis Editar (EditarCasal.test): a aba Ninhada só lê e
+// lança fato novo
+describe('a aba Ninhada não corrige', { timeout: 40_000 }, () => {
+  it('o acasalamento é só a data, sem campo nem Corrigir', async () => {
+    const ninhada = await abrirNinhada()
 
-  it('a data do acasalamento grava ao escolher o dia, sem Corrigir nem motivo', async () => {
-    await abrirNinhada()
-    expect(talvezBotao('Corrigir', secao('Acasalamento'))).toBeNull()
-
-    await escolherAcasalamento('03/09/2026')
-
-    await waitFor(() => expect(api.acasalamento).toHaveBeenCalled(), DEMORA)
-    expect(api.acasalamento).toHaveBeenCalledWith({ idParto: 10, dtAcasalamento: '2026-09-03' })
-    expect(screen.queryByLabelText('Motivo da correção')).toBeNull()
+    expect(within(secao('Acasalamento')).getByText('01/09/2026')).toBeTruthy()
+    expect(within(ninhada).queryByLabelText('Data do acasalamento')).toBeNull()
+    expect(api.acasalamento).not.toHaveBeenCalled()
   })
 
-  it('a recusa da API volta a data de antes e diz por quê no campo', async () => {
-    api.acasalamento.mockRejectedValueOnce(
-      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
-        dtAcasalamento: 'A data não pode ser antes do 1º parto.',
-      }),
-    )
-
-    await abrirNinhada()
-    await escolherAcasalamento('03/09/2026')
-
-    await waitFor(() => expect(api.acasalamento).toHaveBeenCalled(), DEMORA)
-    // com o arquivo inteiro rodando, o campo leva mais de 1 s para mostrar a recusa
-    expect(
-      await screen.findByText('A data não pode ser antes do 1º parto.', {}, DEMORA),
-    ).toBeTruthy()
-    await waitFor(
-      () =>
-        expect((screen.getByLabelText('Data do acasalamento') as HTMLInputElement).value).toBe(
-          '01/09/2026',
-        ),
-      DEMORA,
-    )
-  })
-
-  it('com a ninhada na caixa do casal, os a mais entram nela: a correção não pede caixa', async () => {
-    await abrirNinhada()
-
-    corrigir('Parto')
-    fireEvent.change(screen.getByLabelText('Machos nascidos'), { target: { value: '6' } })
-    fireEvent.change(screen.getByLabelText('Motivo da correção'), {
-      target: { value: 'contagem errada' },
-    })
-
-    expect(screen.queryByText(/em qual caixa de estoque entram/)).toBeNull()
-    fireEvent.click(botao('Salvar correção'))
-
-    await waitFor(() => expect(api.corrigir).toHaveBeenCalled(), DEMORA)
-    expect(api.corrigir).toHaveBeenCalledWith({
-      idParto: 10,
-      evento: 'nascimento',
-      corpo: { dtPartoReal: '2026-09-24', nascidoM: 6, nascidoF: 5, motivo: 'contagem errada' },
-    })
-  })
-
-  it('com a caixa do casal ocupada por outra ninhada, os a mais vão para a caixa de estoque clicada', async () => {
-    api.ficha = fichaDeCasal({
-      partos: [
-        desmamado({ onde: [lugar({ idCaixa: 30, codigo: 'F1C', tipo: 'estoque', m: 4 })] }),
-        parto({
-          id: 11,
-          ordem: 2,
-          dtAcasalamento: '2026-10-20',
-          dtPartoReal: '2026-11-05',
-          baixasAntesDoDesmame: { m: 0, f: 0 },
-        }),
-      ],
-    })
-    abrirFicha()
-    fireEvent.click(await acharBotao('1º'))
-    fireEvent.click(aba('Ninhada'))
-
-    corrigir('Parto')
-    fireEvent.change(screen.getByLabelText('Machos nascidos'), { target: { value: '6' } })
-    fireEvent.change(screen.getByLabelText('Motivo da correção'), {
-      target: { value: 'contagem errada' },
-    })
-
-    const caixa = (
-      await screen.findByText(/em qual caixa de estoque entram os machos a mais/)
-    ).closest('.ant-form-item') as HTMLElement
-    // só caixa que já existe: a posição vazia fica apagada
-    expect(celula('F1B: posição vazia', caixa)).toHaveProperty('disabled', true)
-    fireEvent.click(celula(/^F1C: caixa de estoque com 6 machos/, caixa))
-    fireEvent.click(botao('Salvar correção'))
-
-    await waitFor(() => expect(api.corrigir).toHaveBeenCalled(), DEMORA)
-    expect(api.corrigir).toHaveBeenCalledWith({
-      idParto: 10,
-      evento: 'nascimento',
-      corpo: {
-        dtPartoReal: '2026-09-24',
-        nascidoM: 6,
-        nascidoF: 5,
-        motivo: 'contagem errada',
-        idCaixa: 30,
-      },
-    })
-  })
-
-  it('a troca de sexo não cria animal: com a caixa ocupada, não pede caixa de estoque', async () => {
-    api.ficha = fichaDeCasal({
-      partos: [
-        desmamado({ onde: [lugar({ idCaixa: 30, codigo: 'F1C', tipo: 'estoque', m: 4 })] }),
-        parto({
-          id: 11,
-          ordem: 2,
-          dtAcasalamento: '2026-10-20',
-          dtPartoReal: '2026-11-05',
-          baixasAntesDoDesmame: { m: 0, f: 0 },
-        }),
-      ],
-    })
-    abrirFicha()
-    fireEvent.click(await acharBotao('1º'))
-    fireEvent.click(aba('Ninhada'))
-
-    corrigir('Parto')
-    // um macho a mais sozinho é animal novo, e pede a caixa
-    fireEvent.change(screen.getByLabelText('Machos nascidos'), { target: { value: '6' } })
-    expect(await screen.findByText(/em qual caixa de estoque entram os machos a mais/)).toBeTruthy()
-
-    // com uma fêmea a menos, era um macho registrado como fêmea: a API troca o sexo
-    fireEvent.change(screen.getByLabelText('Fêmeas nascidas'), { target: { value: '4' } })
-    await waitFor(() => expect(screen.queryByText(/em qual caixa de estoque entram/)).toBeNull())
-  })
-
-  it('com a caixa do casal ocupada por outra ninhada, os a mais de dois sexos pedem um sexo por vez', async () => {
-    api.ficha = fichaDeCasal({
-      partos: [
-        desmamado({ onde: [] }),
-        parto({
-          id: 11,
-          ordem: 2,
-          dtAcasalamento: '2026-10-20',
-          dtPartoReal: '2026-11-05',
-          baixasAntesDoDesmame: { m: 0, f: 0 },
-        }),
-      ],
-    })
-    abrirFicha()
-    fireEvent.click(await acharBotao('1º'))
-    fireEvent.click(aba('Ninhada'))
-
-    corrigir('Parto')
-    fireEvent.change(screen.getByLabelText('Machos nascidos'), { target: { value: '6' } })
-    fireEvent.change(screen.getByLabelText('Fêmeas nascidas'), { target: { value: '6' } })
-
-    expect(await screen.findByText(/Corrija um sexo de cada vez\./)).toBeTruthy()
-    // a API recusaria: o envio fica preso até sobrar um sexo só
-    expect(botao('Salvar correção')).toHaveProperty('disabled', true)
-  })
-
-  it('a caixa do casal que a API diz não servir pede a estante, um sexo por vez', async () => {
+  it('nem o parto, nem o desmame têm Corrigir, nem motivo de correção', async () => {
     api.ficha = fichaDeCasal({ partos: [desmamado()] })
-    api.corrigir.mockRejectedValueOnce(
-      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
-        idCaixa: 'A caixa F1A do casal tem agora a ninhada do 2o parto: diga em qual caixa.',
-      }),
-    )
-    await abrirNinhada()
+    const ninhada = await abrirNinhada()
 
-    corrigir('Parto')
-    fireEvent.change(screen.getByLabelText('Machos nascidos'), { target: { value: '6' } })
-    fireEvent.change(screen.getByLabelText('Motivo da correção'), {
-      target: { value: 'contagem errada' },
-    })
-    fireEvent.click(botao('Salvar correção'))
-
-    // a recusa aparece no campo da caixa, que a ficha não sabia que precisava
-    expect(
-      await screen.findByText(
-        'A caixa F1A do casal tem agora a ninhada do 2o parto: diga em qual caixa.',
-        {},
-        DEMORA,
-      ),
-    ).toBeTruthy()
-    expect(screen.getByText(/em qual caixa de estoque entram os machos a mais/)).toBeTruthy()
-
-    // com a mais dos dois sexos, a estante sai, o aviso explica e o envio fica preso
-    fireEvent.change(screen.getByLabelText('Fêmeas nascidas'), { target: { value: '6' } })
-    expect(await screen.findByText(/Corrija um sexo de cada vez\./)).toBeTruthy()
-    expect(screen.queryByText(/em qual caixa de estoque entram/)).toBeNull()
-    expect(botao('Salvar correção')).toHaveProperty('disabled', true)
+    expect(botoes('Corrigir', ninhada)).toHaveLength(0)
+    expect(within(ninhada).queryByLabelText('Motivo da correção')).toBeNull()
+    // o lançamento de fato novo continua: a baixa e a passagem para o estoque
+    expect(talvezBotao('Registrar baixa', ninhada)).toBeTruthy()
+    expect(talvezBotao('Passar para o estoque', ninhada)).toBeTruthy()
   })
 })
 
@@ -1154,7 +832,7 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     }
   }
 
-  it('a ficha não lança fato novo, mas corrige o que já foi registrado', async () => {
+  it('a ficha não lança fato novo; o que já foi registrado se corrige no lápis Editar', async () => {
     api.ficha = liberada()
     abrirFicha()
 
@@ -1163,6 +841,7 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
       screen.getByText(/^Caixa liberada em 20\/10\/2026: a baixa dos últimos animais/),
     ).toBeTruthy()
     expect(talvezBotao('Formar casal')).toBeNull()
+    expect(document.querySelector('button[aria-label="Editar"]')).not.toBeNull()
 
     fireEvent.click(aba('Ninhada'))
     const ninhada = await abaAberta()
@@ -1170,20 +849,7 @@ describe('caixa liberada', { timeout: 40_000 }, () => {
     expect(talvezBotao('Registrar desmame', ninhada)).toBeNull()
     expect(talvezBotao('Registrar baixa', ninhada)).toBeNull()
     expect(within(ninhada).getByText('A ninhada não chegou ao desmame.')).toBeTruthy()
-    // o nascimento; a data do acasalamento se edita direto no campo
-    expect(botoes('Corrigir', ninhada)).toHaveLength(1)
-  })
-
-  it('corrigir o nascimento com animais a mais pede a caixa de estoque: a liberada não recebe', async () => {
-    api.ficha = liberada()
-    abrirFicha()
-    fireEvent.click(aba('Ninhada'))
-    await abaAberta()
-
-    corrigir('Parto')
-    fireEvent.change(screen.getByLabelText('Machos nascidos'), { target: { value: '6' } })
-
-    expect(await screen.findByText(/em qual caixa de estoque entram os machos a mais/)).toBeTruthy()
+    expect(botoes('Corrigir', ninhada)).toHaveLength(0)
   })
 
   it('depois da baixa que libera a caixa, a ficha continua aberta, agora liberada, sem Desfazer', async () => {
@@ -1259,7 +925,7 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
     expect(talvezBotao('Registrar acasalamento')).toBeNull()
   })
 
-  it('o acasalamento que abriu automaticamente é só a data no campo, sem texto nem Corrigir', async () => {
+  it('o acasalamento que abriu automaticamente é só a data, sem texto nem Corrigir', async () => {
     const pendente = (dtAcasalamento: string) =>
       parto({
         id: 11,
@@ -1278,9 +944,7 @@ describe('aba Reprodução', { timeout: 20_000 }, () => {
     fireEvent.click(screen.getByText('2º', { selector: 'button' }))
 
     const ninhada = await abaAberta()
-    expect((within(ninhada).getByLabelText('Data do acasalamento') as HTMLInputElement).value).toBe(
-      '30/09/2026',
-    )
+    expect(within(secao('Acasalamento')).getByText('30/09/2026')).toBeTruthy()
     expect(within(ninhada).queryByText(/Aberto automaticamente/)).toBeNull()
     expect(talvezBotao('Corrigir', secao('Acasalamento'))).toBeNull()
   })
@@ -1476,7 +1140,7 @@ describe('casal novo na caixa', { timeout: 20_000 }, () => {
 })
 
 describe('editar o casal pelo lápis', { timeout: 30_000 }, () => {
-  const lapis = () => document.querySelector<HTMLButtonElement>('button[aria-label="Editar casal"]')
+  const lapis = () => document.querySelector<HTMLButtonElement>('button[aria-label="Editar"]')
 
   /** escolhe a opção no Select do rótulo: a da lista aberta por último, que é a deste campo */
   async function escolher(rotulo: string, opcao: string) {

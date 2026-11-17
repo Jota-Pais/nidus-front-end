@@ -157,6 +157,44 @@ export function vivosNaCaixa(parto: Pick<Parto, 'onde'>, idCaixa: number): OndeE
   return parto.onde.find((lugar) => lugar.idCaixa === idCaixa && lugar.m + lugar.f > 0)
 }
 
+/**
+ * Os pedidos com reservados do parto: as opções quando a API pede de qual pedido saem os animais
+ * da seleção, do desmame ou da correção, que tiram do parto todo
+ */
+export const pedidosDoParto = (parto: Pick<Parto, 'reservados'>) =>
+  parto.reservados.map((reserva) => reserva.idPedido)
+
+/**
+ * A seleção é antes do desmame, e não limita a data dele: com o desmame antes da última seleção, as
+ * seleções depois da data passam para ela (a API leva). O aviso diz isso embaixo do campo, no
+ * registro e na correção do desmame
+ */
+export function avisoDaSelecao(dtUltimaSelecao: DataISO | null) {
+  return (data: DataISO | undefined) =>
+    data && dtUltimaSelecao && data < dtUltimaSelecao
+      ? `As eutanásias de seleção de ${formatarData(dtUltimaSelecao)} passam para a data do desmame.`
+      : null
+}
+
+/**
+ * As causas da baixa como o formulário as mostra. Antes do desmame elas são os índices do
+ * aleitamento: a eutanásia é o ajuste de ninhada (a seleção) e a morte é a morte no aleitamento.
+ * O registro da baixa e a correção dela no lápis Editar mostram as mesmas
+ */
+export const CAUSAS_DA_BAIXA: Record<
+  'aleitamento' | 'depois',
+  { value: 'morte' | 'eutanasia'; label: string }[]
+> = {
+  aleitamento: [
+    { value: 'morte', label: 'Morte no aleitamento' },
+    { value: 'eutanasia', label: 'Eutanásia (ajuste de ninhada)' },
+  ],
+  depois: [
+    { value: 'morte', label: 'Morte' },
+    { value: 'eutanasia', label: 'Eutanásia' },
+  ],
+}
+
 /** Os números dos partos antes do primeiro registrado: o cadastro inicial, de antes do Nidus */
 export function partosAntesDoNidus(partoInicial: number): number[] {
   return Array.from({ length: Math.max(partoInicial - 1, 0) }, (_, i) => i + 1)

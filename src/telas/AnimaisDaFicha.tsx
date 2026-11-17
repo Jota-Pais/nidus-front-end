@@ -8,6 +8,7 @@ import { App, Form, InputNumber, Radio, Select } from 'antd'
 import { Aviso, Botao, CampoDeData } from '@/componentes'
 import {
   CAMPO_DO_SEXO,
+  CAUSAS_DA_BAIXA,
   contarDoSexo,
   descreverFalta,
   destinoDoLugar,
@@ -155,21 +156,6 @@ function nomeDoItem(itens: Pick<ItemDaBaixa, 'sexo'>[]): NomeNoFormulario {
     if (item === undefined || resto === undefined) return chave
     return resto === 'dtNascimento' ? 'dtNascimento' : `${CAMPO_DO_SEXO[item.sexo]}.${resto}`
   }
-}
-
-/**
- * As causas da baixa como o formulário as mostra. Antes do desmame elas são os índices do
- * aleitamento: a eutanásia é o ajuste de ninhada (a seleção) e a morte é a morte no aleitamento
- */
-const CAUSAS_DA_BAIXA: Record<'aleitamento' | 'depois', { value: TipoDaBaixa; label: string }[]> = {
-  aleitamento: [
-    { value: 'morte', label: 'Morte no aleitamento' },
-    { value: 'eutanasia', label: 'Eutanásia (ajuste de ninhada)' },
-  ],
-  depois: [
-    { value: 'morte', label: 'Morte' },
-    { value: 'eutanasia', label: 'Eutanásia' },
-  ],
 }
 
 /**
