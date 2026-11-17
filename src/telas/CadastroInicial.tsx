@@ -1,10 +1,10 @@
 // O cadastro inicial da colônia: animais que já existiam antes do Nidus, de idade conhecida e casal
-// desconhecido. Uma caixa de estoque nova numa posição vazia, ou mais animais numa caixa de
-// estoque que já existe
+// desconhecido. Entram só com a caixa de estoque nova, numa posição vazia; a quantidade lançada
+// errada se corrige no lápis da caixa de estoque (EditarEstoque)
 import { App, Form, InputNumber, Segmented, Select } from 'antd'
 import { Aviso, Botao, CampoDeData } from '@/componentes'
-import { contarDoSexo, ROTULO_DO_SEXO, SEXOS, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
-import { useCatalogo, useEntradaNaCaixa, useNovaCaixaDeEstoque } from '@/dominio/consultas'
+import { ROTULO_DO_SEXO, SEXOS, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
+import { useCatalogo, useNovaCaixaDeEstoque } from '@/dominio/consultas'
 import type { DataISO, PosicaoNaEstante, Sexo } from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { descreverDias, haDias, hoje, idadeEmDias } from '@/lib/data'
@@ -136,76 +136,6 @@ export function NovaCaixaDeEstoque({
       <Botao variante="primario" htmlType="submit" loading={criar.isPending}>
         Cadastrar caixa de estoque
       </Botao>
-    </Form>
-  )
-}
-
-interface CamposDaEntrada {
-  quantidade: number
-  dtNascimento: DataISO
-}
-
-/** Mais animais do cadastro inicial na caixa de estoque: sexo e linhagem vêm da caixa */
-export function AcrescentarAnimais({
-  idCaixa,
-  sexo,
-  aoTerminar,
-}: {
-  idCaixa: number
-  sexo: Sexo
-  aoTerminar: () => void
-}) {
-  const { message } = App.useApp()
-  const entrada = useEntradaNaCaixa()
-  const [form] = Form.useForm<CamposDaEntrada>()
-  const falha = useFalhaDoFormulario(form, ['quantidade', 'dtNascimento'])
-  const nascimento = Form.useWatch('dtNascimento', form)
-
-  function salvar(campos: CamposDaEntrada) {
-    falha.limpar()
-    entrada.mutateAsync({ idCaixa, ...campos }).then(
-      () => {
-        void message.success(`${contarDoSexo(campos.quantidade, sexo)} acrescentados.`)
-        aoTerminar()
-      },
-      (erro: Error) => falha.mostrar(erro),
-    )
-  }
-
-  return (
-    <Form
-      name="entrada"
-      form={form}
-      layout="vertical"
-      onFinish={salvar}
-      className="ficha__formulario"
-    >
-      {falha.erro && <Aviso tom="erro" titulo={falha.erro} />}
-      <LadoALado>
-        <Form.Item
-          name="quantidade"
-          label="Quantidade"
-          rules={[{ required: true, message: 'De 1 a 999' }]}
-        >
-          <InputNumber {...QUANTIDADE} style={{ width: '100%' }} />
-        </Form.Item>
-        <Form.Item
-          name="dtNascimento"
-          label="Data de nascimento"
-          extra={<IdadeHoje nascimento={nascimento} />}
-          rules={[{ required: true, message: 'Data' }]}
-        >
-          <CampoDeData max={haDias(IDADE_MINIMA_DIAS)} />
-        </Form.Item>
-      </LadoALado>
-      <div className="ficha__botoes">
-        <Botao variante="primario" htmlType="submit" loading={entrada.isPending}>
-          Acrescentar
-        </Botao>
-        <Botao variante="fantasma" onClick={aoTerminar}>
-          Cancelar
-        </Botao>
-      </div>
     </Form>
   )
 }

@@ -12,6 +12,7 @@ import {
   mutacaoComResposta,
   parto,
   selecao,
+  talvezBotao,
 } from '@/testes/ficha'
 import { consulta, renderizar } from '@/testes/renderizar'
 import { larguraDaTela } from '@/testes/tela'
@@ -24,7 +25,6 @@ const api = vi.hoisted(() => ({
   catalogo: undefined as unknown,
   formar: vi.fn(),
   criar: vi.fn(),
-  entrada: vi.fn(),
 }))
 
 vi.mock('@/dominio/consultas', () => ({
@@ -32,7 +32,6 @@ vi.mock('@/dominio/consultas', () => ({
   useCatalogo: () => consulta(api.catalogo),
   useFormarCasal: () => mutacaoComResposta(api.formar),
   useNovaCaixaDeEstoque: () => mutacaoComResposta(api.criar),
-  useEntradaNaCaixa: () => mutacaoComResposta(api.entrada),
   useRegistrarNaFicha: () => mutacaoComResposta(vi.fn()),
   useCorrigirEvento: () => mutacaoComResposta(vi.fn()),
   useCorrigirAcasalamento: () => mutacaoComResposta(vi.fn()),
@@ -68,7 +67,6 @@ beforeEach(() => {
   api.catalogo = catalogo
   api.formar.mockReset().mockResolvedValue({ idCaixa: 50 })
   api.criar.mockReset().mockResolvedValue({ idCaixa: 51, codigo: 'F1B' })
-  api.entrada.mockReset().mockResolvedValue({})
 })
 
 afterEach(() => vi.useRealTimers())
@@ -336,22 +334,14 @@ describe('nova caixa de estoque', { timeout: 40_000 }, () => {
   })
 })
 
-describe('acrescentar animais numa caixa de estoque', { timeout: 40_000 }, () => {
-  it('manda a quantidade e o nascimento; sexo e linhagem vêm da caixa', async () => {
+describe('o cadastro inicial na ficha da caixa de estoque', { timeout: 40_000 }, () => {
+  it('não acrescenta animais numa caixa que já existe: o cadastro só entra com a caixa nova', () => {
     api.ficha = fichaDeEstoque()
     renderizar(<FichaDaCaixa idCaixa={30} aoFechar={() => {}} />)
 
-    fireEvent.click(botao('Acrescentar animais (cadastro inicial)'))
-    fireEvent.change(screen.getByLabelText('Quantidade'), { target: { value: '8' } })
-    digitarNascimento('20/09/2026')
-    fireEvent.click(botao('Acrescentar'))
-
-    await waitFor(() => expect(api.entrada).toHaveBeenCalled(), DEMORA)
-    expect(api.entrada).toHaveBeenCalledWith({
-      idCaixa: 30,
-      quantidade: 8,
-      dtNascimento: '2026-09-20',
-    })
+    expect(talvezBotao('Acrescentar animais (cadastro inicial)')).toBeNull()
+    expect(talvezBotao('Passar para outra caixa')).toBeTruthy()
+    expect(talvezBotao('Registrar baixa')).toBeTruthy()
   })
 
   it('a origem nula aparece como cadastro inicial na ficha de estoque', () => {
@@ -369,6 +359,7 @@ describe('acrescentar animais numa caixa de estoque', { timeout: 40_000 }, () =>
               numeroVisivelOrigem: null,
               qtd: 6,
               dtEntrada: '2026-11-10',
+              cadastrados: 6,
             },
           ],
         },
