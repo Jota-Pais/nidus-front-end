@@ -295,10 +295,3 @@
     gap: 0;
   }
 }
-
-/* As baixas do aleitamento desde o início: uma linha discreta, embaixo da tabela */
-.visao__aleitamento {
-  margin: 8px 0 0;
-  font-size: 12px;
-  color: var(--cor-suave-frente);
-}
