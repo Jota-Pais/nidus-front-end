@@ -294,6 +294,11 @@ export interface OrigemDoGrupo {
    * Null na origem de casal
    */
   dtEntrada: DataISO | null
+  /**
+   * quantos entraram na ninhada do cadastro inicial (todo animal dela, onde estiver, menos o
+   * registro anulado): a quantidade que o lápis corrige. Null na origem de casal
+   */
+  cadastrados: number | null
 }
 
 /** Os vivos da caixa de estoque que nasceram no mesmo dia: dentro da caixa, só a idade os separa */

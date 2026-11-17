@@ -1247,6 +1247,8 @@ describe('editar a caixa de estoque pelo lápis', { timeout: 30_000 }, () => {
               numeroVisivelOrigem: null,
               qtd: 4,
               dtEntrada: '2026-11-10',
+              // entraram 5: um já saiu
+              cadastrados: 5,
             },
             { ...(grupo.origens[0] as (typeof grupo.origens)[number]), qtd: 2 },
           ],
@@ -1263,6 +1265,7 @@ describe('editar a caixa de estoque pelo lápis', { timeout: 30_000 }, () => {
               numeroVisivelOrigem: null,
               qtd: 3,
               dtEntrada: '2026-11-12',
+              cadastrados: 3,
             },
           ],
         },
@@ -1286,6 +1289,8 @@ describe('editar a caixa de estoque pelo lápis', { timeout: 30_000 }, () => {
 
   const camposDeNascimento = () =>
     screen.getAllByLabelText(/Nascimento do cadastro inicial/) as HTMLInputElement[]
+
+  const camposDeQuantidade = () => screen.getAllByLabelText('Quantidade') as HTMLInputElement[]
 
   it('o técnico e o gestor veem o lápis na caixa de estoque; o pesquisador e a caixa liberada, não', () => {
     api.ficha = fichaDeEstoque()
@@ -1317,6 +1322,8 @@ describe('editar a caixa de estoque pelo lápis', { timeout: 30_000 }, () => {
 
     expect(selecao('Linhagem').closest('.ant-select')?.textContent).toContain('Wistar')
     expect(camposDeNascimento().map((campo) => campo.value)).toEqual(['24/09/2026', '01/10/2026'])
+    // a quantidade é quantos entraram, e não os vivos de agora
+    expect(camposDeQuantidade().map((campo) => campo.value)).toEqual(['5', '3'])
     expect(
       screen.getByText('Entraram no estoque em 10/11/2026: o nascimento não passa disso.'),
     ).toBeTruthy()
@@ -1338,6 +1345,38 @@ describe('editar a caixa de estoque pelo lápis', { timeout: 30_000 }, () => {
       sexo: 'F',
       nascimentos: [{ idParto: 41, dtNascimento: '2026-09-28' }],
     })
+  })
+
+  it('a quantidade vai só a da ninhada que mudou, com o id do parto dela', async () => {
+    await abrirEdicao()
+
+    fireEvent.change(camposDeQuantidade()[1] as HTMLElement, { target: { value: '2' } })
+    fireEvent.click(botao('Salvar'))
+
+    await waitFor(() => expect(api.editarEstoque).toHaveBeenCalled(), DEMORA)
+    expect(api.editarEstoque).toHaveBeenCalledWith({
+      idCaixa: 30,
+      quantidades: [{ idParto: 41, quantidade: 2 }],
+    })
+  })
+
+  it('a recusa da quantidade vai para o campo da ninhada certa, e a janela fica aberta', async () => {
+    const recusa =
+      'Só sai do cadastro animal vivo e livre nesta caixa, e desta ninhada há 1: 2 estão reservados (desfaça a reserva antes). A quantidade não fica abaixo de 2.'
+    api.editarEstoque.mockReset().mockRejectedValue(
+      erroDaApi(400, 'VALIDACAO', 'Confira os campos destacados.', {
+        'quantidades.0.quantidade': recusa,
+      }),
+    )
+    await abrirEdicao()
+
+    fireEvent.change(camposDeQuantidade()[1] as HTMLElement, { target: { value: '1' } })
+    fireEvent.click(botao('Salvar'))
+
+    const mensagem = await screen.findByText(recusa, {}, DEMORA)
+    // no segundo campo de quantidade, o que mudou
+    expect(mensagem.closest('.ant-form-item')?.querySelector('input')).toBe(camposDeQuantidade()[1])
+    expect(screen.getByText('Editar caixa de estoque F1C')).toBeTruthy()
   })
 
   it('sem mudança nenhuma, fecha sem chamar a API', async () => {

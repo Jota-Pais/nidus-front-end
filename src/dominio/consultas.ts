@@ -194,23 +194,6 @@ export function useNovaCaixaDeEstoque() {
   })
 }
 
-/** Acrescenta animais do cadastro inicial a uma caixa de estoque: sexo e linhagem são os dela */
-export function useEntradaNaCaixa() {
-  const cliente = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({
-      idCaixa,
-      ...corpo
-    }: {
-      idCaixa: number
-      quantidade: number
-      dtNascimento: DataISO
-    }) => api<unknown>(`/api/caixas/${idCaixa}/entrada`, { metodo: 'POST', corpo }),
-    onSuccess: () => invalidarColonia(cliente),
-  })
-}
-
 export interface CasalNovo {
   /** caixa que já existe, ou ... */
   idCaixa?: number
@@ -363,12 +346,14 @@ export type EdicaoDoCasal = Partial<
 
 /**
  * O que muda na caixa de estoque lançada errada: só os campos alterados, ao menos um. O nascimento
- * é o de cada ninhada do cadastro inicial (parto sem casal) com animais na caixa
+ * e a quantidade são os de cada ninhada do cadastro inicial (parto sem casal) com animais na caixa:
+ * a quantidade é quantos entraram, e é assim que se acrescenta ou tira animal do cadastro
  */
 export interface EdicaoDoEstoque {
   idLinhagem?: number
   sexo?: Sexo
   nascimentos?: { idParto: number; dtNascimento: DataISO }[]
+  quantidades?: { idParto: number; quantidade: number }[]
 }
 
 /** O engano de digitação na caixa de estoque, sobretudo no cadastro inicial: sem motivo */
