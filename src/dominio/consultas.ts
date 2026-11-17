@@ -7,6 +7,7 @@ import { alvoDaReserva } from './pedido'
 import type {
   Casal,
   Catalogo,
+  Cruzamento,
   DataISO,
   Destino,
   Estante,
@@ -748,7 +749,11 @@ export function useSalvarLinhagem() {
     mutationFn: (
       pedido:
         | { tipo: 'criar'; idEspecie: number; nome: string }
-        | { tipo: 'alterar'; id: number; dados: { nome?: string; ativa?: boolean } },
+        | {
+            tipo: 'alterar'
+            id: number
+            dados: { nome?: string; ativa?: boolean; cruzamento?: Cruzamento | null }
+          },
     ) =>
       pedido.tipo === 'criar'
         ? api('/api/catalogo/linhagens', {

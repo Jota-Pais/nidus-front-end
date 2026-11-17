@@ -3,6 +3,7 @@
 import { formatarData, formatarDataCurta, hoje } from '@/lib/data'
 import { descreverQuantos } from './pedido'
 import type {
+  Cruzamento,
   DataISO,
   Destino,
   EstoqueNoCard,
@@ -84,6 +85,39 @@ export const OPCOES_DE_GRUPO = ['A', 'B', 'C', 'D', 'E'].map((grupo) => ({
   value: grupo,
   label: grupo,
 }))
+
+/** Como se cruzam as famílias A-E de uma linhagem, como o gestor escolhe nos Cadastros */
+export const NOME_DO_CRUZAMENTO: Record<Cruzamento, string> = {
+  rodizio: 'Rodízio (heterogênica)',
+  mesma_letra: 'Mesma letra (isogênica)',
+}
+
+/** No rodízio, o grupo do macho vai com o seguinte na fêmea: A com B, B com C ... E com A */
+const PROXIMO_GRUPO: Record<string, string> = { A: 'B', B: 'C', C: 'D', D: 'E', E: 'A' }
+
+/**
+ * O que o par foge da regra de cruzamento da linhagem, em texto; null se segue a regra, se falta
+ * escolher a linhagem ou um dos grupos, ou se a linhagem não tem regra. Só avisa: o casal é
+ * salvo do mesmo jeito
+ */
+export function foraDaRegraDeCruzamento(
+  linhagem: { nome: string; cruzamento: Cruzamento | null } | undefined,
+  macho: string | undefined,
+  femea: string | undefined,
+): string | null {
+  if (!linhagem?.cruzamento || !macho || !femea) return null
+
+  if (linhagem.cruzamento === 'rodizio') {
+    const par = PROXIMO_GRUPO[macho]
+    return femea === par
+      ? null
+      : `A ${linhagem.nome} é heterogênica: no rodízio, o macho ${macho} vai com a fêmea ${par}.`
+  }
+
+  return femea === macho
+    ? null
+    : `A ${linhagem.nome} é isogênica: o macho ${macho} vai com a fêmea ${macho}.`
+}
 
 /** Os partos do casal, do 1º ao 5º: em qual ele está quando entra no Nidus */
 export const OPCOES_DE_PARTO = Array.from({ length: MAX_PARTOS_POR_CASAL }, (_, i) => ({

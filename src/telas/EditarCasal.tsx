@@ -8,6 +8,7 @@ import type { EdicaoDoCasal } from '@/dominio/consultas'
 import type { Casal, CodigoEspecie, DataISO } from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { ateHoje } from '@/lib/data'
+import { AvisoDoCruzamento } from './AvisoDoCruzamento'
 import { LadoALado } from './CamposDaFicha'
 import './LapisDaFicha.css'
 
@@ -152,6 +153,7 @@ function JanelaDoCasal({
             <Select options={OPCOES_DE_GRUPO} />
           </Form.Item>
         </LadoALado>
+        <AvisoDoCruzamento form={form} />
         <Form.Item
           name="dtFormacao"
           label="Data de formação"

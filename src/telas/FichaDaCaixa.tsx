@@ -21,6 +21,7 @@ import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
 import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { ateHoje, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
+import { AvisoDoCruzamento } from './AvisoDoCruzamento'
 import { NovaCaixaDeEstoque } from './CadastroInicial'
 import { Campo, LadoALado } from './CamposDaFicha'
 import { EditarCasal } from './EditarCasal'
@@ -560,10 +561,7 @@ function FormarCasal({
           <Select options={OPCOES_DE_GRUPO} />
         </Form.Item>
       </LadoALado>
-      <p className="ficha__dica">
-        Heterogênicas (Wistar, Swiss): rodízio AB, BC, CD, DE, EA. Isogênicas (SHR, Kyoto,
-        C57BL/6J): macho e fêmea da mesma letra.
-      </p>
+      <AvisoDoCruzamento form={form} />
       <Form.Item
         name="dtFormacao"
         label="Acasalamento"

@@ -148,8 +148,8 @@ export const catalogo: Catalogo = {
       codigo: 'rato',
       nome: 'Rato',
       linhagens: [
-        { id: 1, nome: 'Wistar', ativa: true },
-        { id: 2, nome: 'Swiss', ativa: true },
+        { id: 1, nome: 'Wistar', ativa: true, cruzamento: 'rodizio' },
+        { id: 2, nome: 'Swiss', ativa: true, cruzamento: 'rodizio' },
       ],
     },
   ],
