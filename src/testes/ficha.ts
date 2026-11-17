@@ -39,6 +39,7 @@ export const parto = (parcial: Partial<Parto> = {}): Parto => ({
   dtUltimaSelecao: null,
   dtPrimeiraSaida: null,
   dtPrimeiroFato: null,
+  baixas: [],
   ...parcial,
 })
 

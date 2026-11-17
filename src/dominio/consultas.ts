@@ -278,34 +278,75 @@ export interface CorrecaoDoNascimento {
   dtPartoReal: DataISO
   nascidoM: number
   nascidoF: number
-  motivo: string
   /** a caixa de estoque que recebe os animais a mais quando a do casal não serve mais */
   idCaixa?: number
   /** de qual pedido saem os reservados quando os livres não bastam */
   idPedido?: number
 }
 
-/** A correção do desmame é só a data: a contagem se corrige anulando a baixa ou lançando outra */
+/**
+ * A correção do desmame: a data e, só quando mudou, a contagem de um sexo ou dos dois. A contagem
+ * muda pela baixa "não chegou ao desmame", que a API anula e lança de novo
+ */
 export interface CorrecaoDoDesmame {
   dtDesmameReal: DataISO
+  desmamadoM?: number
+  desmamadoF?: number
+  /** de qual pedido saem os reservados que passam a não ter chegado ao desmame */
+  idPedido?: number
+}
+
+/** A data e o motivo do fechamento sem ninhada: o motivo é o do fechamento, não o da correção */
+export interface CorrecaoDoSemNinhada {
+  dtSemNinhada: DataISO
   motivo: string
 }
 
 export type CorrecaoDoParto =
   | { idParto: number; evento: 'nascimento'; corpo: CorrecaoDoNascimento }
   | { idParto: number; evento: 'desmame'; corpo: CorrecaoDoDesmame }
+  | { idParto: number; evento: 'sem-ninhada'; corpo: CorrecaoDoSemNinhada }
 
-/** A correção de um evento já registrado do parto: sempre com motivo */
+/** A correção de um evento já registrado do parto, pelo lápis Editar: sem motivo */
 export function useCorrigirEvento() {
   const cliente = useQueryClient()
 
   return useMutation({
     mutationFn: ({ idParto, evento, corpo }: CorrecaoDoParto) =>
-      // o desmame devolve só o parto; o nascimento, também os pedidos que ficaram em falta
-      api<{ parto: Parto; faltas?: FaltaDoPedido[] }>(`/api/partos/${idParto}/${evento}`, {
+      // o nascimento e o desmame devolvem também os pedidos que ficaram em falta
+      api<{ parto?: Parto; faltas?: FaltaDoPedido[] }>(`/api/partos/${idParto}/${evento}`, {
         metodo: 'PATCH',
         corpo,
       }),
+    onSuccess: () => invalidarColonia(cliente),
+  })
+}
+
+/** Como a baixa do parto fica: a data, a causa e quantos de cada sexo */
+export interface CorrecaoDaBaixa {
+  idParto: number
+  idOcorrencia: number
+  dtFato: DataISO
+  tipo: TipoDaBaixa
+  qtdM: number
+  qtdF: number
+  /** de qual pedido saem os reservados quando a baixa leva mais animais e os livres não bastam */
+  idPedido?: number
+}
+
+/**
+ * A baixa do parto lançada errada: com a mesma contagem, a API corrige no lugar; com outra, anula e
+ * lança a certa, numa transação só. Devolve os pedidos que ficaram em falta
+ */
+export function useCorrigirBaixa() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ idParto, idOcorrencia, ...corpo }: CorrecaoDaBaixa) =>
+      api<{ parto: Parto; faltas?: FaltaDoPedido[] }>(
+        `/api/partos/${idParto}/baixas/${idOcorrencia}`,
+        { metodo: 'PATCH', corpo },
+      ),
     onSuccess: () => invalidarColonia(cliente),
   })
 }
@@ -434,7 +475,8 @@ export function useMudanca() {
 export interface Anulacao {
   /** o idOcorrencia do evento de baixa anulável */
   idOcorrencia: number
-  motivo: string
+  /** sem ele, a trilha diz que a baixa foi lançada por engano */
+  motivo?: string
   /** só quando a caixa da baixa não serve mais: para onde voltam os machos e as fêmeas */
   idCaixaMachos?: number
   idCaixaFemeas?: number
