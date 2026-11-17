@@ -5,6 +5,7 @@ import {
   descreverFalta,
   descreverLiberacao,
   destinoDoLugar,
+  foraDaRegraDeCruzamento,
   motivoDoAtraso,
   reservadosDoSexo,
 } from './caixa'
@@ -141,5 +142,35 @@ describe('aMaisNaCorrecao', () => {
 
   it('contagem menor não cria animal', () => {
     expect(aMaisNaCorrecao({ m: 5, f: 5 }, { m: 4, f: 5 })).toEqual({ m: 0, f: 0 })
+  })
+})
+
+describe('foraDaRegraDeCruzamento', () => {
+  const wistar = { nome: 'Wistar', cruzamento: 'rodizio' as const }
+  const c57 = { nome: 'C57BL/6J', cruzamento: 'mesma_letra' as const }
+
+  it('no rodízio, o macho vai com a fêmea do grupo seguinte, e o E volta ao A', () => {
+    expect(foraDaRegraDeCruzamento(wistar, 'A', 'B')).toBeNull()
+    expect(foraDaRegraDeCruzamento(wistar, 'E', 'A')).toBeNull()
+    expect(foraDaRegraDeCruzamento(wistar, 'A', 'A')).toBe(
+      'A Wistar é heterogênica: no rodízio, o macho A vai com a fêmea B.',
+    )
+    // o rodízio tem sentido: fêmea A com macho B não é o par AB
+    expect(foraDaRegraDeCruzamento(wistar, 'B', 'A')).toBe(
+      'A Wistar é heterogênica: no rodízio, o macho B vai com a fêmea C.',
+    )
+  })
+
+  it('na mesma letra, macho e fêmea do mesmo grupo', () => {
+    expect(foraDaRegraDeCruzamento(c57, 'C', 'C')).toBeNull()
+    expect(foraDaRegraDeCruzamento(c57, 'A', 'B')).toBe(
+      'A C57BL/6J é isogênica: o macho A vai com a fêmea A.',
+    )
+  })
+
+  it('não avisa sem regra na linhagem, sem linhagem ou com um grupo em branco', () => {
+    expect(foraDaRegraDeCruzamento({ nome: 'Lewis', cruzamento: null }, 'A', 'D')).toBeNull()
+    expect(foraDaRegraDeCruzamento(undefined, 'A', 'D')).toBeNull()
+    expect(foraDaRegraDeCruzamento(c57, 'A', undefined)).toBeNull()
   })
 })

@@ -24,7 +24,15 @@ import {
 } from '@/dominio/consultas'
 import type { DadosDoProjeto } from '@/dominio/consultas'
 import { formatarProtocolo } from '@/dominio/protocolo'
-import type { Catalogo, Estante, Projeto, Sala, SituacaoDoProjeto } from '@/dominio/tipos'
+import { NOME_DO_CRUZAMENTO } from '@/dominio/caixa'
+import type {
+  Catalogo,
+  Cruzamento,
+  Estante,
+  Projeto,
+  Sala,
+  SituacaoDoProjeto,
+} from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
 import { useTelaEstreita } from '@/layout/useTelaEstreita'
@@ -279,6 +287,16 @@ function Linhagens() {
   )
 }
 
+/**
+ * A regra das famílias A-E de cada linhagem: só faz aparecer o aviso no casal fora dela, nunca
+ * impede. Sem regra, o casal não avisa nada
+ */
+const OPCOES_DE_CRUZAMENTO: { value: Cruzamento | 'sem'; label: string }[] = [
+  { value: 'rodizio', label: NOME_DO_CRUZAMENTO.rodizio },
+  { value: 'mesma_letra', label: NOME_DO_CRUZAMENTO.mesma_letra },
+  { value: 'sem', label: 'Sem regra' },
+]
+
 function LinhagensDaEspecie({ especie }: { especie: Catalogo['especies'][number] }) {
   const { message } = App.useApp()
   const salvar = useSalvarLinhagem()
@@ -333,6 +351,27 @@ function LinhagensDaEspecie({ especie }: { especie: Catalogo['especies'][number]
         pagination={false}
         columns={[
           { title: 'Linhagem', dataIndex: 'nome' },
+          {
+            title: 'Cruzamento',
+            width: 240,
+            render: (_, linhagem) => (
+              <Select<Cruzamento | 'sem'>
+                value={linhagem.cruzamento ?? 'sem'}
+                options={OPCOES_DE_CRUZAMENTO}
+                aria-label={`Cruzamento da ${linhagem.nome}`}
+                style={{ width: '100%' }}
+                onChange={(valor) => {
+                  const cruzamento = valor === 'sem' ? null : valor
+                  salvar.mutate(
+                    { tipo: 'alterar', id: linhagem.id, dados: { cruzamento } },
+                    aviso(
+                      `${linhagem.nome}: ${cruzamento === null ? 'sem regra de cruzamento' : NOME_DO_CRUZAMENTO[cruzamento].toLowerCase()}.`,
+                    ),
+                  )
+                }}
+              />
+            ),
+          },
           {
             title: 'Ativa',
             width: 90,

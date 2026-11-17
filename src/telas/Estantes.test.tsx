@@ -138,8 +138,8 @@ const catalogo: Catalogo = {
       codigo: 'rato',
       nome: 'Rato',
       linhagens: [
-        { id: 1, nome: 'Wistar', ativa: true },
-        { id: 2, nome: 'SHR', ativa: true },
+        { id: 1, nome: 'Wistar', ativa: true, cruzamento: 'rodizio' },
+        { id: 2, nome: 'SHR', ativa: true, cruzamento: 'mesma_letra' },
       ],
     },
   ],

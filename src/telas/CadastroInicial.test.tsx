@@ -165,26 +165,27 @@ describe('formar casal no Nº parto', { timeout: 40_000 }, () => {
   })
 })
 
-const AVISO_DOS_GRUPOS =
-  'Heterogênicas (Wistar, Swiss): rodízio AB, BC, CD, DE, EA. Isogênicas (SHR, Kyoto, C57BL/6J): macho e fêmea da mesma letra.'
+const FORA_DA_REGRA = 'Par fora da regra de cruzamento'
 
 describe('grupos do casal', { timeout: 40_000 }, () => {
-  it('forma o casal C57BL/6J com A e A: qualquer par passa, e o aviso diz como cruza cada linhagem', async () => {
-    const comCamundongo: Catalogo = {
-      especies: [
-        ...catalogo.especies,
-        {
-          id: 2,
-          codigo: 'camundongo',
-          nome: 'Camundongo',
-          linhagens: [{ id: 5, nome: 'C57BL/6J', ativa: true }],
-        },
-      ],
-    }
+  const comCamundongo: Catalogo = {
+    especies: [
+      ...catalogo.especies,
+      {
+        id: 2,
+        codigo: 'camundongo',
+        nome: 'Camundongo',
+        linhagens: [{ id: 5, nome: 'C57BL/6J', ativa: true, cruzamento: 'mesma_letra' }],
+      },
+    ],
+  }
+
+  it('sem texto fixo: com o par dentro da regra não aparece aviso nenhum', async () => {
     api.catalogo = comCamundongo
     abrirPosicaoVazia()
 
-    expect(screen.getByText(AVISO_DOS_GRUPOS)).toBeTruthy()
+    expect(screen.queryByText(/Heterogênicas/)).toBeNull()
+    expect(screen.queryByText(FORA_DA_REGRA)).toBeNull()
 
     await escolher('Linhagem', 'C57BL/6J')
     await escolher('Grupo do macho (A-E)', 'A')
@@ -192,6 +193,8 @@ describe('grupos do casal', { timeout: 40_000 }, () => {
     const femea = selecao('Grupo da fêmea (A-E)').closest('.ant-select')
     expect(femea?.querySelector('.ant-select-selection-item')).toBeNull()
     await escolher('Grupo da fêmea (A-E)', 'A')
+
+    expect(screen.queryByText(FORA_DA_REGRA)).toBeNull()
     fireEvent.click(botao('Formar casal', document.body))
 
     await waitFor(() => expect(api.formar).toHaveBeenCalled(), DEMORA)
@@ -204,6 +207,40 @@ describe('grupos do casal', { timeout: 40_000 }, () => {
       partoAtual: 1,
     })
     expect(document.querySelector('.ant-form-item-explain-error, .ant-alert-error')).toBeNull()
+  })
+
+  it('par fora da regra: avisa em vermelho, mas forma o casal assim mesmo', async () => {
+    api.catalogo = comCamundongo
+    abrirPosicaoVazia()
+
+    await escolher('Linhagem', 'C57BL/6J')
+    await escolher('Grupo do macho (A-E)', 'A')
+    await escolher('Grupo da fêmea (A-E)', 'B')
+
+    const aviso = screen.getByText(FORA_DA_REGRA).closest('.ant-alert')!
+    expect(aviso.classList.contains('ant-alert-error')).toBe(true)
+    expect(aviso.textContent).toContain('A C57BL/6J é isogênica: o macho A vai com a fêmea A.')
+
+    fireEvent.click(botao('Formar casal', document.body))
+    await waitFor(() => expect(api.formar).toHaveBeenCalled(), DEMORA)
+    expect(api.formar).toHaveBeenCalledWith(
+      expect.objectContaining({ idLinhagem: 5, grupoMacho: 'A', grupoFemea: 'B' }),
+    )
+  })
+
+  it('na heterogênica, avisa o par fora do rodízio e some quando acerta', async () => {
+    abrirPosicaoVazia()
+
+    await escolher('Linhagem', 'Wistar')
+    await escolher('Grupo do macho (A-E)', 'A')
+    await escolher('Grupo da fêmea (A-E)', 'C')
+
+    expect(screen.getByText(FORA_DA_REGRA).closest('.ant-alert')!.textContent).toContain(
+      'A Wistar é heterogênica: no rodízio, o macho A vai com a fêmea B.',
+    )
+
+    await escolher('Grupo da fêmea (A-E)', 'B')
+    await waitFor(() => expect(screen.queryByText(FORA_DA_REGRA)).toBeNull(), DEMORA)
   })
 })
 

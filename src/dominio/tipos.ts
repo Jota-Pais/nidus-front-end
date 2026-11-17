@@ -341,13 +341,16 @@ export interface RespostaDaAnulacao {
 
 // ------------------------------------------------------------ pedidos
 
+/** Como se cruzam as famílias A-E da linhagem; null na linhagem sem regra */
+export type Cruzamento = 'rodizio' | 'mesma_letra'
+
 // GET /api/catalogo
 export interface Catalogo {
   especies: {
     id: number
     codigo: CodigoEspecie
     nome: string
-    linhagens: { id: number; nome: string; ativa: boolean }[]
+    linhagens: { id: number; nome: string; ativa: boolean; cruzamento: Cruzamento | null }[]
   }[]
 }
 
