@@ -541,7 +541,10 @@ export function useConferirViabilidade() {
   })
 }
 
-/** A equipe aceita fazer o pedido. Os animais são reservados depois, em useAlocar */
+/**
+ * A equipe aceita fazer o pedido sem reservar: os animais são reservados depois, em useAlocar. Quem
+ * já tem os animais reserva direto, e a API aprova o pedido na mesma reserva
+ */
 export function useAprovarPedido() {
   const cliente = useQueryClient()
 
@@ -606,8 +609,9 @@ export interface ItemDaReserva {
 }
 
 /**
- * Reserva os animais: o pedido aprovado inteiro, ou, no reservado em falta, o que completa a falta
- * sem passar do pedido. O "qualquer" vai como macho ou fêmea
+ * Reserva os animais: o pedido enviado (que a API aprova junto) ou aprovado inteiro, ou, no
+ * reservado em falta, o que completa a falta sem passar do pedido. O "qualquer" vai como macho ou
+ * fêmea. A lista dos pedidos recarrega com a colônia, já com o pedido reservado
  */
 export function useAlocar() {
   const cliente = useQueryClient()

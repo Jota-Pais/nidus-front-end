@@ -223,11 +223,13 @@ describe('podeRecusar', () => {
 describe('recebeReserva e alvoDaReserva', () => {
   const pedido = { machos: 2, femeas: 2, qualquer: 2 }
 
-  it('o aprovado recebe a reserva do pedido inteiro', () => {
-    const aprovado = { ...pedido, status: 'aprovado' as const, reservaEmFalta: null }
+  it('o enviado e o aprovado recebem a reserva do pedido inteiro', () => {
+    for (const status of ['enviado', 'aprovado'] as const) {
+      const inteiro = { ...pedido, status, reservaEmFalta: null }
 
-    expect(recebeReserva(aprovado)).toBe(true)
-    expect(alvoDaReserva(aprovado)).toEqual(pedido)
+      expect(recebeReserva(inteiro)).toBe(true)
+      expect(alvoDaReserva(inteiro)).toEqual(pedido)
+    }
   })
 
   it('o reservado só recebe se está em falta, e só o que falta', () => {
@@ -242,8 +244,8 @@ describe('recebeReserva e alvoDaReserva', () => {
     })
   })
 
-  it('enviado, entregue e recusado não recebem reserva', () => {
-    for (const status of ['enviado', 'entregue', 'recusado'] as const) {
+  it('entregue e recusado não recebem reserva', () => {
+    for (const status of ['entregue', 'recusado'] as const) {
       expect(recebeReserva({ status, reservaEmFalta: null })).toBe(false)
     }
   })

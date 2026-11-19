@@ -842,7 +842,8 @@ function temAcao(p: Pedido): boolean {
 /**
  * O que a equipe faz com o pedido em cada situação: a ação que leva o pedido adiante à direita,
  * em destaque, e a que recusa ou desfaz à esquerda, longe dela. Aprovar é aqui mesmo, sem outra
- * janela: o pedido inteiro já está à vista. No celular, a ação que leva adiante vai sozinha e
+ * janela: o pedido inteiro já está à vista. O pedido aguardando análise também se reserva direto,
+ * sem aprovar antes: a reserva aprova junto. No celular, a ação que leva adiante vai sozinha e
  * larga no pé da tela, ao alcance do polegar, e as outras numa linha acima dela
  */
 function AcoesDoPedido({
@@ -886,6 +887,13 @@ function AcoesDoPedido({
       </Botao>
     ) : null
 
+  // o que chegou também se reserva já, sem aprovar antes: a API aprova o pedido na reserva
+  const reservarSemAprovar = p.status === 'enviado' && (
+    <Botao variante="secundario" onClick={() => equipe.aoReservar(p)}>
+      Reservar animais
+    </Botao>
+  )
+
   const secundarias = (
     <>
       {podeRecusar(p.status) && (
@@ -893,6 +901,7 @@ function AcoesDoPedido({
           Recusar
         </Botao>
       )}
+      {estreita && reservarSemAprovar}
       {/* a reserva se desfaz a qualquer momento: os animais voltam a ficar livres */}
       {p.status === 'reservado' && (
         <Botao variante={estreita ? 'secundario' : 'fantasma'} onClick={() => equipe.aoDesfazer(p)}>
@@ -916,6 +925,7 @@ function AcoesDoPedido({
       <div className="pedidos__rodapeInicio">{secundarias}</div>
       <div className="pedidos__rodapeFim">
         <Botao onClick={aoFechar}>Fechar</Botao>
+        {reservarSemAprovar}
         {principal}
       </div>
     </div>

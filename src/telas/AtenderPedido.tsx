@@ -46,9 +46,10 @@ function somar(quantos: PorSexo[]): PorSexo {
 /**
  * Reservar os animais do pedido: os lugares (caixa e data de nascimento) com animais livres na
  * idade pedida para a data, com a sugestão do sistema já marcada. A equipe pode trocar de lugar e
- * mudar quanto reserva de cada um. O pedido aprovado só se reserva inteiro; no reservado que perdeu
- * animais, a mesma janela completa a falta, aos poucos se for preciso, sem passar do que falta.
- * Sem animais para isso, espera ou recusa com o motivo
+ * mudar quanto reserva de cada um. O pedido aguardando análise ou aprovado só se reserva inteiro
+ * (o que aguarda análise fica aprovado na mesma reserva); no reservado que perdeu animais, a mesma
+ * janela completa a falta, aos poucos se for preciso, sem passar do que falta. Sem animais para
+ * isso, espera ou recusa com o motivo
  */
 export function AtenderPedido({
   pedido,
@@ -132,11 +133,13 @@ export function AtenderPedido({
       {
         onSuccess: ({ falta }) => {
           void message.success(
-            !completar
-              ? `Animais reservados para o pedido #${pedido.id}.`
-              : falta
-                ? `Reserva do pedido #${pedido.id} completada em parte: ainda ${descreverQueFalta(falta)}.`
-                : `Reserva do pedido #${pedido.id} completa.`,
+            pedido.status === 'enviado'
+              ? `Pedido #${pedido.id} aprovado, com os animais reservados.`
+              : !completar
+                ? `Animais reservados para o pedido #${pedido.id}.`
+                : falta
+                  ? `Reserva do pedido #${pedido.id} completada em parte: ainda ${descreverQueFalta(falta)}.`
+                  : `Reserva do pedido #${pedido.id} completa.`,
           )
           aoConcluir()
         },

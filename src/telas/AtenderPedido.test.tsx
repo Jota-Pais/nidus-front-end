@@ -32,6 +32,14 @@ const aprovado: Pedido = {
   reservaEmFalta: null,
 }
 
+/** O pedido que chegou e ainda aguarda a análise: a reserva o aprova junto */
+const enviado: Pedido = {
+  ...aprovado,
+  status: 'enviado',
+  dataAceite: null,
+  prazoResposta: '2026-11-16',
+}
+
 /** O reservado que perdeu 1 macho e 1 fêmea numa baixa: a janela completa só isso */
 const emFalta: Pedido = {
   ...aprovado,
@@ -249,6 +257,39 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
     // reservado, fecha também o pedido aberto embaixo
     expect(concluir).toHaveBeenCalled()
     expect(fechar).not.toHaveBeenCalled()
+  })
+
+  it('o pedido que aguarda análise se reserva inteiro, e a mensagem diz que ficou aprovado', async () => {
+    responder({
+      sucesso: { idPedido: 12, status: 'reservado', reservados: { m: 2, f: 2 }, falta: null },
+    })
+    const concluir = vi.fn()
+    abrir(enviado, { aoConcluir: concluir })
+
+    expect(screen.getByText('Reservar animais do pedido #12')).toBeTruthy()
+    expect(placar('Machos').textContent).toBe('2 de 2')
+    fireEvent.click(reservar())
+
+    expect(estado.mutate).toHaveBeenCalledWith(
+      { idPedido: 12, itens: [{ idCaixa: 4, dtNascimento: '2026-11-03', machos: 2, femeas: 2 }] },
+      expect.anything(),
+    )
+    expect(await screen.findByText('Pedido #12 aprovado, com os animais reservados.')).toBeTruthy()
+    expect(screen.queryByText('Animais reservados para o pedido #12.')).toBeNull()
+    expect(concluir).toHaveBeenCalled()
+  })
+
+  it('o pedido que aguarda análise exige o pedido inteiro: com menos, não reserva', () => {
+    estado.busca = resultado(
+      [lugar({ sugerida: true, livres: { m: 2, f: 1 }, alocar: { m: 2, f: 1 } })],
+      { m: 0, f: 1, qualquer: 0 },
+    )
+    abrir(enviado)
+
+    expect(reservar()).toHaveProperty('disabled', true)
+    expect(placar('Fêmeas').textContent).toBe('1 de 2')
+    expect(screen.getByText('As caixas não têm animais para o pedido inteiro.')).toBeTruthy()
+    expect(estado.mutate).not.toHaveBeenCalled()
   })
 
   it('a equipe ajusta a sugestão e completa com outro lugar da mesma caixa', async () => {
