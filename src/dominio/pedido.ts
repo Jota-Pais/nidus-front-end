@@ -161,9 +161,10 @@ export interface LugarMarcado {
 }
 
 /**
- * Se a reserva marcada pode ir para a API: a do pedido aprovado só inteira, cobrindo o alvo; a que
- * completa a falta do reservado vai aos poucos, com qualquer quantidade que não passe do alvo. E
- * nenhum lugar dá mais do que tem livre: depois de a busca recarregar, um lugar pode ter menos
+ * Se a reserva marcada pode ir para a API: a do pedido enviado ou aprovado só inteira, cobrindo o
+ * alvo; a que completa a falta do reservado vai aos poucos, com qualquer quantidade que não passe
+ * do alvo. E nenhum lugar dá mais do que tem livre: depois de a busca recarregar, um lugar pode
+ * ter menos
  */
 export function reservaPodeIr(
   conferencia: ConferenciaDaReserva,
@@ -215,18 +216,20 @@ export function podeRecusar(status: StatusDoPedido): boolean {
 }
 
 /**
- * Se o pedido recebe reserva agora: o aprovado, inteiro; o reservado, só o que completa a falta
+ * Se o pedido recebe reserva agora: o enviado e o aprovado, inteiros (a API aprova o enviado na
+ * própria reserva); o reservado, só o que completa a falta
  */
 export function recebeReserva(pedido: Pick<Pedido, 'status' | 'reservaEmFalta'>): boolean {
   return (
+    pedido.status === 'enviado' ||
     pedido.status === 'aprovado' ||
     (pedido.status === 'reservado' && pedido.reservaEmFalta !== null)
   )
 }
 
 /**
- * O que a reserva tem de cobrir: o pedido inteiro no aprovado, só a falta no reservado em falta.
- * No formato de conferirReserva
+ * O que a reserva tem de cobrir: o pedido inteiro no enviado e no aprovado, só a falta no
+ * reservado em falta. No formato de conferirReserva
  */
 export function alvoDaReserva(
   pedido: Pick<Pedido, 'machos' | 'femeas' | 'qualquer' | 'reservaEmFalta'>,

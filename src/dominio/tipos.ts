@@ -436,7 +436,10 @@ export interface Pedido {
   reservaEmFalta: { m: number; f: number; qualquer: number } | null
 }
 
-/** POST /api/pedidos/:id/alocacao: a reserva do aprovado inteiro, ou o que completou da falta */
+/**
+ * POST /api/pedidos/:id/alocacao: a reserva do enviado ou do aprovado inteiro, ou o que completou
+ * da falta
+ */
 export interface RespostaDaAlocacao {
   idPedido: number
   status: 'reservado'
