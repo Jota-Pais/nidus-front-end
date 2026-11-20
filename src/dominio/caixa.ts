@@ -235,6 +235,19 @@ export function partosDaCaixa(ficha: Pick<FichaDeCasal, 'partos' | 'anteriores'>
   return [...ficha.partos, ...ficha.anteriores.flatMap((anterior) => anterior.partos)]
 }
 
+/**
+ * O parto do casal em que a ficha abre quando nenhum tem animais na caixa nem está mamando: o
+ * pendente (acasalado, ainda sem nascer); senão, o último que nasceu. O fechado sem ninhada (o
+ * acasalamento de depois do encerramento que não deu parto) só quando o casal não tem outro
+ */
+export function partoQueAbreAFicha(partos: Parto[]): Parto | undefined {
+  return (
+    partos.find((parto) => parto.dtPartoReal === null && parto.dtSemNinhada === null) ??
+    partos.filter((parto) => parto.dtPartoReal !== null).at(-1) ??
+    partos.at(-1)
+  )
+}
+
 /** Um lugar clicado na estante: uma caixa que já existe (idCaixa) ou uma posição vazia */
 export interface LugarNaEstante {
   idEstante: number

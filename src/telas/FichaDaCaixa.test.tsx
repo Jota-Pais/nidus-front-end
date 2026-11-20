@@ -1433,3 +1433,65 @@ describe('editar a caixa de estoque pelo lápis', { timeout: 30_000 }, () => {
     expect(doCampo?.textContent).toContain('3 animais')
   })
 })
+
+describe('em que parto a ficha do casal abre', { timeout: 40_000 }, () => {
+  const encerrada = (partos: ReturnType<typeof parto>[], ativa: boolean): FichaDeCasal => {
+    const ficha = fichaDeCasal({ casal: casal(1, 'AB', false), partos })
+    return { ...ficha, caixa: { ...ficha.caixa, ativa } }
+  }
+  const aberto = (nome: string) =>
+    screen.getByRole('button', { name: nome }).getAttribute('aria-pressed')
+  const semAnimais = { vivos: { m: 0, f: 0 }, onde: [] }
+
+  it('casal encerrado e caixa liberada abre no último parto que nasceu, e não no fechado sem ninhada', async () => {
+    api.ficha = encerrada(
+      [
+        desmamado({ id: 10, ordem: 1, ...semAnimais }),
+        desmamado({ id: 20, ordem: 2, ...semAnimais }),
+        parto({
+          id: 30,
+          ordem: 3,
+          dtPartoReal: null,
+          dtSemNinhada: '2026-11-05',
+          motivoSemNinhada: 'não emprenhou',
+          ...semAnimais,
+        }),
+      ],
+      false,
+    )
+    abrirFicha()
+
+    expect(await screen.findByRole('button', { name: '2º' })).toBeTruthy()
+    expect(aberto('2º')).toBe('true')
+    expect(aberto('3º')).toBe('false')
+    expect(aberto('1º')).toBe('false')
+  })
+
+  it('a caixa ativa abre no parto que tem animais nela, ainda que haja um mais novo', async () => {
+    api.ficha = encerrada(
+      [desmamado({ id: 10, ordem: 1 }), desmamado({ id: 20, ordem: 2, ...semAnimais })],
+      true,
+    )
+    abrirFicha()
+
+    expect(await screen.findByRole('button', { name: '1º' })).toBeTruthy()
+    expect(aberto('1º')).toBe('true')
+    expect(aberto('2º')).toBe('false')
+  })
+
+  it('a caixa ativa abre no parto que mama, e não no pendente depois dele', async () => {
+    api.ficha = encerrada(
+      [
+        desmamado({ id: 10, ordem: 1, ...semAnimais }),
+        parto({ id: 20, ordem: 2, ...semAnimais }),
+        parto({ id: 30, ordem: 3, dtPartoReal: null, ...semAnimais }),
+      ],
+      true,
+    )
+    abrirFicha()
+
+    expect(await screen.findByRole('button', { name: '2º' })).toBeTruthy()
+    expect(aberto('2º')).toBe('true')
+    expect(aberto('3º')).toBe('false')
+  })
+})
