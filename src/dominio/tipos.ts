@@ -630,3 +630,43 @@ export interface RegistroDoHistorico {
   descricao: string
   dados: unknown
 }
+
+// GET /api/caixas/liberadas
+/** Um casal que morou na caixa liberada, com o que ele deu */
+export interface CasalDaCaixaLiberada {
+  id: number
+  identificacao: string
+  dtFormacao: DataISO
+  dtEncerramento: DataISO | null
+  motivoEncerramento: string | null
+  /** quantos partos nasceram no Nidus; o fechado sem ninhada não conta */
+  partos: number
+  /** a ordem do último parto nascido; null se nenhum nasceu */
+  ultimoParto: number | null
+  /** os animais de todos os partos do casal, contados neles */
+  nascidos: number
+}
+
+/** A caixa que esvaziou e saiu da estante: a ficha dela continua, só não está mais na grade */
+export interface CaixaLiberada {
+  id: number
+  codigo: string
+  sala: string
+  numeroVisivel: string
+  tipo: TipoDeCaixa
+  /** a da caixa de estoque, ou a do casal mais recente na de casal */
+  linhagem: string | null
+  idLinhagem: number | null
+  /** só na de estoque */
+  sexo: Sexo | null
+  dtLiberacao: DataISO | null
+  motivoLiberacao: MotivoDaLiberacao | null
+  /** do mais recente para o mais antigo; vazio na de estoque que nunca foi de casal */
+  casais: CasalDaCaixaLiberada[]
+}
+
+export interface CaixasLiberadas {
+  caixas: CaixaLiberada[]
+  /** há outras, mais antigas, além do limite pedido */
+  temMais: boolean
+}

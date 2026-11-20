@@ -1,4 +1,4 @@
-import { CloseOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import { CloseOutlined, HistoryOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { App, Segmented } from 'antd'
 import { createContext, useContext, useState } from 'react'
 import type { DragEvent } from 'react'
@@ -20,6 +20,7 @@ import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { descreverDias, formatarDataCurta } from '@/lib/data'
 import { FichaDaCaixa } from './FichaDaCaixa'
 import type { PosicaoVazia } from './FichaDaCaixa'
+import { FichaDoHistorico } from './FichaDoHistorico'
 import { LegendaDasFases } from './FaseDaCaixa'
 import { FormularioDaEstante } from './FormularioDaEstante'
 import './Estantes.css'
@@ -79,6 +80,9 @@ export function Estantes() {
   const estantes = useEstantes()
   const salasCadastradas = useSalas()
   const [cadastrando, setCadastrando] = useState(false)
+  // as caixas que saíram da estante: quem opera a colônia acha ali a ficha de cada uma
+  const [comHistorico, setComHistorico] = useState(false)
+  const operaAColonia = perfil === 'tecnico' || perfil === 'gestor'
   const mover = useMudarDePosicao()
   const [sala, setSala] = useState<string | null>(null)
   const [aberta, setAberta] = useState<Alvo | null>(null)
@@ -137,14 +141,21 @@ export function Estantes() {
         rotulo="Infraestrutura"
         titulo="Estantes"
         acoes={
-          perfil === 'gestor' ? (
-            <Botao
-              variante="primario"
-              onClick={() => setCadastrando(true)}
-              disabled={salasCadastradas.data === undefined || estantes.data === undefined}
-            >
-              Nova estante
-            </Botao>
+          operaAColonia ? (
+            <Linha espaco={8}>
+              <Botao icon={<HistoryOutlined />} onClick={() => setComHistorico(true)}>
+                Histórico
+              </Botao>
+              {perfil === 'gestor' && (
+                <Botao
+                  variante="primario"
+                  onClick={() => setCadastrando(true)}
+                  disabled={salasCadastradas.data === undefined || estantes.data === undefined}
+                >
+                  Nova estante
+                </Botao>
+              )}
+            </Linha>
           ) : undefined
         }
       />
@@ -210,6 +221,9 @@ export function Estantes() {
         aoFechar={() => setAberta(null)}
       />
       {cadastrando && <FormularioDaEstante estante={null} aoFechar={() => setCadastrando(false)} />}
+      {operaAColonia && (
+        <FichaDoHistorico aberta={comHistorico} aoFechar={() => setComHistorico(false)} />
+      )}
     </Pilha>
   )
 }

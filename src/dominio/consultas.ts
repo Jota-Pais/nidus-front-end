@@ -5,6 +5,7 @@ import { chaves, invalidarColonia, invalidarPedidos } from '@/app/chaves'
 import { api, ErroDeApi } from '@/lib/api'
 import { alvoDaReserva } from './pedido'
 import type {
+  CaixasLiberadas,
   Casal,
   Catalogo,
   Cruzamento,
@@ -156,6 +157,37 @@ export function useFicha(idCaixa: number | null) {
     queryKey: chaves.caixa(idCaixa ?? 0),
     queryFn: () => api<FichaDaCaixa>(`/api/caixas/${idCaixa}`),
     enabled: idCaixa !== null,
+  })
+}
+
+/** O filtro da lista das caixas liberadas. idEspecie null deixa a consulta desligada */
+export interface FiltroDasLiberadas {
+  idEspecie: number | null
+  idLinhagem: number | null
+  busca: string
+  limite: number
+}
+
+export function caminhoDasLiberadas(filtro: FiltroDasLiberadas): string {
+  const parametros = new URLSearchParams({
+    idEspecie: String(filtro.idEspecie ?? ''),
+    limite: String(filtro.limite),
+  })
+  if (filtro.idLinhagem !== null) parametros.set('idLinhagem', String(filtro.idLinhagem))
+  if (filtro.busca.trim() !== '') parametros.set('busca', filtro.busca.trim())
+  return `/api/caixas/liberadas?${parametros}`
+}
+
+/**
+ * As caixas que saíram da estante, da liberação mais recente para a mais antiga: o caminho até a
+ * ficha delas. Mostrar mais pede um limite maior, sem apagar a lista enquanto carrega
+ */
+export function useCaixasLiberadas(filtro: FiltroDasLiberadas) {
+  return useQuery({
+    queryKey: [...chaves.liberadas, filtro],
+    queryFn: () => api<CaixasLiberadas>(caminhoDasLiberadas(filtro)),
+    enabled: filtro.idEspecie !== null,
+    placeholderData: keepPreviousData,
   })
 }
 

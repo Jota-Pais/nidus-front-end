@@ -15,6 +15,7 @@ const DA_COLONIA = [
   chaves.pedidos,
   chaves.atendimento(7),
   chaves.retirada(7),
+  [...chaves.liberadas, { idEspecie: 1, idLinhagem: null, busca: '', limite: 50 }],
   HISTORICO,
 ]
 

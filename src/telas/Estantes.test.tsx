@@ -149,6 +149,7 @@ vi.mock('@/dominio/consultas', () => ({
   useCatalogo: () => consulta(catalogo),
   useEstantes: () => consulta([estante(1, 'Sala 1', 'E-01'), estante(2, 'Sala 2', 'E-03')]),
   useGrade: () => consulta(grade),
+  useCaixasLiberadas: () => consulta({ caixas: [], temMais: false }),
   useMudarDePosicao: () => ({ mutate: mover, isPending: false }),
   useSalas: () => consulta([{ id: 1, nome: 'Sala 1', estantes: 1 }]),
   useSalvarEstante: () => ({ mutate: vi.fn(), isPending: false }),
@@ -194,6 +195,21 @@ describe('tela Estantes', { timeout: 20_000 }, () => {
     renderizar(<Estantes />, 'tecnico')
 
     expect(screen.queryByRole('button', { name: 'Nova estante' })).toBeNull()
+  })
+
+  it.each(['tecnico', 'gestor'] as const)('o %s tem o botão Histórico, que abre as caixas liberadas', async (perfil) => {
+    renderizar(<Estantes />, perfil)
+
+    expect(screen.queryByRole('dialog', { name: 'Histórico das estantes' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Histórico/ }))
+
+    expect(await screen.findByRole('dialog', { name: 'Histórico das estantes' })).toBeTruthy()
+  })
+
+  it('o pesquisador não vê o botão Histórico', () => {
+    renderizar(<Estantes />, 'pesquisador')
+
+    expect(screen.queryByRole('button', { name: /Histórico/ })).toBeNull()
   })
 
   it('não tem a descrição embaixo do título', () => {
