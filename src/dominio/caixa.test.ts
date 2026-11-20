@@ -7,9 +7,10 @@ import {
   destinoDoLugar,
   foraDaRegraDeCruzamento,
   motivoDoAtraso,
+  partoQueAbreAFicha,
   reservadosDoSexo,
 } from './caixa'
-import type { CasalNoCard } from './tipos'
+import type { CasalNoCard, Parto } from './tipos'
 
 describe('descreverEstoque', () => {
   it('diz quantos animais e quantos reservados', () => {
@@ -172,5 +173,36 @@ describe('foraDaRegraDeCruzamento', () => {
     expect(foraDaRegraDeCruzamento({ nome: 'Lewis', cruzamento: null }, 'A', 'D')).toBeNull()
     expect(foraDaRegraDeCruzamento(undefined, 'A', 'D')).toBeNull()
     expect(foraDaRegraDeCruzamento(c57, 'A', undefined)).toBeNull()
+  })
+})
+
+describe('partoQueAbreAFicha', () => {
+  const doCasal = (ordem: number, parcial: Partial<Parto> = {}) =>
+    ({
+      id: ordem * 10,
+      ordem,
+      dtAcasalamento: '2026-09-01',
+      dtPartoReal: '2026-09-24',
+      dtSemNinhada: null,
+      ...parcial,
+    }) as Parto
+  const pendente = (ordem: number) => doCasal(ordem, { dtPartoReal: null })
+  const semNinhada = (ordem: number) =>
+    doCasal(ordem, { dtPartoReal: null, dtSemNinhada: '2026-11-01' })
+
+  it('abre no parto pendente, o acasalado que ainda não nasceu', () => {
+    expect(partoQueAbreAFicha([doCasal(1), doCasal(2), pendente(3)])?.ordem).toBe(3)
+  })
+
+  it('sem pendente, abre no último que nasceu, mesmo com o sem ninhada depois dele', () => {
+    expect(partoQueAbreAFicha([doCasal(1), doCasal(2), semNinhada(3)])?.ordem).toBe(2)
+  })
+
+  it('o sem ninhada só abre quando o casal não tem outro parto', () => {
+    expect(partoQueAbreAFicha([semNinhada(1)])?.ordem).toBe(1)
+  })
+
+  it('sem parto nenhum, não há o que abrir', () => {
+    expect(partoQueAbreAFicha([])).toBeUndefined()
   })
 })

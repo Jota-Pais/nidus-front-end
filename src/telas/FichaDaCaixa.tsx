@@ -11,6 +11,7 @@ import {
   OPCOES_DE_GRUPO,
   OPCOES_DE_PARTO,
   partosDaCaixa,
+  partoQueAbreAFicha,
   SIMBOLO_DO_SEXO,
   vivosNaCaixa,
 } from '@/dominio/caixa'
@@ -208,8 +209,9 @@ function emAndamento(partos: Parto[]): Parto | undefined {
 
 /**
  * Onde o seletor abre: no parto que tem animais nesta caixa (a ninhada que mama, ou a desmamada
- * que ainda não saiu), deste casal ou de um de antes; senão, no parto em andamento; senão, no mais
- * recente do casal da caixa
+ * que ainda não saiu), deste casal ou de um de antes; senão, no parto em andamento; senão, no do
+ * casal da caixa que faz sentido abrir: o pendente, ou o último que nasceu, e não o fechado sem
+ * ninhada (partoQueAbreAFicha)
  */
 function escolhaInicial(ficha: FichaDeCasal | undefined): Escolha {
   const casais = [
@@ -229,7 +231,10 @@ function escolhaInicial(ficha: FichaDeCasal | undefined): Escolha {
     if (andando) return { idCasal, ordem: andando.ordem }
   }
 
-  return { idCasal: null, ordem: ficha?.partos.at(-1)?.ordem ?? ficha?.casal?.partoInicial ?? 1 }
+  return {
+    idCasal: null,
+    ordem: partoQueAbreAFicha(ficha?.partos ?? [])?.ordem ?? ficha?.casal?.partoInicial ?? 1,
+  }
 }
 
 function BotaoDoParto({
