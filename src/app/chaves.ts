@@ -19,6 +19,8 @@ export const chaves = {
   visaoGeral: [COLONIA, 'visao-geral'] as const,
   grade: (idEstante: number) => [COLONIA, 'grade', idEstante] as const,
   caixa: (idCaixa: number) => [COLONIA, 'caixa', idCaixa] as const,
+  /** as caixas que saíram da estante: a baixa, a mudança e a entrega que esvaziam uma caixa a põem aqui */
+  liberadas: [COLONIA, 'liberadas'] as const,
   pedidos: [COLONIA, 'pedidos'] as const,
   atendimento: (idPedido: number) => [COLONIA, 'atendimento', idPedido] as const,
   retirada: (idPedido: number) => [COLONIA, 'retirada', idPedido] as const,

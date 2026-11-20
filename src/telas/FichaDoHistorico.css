@@ -1,0 +1,58 @@
+/* O histórico das estantes: a janela aberta pelo botão da tela das estantes */
+
+.fichaDoHistorico__explicacao {
+  margin: 12px 0 0;
+  color: var(--cor-suave-frente);
+}
+
+.fichaDoHistorico__aba {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fichaDoHistorico__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fichaDoHistorico__linhagem {
+  width: 200px;
+}
+
+.fichaDoHistorico__busca {
+  width: 300px;
+}
+
+/* No celular, cada filtro ocupa a linha inteira */
+.fichaDoHistorico__filtros--estreito .fichaDoHistorico__linhagem,
+.fichaDoHistorico__filtros--estreito .fichaDoHistorico__busca {
+  flex: 1 1 100%;
+  width: auto;
+}
+
+/* a linha inteira abre a ficha da caixa */
+.fichaDoHistorico__linha {
+  cursor: pointer;
+}
+
+.fichaDoHistorico__caixa,
+.fichaDoHistorico__casal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* o código da caixa é um botão, mas lido como o nome da linha */
+.fichaDoHistorico__caixa > .ant-btn {
+  padding-inline: 0;
+  font-family: var(--fonte-mono);
+  font-weight: 600;
+}
+
+.fichaDoHistorico__mais {
+  display: flex;
+  justify-content: center;
+}
