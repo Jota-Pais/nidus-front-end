@@ -348,7 +348,10 @@ export interface RespostaDaBaixa {
 
 /** POST /api/caixas/:id/mudanca */
 export interface RespostaDaMudanca {
-  /** para onde foi cada sexo; a caixa nova numa posição vazia vem com o código que ela ganhou */
+  /**
+   * uma entrada por caixa que recebeu animais, na ordem em que foram mandadas (machos primeiro); a
+   * caixa nova numa posição vazia vem com o código que ela ganhou
+   */
   caixas: { idCaixa: number; codigo: string; sexo: Sexo; qtd: number }[]
   /** a caixa de origem esvaziou e foi liberada */
   liberada: boolean

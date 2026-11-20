@@ -24,12 +24,20 @@ interface Filtro {
   aceitaVazia: boolean
   /** a caixa de onde os animais saem não recebe a si mesma (ou a que muda de lugar) */
   idOrigem: number
-  /** o lugar que o outro sexo já pegou na mesma ação: machos e fêmeas não dividem a caixa */
-  doOutroSexo: LugarNaEstante | null
+  /**
+   * os lugares que as outras partes da mesma ação já pegaram: nenhuma caixa recebe duas partes, e
+   * machos e fêmeas não dividem a caixa
+   */
+  ocupados: LugarOcupado[]
+}
+
+/** Um lugar já escolhido por outra parte da mesma ação, e de qual sexo são os animais dela */
+export interface LugarOcupado {
+  lugar: LugarNaEstante
+  sexo: Sexo
 }
 
 const OS_DO_SEXO: Record<Sexo, string> = { M: 'os machos', F: 'as fêmeas' }
-const OUTRO_SEXO: Record<Sexo, Sexo> = { M: 'F', F: 'M' }
 
 /** A caixa de estoque do sexo e da linhagem dos animais, que não é a de onde eles saem */
 function recebe(caixa: CaixaNaGrade, filtro: Filtro): boolean {
@@ -51,7 +59,7 @@ export function EscolherCaixa({
   idLinhagem,
   aceitaVazia,
   idOrigem,
-  doOutroSexo = null,
+  ocupados = [],
   value = null,
   onChange,
   id,
@@ -64,7 +72,7 @@ export function EscolherCaixa({
   idLinhagem: number | null
   aceitaVazia: boolean
   idOrigem: number
-  doOutroSexo?: LugarNaEstante | null | undefined
+  ocupados?: LugarOcupado[] | undefined
   value?: LugarNaEstante | null | undefined
   onChange?: ((lugar: LugarNaEstante) => void) | undefined
   id?: string | undefined
@@ -97,7 +105,7 @@ export function EscolherCaixa({
       )}
       <MiniGrade
         estante={aberta}
-        filtro={{ sexo, idLinhagem, aceitaVazia, idOrigem, doOutroSexo }}
+        filtro={{ sexo, idLinhagem, aceitaVazia, idOrigem, ocupados }}
         escolhida={value}
         aoEscolher={(lugar) => onChange?.(lugar)}
       />
@@ -105,8 +113,13 @@ export function EscolherCaixa({
   )
 }
 
+/** Para quem é o lugar que outra parte já pegou: o outro sexo, ou outra caixa do mesmo */
+function paraQuem(ocupado: Sexo, sexo: Sexo): string {
+  return ocupado === sexo ? `para outra caixa d${OS_DO_SEXO[sexo]}` : `para ${OS_DO_SEXO[ocupado]}`
+}
+
 /** O que a célula diz, para o título e para o leitor de tela */
-function tituloDa(posicao: Posicao, filtro: Filtro, doOutro: boolean): string {
+function tituloDa(posicao: Posicao, filtro: Filtro, ocupado: Sexo | null): string {
   const { caixa, codigo } = posicao
 
   if (filtro.sexo === null) {
@@ -115,13 +128,15 @@ function tituloDa(posicao: Posicao, filtro: Filtro, doOutro: boolean): string {
   }
 
   if (caixa === null) {
-    if (doOutro) return `${codigo}: já escolhida para ${OS_DO_SEXO[OUTRO_SEXO[filtro.sexo]]}`
+    if (ocupado !== null) return `${codigo}: já escolhida ${paraQuem(ocupado, filtro.sexo)}`
     return filtro.aceitaVazia
       ? `${codigo}: posição vazia, vira caixa de estoque nova`
       : `${codigo}: posição vazia`
   }
   if (caixa.id === filtro.idOrigem) return `${codigo}: a caixa de onde os animais saem`
   if (recebe(caixa, filtro) && caixa.estoque) {
+    if (ocupado !== null)
+      return `${codigo}: caixa de estoque já escolhida ${paraQuem(ocupado, filtro.sexo)}`
     return `${codigo}: caixa de estoque com ${contarDoSexo(caixa.estoque.total, filtro.sexo)}`
   }
   return `${codigo}: ocupada`
@@ -129,8 +144,8 @@ function tituloDa(posicao: Posicao, filtro: Filtro, doOutro: boolean): string {
 
 /**
  * A estante em miniatura. Dá para clicar na caixa de estoque do sexo e da linhagem dos animais
- * e, quando a ação cria caixa, na posição vazia; o resto fica apagado. A posição vazia que o outro
- * sexo já pegou mostra o símbolo dele
+ * e, quando a ação cria caixa, na posição vazia; o resto fica apagado. O lugar que outra parte da
+ * ação já pegou também fica apagado, e a posição vazia mostra o símbolo do sexo que a pegou
  */
 function MiniGrade({
   estante,
@@ -166,13 +181,16 @@ function MiniGrade({
               .map((posicao) => {
                 const { caixa } = posicao
                 const vazia = caixa === null
-                const doOutro = vazia && naPosicao(filtro.doOutroSexo, posicao.codigo)
-                const estoque = caixa !== null && recebe(caixa, filtro) ? caixa.estoque : null
-                const livre = vazia && filtro.aceitaVazia && !doOutro
+                const ocupado =
+                  filtro.ocupados.find((outro) => naPosicao(outro.lugar, posicao.codigo))?.sexo ??
+                  null
+                const recebeAqui = caixa !== null && recebe(caixa, filtro) ? caixa.estoque : null
+                const estoque = ocupado === null ? recebeAqui : null
+                const livre = vazia && filtro.aceitaVazia && ocupado === null
                 const marcada = naPosicao(escolhida, posicao.codigo)
                 // mudando a caixa de lugar: onde ela está agora
                 const origem = filtro.sexo === null && caixa?.id === filtro.idOrigem
-                const titulo = tituloDa(posicao, filtro, doOutro)
+                const titulo = tituloDa(posicao, filtro, ocupado)
 
                 return (
                   <button
@@ -202,10 +220,10 @@ function MiniGrade({
                       })
                     }
                   >
-                    {estoque
-                      ? `${SIMBOLO_DO_SEXO[estoque.sexo]}${estoque.total}`
-                      : doOutro && filtro.sexo !== null
-                        ? SIMBOLO_DO_SEXO[OUTRO_SEXO[filtro.sexo]]
+                    {recebeAqui
+                      ? `${SIMBOLO_DO_SEXO[recebeAqui.sexo]}${recebeAqui.total}`
+                      : vazia && ocupado !== null
+                        ? SIMBOLO_DO_SEXO[ocupado]
                         : posicao.codigo}
                   </button>
                 )
