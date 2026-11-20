@@ -1,7 +1,8 @@
 // As ações sobre os animais de uma caixa, de casal ou de estoque: a baixa (morte ou eutanásia, uma
 // ação só, com o Desfazer na mensagem) e a mudança para outra caixa (a passagem para o estoque é
 // uma delas). Cada ação pede o mínimo: quantos, de qual idade quando a
-// caixa tem mais de uma, a data do fato e um clique na estante. Dentro da caixa, só a idade separa
+// caixa tem mais de uma, a data do fato e um clique na estante (na mudança, um por caixa, quando o
+// sexo se divide em várias). Dentro da caixa, só a idade separa
 // os animais, e quem escolhe quais saem é a API: os livres primeiro. De qual pedido saem os
 // reservados só aparece quando a API pede
 import { App, Form, InputNumber, Radio, Select } from 'antd'
@@ -13,13 +14,14 @@ import {
   descreverFalta,
   destinoDoLugar,
   doSexo,
+  PARTES_POR_SEXO,
   ROTULO_DO_SEXO,
   SEXOS,
   SIMBOLO_DO_SEXO,
 } from '@/dominio/caixa'
 import type { LugarNaEstante } from '@/dominio/caixa'
 import { useAnularBaixa, useBaixa, useMudanca } from '@/dominio/consultas'
-import type { GrupoQueMuda, ItemDaBaixa, TipoDaBaixa } from '@/dominio/consultas'
+import type { GrupoQueMuda, ItemDaBaixa, SexoQueMuda, TipoDaBaixa } from '@/dominio/consultas'
 import { descreverQuantos } from '@/dominio/pedido'
 import type { DataISO, PorSexo, ReservaDoPedido, Sexo } from '@/dominio/tipos'
 import { useFalhaDoFormulario } from '@/layout/useFalhaDoFormulario'
@@ -27,6 +29,7 @@ import type { NomeNoFormulario } from '@/layout/useFalhaDoFormulario'
 import { ateHoje, descreverDias, formatarData, idadeEmDias, maisTarde } from '@/lib/data'
 import { LadoALado } from './CamposDaFicha'
 import { EscolherCaixa } from './EscolherCaixa'
+import type { LugarOcupado } from './EscolherCaixa'
 import './AnimaisDaFicha.css'
 
 /** A caixa onde a ação acontece */
@@ -343,33 +346,85 @@ export function BaixaNaCaixa({
 /** 'livres': os livres primeiro, como em toda escolha; um pedido: só os reservados dele */
 type Quais = 'livres' | number
 
-interface SexoQueMuda {
+/** Uma caixa que recebe parte dos animais do sexo: quantos e onde */
+interface ParteNoFormulario {
   qtd?: number | null
-  quais?: Quais
   destino?: LugarNaEstante
+}
+
+interface SexoNoFormulario {
+  quais?: Quais
   idPedido?: number
+  /** começa com uma caixa; "+ outra caixa" divide o sexo em mais */
+  partes?: ParteNoFormulario[]
 }
 
 interface CamposDaMudanca {
   dtFato: DataISO
   dtNascimento?: DataISO
-  machos?: SexoQueMuda
-  femeas?: SexoQueMuda
+  machos?: SexoNoFormulario
+  femeas?: SexoNoFormulario
 }
 
 const CAMPOS_DA_MUDANCA = [
   'dtFato',
   'dtNascimento',
-  ...SEXOS.flatMap((sexo) =>
-    ['qtd', 'quais', 'destino', 'idPedido'].map((campo) => `${CAMPO_DO_SEXO[sexo]}.${campo}`),
-  ),
+  ...SEXOS.flatMap((sexo) => {
+    const campo = CAMPO_DO_SEXO[sexo]
+    const dasPartes = Array.from({ length: PARTES_POR_SEXO }, (_, indice) => [
+      `${campo}.partes.${indice}.qtd`,
+      `${campo}.partes.${indice}.destino`,
+    ])
+    return [`${campo}.quais`, ...dasPartes.flat(), `${campo}.idPedido`]
+  }),
 ]
+
+const DOS_DO_SEXO: Record<Sexo, string> = { M: 'dos machos', F: 'das fêmeas' }
+
+const somaDasPartes = (partes: ParteNoFormulario[] | undefined) =>
+  (partes ?? []).reduce((soma, parte) => soma + (parte.qtd ?? 0), 0)
+
+/** Quantos do sexo podem mudar: todos do grupo, ou só os reservados do pedido escolhido em "Quais" */
+function limiteDoSexo(grupo: GrupoDaCaixa, sexo: Sexo, quais: Quais | undefined): number {
+  const vivos = doSexo(grupo.vivos, sexo)
+  if (typeof quais !== 'number') return vivos
+
+  const reserva = grupo.reservas.find((r) => r.idPedido === quais)
+  return Math.min(vivos, reserva ? doSexo(reserva, sexo) : 0)
+}
+
+/**
+ * Os lugares que as partes com animais já pegaram, menos o da própria parte: a estante de cada
+ * parte não oferece o que outra caixa da mesma mudança já tem
+ */
+function lugaresOcupados(
+  noFormulario: Record<Sexo, SexoNoFormulario | undefined>,
+  sexos: Sexo[],
+  propria: { sexo: Sexo; indice: number },
+): LugarOcupado[] {
+  return sexos.flatMap((sexo) =>
+    (noFormulario[sexo]?.partes ?? []).flatMap((parte, indice) =>
+      (parte.qtd ?? 0) > 0 && parte.destino && !(sexo === propria.sexo && indice === propria.indice)
+        ? [{ lugar: parte.destino, sexo }]
+        : [],
+    ),
+  )
+}
+
+/** "a, b e c" */
+function emLista(itens: string[]): string {
+  const ultimo = itens.at(-1)
+  if (itens.length < 2 || ultimo === undefined) return ultimo ?? ''
+  return `${itens.slice(0, -1).join(', ')} e ${ultimo}`
+}
 
 /**
  * Para cada sexo, quantos e um clique na caixa onde vão: uma posição vazia vira caixa de estoque
- * nova, e uma caixa de estoque do mesmo sexo e linhagem recebe mais animais. Serve para a passagem
- * da caixa do casal para o estoque e para juntar ou separar caixas de estoque. Saem os livres
- * primeiro; quando a caixa tem reservados, dá para levar só os de um pedido. A reserva vai junto
+ * nova, e uma caixa de estoque do mesmo sexo e linhagem recebe mais animais. Cada sexo pode ser
+ * dividido em várias caixas ("+ outra caixa"), com a soma conferida, e nenhuma caixa recebe duas
+ * partes. Serve para a passagem da caixa do casal para o estoque e para juntar ou separar caixas
+ * de estoque. Saem os livres primeiro; quando a caixa tem reservados, dá para levar só os de um
+ * pedido, o que vale para todas as caixas do sexo. A reserva vai junto
  */
 export function MudarAnimais({
   caixa,
@@ -396,12 +451,16 @@ export function MudarAnimais({
   if (!grupo) return null
 
   const sexos = SEXOS.filter((sexo) => doSexo(grupo.vivos, sexo) > 0)
-  const doSexoNoForm: Record<Sexo, SexoQueMuda | undefined> = { M: machos, F: femeas }
-  const nenhum = sexos.every((sexo) => (doSexoNoForm[sexo]?.qtd ?? 0) === 0)
+  const noFormulario: Record<Sexo, SexoNoFormulario | undefined> = { M: machos, F: femeas }
+  const nenhum = sexos.every((sexo) => somaDasPartes(noFormulario[sexo]?.partes) === 0)
+
+  const partesDoCampo = (campo: (typeof CAMPO_DO_SEXO)[Sexo]) =>
+    (form.getFieldValue([campo, 'partes']) as ParteNoFormulario[] | undefined) ?? []
 
   /**
-   * Trocar a idade ou o pedido refaz as quantidades: todos do grupo, ou os reservados do pedido no
-   * grupo. A idade nova volta aos livres primeiro: os pedidos dela são outros
+   * Trocar a idade ou o pedido refaz o sexo numa caixa só, com todos do grupo ou os reservados do
+   * pedido no grupo; o destino da primeira caixa fica. A idade nova volta aos livres primeiro: os
+   * pedidos dela são outros
    */
   function aoMudarValores(mudou: Partial<CamposDaMudanca>) {
     const novo = grupoEscolhido(grupos, form.getFieldValue('dtNascimento') as DataISO | undefined)
@@ -409,19 +468,50 @@ export function MudarAnimais({
 
     for (const sexo of SEXOS) {
       const campo = CAMPO_DO_SEXO[sexo]
-      const quais = mudou[campo]?.quais
-      const vivos = doSexo(novo.vivos, sexo)
+      const quais = mudou.dtNascimento !== undefined ? 'livres' : mudou[campo]?.quais
+      if (quais === undefined) continue
 
-      if (mudou.dtNascimento !== undefined) {
-        form.setFieldValue([campo, 'qtd'], vivos)
-        form.setFieldValue([campo, 'quais'], 'livres')
-      }
-      if (quais === 'livres') form.setFieldValue([campo, 'qtd'], vivos)
-      if (typeof quais === 'number') {
-        const reserva = novo.reservas.find((r) => r.idPedido === quais)
-        form.setFieldValue([campo, 'qtd'], Math.min(vivos, reserva ? doSexo(reserva, sexo) : 0))
-      }
+      const [primeira] = partesDoCampo(campo)
+      form.setFieldValue([campo, 'quais'], quais)
+      form.setFieldValue(
+        [campo, 'partes'],
+        [{ qtd: limiteDoSexo(novo, sexo, quais), destino: primeira?.destino }],
+      )
     }
+  }
+
+  /**
+   * Mais uma caixa para o sexo: com o que falta para o total, ou, se as caixas já levam todos, com
+   * metade da última
+   */
+  function dividir(sexo: Sexo, adicionar: (parte: ParteNoFormulario) => void) {
+    if (!grupo) return
+    const campo = CAMPO_DO_SEXO[sexo]
+    const partes = partesDoCampo(campo)
+    const limite = limiteDoSexo(grupo, sexo, form.getFieldValue([campo, 'quais']) as Quais)
+    const falta = limite - somaDasPartes(partes)
+
+    if (falta > 0) {
+      adicionar({ qtd: falta })
+      return
+    }
+
+    const ultima = partes.length - 1
+    const qtd = partes[ultima]?.qtd ?? 0
+    const metade = Math.floor(qtd / 2)
+    form.setFieldValue([campo, 'partes', ultima, 'qtd'], qtd - metade)
+    adicionar({ qtd: metade })
+  }
+
+  /** Tira uma caixa do sexo: os animais dela voltam para a primeira */
+  function tirar(sexo: Sexo, indice: number, remover: (indice: number) => void) {
+    const campo = CAMPO_DO_SEXO[sexo]
+    const partes = partesDoCampo(campo)
+    form.setFieldValue(
+      [campo, 'partes', 0, 'qtd'],
+      (partes[0]?.qtd ?? 0) + (partes[indice]?.qtd ?? 0),
+    )
+    remover(indice)
   }
 
   function mudarAgora(campos: CamposDaMudanca) {
@@ -429,34 +519,55 @@ export function MudarAnimais({
     falha.limpar()
 
     const soDoPedido = new Set<string>()
-    const corpo: { machos?: GrupoQueMuda; femeas?: GrupoQueMuda } = {}
+    /** de cada sexo, a parte do formulário de cada caixa mandada: a API conta só as mandadas */
+    const mandadas: Partial<Record<string, number[]>> = {}
+    const corpo: { machos?: SexoQueMuda; femeas?: SexoQueMuda } = {}
 
     for (const sexo of sexos) {
       const campo = CAMPO_DO_SEXO[sexo]
-      const doSexoNoCampo = campos[campo]
-      const qtd = doSexoNoCampo?.qtd ?? 0
-      if (qtd === 0 || !doSexoNoCampo?.destino) continue
-
-      const { quais, idPedido } = doSexoNoCampo
-      if (typeof quais === 'number') soDoPedido.add(campo)
-
-      corpo[campo] = {
-        qtd,
-        dtNascimento: grupo.dtNascimento,
-        destino: destinoDoLugar(doSexoNoCampo.destino),
-        ...(typeof quais === 'number'
+      const { quais, idPedido, partes = [] } = campos[campo] ?? {}
+      const doPedido =
+        typeof quais === 'number'
           ? { idPedido: quais, soDoPedido: true }
           : idPedido === undefined
             ? {}
-            : { idPedido }),
-      }
+            : { idPedido }
+
+      const comAnimais = partes.flatMap((parte, indice) => {
+        const qtd = parte.qtd ?? 0
+        if (qtd === 0 || !parte.destino) return []
+
+        const grupoQueMuda: GrupoQueMuda = {
+          qtd,
+          dtNascimento: grupo.dtNascimento,
+          destino: destinoDoLugar(parte.destino),
+          ...doPedido,
+        }
+        return [{ indice, grupoQueMuda }]
+      })
+
+      if (comAnimais.length === 0) continue
+      if (typeof quais === 'number') soDoPedido.add(campo)
+
+      mandadas[campo] = comAnimais.map((parte) => parte.indice)
+      const lista = comAnimais.map((parte) => parte.grupoQueMuda)
+      const [unica] = lista
+      // uma caixa só vai no formato de grupo; dividido, vai a lista
+      corpo[campo] = lista.length === 1 && unica !== undefined ? unica : lista
     }
 
-    // a API fala do pedido do grupo; quando ele é o "só os do pedido", o campo é o de quais
+    // a API fala nas caixas mandadas ('machos.1.destino', ou 'machos.destino' com uma só); o
+    // formulário, nas partes dele. O pedido é do sexo; quando ele é o "só os do pedido", o campo é
+    // o de quais. A idade é uma só para os dois
     const nome: NomeNoFormulario = (chave) => {
-      if (/^(machos|femeas)\.dtNascimento$/.test(chave)) return 'dtNascimento'
-      const [, campo] = /^(machos|femeas)\.idPedido$/.exec(chave) ?? []
-      return campo !== undefined && soDoPedido.has(campo) ? `${campo}.quais` : chave
+      const [, campo, indice, resto] = /^(machos|femeas)\.(?:(\d+)\.)?(.+)$/.exec(chave) ?? []
+      if (campo === undefined || resto === undefined) return chave
+      if (resto === 'dtNascimento') return 'dtNascimento'
+      if (resto === 'idPedido')
+        return soDoPedido.has(campo) ? `${campo}.quais` : `${campo}.idPedido`
+
+      const parte = mandadas[campo]?.[Number(indice ?? 0)]
+      return parte === undefined ? chave : `${campo}.partes.${parte}.${resto}`
     }
 
     // mutateAsync: quando todos saem, a caixa é liberada e a ficha recarregada pode já não
@@ -469,7 +580,7 @@ export function MudarAnimais({
         const vazia = liberada
           ? ` A caixa ${caixa.endereco.codigo} ficou vazia e foi liberada.`
           : ''
-        void message.success(`${feitas.join(' e ')}.${vazia}`)
+        void message.success(`${emLista(feitas)}.${vazia}`)
         aoTerminar()
       },
       (erro: Error) => falha.mostrarComNomes(erro, nome),
@@ -485,8 +596,8 @@ export function MudarAnimais({
       initialValues={{
         dtFato: ateHoje(),
         dtNascimento: grupo.dtNascimento,
-        machos: { qtd: grupo.vivos.m, quais: 'livres' },
-        femeas: { qtd: grupo.vivos.f, quais: 'livres' },
+        machos: { quais: 'livres', partes: [{ qtd: grupo.vivos.m }] },
+        femeas: { quais: 'livres', partes: [{ qtd: grupo.vivos.f }] },
       }}
       onValuesChange={aoMudarValores}
       onFinish={mudarAgora}
@@ -495,58 +606,124 @@ export function MudarAnimais({
       <CampoDaIdade grupos={grupos} />
       {sexos.map((sexo) => {
         const campo = CAMPO_DO_SEXO[sexo]
-        const atual = doSexoNoForm[sexo]
+        const atual = noFormulario[sexo]
         const pedidos = pedidosDoSexo(grupo.reservas, sexo)
-        const outro = doSexoNoForm[sexo === 'M' ? 'F' : 'M']
+        const limite = limiteDoSexo(grupo, sexo, atual?.quais)
+        const soma = somaDasPartes(atual?.partes)
+        const ficam = limite - soma
 
         return (
           <div key={sexo} className="animais__sexo" role="group" aria-label={ROTULO_DO_SEXO[sexo]}>
-            <LadoALado>
-              <Form.Item
-                name={[campo, 'qtd']}
-                label={`${SIMBOLO_DO_SEXO[sexo]} ${ROTULO_DO_SEXO[sexo]}`}
-                extra={`de ${doSexo(grupo.vivos, sexo)}`}
-              >
-                <InputNumber
-                  aria-label={QUANTOS_DO_SEXO[sexo]}
-                  min={0}
-                  max={doSexo(grupo.vivos, sexo)}
-                  precision={0}
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-              {pedidos.length > 0 && (
-                <Form.Item name={[campo, 'quais']} label="Quais">
-                  <Select
-                    aria-label={`Quais ${ROTULO_DO_SEXO[sexo].toLowerCase()}`}
-                    options={[
-                      { value: 'livres', label: 'Os livres primeiro' },
-                      ...pedidos.map((idPedido) => ({
-                        value: idPedido,
-                        label: `Só os reservados do pedido #${idPedido}`,
-                      })),
-                    ]}
-                  />
-                </Form.Item>
-              )}
-            </LadoALado>
-            {(atual?.qtd ?? 0) > 0 && (
-              <Form.Item
-                name={[campo, 'destino']}
-                label={`Para onde vão ${OS_DO_SEXO[sexo]}`}
-                rules={[{ required: true, message: 'Clique na caixa de destino' }]}
-              >
-                <EscolherCaixa
-                  sala={caixa.endereco.sala}
-                  numeroVisivel={caixa.endereco.numeroVisivel}
-                  sexo={sexo}
-                  idLinhagem={caixa.idLinhagem}
-                  aceitaVazia
-                  idOrigem={caixa.id}
-                  doOutroSexo={(outro?.qtd ?? 0) > 0 ? (outro?.destino ?? null) : null}
+            {pedidos.length > 0 && (
+              <Form.Item name={[campo, 'quais']} label="Quais">
+                <Select
+                  aria-label={`Quais ${ROTULO_DO_SEXO[sexo].toLowerCase()}`}
+                  options={[
+                    { value: 'livres', label: 'Os livres primeiro' },
+                    ...pedidos.map((idPedido) => ({
+                      value: idPedido,
+                      label: `Só os reservados do pedido #${idPedido}`,
+                    })),
+                  ]}
                 />
               </Form.Item>
             )}
+            <Form.List name={[campo, 'partes']}>
+              {(partes, { add, remove }) => {
+                const varias = partes.length > 1
+
+                return (
+                  <>
+                    {partes.map((parte, indice) => {
+                      const qtd = atual?.partes?.[indice]?.qtd ?? 0
+                      const ordinal = `${indice + 1}ª caixa`
+
+                      return (
+                        <div key={parte.key} className="animais__parte">
+                          <div className="animais__quantos">
+                            <Form.Item
+                              name={[parte.name, 'qtd']}
+                              label={`${SIMBOLO_DO_SEXO[sexo]} ${ROTULO_DO_SEXO[sexo]}${varias ? ` na ${ordinal}` : ''}`}
+                              extra={varias ? undefined : `de ${limite}`}
+                              rules={[
+                                {
+                                  // a primeira caixa que, somada às de antes, passa do total
+                                  validator: async () => {
+                                    const todas = partesDoCampo(campo)
+                                    const antes = somaDasPartes(todas.slice(0, indice))
+                                    const total = somaDasPartes(todas)
+                                    const propria = todas[indice]?.qtd ?? 0
+                                    if (antes > limite || antes + propria <= limite) return
+                                    throw new Error(
+                                      `As caixas somam ${total}, mas só há ${limite}: sobram ${limite - antes} para esta.`,
+                                    )
+                                  },
+                                },
+                              ]}
+                            >
+                              <InputNumber
+                                aria-label={`${QUANTOS_DO_SEXO[sexo]}${indice > 0 ? ` na ${ordinal}` : ''}`}
+                                min={0}
+                                max={Math.max(limite - (soma - qtd), 0)}
+                                precision={0}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                            {indice > 0 && (
+                              <Botao
+                                variante="fantasma"
+                                size="small"
+                                className="animais__tirar"
+                                aria-label={`Tirar a ${ordinal} ${DOS_DO_SEXO[sexo]}`}
+                                onClick={() => tirar(sexo, indice, remove)}
+                              >
+                                Tirar
+                              </Botao>
+                            )}
+                          </div>
+                          {qtd > 0 && (
+                            <Form.Item
+                              name={[parte.name, 'destino']}
+                              label={
+                                varias
+                                  ? `Para onde ${qtd === 1 ? 'vai' : 'vão'} ${contarDoSexo(qtd, sexo)}`
+                                  : `Para onde vão ${OS_DO_SEXO[sexo]}`
+                              }
+                              rules={[{ required: true, message: 'Clique na caixa de destino' }]}
+                            >
+                              <EscolherCaixa
+                                sala={caixa.endereco.sala}
+                                numeroVisivel={caixa.endereco.numeroVisivel}
+                                sexo={sexo}
+                                idLinhagem={caixa.idLinhagem}
+                                aceitaVazia
+                                idOrigem={caixa.id}
+                                ocupados={lugaresOcupados(noFormulario, sexos, { sexo, indice })}
+                              />
+                            </Form.Item>
+                          )}
+                        </div>
+                      )
+                    })}
+                    <div className="animais__dividir">
+                      <span className="animais__soma" aria-live="polite">
+                        {varias &&
+                          `${soma} de ${limite} nas caixas${ficam > 0 ? `; ${ficam} ${ficam === 1 ? 'fica' : 'ficam'} na ${caixa.endereco.codigo}` : ''}`}
+                      </span>
+                      <Botao
+                        variante="fantasma"
+                        size="small"
+                        aria-label={`+ outra caixa para ${OS_DO_SEXO[sexo]}`}
+                        disabled={partes.length >= PARTES_POR_SEXO || partes.length >= limite}
+                        onClick={() => dividir(sexo, add)}
+                      >
+                        + outra caixa
+                      </Botao>
+                    </div>
+                  </>
+                )
+              }}
+            </Form.List>
             {atual?.quais === 'livres' && falha.pediu(`${campo}.idPedido`) && (
               <CampoDoPedido
                 nome={[campo, 'idPedido']}

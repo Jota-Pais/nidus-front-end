@@ -426,7 +426,7 @@ export function useBaixa() {
   })
 }
 
-/** Os animais de um sexo que mudam de caixa, e para onde */
+/** Os animais de um sexo que mudam para uma caixa, e qual */
 export interface GrupoQueMuda {
   qtd: number
   /** só quando a caixa tem vivos de mais de uma idade naquele sexo */
@@ -442,11 +442,20 @@ export interface Mudanca {
   /** a caixa de onde os animais saem: a do casal (a passagem para o estoque) ou uma de estoque */
   idCaixa: number
   dtFato: DataISO
-  machos?: GrupoQueMuda
-  femeas?: GrupoQueMuda
+  machos?: SexoQueMuda
+  femeas?: SexoQueMuda
 }
 
-/** Desmamados mudam para caixas de estoque, machos numa e fêmeas noutra; a reserva vai junto */
+/**
+ * Um sexo todo para uma caixa (o grupo) ou dividido em várias (a lista, uma parte por caixa). Nos
+ * erros, a API fala em 'machos.destino' no grupo e em 'machos.1.destino' na lista
+ */
+export type SexoQueMuda = GrupoQueMuda | GrupoQueMuda[]
+
+/**
+ * Desmamados mudam para caixas de estoque, machos e fêmeas nunca na mesma; cada sexo pode ir
+ * dividido em várias caixas, numa operação só. A reserva vai junto
+ */
 export function useMudanca() {
   const cliente = useQueryClient()
 

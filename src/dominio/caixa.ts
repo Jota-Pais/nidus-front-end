@@ -131,6 +131,9 @@ export const SEXOS: readonly Sexo[] = ['M', 'F']
 
 export const ROTULO_DO_SEXO: Record<Sexo, string> = { M: 'Machos', F: 'Fêmeas' }
 
+/** No máximo quantas caixas recebem os animais de um sexo numa mudança, como a API aceita */
+export const PARTES_POR_SEXO = 20
+
 /** O grupo de cada sexo no corpo da mudança, e o nome dele nos formulários */
 export const CAMPO_DO_SEXO: Record<Sexo, 'machos' | 'femeas'> = { M: 'machos', F: 'femeas' }
 
