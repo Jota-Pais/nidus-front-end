@@ -181,6 +181,30 @@ export function reservaPodeIr(
   return reservado.m + reservado.f > 0 && aMais.machos + aMais.femeas + aMais.total === 0
 }
 
+/**
+ * Os sexos que a reserva aceita do alvo: o macho só quando o pedido tem machos ou animais de
+ * qualquer sexo, e a fêmea do mesmo jeito. Com "qualquer", os dois servem
+ */
+export function sexosQueServem(alvo: { machos: number; femeas: number; qualquer: number }): {
+  m: boolean
+  f: boolean
+} {
+  return { m: alvo.machos + alvo.qualquer > 0, f: alvo.femeas + alvo.qualquer > 0 }
+}
+
+/**
+ * Se um lugar da busca pode dar animais ao alvo: tem livre de algum sexo que serve. A busca traz
+ * os lugares da linhagem na idade, dos dois sexos; a caixa só de fêmeas não serve ao pedido só de
+ * machos
+ */
+export function lugarServe(
+  alvo: { machos: number; femeas: number; qualquer: number },
+  livres: PorSexo,
+): boolean {
+  const serve = sexosQueServem(alvo)
+  return (serve.m && livres.m > 0) || (serve.f && livres.f > 0)
+}
+
 // ------------------------------------------------------------ situações
 
 /**

@@ -10,7 +10,9 @@ import {
   descreverIdade,
   descreverQuantos,
   descreverQueFalta,
+  lugarServe,
   reservaPodeIr,
+  sexosQueServem,
 } from '@/dominio/pedido'
 import type { ConferenciaDaReserva } from '@/dominio/pedido'
 import type { DataISO, LugarCandidato, Pedido, PorSexo, ResultadoDaBusca } from '@/dominio/tipos'
@@ -71,11 +73,17 @@ export function AtenderPedido({
   const [editada, setEditada] = useState<Reserva | null>(null)
   const [falha, setFalha] = useState<string | null>(null)
 
-  // o reservado em falta completa só o que falta; o aprovado reserva o pedido inteiro
+  // o reservado em falta completa só o que falta; o enviado e o aprovado reservam o pedido inteiro
   const completar = pedido.status === 'reservado'
   const alvo = alvoDaReserva(pedido)
-  const candidatas = atendimento.data?.candidatas ?? []
-  const reserva = editada ?? reservaSugerida(candidatas)
+  const serve = sexosQueServem(alvo)
+  const daBusca = atendimento.data?.candidatas ?? []
+  const reserva = editada ?? reservaSugerida(daBusca)
+  // só os lugares que podem dar animais ao pedido: a busca traz os dois sexos, e a caixa só de
+  // fêmeas não entra no pedido só de machos. O lugar já marcado fica, para tirar dele o que passou
+  const candidatas = daBusca.filter(
+    (c) => lugarServe(alvo, c.livres) || reserva[chaveDoLugar(c)] !== undefined,
+  )
   // só os lugares da busca de agora: o que sumiu depois de recarregar sai da reserva
   const marcadas = candidatas.flatMap((c) => {
     const quantos = reserva[chaveDoLugar(c)]
@@ -115,7 +123,7 @@ export function AtenderPedido({
   }
 
   // nenhum lugar serve: a janela fica só com o que é preciso para a entrega
-  const semNenhum = atendimento.data?.candidatas.length === 0
+  const semNenhum = atendimento.data !== undefined && candidatas.length === 0
 
   function reservar() {
     const itens: ItemDaReserva[] = marcadas
@@ -228,6 +236,7 @@ export function AtenderPedido({
                       key={chaveDoLugar(lugar)}
                       lugar={lugar}
                       reserva={reserva[chaveDoLugar(lugar)]}
+                      serve={serve}
                       aoMarcar={(marcado) => marcar(lugar, marcado)}
                       aoMudar={(sexo, valor) => mudar(lugar, sexo, valor)}
                     />
@@ -324,17 +333,23 @@ const TIPO: Record<LugarCandidato['tipo'], string> = {
 function Lugar({
   lugar: l,
   reserva,
+  serve,
   aoMarcar,
   aoMudar,
 }: {
   lugar: LugarCandidato
   reserva: PorSexo | undefined
+  /** os sexos que o pedido aceita: o outro não aparece, nem os livres dele */
+  serve: { m: boolean; f: boolean }
   aoMarcar: (marcado: boolean) => void
   aoMudar: (sexo: keyof PorSexo, valor: number | null) => void
 }) {
   const nome = `caixa ${l.codigo}, nascimento em ${formatarData(l.dtNascimento)}`
-  // o sexo que perdeu os livres depois de recarregar continua, para tirar o que passou
-  const sexos = SEXOS.filter(({ chave }) => l.livres[chave] > 0 || (reserva?.[chave] ?? 0) > 0)
+  // só os sexos que o pedido aceita; o que perdeu os livres depois de recarregar continua, e o
+  // reservado de um sexo que não serve também, para tirar o que passou
+  const sexos = SEXOS.filter(
+    ({ chave }) => (serve[chave] && l.livres[chave] > 0) || (reserva?.[chave] ?? 0) > 0,
+  )
   const inicial = ehCadastroInicial(l.partos)
 
   return (
