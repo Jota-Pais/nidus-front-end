@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { GrupoDoEstoque } from '@/dominio/tipos'
+import type { FichaDeEstoque, GrupoDoEstoque, PassagemDoEstoque } from '@/dominio/tipos'
 import { hoje } from '@/lib/data'
 import {
   aba,
@@ -327,5 +327,96 @@ describe('ficha da caixa de estoque', { timeout: 30_000 }, () => {
     expect(talvezBotao('Registrar baixa')).toBeNull()
     expect(talvezBotao('Passar para outra caixa')).toBeNull()
     expect(talvezBotao('Anular')).toBeNull()
+  })
+})
+
+describe('a trilha dos animais na ficha da caixa de estoque', { timeout: 30_000 }, () => {
+  const trilha: PassagemDoEstoque[] = [
+    {
+      idOcorrencia: 1,
+      dtFato: '2026-10-16',
+      sentido: 'chegada',
+      tipo: 'mudanca',
+      m: 6,
+      f: 0,
+      outraCaixa: { id: 7, codigo: 'F1A', numeroVisivel: 'E-01' },
+      idPedido: null,
+      causa: null,
+      motivo: null,
+      origens: [{ idParto: 10, ordem: 1, casal: 'AB', dtNascimento: '2026-09-24', m: 6, f: 0 }],
+    },
+    {
+      idOcorrencia: 2,
+      dtFato: '2026-10-25',
+      sentido: 'saida',
+      tipo: 'entrega',
+      m: 2,
+      f: 0,
+      outraCaixa: null,
+      idPedido: 12,
+      causa: null,
+      motivo: null,
+      origens: [{ idParto: 10, ordem: 1, casal: 'AB', dtNascimento: '2026-09-24', m: 2, f: 0 }],
+    },
+  ]
+
+  const liberada = (parcial: Partial<FichaDeEstoque> = {}) => {
+    const base = fichaDeEstoque()
+    return fichaDeEstoque({
+      caixa: { ...base.caixa, ativa: false, dtLiberacao: '2026-11-01', motivoLiberacao: 'baixa' },
+      total: 0,
+      reservado: 0,
+      livre: 0,
+      nascimentoDe: null,
+      nascimentoAte: null,
+      grupos: [],
+      pedidos: [],
+      ...parcial,
+    })
+  }
+
+  const titulos = () => screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
+
+  it('mostra de onde vieram e para onde foram, com os totais', () => {
+    renderizar(<FichaDoEstoque ficha={fichaDeEstoque({ trilha })} />)
+
+    expect(screen.getByText('De onde vieram')).toBeTruthy()
+    expect(screen.getByText('Para onde foram')).toBeTruthy()
+    expect(screen.getByText('16/10/2026 · Da caixa F1A (E-01): 6 machos')).toBeTruthy()
+    expect(screen.getByText('25/10/2026 · Entregues ao pedido #12: 2 machos')).toBeTruthy()
+    expect(
+      screen.getByText('6 machos do 1º parto do casal AB, nascidos em 24/09/2026'),
+    ).toBeTruthy()
+    expect(
+      screen.getByText('2 machos do 1º parto do casal AB, nascidos em 24/09/2026'),
+    ).toBeTruthy()
+    expect(screen.getByText('Chegaram')).toBeTruthy()
+    expect(screen.getByText('Saíram')).toBeTruthy()
+  })
+
+  it('na caixa ativa a trilha fica no fim, depois dos reservados', () => {
+    renderizar(<FichaDoEstoque ficha={fichaDeEstoque({ trilha })} />)
+
+    expect(titulos()).toEqual(['Por idade', 'Reservados para', 'De onde vieram', 'Para onde foram'])
+  })
+
+  it('na caixa liberada a trilha vem logo abaixo das contagens, antes de Por idade', () => {
+    renderizar(<FichaDoEstoque ficha={liberada({ trilha })} />)
+
+    expect(titulos()).toEqual(['De onde vieram', 'Para onde foram', 'Por idade', 'Reservados para'])
+  })
+
+  it('sem passagem, diz que nenhum animal chegou nem saiu', () => {
+    renderizar(<FichaDoEstoque ficha={liberada({ trilha: [] })} />)
+
+    expect(screen.getByText('Nenhum animal chegou a esta caixa.')).toBeTruthy()
+    expect(screen.getByText('Nenhum animal saiu desta caixa.')).toBeTruthy()
+  })
+
+  it('só com chegadas, o vazio é só o das saídas', () => {
+    renderizar(<FichaDoEstoque ficha={fichaDeEstoque({ trilha: trilha.slice(0, 1) })} />)
+
+    expect(screen.queryByText('Nenhum animal chegou a esta caixa.')).toBeNull()
+    expect(screen.getByText('Nenhum animal saiu desta caixa.')).toBeTruthy()
   })
 })

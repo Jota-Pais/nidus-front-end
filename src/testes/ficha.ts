@@ -140,6 +140,7 @@ export const fichaDeEstoque = (parcial: Partial<FichaDeEstoque> = {}): FichaDeEs
   ],
   pedidos: [{ idPedido: 12, qtd: 2 }],
   casaisAnteriores: [],
+  trilha: [],
   ...parcial,
 })
 
