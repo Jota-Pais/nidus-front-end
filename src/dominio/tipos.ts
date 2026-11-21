@@ -329,6 +329,48 @@ export interface FichaDeEstoque {
   pedidos: { idPedido: number; qtd: number }[]
   /** os casais da caixa, se ela foi de casal antes de virar de estoque */
   casaisAnteriores: CasalComPartos[]
+  /**
+   * os animais que passaram pela caixa, da passagem mais antiga para a mais recente: de onde
+   * vieram e para onde foram, também os que já saíram
+   */
+  trilha: PassagemDoEstoque[]
+}
+
+/**
+ * O que pôs animais na caixa de estoque ou tirou dela: a entrada do cadastro inicial, o nascimento
+ * (quando ela era de casal), a mudança, o animal a mais da correção, a baixa anulada que devolveu
+ * animais, a entrega e a baixa
+ */
+export type TipoDaPassagem =
+  'entrada' | 'nascimento' | 'mudanca' | 'correcao' | 'anulacao' | 'baixa' | 'entrega'
+
+/** O parto de onde vieram os animais da passagem; o cadastro inicial tem ordem e casal nulos */
+export interface OrigemDaPassagem extends PorSexo {
+  idParto: number
+  ordem: number | null
+  casal: string | null
+  dtNascimento: DataISO | null
+}
+
+/** Os animais que chegaram à caixa de estoque ou saíram dela numa ocorrência */
+export interface PassagemDoEstoque extends PorSexo {
+  idOcorrencia: number
+  dtFato: DataISO
+  sentido: 'chegada' | 'saida'
+  tipo: TipoDaPassagem
+  /**
+   * a outra caixa da mudança e da baixa anulada: de onde vieram ou para onde foram. Null nas
+   * demais
+   */
+  outraCaixa: { id: number; codigo: string; numeroVisivel: string } | null
+  /** só na entrega */
+  idPedido: number | null
+  /** só na baixa */
+  causa: 'morte' | 'eutanasia' | null
+  /** o texto da baixa, da correção e da anulação */
+  motivo: string | null
+  /** os partos dos animais, pela data do nascimento */
+  origens: OrigemDaPassagem[]
 }
 
 export type FichaDaCaixa = FichaDeCasal | FichaDeEstoque

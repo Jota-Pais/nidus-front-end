@@ -1,6 +1,7 @@
 // A ficha da caixa de estoque: os vivos dela por data de nascimento (dentro da caixa, só a idade
-// os separa), de onde vieram, o que cada pedido tem reservado nela, o que aconteceu com eles e os
-// casais da caixa, se ela foi de casal antes de virar de estoque. As ações são as de qualquer
+// os separa), de onde vieram, o que cada pedido tem reservado nela, a trilha dos que passaram por
+// ela (de onde vieram e para onde foram) e os casais da caixa, se ela foi de casal antes de virar
+// de estoque. As ações são as de qualquer
 // caixa: baixa e mudar animais de caixa. Aqui fica também a caixa do
 // casal encerrado que vira de estoque no lugar
 import { App, Tabs } from 'antd'
@@ -19,6 +20,7 @@ import { descreverDias, formatarData, idadeEmDias } from '@/lib/data'
 import { BaixaNaCaixa, MudarAnimais } from './AnimaisDaFicha'
 import type { CaixaDaAcao, GrupoDaCaixa } from './AnimaisDaFicha'
 import { Campo, LadoALado } from './CamposDaFicha'
+import { TrilhaDoEstoque } from './TrilhaDoEstoque'
 import './EstoqueDaFicha.css'
 
 /** "28 dias", ou "25 a 31 dias" quando as idades são diferentes */
@@ -105,6 +107,9 @@ function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDa
         <Campo rotulo="Livres">{ficha.livre}</Campo>
       </LadoALado>
 
+      {/* na caixa liberada não há vivo: o que importa é para onde os animais foram, logo em cima */}
+      {!ativa && <TrilhaDoEstoque trilha={ficha.trilha} />}
+
       {acao === 'baixa' && (
         <BaixaNaCaixa caixa={caixa} grupos={grupos} aoTerminar={() => setAcao(null)} />
       )}
@@ -171,6 +176,8 @@ function AbaDosAnimais({ ficha, caixa }: { ficha: FichaDeEstoque; caixa: CaixaDa
           ))}
         </ul>
       )}
+
+      {ativa && <TrilhaDoEstoque trilha={ficha.trilha} />}
     </div>
   )
 }
