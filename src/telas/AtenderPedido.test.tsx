@@ -422,6 +422,129 @@ describe('reservar os animais do pedido aprovado', { timeout: 30_000 }, () => {
   })
 })
 
+describe('só os lugares com livres do sexo que o pedido aceita', { timeout: 30_000 }, () => {
+  const soMachos = { ...aprovado, machos: 2, femeas: 0, qualquer: 0 }
+  const soFemeas = { ...aprovado, machos: 0, femeas: 2, qualquer: 0 }
+  const caixas = () => [
+    lugar({ idCaixa: 1, codigo: 'AAM', livres: { m: 3, f: 0 } }),
+    lugar({ idCaixa: 2, codigo: 'BBF', livres: { m: 0, f: 3 } }),
+    lugar({ idCaixa: 3, codigo: 'CCX', livres: { m: 2, f: 2 } }),
+  ]
+  const marcar = (codigo: string) =>
+    fireEvent.click(screen.getByLabelText(`Reservar da caixa ${codigo}, nascimento em 03/11/2026`))
+  const campo = (sexo: 'Machos' | 'Fêmeas', codigo: string) =>
+    screen.queryByLabelText(`${sexo} a reservar da caixa ${codigo}, nascimento em 03/11/2026`)
+
+  it('o pedido só de machos esconde a caixa só de fêmeas e a mista mostra só o macho', () => {
+    estado.busca = resultado(caixas())
+    abrir(soMachos)
+
+    expect(screen.getByText('AAM')).toBeTruthy()
+    expect(screen.queryByText('BBF')).toBeNull()
+    expect(screen.getByText('CCX')).toBeTruthy()
+    marcar('CCX')
+    expect(campo('Machos', 'CCX')).toBeTruthy()
+    expect(campo('Fêmeas', 'CCX')).toBeNull()
+  })
+
+  it('o pedido só de fêmeas faz o espelho: some a caixa só de machos, a mista mostra a fêmea', () => {
+    estado.busca = resultado(caixas())
+    abrir(soFemeas)
+
+    expect(screen.queryByText('AAM')).toBeNull()
+    expect(screen.getByText('BBF')).toBeTruthy()
+    marcar('CCX')
+    expect(campo('Fêmeas', 'CCX')).toBeTruthy()
+    expect(campo('Machos', 'CCX')).toBeNull()
+  })
+
+  it('o pedido com animais de qualquer sexo mostra as três caixas, com os dois sexos', () => {
+    estado.busca = resultado(caixas())
+    abrir({ ...aprovado, machos: 0, femeas: 0, qualquer: 2 })
+
+    expect(screen.getByText('AAM')).toBeTruthy()
+    expect(screen.getByText('BBF')).toBeTruthy()
+    expect(screen.getByText('CCX')).toBeTruthy()
+    marcar('CCX')
+    expect(campo('Machos', 'CCX')).toBeTruthy()
+    expect(campo('Fêmeas', 'CCX')).toBeTruthy()
+  })
+
+  it('só caixas do sexo errado: avisa que não há animais e quantos acasalamentos', () => {
+    estado.busca = {
+      ...semNenhum({ de: daqui(5), ate: daqui(10) }),
+      candidatas: [lugar({ codigo: 'BBF', livres: { m: 0, f: 3 } })],
+    }
+    abrir(soMachos)
+
+    expect(screen.getByText('Não há animais para esta entrega com a idade pedida.')).toBeTruthy()
+    expect(
+      screen.getByText(
+        `Para atender este pedido, são necessários cerca de 2 a 4 acasalamentos entre ${naTela(5)} e ${naTela(10)}.`,
+      ),
+    ).toBeTruthy()
+    expect(screen.queryByText('BBF')).toBeNull()
+    expect(screen.queryByText('Idade na entrega')).toBeNull()
+  })
+
+  it('o reservado em falta só de machos não lista as caixas só de fêmeas', () => {
+    estado.busca = resultado(caixas(), { m: 1, f: 0, qualquer: 0 })
+    abrir({ ...emFalta, machos: 2, femeas: 0, reservaEmFalta: { m: 1, f: 0, qualquer: 0 } })
+
+    expect(screen.getByText('AAM')).toBeTruthy()
+    expect(screen.queryByText('BBF')).toBeNull()
+    expect(screen.getByText('CCX')).toBeTruthy()
+  })
+
+  it('o lugar marcado que perdeu os livres do sexo segue na lista, com o aviso e o envio preso', () => {
+    estado.mutate.mockImplementationOnce(
+      (_dados: unknown, opcoes: { onError: (e: Error) => void }) => {
+        // a AAM ficou só com fêmeas livres, mas continua na busca
+        estado.busca = resultado([
+          lugar({ idCaixa: 1, codigo: 'AAM', livres: { m: 0, f: 2 } }),
+          lugar({ idCaixa: 3, codigo: 'CCX', livres: { m: 2, f: 2 } }),
+        ])
+        opcoes.onError(erroDaApi(409, 'SEM_ANIMAIS', 'Os animais mudaram.'))
+      },
+    )
+    estado.busca = resultado([lugar({ idCaixa: 1, codigo: 'AAM', livres: { m: 2, f: 0 } })])
+    abrir(soMachos)
+    // a equipe marca a AAM à mão
+    marcar('AAM')
+    fireEvent.click(reservar())
+
+    expect(screen.getByText('AAM')).toBeTruthy()
+    expect(
+      screen.getByText('Livres agora na AAM, desta idade: 2 fêmeas. Ajuste o que reservar dela.'),
+    ).toBeTruthy()
+    expect(reservar()).toHaveProperty('disabled', true)
+  })
+
+  it('o sexo que já tem reserva no lugar continua visível, o outro some', () => {
+    estado.busca = resultado([
+      lugar({
+        codigo: 'AAM',
+        livres: { m: 2, f: 1 },
+        sugerida: true,
+        alocar: { m: 1, f: 1 },
+      }),
+    ])
+    abrir(soMachos)
+
+    expect(campo('Machos', 'AAM')).toBeTruthy()
+    // a fêmea tem reserva, embora o pedido não a aceite: o campo fica para a equipe tirá-la
+    expect(campo('Fêmeas', 'AAM')).toBeTruthy()
+
+    // sem reserva de fêmea, o campo dela não existe
+    estado.busca = resultado([
+      lugar({ codigo: 'AAM', livres: { m: 2, f: 1 }, sugerida: true, alocar: { m: 2, f: 0 } }),
+    ])
+    document.body.innerHTML = ''
+    abrir(soMachos)
+    expect(campo('Fêmeas', 'AAM')).toBeNull()
+  })
+})
+
 describe('a recusa da reserva', { timeout: 30_000 }, () => {
   it('reservado por outra pessoa antes: avisa e fecha, e a lista mostra o pedido reservado', async () => {
     responder({

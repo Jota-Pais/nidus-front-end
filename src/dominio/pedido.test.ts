@@ -17,9 +17,11 @@ import {
   entraNoFiltro,
   faixaDeIdade,
   FILTROS_DE_PEDIDO,
+  lugarServe,
   podeRecusar,
   recebeReserva,
   reservaPodeIr,
+  sexosQueServem,
   SITUACAO_DO_PEDIDO,
   totalDeAnimais,
   voltaramAFicarLivres,
@@ -345,5 +347,47 @@ describe('avisoDeEntregaSemReserva', () => {
     expect(
       avisoDeEntregaSemReserva({ status: 'enviado', dataEntrega: '2026-11-08' }, hoje),
     ).toBeNull()
+  })
+})
+
+describe('sexosQueServem e lugarServe', () => {
+  const pedido = (machos: number, femeas: number, qualquer: number) => ({
+    machos,
+    femeas,
+    qualquer,
+  })
+
+  it('o pedido só de machos aceita só o macho; só de fêmeas, só a fêmea', () => {
+    expect(sexosQueServem(pedido(2, 0, 0))).toEqual({ m: true, f: false })
+    expect(sexosQueServem(pedido(0, 3, 0))).toEqual({ m: false, f: true })
+  })
+
+  it('com animais de qualquer sexo, os dois sexos servem', () => {
+    expect(sexosQueServem(pedido(0, 0, 4))).toEqual({ m: true, f: true })
+    expect(sexosQueServem(pedido(2, 0, 1))).toEqual({ m: true, f: true })
+    expect(sexosQueServem(pedido(0, 2, 1))).toEqual({ m: true, f: true })
+  })
+
+  it('macho e fêmea no pedido: os dois servem; sem nada, nenhum', () => {
+    expect(sexosQueServem(pedido(1, 1, 0))).toEqual({ m: true, f: true })
+    expect(sexosQueServem(pedido(0, 0, 0))).toEqual({ m: false, f: false })
+  })
+
+  it('o lugar só de fêmeas não serve ao pedido só de machos, e o espelho também', () => {
+    expect(lugarServe(pedido(2, 0, 0), { m: 0, f: 3 })).toBe(false)
+    expect(lugarServe(pedido(2, 0, 0), { m: 1, f: 3 })).toBe(true)
+    expect(lugarServe(pedido(0, 2, 0), { m: 3, f: 0 })).toBe(false)
+    expect(lugarServe(pedido(0, 2, 0), { m: 3, f: 1 })).toBe(true)
+  })
+
+  it('com qualquer sexo no pedido, qualquer livre serve', () => {
+    expect(lugarServe(pedido(0, 0, 2), { m: 0, f: 3 })).toBe(true)
+    expect(lugarServe(pedido(0, 0, 2), { m: 1, f: 0 })).toBe(true)
+    expect(lugarServe(pedido(2, 0, 1), { m: 0, f: 1 })).toBe(true)
+  })
+
+  it('o lugar sem nenhum livre não serve a pedido nenhum', () => {
+    expect(lugarServe(pedido(2, 2, 0), { m: 0, f: 0 })).toBe(false)
+    expect(lugarServe(pedido(0, 0, 3), { m: 0, f: 0 })).toBe(false)
   })
 })
