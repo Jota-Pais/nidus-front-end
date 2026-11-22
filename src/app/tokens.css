@@ -138,6 +138,10 @@
   --fase-estoque-fundo: var(--cor-acao-fundo);
   --fase-estoque-borda: var(--cor-acao-borda);
   --fase-estoque-texto: var(--cor-acao);
+
+  --fase-viuvas-fundo: #E8F4F3;
+  --fase-viuvas-borda: #B5DAD6;
+  --fase-viuvas-texto: #1F6B63;
 }
 
 /* ------------------------------------------------------------------------ *
@@ -183,6 +187,10 @@
   --fase-mamando-fundo: #33220F;
   --fase-mamando-borda: #6B4520;
   --fase-mamando-texto: #F5B67A;
+
+  --fase-viuvas-fundo: #112B29;
+  --fase-viuvas-borda: #25524E;
+  --fase-viuvas-texto: #8FD6CD;
 
   --sombra-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --sombra-md: 0 4px 6px rgba(0, 0, 0, 0.45);

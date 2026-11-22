@@ -218,6 +218,11 @@
   border-color: var(--fase-estoque-borda);
 }
 
+.posicao--viuvas {
+  background: var(--fase-viuvas-fundo);
+  border-color: var(--fase-viuvas-borda);
+}
+
 /* O atraso engrossa a borda para dentro, sem mexer no tamanho da caixa: o parto previsto que
    passou sem nascimento ou os filhotes que passaram da idade de desmamar */
 .posicao--atrasado {

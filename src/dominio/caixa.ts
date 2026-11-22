@@ -27,7 +27,7 @@ interface DadosDaFase {
   legenda: string
 }
 
-/** As fases na ordem do ciclo da caixa de casal, e a da caixa de estoque por último */
+/** As fases na ordem do ciclo da caixa de casal, e as das caixas de estoque e de viúvas por último */
 export const FASES: readonly DadosDaFase[] = [
   { fase: 'acasalado', rotulo: 'Acasalado', legenda: 'casal acasalado, esperando o parto' },
   { fase: 'mamando', rotulo: 'Em aleitamento', legenda: 'filhotes em aleitamento' },
@@ -37,12 +37,19 @@ export const FASES: readonly DadosDaFase[] = [
     legenda: 'desmamados, prontos para o estoque',
   },
   { fase: 'estoque', rotulo: 'Estoque', legenda: 'caixa de estoque' },
+  { fase: 'viuvas', rotulo: 'Viúvas', legenda: 'caixa de viúvas' },
 ]
 
 export const FASE = Object.fromEntries(FASES.map((dados) => [dados.fase, dados])) as Record<
   FaseDaCaixa,
   DadosDaFase
 >
+
+export const MAX_VIUVAS_POR_CAIXA = 3
+
+export function descreverViuvas(viuvas: number): string {
+  return `Viúvas ${viuvas}/${MAX_VIUVAS_POR_CAIXA}`
+}
 
 /** Quantos dias o filhote mama: o mesmo ALEITAMENTO_DIAS da API. Depois disso, o desmame atrasou */
 export const DIAS_DE_ALEITAMENTO = 22

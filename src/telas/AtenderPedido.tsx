@@ -324,6 +324,7 @@ function Placar({
 const TIPO: Record<LugarCandidato['tipo'], string> = {
   estoque: 'caixa de estoque',
   casal: 'caixa do casal',
+  viuvas: 'caixa de viúvas',
 }
 
 /**

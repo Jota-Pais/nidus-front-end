@@ -5,7 +5,13 @@ import type { DragEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { usePerfil } from '@/auth/contexto'
 import { Botao, CabecalhoDaTela, Linha, Pilha, Secao, Texto, Vazio } from '@/componentes'
-import { descreverEstoque, FASE, motivoDoAtraso, SIMBOLO_DO_SEXO } from '@/dominio/caixa'
+import {
+  descreverEstoque,
+  descreverViuvas,
+  FASE,
+  motivoDoAtraso,
+  SIMBOLO_DO_SEXO,
+} from '@/dominio/caixa'
 import {
   useCatalogo,
   useEstantes,
@@ -425,9 +431,11 @@ function Celula({
       title={`${posicao.codigo}: ${
         caixa.estoque
           ? `caixa de estoque, ${descreverEstoque(caixa.estoque)}${idadesDoEstoque(caixa.estoque)}`
-          : fase
-            ? FASE[fase].legenda
-            : 'sem ciclo aberto'
+          : caixa.viuvas
+            ? `caixa de viúvas, ${descreverViuvas(caixa.viuvas.viuvas)}`
+            : fase
+              ? FASE[fase].legenda
+              : 'sem ciclo aberto'
       }${atraso ? `. ${atraso}` : ''} - ${estreita ? 'toque para abrir a ficha' : 'clique para abrir a ficha, arraste para mudar de lugar'}`}
       draggable={movimento === null && !estreita}
       onDragStart={(evento) => {
@@ -458,6 +466,9 @@ function Celula({
       </span>
       {caixa.linhagem && <span className="posicao__linhagem">{caixa.linhagem}</span>}
       {caixa.casal && <span className="posicao__casal">{caixa.casal.identificacao}</span>}
+      {caixa.viuvas && (
+        <span className="posicao__casal">{descreverViuvas(caixa.viuvas.viuvas)}</span>
+      )}
       {fase === 'acasalado' && caixa.casal?.partoPrevisto && (
         <span className="posicao__previsto">
           <span className="posicao__previstoRotulo">parto </span>

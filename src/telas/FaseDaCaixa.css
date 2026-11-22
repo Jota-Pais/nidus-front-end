@@ -47,6 +47,11 @@
   border-color: var(--fase-estoque-borda);
 }
 
+.amostraDaFase--viuvas {
+  background: var(--fase-viuvas-fundo);
+  border-color: var(--fase-viuvas-borda);
+}
+
 /* O atraso é a borda, por cima de qualquer fundo */
 .amostraDaFase--atrasado {
   border: 2px solid var(--cor-erro);
@@ -86,4 +91,10 @@
   background: var(--fase-estoque-fundo);
   border-color: var(--fase-estoque-borda);
   color: var(--fase-estoque-texto);
+}
+
+.etiquetaDaFase--viuvas {
+  background: var(--fase-viuvas-fundo);
+  border-color: var(--fase-viuvas-borda);
+  color: var(--fase-viuvas-texto);
 }

@@ -121,6 +121,10 @@ export const FASE = {
   estoqueFundo: COR.acaoFundo,
   estoqueBorda: COR.acaoBorda,
   estoqueTexto: COR.acao,
+
+  viuvasFundo: '#E8F4F3',
+  viuvasBorda: '#B5DAD6',
+  viuvasTexto: '#1F6B63',
 } as const
 
 /*
@@ -195,6 +199,10 @@ export const FASE_ESCURO: Record<keyof typeof FASE, string> = {
   estoqueFundo: COR_ESCURO.acaoFundo,
   estoqueBorda: COR_ESCURO.acaoBorda,
   estoqueTexto: COR_ESCURO.acao,
+
+  viuvasFundo: '#112B29',
+  viuvasBorda: '#25524E',
+  viuvasTexto: '#8FD6CD',
 }
 
 /** Tipografia de dois tempos */

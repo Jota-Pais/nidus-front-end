@@ -31,12 +31,14 @@ const grade: Grade = {
           codigo: 'F1A',
           caixa: {
             id: 10,
+            tipo: 'casal',
             fase: null,
             atrasado: false,
             idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
             estoque: null,
+            viuvas: null,
           },
         },
         { linha: 1, coluna: 2, codigo: 'F1B', caixa: null },
@@ -46,6 +48,7 @@ const grade: Grade = {
           codigo: 'F1C',
           caixa: {
             id: 11,
+            tipo: 'estoque',
             fase: 'estoque',
             atrasado: false,
             idLinhagem: 1,
@@ -63,6 +66,7 @@ const grade: Grade = {
                 { dtNascimento: '2026-10-10', idadeDias: 30, total: 3, reservados: 3 },
               ],
             },
+            viuvas: null,
           },
         },
         {
@@ -71,6 +75,7 @@ const grade: Grade = {
           codigo: 'F1D',
           caixa: {
             id: 12,
+            tipo: 'casal',
             fase: 'pronto_estoque',
             atrasado: false,
             idLinhagem: 2,
@@ -86,6 +91,7 @@ const grade: Grade = {
               reservado: 2,
             },
             estoque: null,
+            viuvas: null,
           },
         },
         {
@@ -94,12 +100,14 @@ const grade: Grade = {
           codigo: 'F1E',
           caixa: {
             id: 13,
+            tipo: 'casal',
             fase: null,
             atrasado: false,
             idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
             estoque: null,
+            viuvas: null,
           },
         },
         // só o casal, com o parto previsto para 01/11 sem nascimento registrado
@@ -109,6 +117,7 @@ const grade: Grade = {
           codigo: 'F2A',
           caixa: {
             id: 14,
+            tipo: 'casal',
             fase: 'acasalado',
             atrasado: true,
             idLinhagem: 2,
@@ -124,6 +133,7 @@ const grade: Grade = {
               reservado: 0,
             },
             estoque: null,
+            viuvas: null,
           },
         },
       ],

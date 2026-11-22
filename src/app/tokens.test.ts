@@ -173,7 +173,7 @@ describe.each([
         COR_DE_RETORNO.informacao,
         SUPERFICIE_DE_RETORNO.informacaoFundo,
       ],
-      ...(['acasalado', 'mamando', 'prontoEstoque', 'estoque'] as const).map(
+      ...(['acasalado', 'mamando', 'prontoEstoque', 'estoque', 'viuvas'] as const).map(
         (fase): [string, string, string] => [
           `texto da fase ${fase}`,
           FASE[`${fase}Texto`],

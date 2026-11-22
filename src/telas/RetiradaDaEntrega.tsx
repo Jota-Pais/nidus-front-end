@@ -11,6 +11,7 @@ import './RetiradaDaEntrega.css'
 const TIPO: Record<LugarDaRetirada['tipo'], string> = {
   estoque: 'caixa de estoque',
   casal: 'caixa do casal',
+  viuvas: 'caixa de viúvas',
 }
 
 export function RetiradaDaEntrega({ idPedido }: { idPedido: number }) {

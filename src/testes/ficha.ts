@@ -8,6 +8,7 @@ import type {
   Estante,
   FichaDeCasal,
   FichaDeEstoque,
+  FichaDeViuvas,
   Grade,
   OndeEstao,
   Parto,
@@ -70,6 +71,9 @@ export const casal = (id: number, identificacao: string, ativo: boolean): Casal 
   ativo,
   dtEncerramento: ativo ? null : '2026-10-27',
   partoInicial: 1,
+  viuva: null,
+  podeVirarViuva: false,
+  porQueNaoViraViuva: null,
 })
 
 /** A caixa F1A, de casal, com o casal AB ativo no 1º parto */
@@ -193,12 +197,14 @@ export const gradeE01: Grade = {
           codigo: 'F1A',
           caixa: {
             id: 7,
+            tipo: 'casal',
             fase: 'mamando',
             atrasado: false,
             idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
             estoque: null,
+            viuvas: null,
           },
         },
         { linha: 1, coluna: 2, codigo: 'F1B', caixa: null },
@@ -208,12 +214,14 @@ export const gradeE01: Grade = {
           codigo: 'F1C',
           caixa: {
             id: 30,
+            tipo: 'estoque',
             fase: 'estoque',
             atrasado: false,
             idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
             estoque: estoqueNaGrade('M', 6, 1),
+            viuvas: null,
           },
         },
         { linha: 1, coluna: 4, codigo: 'F1D', caixa: null },
@@ -223,12 +231,14 @@ export const gradeE01: Grade = {
           codigo: 'F1E',
           caixa: {
             id: 31,
+            tipo: 'estoque',
             fase: 'estoque',
             atrasado: false,
             idLinhagem: 1,
             linhagem: 'Wistar',
             casal: null,
             estoque: estoqueNaGrade('F', 3, 1),
+            viuvas: null,
           },
         },
         {
@@ -237,12 +247,14 @@ export const gradeE01: Grade = {
           codigo: 'F1F',
           caixa: {
             id: 32,
+            tipo: 'estoque',
             fase: 'estoque',
             atrasado: false,
             idLinhagem: 2,
             linhagem: 'Swiss',
             casal: null,
             estoque: estoqueNaGrade('M', 2, 2),
+            viuvas: null,
           },
         },
       ],
@@ -335,3 +347,51 @@ export function selecao(rotulo: Texto): HTMLElement {
   if (!campo) throw new Error(`Sem a escolha ${String(rotulo)}`)
   return campo
 }
+
+/** A caixa de viúvas F1D da Wistar, com duas fêmeas: de onde cada uma veio e quando */
+export const fichaDeViuvas = (parcial: Partial<FichaDeViuvas> = {}): FichaDeViuvas => ({
+  tipo: 'viuvas',
+  caixa: {
+    id: 40,
+    endereco: { numeroVisivel: 'E-01', sala: 'Sala 1', codigo: 'F1D' },
+    especie: 'rato',
+    linhagem: 'Wistar',
+    idLinhagem: 1,
+    fase: 'viuvas',
+    atrasado: false,
+    ativa: true,
+    dtLiberacao: null,
+    motivoLiberacao: null,
+  },
+  vagas: 1,
+  viuvas: [
+    { id: 1, caixaDeOrigem: 'F1A', dtViuvez: '2026-10-21' },
+    { id: 2, caixaDeOrigem: 'F2C', dtViuvez: '2026-11-03' },
+  ],
+  ...parcial,
+})
+
+/** A estante E-01 com a caixa de viúvas F1D, com 'vagas' vagas */
+export const gradeComViuvas = (vagas = 1): Grade => ({
+  faces: gradeE01.faces.map((face) => ({
+    ...face,
+    posicoes: face.posicoes.map((posicao) =>
+      posicao.codigo !== 'F1D'
+        ? posicao
+        : {
+            ...posicao,
+            caixa: {
+              id: 40,
+              tipo: 'viuvas',
+              fase: 'viuvas',
+              atrasado: false,
+              idLinhagem: 1,
+              linhagem: 'Wistar',
+              casal: null,
+              estoque: null,
+              viuvas: { viuvas: 3 - vagas, vagas },
+            },
+          },
+    ),
+  })),
+})

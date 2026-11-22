@@ -20,11 +20,11 @@ export type Face = 'frontal' | 'traseira'
 /**
  * A fase da caixa, calculada do que ela tem: nada é gravado. É a cor dela na grade e na ficha. A de
  * casal fica pronta para o estoque se ainda tem desmamados; senão, mamando se tem filhotes; senão,
- * acasalada se tem parto pendente. A de estoque fica em estoque
+ * acasalada se tem parto pendente. A de estoque fica em estoque e a de viúvas, em viúvas
  */
-export type FaseDaCaixa = 'acasalado' | 'mamando' | 'pronto_estoque' | 'estoque'
+export type FaseDaCaixa = 'acasalado' | 'mamando' | 'pronto_estoque' | 'estoque' | 'viuvas'
 
-export type TipoDeCaixa = 'casal' | 'estoque'
+export type TipoDeCaixa = 'casal' | 'estoque' | 'viuvas'
 
 /** O fato que esvaziou a caixa e a liberou */
 export type MotivoDaLiberacao = 'entrega' | 'baixa' | 'mudanca' | 'casal_encerrado'
@@ -126,8 +126,14 @@ export interface Estante {
 }
 
 /** Na grade só aparece caixa ativa */
+export interface ViuvasNoCard {
+  viuvas: number
+  vagas: number
+}
+
 export interface CaixaNaGrade {
   id: number
+  tipo: TipoDeCaixa
   /** a cor da caixa; null na caixa de casal sem ciclo aberto e sem animais */
   fase: FaseDaCaixa | null
   /** o parto previsto passou sem nascimento, ou filhotes passaram da idade de desmamar */
@@ -137,6 +143,7 @@ export interface CaixaNaGrade {
   linhagem: string | null
   casal: CasalNoCard | null
   estoque: EstoqueNoCard | null
+  viuvas: ViuvasNoCard | null
 }
 
 export interface Posicao {
@@ -177,6 +184,16 @@ export interface Casal {
   dtEncerramento: DataISO | null
   /** o primeiro parto registrado: os de antes são do cadastro inicial, de antes do Nidus */
   partoInicial: number
+  viuva: ViuvaDoCasal | null
+  podeVirarViuva: boolean
+  porQueNaoViraViuva: string | null
+}
+
+export interface ViuvaDoCasal {
+  idCaixa: number
+  codigoCaixa: string
+  numeroVisivel: string
+  dtViuvez: DataISO
 }
 
 /** O que um pedido tem reservado, por sexo */
@@ -373,7 +390,20 @@ export interface PassagemDoEstoque extends PorSexo {
   origens: OrigemDaPassagem[]
 }
 
-export type FichaDaCaixa = FichaDeCasal | FichaDeEstoque
+export interface ViuvaNaFicha {
+  id: number
+  caixaDeOrigem: string
+  dtViuvez: DataISO
+}
+
+export interface FichaDeViuvas {
+  tipo: 'viuvas'
+  caixa: DadosDaCaixa & { linhagem: string; idLinhagem: number }
+  vagas: number
+  viuvas: ViuvaNaFicha[]
+}
+
+export type FichaDaCaixa = FichaDeCasal | FichaDeEstoque | FichaDeViuvas
 
 // ------------------------------------------------------------ respostas das ações da colônia
 
