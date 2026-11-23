@@ -323,27 +323,17 @@ describe('lista de pedidos', { timeout: 40_000 }, () => {
 })
 
 describe('as ações da equipe em cada situação', { timeout: 40_000 }, () => {
-  it('o pedido que chega se aprova, se reserva direto ou se recusa', async () => {
+  it('o pedido que chega se reserva ou se recusa, sem aprovar sozinho antes da reserva', async () => {
     renderizar(<Pedidos />, 'tecnico')
 
     const chegou = await abrir('Abrir o pedido #1')
     // o prazo para responder, que não vai na lista
     expect(within(chegou).getByText('Responder até 15/11/2026')).toBeTruthy()
-    expect(botao('Aprovar', chegou)).toBeTruthy()
-    expect(botao('Recusar', chegou)).toBeTruthy()
+    expect(within(chegou).getByText('Machos')).toBeTruthy()
+    expect(within(chegou).getByText('Entrega')).toBeTruthy()
     expect(botao('Reservar animais', chegou)).toBeTruthy()
-  })
-
-  it('aprova direto do pedido aberto, que mostra o resumo', async () => {
-    renderizar(<Pedidos />, 'tecnico')
-
-    const janela = await abrir('Abrir o pedido #1')
-    expect(within(janela).getByText('Machos')).toBeTruthy()
-    expect(within(janela).getByText('Entrega')).toBeTruthy()
-    expect(acoes.aprovar).not.toHaveBeenCalled()
-
-    fireEvent.click(botao('Aprovar', janela))
-    expect(acoes.aprovar).toHaveBeenCalledWith(1, expect.anything())
+    expect(botao('Recusar', chegou)).toBeTruthy()
+    expect(talvezBotao('Aprovar', chegou)).toBeNull()
   })
 
   it('o aprovado se reserva ou recusa', async () => {
@@ -810,20 +800,10 @@ describe('no celular', { timeout: 40_000 }, () => {
 
     const chegou = await abrir('Abrir o pedido #1')
     const principal = chegou.querySelector<HTMLElement>('.pedidos__rodapePrincipal')
-    expect(principal && botao('Aprovar', principal)).toBeTruthy()
+    expect(principal && botao('Reservar animais', principal)).toBeTruthy()
     expect(botao('Recusar', chegou).closest('.pedidos__rodapeSecundario')).toBeTruthy()
+    expect(talvezBotao('Aprovar', chegou)).toBeNull()
     expect(talvezBotao('Fechar', chegou)).toBeNull()
-  })
-
-  it('no pedido que chegou, Reservar animais vai na linha de cima com o Recusar, e Aprovar segue embaixo', async () => {
-    renderizar(<Pedidos />, 'tecnico')
-
-    const chegou = await abrir('Abrir o pedido #1')
-    const principal = chegou.querySelector<HTMLElement>('.pedidos__rodapePrincipal')
-    expect(principal && botao('Aprovar', principal)).toBeTruthy()
-    expect(principal && talvezBotao('Reservar animais', principal)).toBeNull()
-    expect(botao('Reservar animais', chegou).closest('.pedidos__rodapeSecundario')).toBeTruthy()
-    expect(botao('Recusar', chegou).closest('.pedidos__rodapeSecundario')).toBeTruthy()
   })
 
   it('o pedido sem o que fazer abre sem rodapé', async () => {
