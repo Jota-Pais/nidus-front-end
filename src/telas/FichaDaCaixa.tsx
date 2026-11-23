@@ -25,8 +25,10 @@ import { ateHoje, formatarData, hoje, idadeEmDias, maisTarde } from '@/lib/data'
 import { AvisoDoCruzamento } from './AvisoDoCruzamento'
 import { NovaCaixaDeEstoque } from './CadastroInicial'
 import { Campo, LadoALado } from './CamposDaFicha'
+import { AbrirFicha } from './abrirFicha'
 import { EditarCasal } from './EditarCasal'
 import { EditarEstoque } from './EditarEstoque'
+import { FichaDasViuvas, ViuvaDoCasal } from './FichaDasViuvas'
 import { FichaDoEstoque, VirarCaixaDeEstoque } from './EstoqueDaFicha'
 import { EtiquetaDaFase } from './FaseDaCaixa'
 import { MudarDeLugar } from './MudarDeLugar'
@@ -68,13 +70,16 @@ export function FichaDaCaixa({
 }) {
   // depois de formar casal numa posição vazia, a ficha passa a ser a da caixa criada
   const [idCriado, setIdCriado] = useState<number | null>(null)
-  const id = idCaixa ?? idCriado
+  // da ficha do casal se abre a caixa de viúvas para onde a fêmea foi
+  const [idOutra, setIdOutra] = useState<number | null>(null)
+  const id = idOutra ?? idCaixa ?? idCriado
   const ficha = useFicha(id)
   const [escolhido, setEscolhido] = useState<Escolha | null>(null)
   const [modo, setModo] = useState<ModoDaPosicao>('casal')
   // a caixa de estoque tem a ficha dela, sem casal nem parto
   const deCasal = ficha.data?.tipo === 'casal' ? ficha.data : undefined
   const deEstoque = ficha.data?.tipo === 'estoque' ? ficha.data : undefined
+  const deViuvas = ficha.data?.tipo === 'viuvas' ? ficha.data : undefined
   const escolha = escolhido ?? escolhaInicial(deCasal)
   const endereco = ficha.data?.caixa.endereco ?? posicaoVazia
   const caixa = ficha.data?.caixa
@@ -90,7 +95,13 @@ export function FichaDaCaixa({
     setEscolhido(null)
     setModo('casal')
     setIdCriado(null)
+    setIdOutra(null)
     aoFechar()
+  }
+
+  function abrirOutra(idDaOutra: number) {
+    setEscolhido(null)
+    setIdOutra(idDaOutra)
   }
 
   return (
@@ -103,7 +114,11 @@ export function FichaDaCaixa({
       styles={{
         header: {
           background:
-            deEstoque?.caixa.fase === 'estoque' ? 'var(--fase-estoque-fundo)' : 'var(--cor-suave)',
+            deEstoque?.caixa.fase === 'estoque'
+              ? 'var(--fase-estoque-fundo)'
+              : deViuvas
+                ? 'var(--fase-viuvas-fundo)'
+                : 'var(--cor-suave)',
           margin: '-20px -24px 0',
           padding: '16px 24px',
         },
@@ -119,7 +134,8 @@ export function FichaDaCaixa({
           {deEstoque && (
             <Etiqueta>Caixa de estoque {SIMBOLO_DO_SEXO[deEstoque.caixa.sexo]}</Etiqueta>
           )}
-          {/* a de estoque já diz o que é na etiqueta de cima */}
+          {deViuvas && <Etiqueta>Caixa de viúvas</Etiqueta>}
+          {/* a de estoque e a de viúvas já dizem o que são na etiqueta de cima */}
           {deCasal && caixa?.fase && <EtiquetaDaFase fase={caixa.fase} />}
           {caixa?.atrasado && <Etiqueta tom="erro">Atrasado</Etiqueta>}
           {caixa && !caixa.ativa && <Etiqueta tom="atencao">Liberada</Etiqueta>}
@@ -164,8 +180,13 @@ export function FichaDaCaixa({
               {caixa && mudaDeLugar && <MudarDeLugar key={caixa.id} caixa={caixa} />}
             </div>
           )}
-          {deEstoque && <FichaDoEstoque ficha={deEstoque} />}
-          {deCasal && <FichaDoCasal ficha={deCasal} escolha={escolha} aoEscolher={setEscolhido} />}
+          <AbrirFicha.Provider value={abrirOutra}>
+            {deEstoque && <FichaDoEstoque ficha={deEstoque} />}
+            {deCasal && (
+              <FichaDoCasal ficha={deCasal} escolha={escolha} aoEscolher={setEscolhido} />
+            )}
+            {deViuvas && <FichaDasViuvas ficha={deViuvas} />}
+          </AbrirFicha.Provider>
         </EstadoDaConsulta>
       )}
     </Janela>
@@ -449,6 +470,14 @@ function AbaReproducao({
       {ficha.virarEstoque && caixa.ativa && (
         <VirarCaixaDeEstoque idCaixa={caixa.id} sexo={ficha.virarEstoque} total={quantosViram} />
       )}
+      {casal &&
+        !casal.ativo &&
+        (casal.viuva || casal.podeVirarViuva || casal.porQueNaoViraViuva) && (
+          <>
+            <h3>Viúva</h3>
+            <ViuvaDoCasal casal={casal} ficha={ficha} />
+          </>
+        )}
 
       <h3>
         {ordem}º parto

@@ -1,0 +1,27 @@
+.fichaDasViuvas__lista {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fichaDasViuvas__lista th,
+.fichaDasViuvas__lista td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.fichaDasViuvas__lista th {
+  font-weight: 600;
+  color: var(--cor-suave-frente);
+}
+
+/* na ficha do casal: para que caixa de viúvas a fêmea foi */
+.fichaDasViuvas__doCasal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--fase-viuvas-fundo);
+  border-left: 3px solid var(--fase-viuvas-borda);
+  border-radius: var(--raio-sm);
+}

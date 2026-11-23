@@ -69,6 +69,14 @@
   font-weight: 700;
 }
 
+/* a caixa de viúvas que recebe a fêmea, com a cor da fase dela */
+.miniGrade__celula--viuvas {
+  background: var(--fase-viuvas-fundo);
+  border-color: var(--fase-viuvas-borda);
+  color: var(--cor-frente);
+  font-weight: 700;
+}
+
 .miniGrade__celula:enabled:hover {
   border-color: var(--cor-acao);
 }

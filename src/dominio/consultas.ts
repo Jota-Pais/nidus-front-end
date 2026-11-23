@@ -14,6 +14,7 @@ import type {
   Estante,
   FaltaDoPedido,
   FichaDaCaixa,
+  FichaDeViuvas,
   Grade,
   LugarDaRetirada,
   Parto,
@@ -834,5 +835,17 @@ export function useSalvarLinhagem() {
           })
         : api(`/api/catalogo/linhagens/${pedido.id}`, { metodo: 'PATCH', corpo: pedido.dados }),
     onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.catalogo }),
+  })
+}
+
+export type LevarParaViuvas = { dtViuvez: DataISO } & Destino
+
+export function useLevarParaViuvas(idCasal: number) {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (corpo: LevarParaViuvas) =>
+      api<FichaDeViuvas>(`/api/casais/${idCasal}/viuva`, { metodo: 'POST', corpo }),
+    onSuccess: () => invalidarColonia(cliente),
   })
 }
