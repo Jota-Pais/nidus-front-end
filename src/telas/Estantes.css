@@ -105,6 +105,17 @@
   }
 }
 
+/* com o aparelho pedindo menos movimento, a caixa só ganha a sombra, sem subir */
+@media (prefers-reduced-motion: reduce) {
+  .posicao {
+    transition: none;
+  }
+
+  .posicao:hover {
+    transform: none;
+  }
+}
+
 .posicao--vazia {
   justify-content: flex-start;
   background: var(--cor-fundo);

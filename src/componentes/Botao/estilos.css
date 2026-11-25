@@ -21,6 +21,18 @@
   transition-duration: 80ms;
 }
 
+/* Com o aparelho pedindo menos movimento, o botão não sobe e muda sem transição. O retorno do
+   clique fica, de uma vez */
+@media (prefers-reduced-motion: reduce) {
+  .botao {
+    transition: none;
+  }
+
+  .botao:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
 /* ---- Primário: a cor de ação chapada ----------------------------------- */
 
 /* O fundo em repouso, com o mouse em cima e no clique vem do Ant Design, que

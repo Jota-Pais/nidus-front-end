@@ -201,8 +201,12 @@
  * Movimento reduzido não é preferência estética: é acessibilidade.
  *
  * Animação contínua em tela que fica aberta o turno inteiro é gatilho de
- * enjoo para quem tem sensibilidade vestibular. Aqui tudo para — transição
- * e animação viram aparecer.
+ * enjoo para quem tem sensibilidade vestibular. Aqui a animação vira aparecer.
+ *
+ * A transição não entra nesta regra geral: com ela encurtada em todo elemento,
+ * o Ant Design abria a lista, o calendário e o menu suspenso fora da tela (a
+ * lista de linhagens não aparecia). A peça do Nidus que se mexe para o próprio
+ * movimento no CSS dela, como o botão e a célula da estante.
  */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -210,7 +214,6 @@
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
