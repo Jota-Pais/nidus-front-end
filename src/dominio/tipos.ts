@@ -117,9 +117,11 @@ export interface Estante {
   idSala: number
   /** o nome da sala, que a grade usa para separar as estantes */
   sala: string
-  fabricante: string
-  modelo: string
+  idFormato: number
+  /** o nome do formato. ex: "ALESCO Modelo 1" */
+  formato: string
   numeroVisivel: string
+  /** as medidas vêm do formato: 1 ou 2 faces */
   faces: number
   linhas: number
   colunas: number

@@ -1,6 +1,6 @@
-/* Os cadastros: projetos, linhagens, salas e estantes */
+/* Os cadastros: projetos, linhagens e salas */
 
-/* O número do projeto e o da estante são código, e código vai em mono */
+/* O número do projeto é código, e código vai em mono */
 .cadastros__codigo {
   font-family: var(--fonte-mono);
   font-size: 14px;

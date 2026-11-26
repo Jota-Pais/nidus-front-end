@@ -1,0 +1,48 @@
+/* O cadastro e a edição da estante */
+
+/* No computador, o Remover estante fica à esquerda do rodapé, longe do Salvar */
+.formularioDaEstante__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.formularioDaEstante__botoes {
+  display: flex;
+  gap: 8px;
+}
+
+/* No celular, ele vai para o fim da janela, longe do Cancelar e do Salvar */
+.formularioDaEstante__remover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--cor-borda);
+  text-align: center;
+}
+
+/* o erro da API em cima dos campos, e os avisos da troca de formato embaixo dele */
+.formularioDaEstante__avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.formularioDaEstante__miniatura {
+  margin-bottom: 24px;
+}
+
+/* o "Novo formato" no fim da lista, na cor de ação: abre o formulário, não escolhe */
+.formularioDaEstante__novoFormato {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cor-acao);
+  font-weight: 600;
+}

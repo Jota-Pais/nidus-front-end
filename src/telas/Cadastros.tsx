@@ -13,10 +13,8 @@ import {
 } from '@/componentes'
 import {
   useCatalogo,
-  useEstantes,
   useProjetos,
   useSalas,
-  useSalvarEstante,
   useSalvarLinhagem,
   useSalvarProjeto,
   useSalvarSala,
@@ -25,20 +23,12 @@ import {
 import type { DadosDoProjeto } from '@/dominio/consultas'
 import { formatarProtocolo } from '@/dominio/protocolo'
 import { NOME_DO_CRUZAMENTO } from '@/dominio/caixa'
-import type {
-  Catalogo,
-  Cruzamento,
-  Estante,
-  Projeto,
-  Sala,
-  SituacaoDoProjeto,
-} from '@/dominio/tipos'
+import type { Catalogo, Cruzamento, Projeto, Sala, SituacaoDoProjeto } from '@/dominio/tipos'
 import { EstadoDaConsulta } from '@/layout/EstadoDaConsulta'
 import { motivoDaFalha } from '@/layout/useFalhaDoFormulario'
 import { useTelaEstreita } from '@/layout/useTelaEstreita'
 import { formatarData } from '@/lib/data'
 import { CampoDoProtocolo } from './CampoDoProtocolo'
-import { FormularioDaEstante } from './FormularioDaEstante'
 import './Cadastros.css'
 
 const SITUACOES: { value: SituacaoDoProjeto; label: string }[] = [
@@ -53,12 +43,15 @@ const SITUACOES: { value: SituacaoDoProjeto; label: string }[] = [
  */
 const MOSTRAR_PROJETOS = false
 
-/** Linhagens, salas e estantes: o que antes só entrava pela carga inicial */
+/**
+ * Linhagens e salas: o que antes só entrava pela carga inicial. A estante tem um lugar só, a tela
+ * das estantes
+ */
 export function Cadastros() {
   const abas = [
     { key: 'projetos', label: 'Projetos CEUA', children: <Projetos /> },
     { key: 'linhagens', label: 'Linhagens', children: <Linhagens /> },
-    { key: 'salas', label: 'Salas e estantes', children: <SalasEEstantes /> },
+    { key: 'salas', label: 'Salas', children: <Salas /> },
   ].filter((aba) => MOSTRAR_PROJETOS || aba.key !== 'projetos')
 
   return (
@@ -66,7 +59,7 @@ export function Cadastros() {
       <CabecalhoDaTela
         rotulo="Configurações"
         titulo="Cadastros"
-        descricao="Linhagens, salas e estantes. Nada é apagado: linhagem fora de uso fica inativa, e sala ou estante removida sai das listas, mas fica no histórico."
+        descricao="Linhagens e salas. Nada é apagado: linhagem fora de uso fica inativa, e sala removida sai das listas, mas fica no histórico."
       />
       <Tabs items={abas} />
     </Pilha>
@@ -394,18 +387,9 @@ function LinhagensDaEspecie({ especie }: { especie: Catalogo['especies'][number]
 }
 
 /**
- * Sala pode existir sem estante, e a estante nasce numa sala. Remover só tira da lista, e o
- * back só aceita a sala sem estante e a estante vazia
+ * Sala pode existir sem estante, e a estante nasce numa sala, pela tela das estantes. Remover só
+ * tira da lista, e o back só aceita a sala sem estante
  */
-function SalasEEstantes() {
-  return (
-    <Pilha>
-      <Salas />
-      <EstantesDasSalas />
-    </Pilha>
-  )
-}
-
 function Salas() {
   const { message, modal } = App.useApp()
   const estreita = useTelaEstreita()
@@ -538,112 +522,5 @@ function FormularioDaSala({ sala, aoFechar }: { sala: Sala | null; aoFechar: () 
         </Form.Item>
       </Form>
     </Janela>
-  )
-}
-
-/** "50 caixas (5 x 5 por face)": quantas posições a estante tem */
-const capacidade = (e: Estante) =>
-  `${e.faces * e.linhas * e.colunas} caixas (${e.linhas} x ${e.colunas} por face)`
-
-function EstantesDasSalas() {
-  const { message, modal } = App.useApp()
-  const estreita = useTelaEstreita()
-  const estantes = useEstantes()
-  const salas = useSalas()
-  const salvar = useSalvarEstante()
-  const [editando, setEditando] = useState<Estante | 'nova' | null>(null)
-  // O formulário tira a sala e o número sugeridos das duas listas quando abre: aberto antes de
-  // elas chegarem (a API acordando leva segundos), viria sem sala e com E-01
-  const listasCarregadas = salas.data !== undefined && estantes.data !== undefined
-
-  function remover(estante: Estante) {
-    void modal.confirm({
-      title: `Remover a estante ${estante.numeroVisivel}?`,
-      content: `Ela sai da grade da ${estante.sala}. Só dá para remover a estante vazia, sem caixa em nenhuma posição.`,
-      okText: 'Remover',
-      okButtonProps: { danger: true },
-      cancelText: 'Cancelar',
-      onOk: () =>
-        salvar.mutateAsync({ tipo: 'remover', id: estante.id }).then(
-          () => void message.success(`Estante ${estante.numeroVisivel} removida.`),
-          (erro: Error) => void message.error(erro.message),
-        ),
-    })
-  }
-
-  return (
-    <Secao
-      titulo="Estantes"
-      semPreenchimento
-      acoes={
-        <Botao variante="primario" onClick={() => setEditando('nova')} disabled={!listasCarregadas}>
-          Nova estante
-        </Botao>
-      }
-    >
-      <EstadoDaConsulta consulta={estantes} rotulo="Carregando as estantes…">
-        {estreita ? (
-          <ListaDeCartoes
-            itens={estantes.data ?? []}
-            chave={(estante) => estante.id}
-            rotulo="Estantes"
-            vazio="Nenhuma estante cadastrada."
-            renderizar={(estante) => (
-              <>
-                <ListaDeCartoes.Topo lado={<span className="cadastros__lado">{estante.sala}</span>}>
-                  <span className="cadastros__codigo">{estante.numeroVisivel}</span>
-                </ListaDeCartoes.Topo>
-                <ListaDeCartoes.Dados>
-                  <ListaDeCartoes.Dado rotulo="Modelo">
-                    {estante.fabricante} {estante.modelo}
-                  </ListaDeCartoes.Dado>
-                  <ListaDeCartoes.Dado rotulo="Capacidade">
-                    {capacidade(estante)}
-                  </ListaDeCartoes.Dado>
-                </ListaDeCartoes.Dados>
-                <ListaDeCartoes.Acoes>
-                  <Botao onClick={() => setEditando(estante)}>Editar</Botao>
-                  <Botao onClick={() => remover(estante)}>Remover</Botao>
-                </ListaDeCartoes.Acoes>
-              </>
-            )}
-          />
-        ) : (
-          <Table<Estante>
-            rowKey="id"
-            dataSource={estantes.data ?? []}
-            pagination={false}
-            scroll={{ x: true }}
-            locale={{ emptyText: 'Nenhuma estante cadastrada.' }}
-            columns={[
-              { title: 'Número', dataIndex: 'numeroVisivel' },
-              { title: 'Sala', dataIndex: 'sala' },
-              { title: 'Modelo', render: (_, e) => `${e.fabricante} ${e.modelo}` },
-              { title: 'Capacidade', render: (_, e) => capacidade(e) },
-              {
-                title: '',
-                align: 'right',
-                render: (_, estante) => (
-                  <Linha espaco={4} distribuicao="flex-end" estilo={{ flexWrap: 'nowrap' }}>
-                    <Botao variante="fantasma" onClick={() => setEditando(estante)}>
-                      Editar
-                    </Botao>
-                    <Botao variante="fantasma" onClick={() => remover(estante)}>
-                      Remover
-                    </Botao>
-                  </Linha>
-                ),
-              },
-            ]}
-          />
-        )}
-      </EstadoDaConsulta>
-      {editando && (
-        <FormularioDaEstante
-          estante={editando === 'nova' ? null : editando}
-          aoFechar={() => setEditando(null)}
-        />
-      )}
-    </Secao>
   )
 }

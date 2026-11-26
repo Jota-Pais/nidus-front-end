@@ -1,6 +1,7 @@
 import {
   AppstoreOutlined,
   CloseOutlined,
+  EditOutlined,
   HistoryOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons'
@@ -14,6 +15,7 @@ import { descreverEstoque, FASE, motivoDoAtraso, SIMBOLO_DO_SEXO } from '@/domin
 import {
   useCatalogo,
   useEstantes,
+  useFormatos,
   useGrade,
   useMudarDePosicao,
   useSalas,
@@ -79,13 +81,17 @@ function linhagemDoEndereco(valor: string | null): number | null {
 /** O código da posição só não se repete dentro da estante */
 const chaveDaPosicao = (idEstante: number, codigo: string) => `${idEstante}:${codigo}`
 
-/** As estantes de cada sala, com as faces frontal e traseira lado a lado */
+/**
+ * As estantes de cada sala, com as faces frontal e traseira lado a lado. Técnico e gestor
+ * cadastram, editam e removem as estantes aqui, e cuidam dos formatos delas
+ */
 export function Estantes() {
   const { message } = App.useApp()
   const { perfil } = usePerfil()
   const estantes = useEstantes()
   const salasCadastradas = useSalas()
-  const [cadastrando, setCadastrando] = useState(false)
+  const formatos = useFormatos()
+  const [editando, setEditando] = useState<Estante | 'nova' | null>(null)
   const [comFormatos, setComFormatos] = useState(false)
   // as caixas que saíram da estante: quem opera a colônia acha ali a ficha de cada uma
   const [comHistorico, setComHistorico] = useState(false)
@@ -100,10 +106,17 @@ export function Estantes() {
   const estreita = useTelaEstreita()
   // no celular a legenda fica atrás de um botão: aberta, ela empurra a grade para baixo
   const [comLegenda, setComLegenda] = useState(false)
+  // A estante nova abre com a sala, o formato e o número sugeridos, tirados das listas: aberta
+  // antes de elas chegarem (a API acordando leva segundos), viria sem sala e com E-01
+  const listasCarregadas =
+    salasCadastradas.data !== undefined &&
+    estantes.data !== undefined &&
+    formatos.data !== undefined
 
   const lista = estantes.data ?? []
   const salas = [...new Set(lista.map((estante) => estante.sala))]
-  const salaAtiva = sala ?? salas[0] ?? null
+  // a sala escolhida some quando a última estante dela muda de sala ou é removida
+  const salaAtiva = sala !== null && salas.includes(sala) ? sala : (salas[0] ?? null)
 
   function soltar(destino: PosicaoVazia) {
     setPega(null)
@@ -160,15 +173,13 @@ export function Estantes() {
                 rotulo="Formatos"
                 aoClicar={() => setComFormatos(true)}
               />
-              {perfil === 'gestor' && (
-                <Botao
-                  variante="primario"
-                  onClick={() => setCadastrando(true)}
-                  disabled={salasCadastradas.data === undefined || estantes.data === undefined}
-                >
-                  Nova estante
-                </Botao>
-              )}
+              <Botao
+                variante="primario"
+                onClick={() => setEditando('nova')}
+                disabled={!listasCarregadas}
+              >
+                Nova estante
+              </Botao>
             </Linha>
           ) : undefined
         }
@@ -221,6 +232,7 @@ export function Estantes() {
                       estante={estante}
                       arraste={arraste}
                       aoAbrir={setAberta}
+                      {...(operaAColonia ? { aoEditar: () => setEditando(estante) } : {})}
                     />
                   ))}
               </LinhagemAcesa.Provider>
@@ -234,7 +246,12 @@ export function Estantes() {
         posicaoVazia={aberta && 'vazia' in aberta ? aberta.vazia : null}
         aoFechar={() => setAberta(null)}
       />
-      {cadastrando && <FormularioDaEstante estante={null} aoFechar={() => setCadastrando(false)} />}
+      {editando && (
+        <FormularioDaEstante
+          estante={editando === 'nova' ? null : editando}
+          aoFechar={() => setEditando(null)}
+        />
+      )}
       {comFormatos && <FormatosDeEstante aoFechar={() => setComFormatos(false)} />}
       {operaAColonia && (
         <FichaDoHistorico aberta={comHistorico} aoFechar={() => setComHistorico(false)} />
@@ -303,15 +320,27 @@ function CartaoDaEstante({
   estante,
   arraste,
   aoAbrir,
+  aoEditar,
 }: {
   estante: Estante
   arraste: Arraste
   aoAbrir: (alvo: Alvo) => void
+  /** abre o formulário da estante: a sala, o formato, o número e o Remover */
+  aoEditar?: () => void
 }) {
   const grade = useGrade(estante.id)
 
   return (
-    <Secao titulo={`${estante.numeroVisivel} · ${estante.fabricante} ${estante.modelo}`}>
+    <Secao
+      titulo={`${estante.numeroVisivel} · ${estante.formato}`}
+      acoes={
+        aoEditar ? (
+          <Botao variante="fantasma" icon={<EditOutlined />} onClick={aoEditar}>
+            Editar
+          </Botao>
+        ) : undefined
+      }
+    >
       <EstadoDaConsulta consulta={grade} rotulo="Carregando a grade…">
         <div className="faces">
           {grade.data?.faces.map((face) => (
@@ -343,6 +372,9 @@ function Face({
   const estreita = useContext(GradeEstreita)
   const posicoes = [...face.posicoes].sort((a, b) => a.linha - b.linha || a.coluna - b.coluna)
   const rotulo = face.face === 'frontal' ? 'Face frontal' : 'Face traseira'
+  // as colunas saem da própria grade: com o formato trocado, a lista das estantes e a grade
+  // recarregam cada uma no seu tempo, e a grade nova não pode cair nas colunas de antes
+  const colunas = Math.max(1, ...posicoes.map((posicao) => posicao.coluna))
 
   return (
     <section className="face" aria-label={rotulo}>
@@ -352,7 +384,7 @@ function Face({
           className="face__grade"
           // no celular, 6 colunas cabem em 320 px; a estante mais larga rola de lado
           style={{
-            gridTemplateColumns: `repeat(${estante.colunas}, minmax(${estreita ? 44 : 58}px, 1fr))`,
+            gridTemplateColumns: `repeat(${colunas}, minmax(${estreita ? 44 : 58}px, 1fr))`,
           }}
         >
           {posicoes.map((posicao) => (

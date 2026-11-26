@@ -71,10 +71,12 @@ export function useEstantes() {
   })
 }
 
-export function useGrade(idEstante: number) {
+/** null deixa a consulta desligada: é assim que a estante ainda não cadastrada não busca grade */
+export function useGrade(idEstante: number | null) {
   return useQuery({
-    queryKey: chaves.grade(idEstante),
+    queryKey: chaves.grade(idEstante ?? 0),
     queryFn: () => api<Grade>(`/api/estantes/${idEstante}/grade`),
+    enabled: idEstante !== null,
     refetchInterval: 30_000,
   })
 }
@@ -87,11 +89,16 @@ export function useSalas() {
   })
 }
 
-/** A sala dá nome às abas das estantes e à grade: salvar recarrega as três */
-function invalidarSalasEEstantes(cliente: ReturnType<typeof useQueryClient>) {
+/**
+ * A sala dá nome às abas das estantes e à grade, e cada formato lista as estantes que o usam, com
+ * a sala de cada uma: salvar sala ou estante recarrega as salas, as estantes, os formatos e o que
+ * mostra caixa, que leva o número e a sala da estante no endereço
+ */
+function invalidarSalasEEstantes(cliente: QueryClient) {
   return Promise.all([
     cliente.invalidateQueries({ queryKey: chaves.salas }),
     cliente.invalidateQueries({ queryKey: chaves.estantes }),
+    cliente.invalidateQueries({ queryKey: chaves.formatos }),
     invalidarColonia(cliente),
   ])
 }
@@ -119,25 +126,25 @@ export function useSalvarSala() {
   })
 }
 
-export interface NovaEstante {
+/** A sala, o formato e o número da estante */
+export interface DadosDaEstante {
   idSala: number
-  fabricante: string
-  modelo: string
+  idFormato: number
   numeroVisivel: string
-  faces: number
-  linhas: number
-  colunas: number
 }
 
-/** O modelo não muda depois do cadastro: a edição leva só o número e a sala */
+/**
+ * A edição leva só o que mudou, ao menos um, e o formato também muda: a API recusa o formato que
+ * deixaria caixa de fora. Remover, só a estante vazia
+ */
 export function useSalvarEstante() {
   const cliente = useQueryClient()
 
   return useMutation({
     mutationFn: (
       pedido:
-        | { tipo: 'criar'; dados: NovaEstante }
-        | { tipo: 'alterar'; id: number; dados: { numeroVisivel: string; idSala: number } }
+        | { tipo: 'criar'; dados: DadosDaEstante }
+        | { tipo: 'alterar'; id: number; dados: Partial<DadosDaEstante> }
         | { tipo: 'remover'; id: number },
     ) => {
       if (pedido.tipo === 'criar') {

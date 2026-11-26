@@ -20,6 +20,7 @@ import {
   useRecusarPedido,
   useRegistrarEntrega,
   useRegistrarNaFicha,
+  useSalvarEstante,
   useSalvarFormato,
   useSemNinhada,
   useVirarCaixaDeEstoque,
@@ -168,6 +169,24 @@ describe('as estantes e os formatos', () => {
         opcoes: { metodo: 'POST', corpo: { nome: 'Rack', faces: 2, linhas: 4, colunas: 4 } },
       },
       { caminho: '/api/formatos/3', opcoes: { metodo: 'DELETE' } },
+    ])
+  })
+
+  it('salvar estante recarrega as salas, as estantes, os formatos (quem usa cada um) e a grade', async () => {
+    const { cliente, mutacao } = montar(useSalvarEstante)
+
+    await mutacao.mutateAsync({
+      tipo: 'criar',
+      dados: { idSala: 1, idFormato: 3, numeroVisivel: 'E-07' },
+    })
+
+    expect(estruturaDerrubada(cliente)).toEqual(DA_ESTRUTURA)
+    expect(invalidadas(cliente)).toContainEqual(chaves.grade(1))
+    expect(chamadas).toEqual([
+      {
+        caminho: '/api/estantes',
+        opcoes: { metodo: 'POST', corpo: { idSala: 1, idFormato: 3, numeroVisivel: 'E-07' } },
+      },
     ])
   })
 })

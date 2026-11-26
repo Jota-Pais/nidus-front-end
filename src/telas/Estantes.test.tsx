@@ -1,18 +1,20 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Catalogo, Estante, Grade } from '@/dominio/tipos'
+import { formato } from '@/testes/estante'
 import { consulta, renderizar } from '@/testes/renderizar'
 import { larguraDaTela } from '@/testes/tela'
 import { Estantes } from './Estantes'
 
 const mover = vi.hoisted(() => vi.fn())
+const usarFormatos = vi.hoisted(() => vi.fn())
 
 const estante = (id: number, sala: string, numeroVisivel: string): Estante => ({
   id,
   idSala: id,
   sala,
-  fabricante: 'ALESCO',
-  modelo: 'Modelo 2',
+  idFormato: 2,
+  formato: 'ALESCO Modelo 2',
   numeroVisivel,
   faces: 2,
   linhas: 5,
@@ -148,23 +150,31 @@ const catalogo: Catalogo = {
 vi.mock('@/dominio/consultas', () => ({
   useCatalogo: () => consulta(catalogo),
   useEstantes: () => consulta([estante(1, 'Sala 1', 'E-01'), estante(2, 'Sala 2', 'E-03')]),
+  useFormatos: usarFormatos,
   useGrade: () => consulta(grade),
   useCaixasLiberadas: () => consulta({ caixas: [], temMais: false }),
   useMudarDePosicao: () => ({ mutate: mover, isPending: false }),
   useSalas: () => consulta([{ id: 1, nome: 'Sala 1', estantes: 1 }]),
-  useSalvarEstante: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
 // a ficha tem as consultas dela; aqui ela fica fechada e não importa
 vi.mock('./FichaDaCaixa', () => ({ FichaDaCaixa: () => null }))
 
-// a janela dos formatos tem os testes dela: aqui basta saber que abriu
+// o formulário da estante e a janela dos formatos têm os testes deles: aqui basta saber o que abriu
+vi.mock('./FormularioDaEstante', () => ({
+  FormularioDaEstante: ({ estante }: { estante: Estante | null }) => (
+    <div>formulário da {estante ? `estante ${estante.numeroVisivel}` : 'estante nova'}</div>
+  ),
+}))
 vi.mock('./FormatosDeEstante', () => ({
   FormatosDeEstante: () => <div>janela dos formatos</div>,
 }))
 
 beforeEach(() => {
   mover.mockReset()
+  usarFormatos.mockReturnValue(
+    consulta([formato(2, 'ALESCO Modelo 2', { faces: 2, linhas: 5, colunas: 5 })]),
+  )
 })
 
 /** O DataTransfer do navegador, que o jsdom não tem */
@@ -188,27 +198,48 @@ function arrastarF1AParaF1B() {
 }
 
 describe('tela Estantes', { timeout: 20_000 }, () => {
-  it('o gestor cadastra estante pela grade, no mesmo formulário dos Cadastros', async () => {
-    renderizar(<Estantes />, 'gestor')
+  it.each(['tecnico', 'gestor'] as const)(
+    'o %s cadastra estante, cuida dos formatos e edita cada estante',
+    (perfil) => {
+      renderizar(<Estantes />, perfil)
+
+      expect(screen.getByRole('button', { name: 'Nova estante' })).toHaveProperty('disabled', false)
+      expect(screen.getByRole('button', { name: /Formatos/ })).toBeTruthy()
+      // a Sala 1 aberta tem só a E-01
+      expect(screen.getAllByRole('button', { name: /Editar/ })).toHaveLength(1)
+    },
+  )
+
+  it('Nova estante abre o formulário da estante nova', () => {
+    renderizar(<Estantes />, 'tecnico')
 
     fireEvent.click(screen.getByRole('button', { name: 'Nova estante' }))
 
-    expect(await screen.findByRole('dialog', { name: 'Nova estante' })).toBeTruthy()
+    expect(screen.getByText('formulário da estante nova')).toBeTruthy()
   })
 
-  it('o técnico não vê o botão Nova estante', () => {
+  it('o Editar da estante abre o formulário dela', () => {
     renderizar(<Estantes />, 'tecnico')
 
-    expect(screen.queryByRole('button', { name: 'Nova estante' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Editar/ }))
+
+    expect(screen.getByText('formulário da estante E-01')).toBeTruthy()
   })
 
-  it.each(['tecnico', 'gestor'] as const)('o %s abre a janela dos formatos', (perfil) => {
-    renderizar(<Estantes />, perfil)
+  it('Formatos abre a janela dos formatos', () => {
+    renderizar(<Estantes />, 'tecnico')
     expect(screen.queryByText('janela dos formatos')).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: /Formatos/ }))
 
     expect(screen.getByText('janela dos formatos')).toBeTruthy()
+  })
+
+  it('Nova estante só abre depois que os formatos chegam, para o formato sugerido sair certo', () => {
+    usarFormatos.mockReturnValue({ data: undefined, isPending: true, error: null })
+    renderizar(<Estantes />, 'tecnico')
+
+    expect(screen.getByRole('button', { name: 'Nova estante' })).toHaveProperty('disabled', true)
   })
 
   it.each(['tecnico', 'gestor'] as const)('o %s tem o botão Histórico, que abre as caixas liberadas', async (perfil) => {
@@ -220,11 +251,12 @@ describe('tela Estantes', { timeout: 20_000 }, () => {
     expect(await screen.findByRole('dialog', { name: 'Histórico das estantes' })).toBeTruthy()
   })
 
-  it('o pesquisador não vê os botões Histórico e Formatos', () => {
+  it('o pesquisador não vê os botões de quem opera a colônia', () => {
     renderizar(<Estantes />, 'pesquisador')
 
-    expect(screen.queryByRole('button', { name: /Histórico/ })).toBeNull()
-    expect(screen.queryByRole('button', { name: /Formatos/ })).toBeNull()
+    for (const nome of [/Histórico/, /Formatos/, /Nova estante/, /Editar/]) {
+      expect(screen.queryByRole('button', { name: nome })).toBeNull()
+    }
   })
 
   it('não tem a descrição embaixo do título', () => {
@@ -233,7 +265,7 @@ describe('tela Estantes', { timeout: 20_000 }, () => {
     expect(screen.queryByText(/As duas faces de cada estante/)).toBeNull()
   })
 
-  it('continua separando as estantes por sala, pelo nome que vem na estante', () => {
+  it('separa as estantes por sala, pelo nome que vem na estante, com o formato no título', () => {
     renderizar(<Estantes />, 'tecnico')
 
     expect(screen.getByText('Sala 1')).toBeTruthy()
@@ -248,7 +280,7 @@ describe('no celular', { timeout: 20_000 }, () => {
     const voltar = larguraDaTela(390)
 
     try {
-      renderizar(<Estantes />, 'gestor')
+      renderizar(<Estantes />, 'tecnico')
 
       for (const nome of ['Histórico', 'Formatos']) {
         const botao = screen.getByRole('button', { name: nome })

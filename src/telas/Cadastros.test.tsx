@@ -1,33 +1,16 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Estante, Sala } from '@/dominio/tipos'
+import type { Sala } from '@/dominio/tipos'
 import { consulta, mutacao, renderizar } from '@/testes/renderizar'
 import { larguraDaTela } from '@/testes/tela'
 import { Cadastros } from './Cadastros'
 
-const usarEstantes = vi.hoisted(() => vi.fn())
 const salvarSala = vi.hoisted(() => vi.fn())
 const removerSala = vi.hoisted(() => vi.fn())
-const salvarEstante = vi.hoisted(() => vi.fn())
-const removerEstante = vi.hoisted(() => vi.fn())
 
 const salas: Sala[] = [
   { id: 1, nome: 'Sala 1', estantes: 1 },
   { id: 4, nome: 'Sala 4', estantes: 0 },
-]
-
-const estantes: Estante[] = [
-  {
-    id: 7,
-    idSala: 1,
-    sala: 'Sala 1',
-    fabricante: 'ALESCO',
-    modelo: 'Modelo 1',
-    numeroVisivel: 'E-01',
-    faces: 2,
-    linhas: 8,
-    colunas: 8,
-  },
 ]
 
 vi.mock('@/dominio/consultas', () => ({
@@ -37,66 +20,58 @@ vi.mock('@/dominio/consultas', () => ({
   useSalvarProjeto: mutacao,
   useSalvarLinhagem: mutacao,
   useSalas: () => consulta(salas),
-  useEstantes: usarEstantes,
   useSalvarSala: () => ({ mutate: salvarSala, mutateAsync: removerSala, isPending: false }),
-  useSalvarEstante: () => ({
-    mutate: salvarEstante,
-    mutateAsync: removerEstante,
-    isPending: false,
-  }),
 }))
 
 beforeEach(() => {
-  usarEstantes.mockReturnValue(consulta(estantes))
   salvarSala.mockReset()
   removerSala.mockReset()
-  salvarEstante.mockReset()
-  removerEstante.mockReset()
 })
 
+/** Os Cadastros na aba das salas: a tela abre nas linhagens */
 function abrirAba() {
   renderizar(<Cadastros />, 'gestor')
-  fireEvent.click(screen.getByRole('tab', { name: 'Salas e estantes' }))
+  fireEvent.click(screen.getByRole('tab', { name: 'Salas' }))
 }
 
-/** A linha da tabela com o texto e o botão pedidos: "Sala 1" aparece nas duas tabelas */
-function linha(texto: string, botao: string): HTMLElement {
-  const achada = screen
-    .getAllByRole('row')
-    .find(
-      (tr) =>
-        within(tr).queryByText(texto) !== null &&
-        within(tr).queryByRole('button', { name: botao }) !== null,
-    )
-  if (!achada) throw new Error(`sem linha com ${texto} e ${botao}`)
+/** A linha da tabela com o texto */
+function linha(texto: string): HTMLElement {
+  const achada = screen.getAllByRole('row').find((tr) => within(tr).queryByText(texto) !== null)
+  if (!achada) throw new Error(`sem linha com ${texto}`)
   return achada
 }
 
+const descricao = () => document.querySelector('.cabecalhoDaTela__descricao')?.textContent ?? ''
+
 describe('abas', () => {
-  it('os projetos CEUA ficam ocultos: só linhagens e salas e estantes', () => {
+  it('o gestor cadastra linhagens e salas; os projetos CEUA ficam ocultos', () => {
     renderizar(<Cadastros />, 'gestor')
 
-    expect(screen.getAllByRole('tab').map((aba) => aba.textContent)).toEqual([
-      'Linhagens',
-      'Salas e estantes',
-    ])
+    expect(screen.getAllByRole('tab').map((aba) => aba.textContent)).toEqual(['Linhagens', 'Salas'])
+  })
+
+  // sem useEstantes no mock: se os Cadastros voltassem a listar estantes, a tela nem abriria
+  it('a estante mora na tela das estantes: aqui não tem estante', () => {
+    abrirAba()
+
+    expect(descricao()).not.toMatch(/estante/i)
+    expect(screen.queryByRole('button', { name: 'Nova estante' })).toBeNull()
   })
 })
 
-// A aba monta duas tabelas do antd, e o formulário da estante tem dois Select: no jsdom cada
-// caso leva de 15 a 30 s, como na busca de atendimento, e os 5 s padrão falham à toa
+// A aba monta a tabela do antd: no jsdom cada caso leva segundos, e os 5 s padrão falham à toa
 describe('salas', { timeout: 60_000 }, () => {
   it('lista a sala sem estante junto com as outras', () => {
     abrirAba()
 
-    expect(within(linha('Sala 4', 'Renomear')).getByText('0')).toBeTruthy()
-    expect(within(linha('Sala 1', 'Renomear')).getByText('1')).toBeTruthy()
+    expect(within(linha('Sala 4')).getByText('0')).toBeTruthy()
+    expect(within(linha('Sala 1')).getByText('1')).toBeTruthy()
   })
 
   it('renomear manda o nome novo da sala', async () => {
     abrirAba()
 
-    fireEvent.click(within(linha('Sala 4', 'Renomear')).getByRole('button', { name: 'Renomear' }))
+    fireEvent.click(within(linha('Sala 4')).getByRole('button', { name: 'Renomear' }))
     fireEvent.change(await screen.findByLabelText('Nome'), { target: { value: ' Sala B ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
 
@@ -112,7 +87,7 @@ describe('salas', { timeout: 60_000 }, () => {
     removerSala.mockRejectedValue(new Error('Sala 1 ainda tem 1 estante.'))
     abrirAba()
 
-    fireEvent.click(within(linha('Sala 1', 'Renomear')).getByRole('button', { name: 'Remover' }))
+    fireEvent.click(within(linha('Sala 1')).getByRole('button', { name: 'Remover' }))
 
     expect(await screen.findAllByText('Remover Sala 1?')).not.toHaveLength(0)
     expect(removerSala).not.toHaveBeenCalled()
@@ -124,87 +99,8 @@ describe('salas', { timeout: 60_000 }, () => {
   })
 })
 
-describe('estantes', { timeout: 60_000 }, () => {
-  it('nova estante só abre depois que as estantes chegam, para o número sugerido sair certo', () => {
-    usarEstantes.mockReturnValue({ data: undefined, isPending: true, error: null })
-    abrirAba()
-
-    expect(screen.getByRole('button', { name: 'Nova estante' })).toHaveProperty('disabled', true)
-  })
-
-  it('nova estante já vem com o número seguinte e manda a sala e o modelo, com a topologia dele', async () => {
-    abrirAba()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Nova estante' }))
-    expect(await screen.findByLabelText('Número da estante')).toHaveProperty('value', 'E-02')
-    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar estante' }))
-
-    await waitFor(() =>
-      expect(salvarEstante).toHaveBeenCalledWith(
-        {
-          tipo: 'criar',
-          dados: {
-            idSala: 1,
-            numeroVisivel: 'E-02',
-            faces: 2,
-            fabricante: 'ALESCO',
-            modelo: 'Modelo 1',
-            linhas: 8,
-            colunas: 8,
-          },
-        },
-        expect.anything(),
-      ),
-    )
-  })
-
-  it('editar mostra o modelo travado e manda só o número e a sala', async () => {
-    abrirAba()
-
-    fireEvent.click(within(linha('E-01', 'Editar')).getByRole('button', { name: 'Editar' }))
-
-    const modelo = await screen.findByDisplayValue('ALESCO Modelo 1 - 8 x 8 por face (128 caixas)')
-    expect((modelo as HTMLInputElement).disabled).toBe(true)
-
-    fireEvent.change(screen.getByLabelText('Número da estante'), { target: { value: 'E-09' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
-
-    await waitFor(() =>
-      expect(salvarEstante).toHaveBeenCalledWith(
-        { tipo: 'alterar', id: 7, dados: { numeroVisivel: 'E-09', idSala: 1 } },
-        expect.anything(),
-      ),
-    )
-  })
-
-  it('remover pede confirmação, e Cancelar não remove nada', async () => {
-    abrirAba()
-
-    fireEvent.click(within(linha('E-01', 'Editar')).getByRole('button', { name: 'Remover' }))
-
-    expect(await screen.findAllByText('Remover a estante E-01?')).not.toHaveLength(0)
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
-
-    await waitFor(() => expect(screen.queryAllByText('Remover a estante E-01?')).toHaveLength(0))
-    expect(removerEstante).not.toHaveBeenCalled()
-  })
-
-  it('remover confirmado chama a API e avisa', async () => {
-    removerEstante.mockResolvedValue(undefined)
-    abrirAba()
-
-    fireEvent.click(within(linha('E-01', 'Editar')).getByRole('button', { name: 'Remover' }))
-    fireEvent.click(
-      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Remover' }),
-    )
-
-    await waitFor(() => expect(removerEstante).toHaveBeenCalledWith({ tipo: 'remover', id: 7 }))
-    expect(await screen.findByText('Estante E-01 removida.')).toBeTruthy()
-  })
-})
-
-describe('salas e estantes no celular', { timeout: 60_000 }, () => {
-  it('cada sala e cada estante é um cartão, com as ações em botões', async () => {
+describe('salas no celular', { timeout: 60_000 }, () => {
+  it('cada sala é um cartão, com as ações em botões', async () => {
     const voltar = larguraDaTela(390)
     try {
       abrirAba()
@@ -213,11 +109,6 @@ describe('salas e estantes no celular', { timeout: 60_000 }, () => {
       const salasNaTela = screen.getByRole('list', { name: 'Salas' })
       const sala4 = within(salasNaTela).getByText('Sala 4').closest('li')!
       expect(within(sala4).getByText('0 estantes')).toBeTruthy()
-
-      const estantesNaTela = screen.getByRole('list', { name: 'Estantes' })
-      const e01 = within(estantesNaTela).getByText('E-01').closest('li')!
-      expect(within(e01).getByText('ALESCO Modelo 1')).toBeTruthy()
-      expect(within(e01).getByText('128 caixas (8 x 8 por face)')).toBeTruthy()
 
       fireEvent.click(within(sala4).getByRole('button', { name: 'Renomear' }))
       fireEvent.change(await screen.findByLabelText('Nome'), { target: { value: 'Sala B' } })

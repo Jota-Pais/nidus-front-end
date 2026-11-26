@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { proximoNumeroDeEstante } from './estante'
+import { caixasNaGrade, porQueNaoRemove, proximoNumeroDeEstante } from './estante'
+import type { Grade } from './tipos'
 
 const comNumeros = (...numeros: string[]) => numeros.map((numeroVisivel) => ({ numeroVisivel }))
 
@@ -26,5 +27,41 @@ describe('proximoNumeroDeEstante', () => {
 
   it('passa de dois dígitos sem cortar', () => {
     expect(proximoNumeroDeEstante(comNumeros('E-99'))).toBe('E-100')
+  })
+})
+
+describe('remover a estante', () => {
+  const posicao = (codigo: string, comCaixa: boolean) => ({
+    linha: 1,
+    coluna: 1,
+    codigo,
+    caixa: comCaixa
+      ? {
+          id: 1,
+          fase: null,
+          atrasado: false,
+          idLinhagem: null,
+          linhagem: null,
+          casal: null,
+          estoque: null,
+        }
+      : null,
+  })
+
+  it('conta as caixas das duas faces', () => {
+    const grade: Grade = {
+      faces: [
+        { face: 'frontal', posicoes: [posicao('F1A', true), posicao('F1B', false)] },
+        { face: 'traseira', posicoes: [posicao('T1C', true)] },
+      ],
+    }
+
+    expect(caixasNaGrade(grade)).toBe(2)
+    expect(caixasNaGrade({ faces: [] })).toBe(0)
+  })
+
+  it('explica por que a estante com caixa não sai', () => {
+    expect(porQueNaoRemove(1)).toBe('Só dá para remover a estante vazia. Esta tem 1 caixa.')
+    expect(porQueNaoRemove(12)).toBe('Só dá para remover a estante vazia. Esta tem 12 caixas.')
   })
 })
