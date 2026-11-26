@@ -12,6 +12,13 @@
   white-space: nowrap;
 }
 
+/* o número da estante e o título "Linhas × colunas" não quebram no meio: a coluna estreita
+   partia "E-06" no hífen */
+.formatos__estante,
+.formatos__titulo {
+  white-space: nowrap;
+}
+
 /* o erro e o aviso de quem usa o formato, um embaixo do outro, em cima dos campos */
 .formatos__avisos {
   display: flex;

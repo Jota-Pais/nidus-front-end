@@ -76,11 +76,6 @@ function emLista(itens: readonly string[]): string {
   return `${itens.slice(0, -1).join(', ')} e ${ultimo}`
 }
 
-/** As estantes que usam o formato, na lista dos formatos: "E-01, E-06", ou "Nenhuma" */
-export function estantesDoFormato(formato: Pick<Formato, 'estantes'>): string {
-  return formato.estantes.map((estante) => estante.numeroVisivel).join(', ') || 'Nenhuma'
-}
-
 /** "Usado por E-01 e E-06": por que o formato não sai da lista */
 export function usadoPor(formato: Pick<Formato, 'estantes'>): string {
   return `Usado por ${emLista(formato.estantes.map((estante) => estante.numeroVisivel))}`

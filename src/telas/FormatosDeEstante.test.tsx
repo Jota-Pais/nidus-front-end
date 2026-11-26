@@ -198,7 +198,8 @@ describe('os formatos no celular', { timeout: 60_000 }, () => {
       const lista = screen.getByRole('list', { name: 'Formatos' })
       const [alesco, bancada] = within(lista).getAllByRole('listitem')
       expect(within(alesco!).getByText('128 caixas')).toBeTruthy()
-      expect(within(alesco!).getByText('E-01, E-06')).toBeTruthy()
+      // cada número numa peça que não quebra no hífen: o texto junta as duas
+      expect(within(alesco!).getByText('E-01').parentElement?.textContent).toBe('E-01, E-06')
       expect(within(alesco!).getByRole('button', { name: 'Remover' })).toHaveProperty(
         'disabled',
         true,

@@ -8,7 +8,6 @@ import {
   codigoDaPosicao,
   descreverFormato,
   descreverMedidas,
-  estantesDoFormato,
   medidasQueCabem,
   usadoPor,
 } from './formato'
@@ -142,13 +141,6 @@ describe('avisoDaTraseira', () => {
 })
 
 describe('o uso do formato', () => {
-  it('lista as estantes que usam, ou Nenhuma', () => {
-    expect(estantesDoFormato({ estantes: estantes(['E-01', 'Sala 1'], ['E-06', 'Sala 2']) })).toBe(
-      'E-01, E-06',
-    )
-    expect(estantesDoFormato({ estantes: [] })).toBe('Nenhuma')
-  })
-
   it('diz por quem o formato é usado', () => {
     expect(usadoPor({ estantes: estantes(['E-01', 'Sala 1'], ['E-06', 'Sala 2']) })).toBe(
       'Usado por E-01 e E-06',

@@ -1,11 +1,10 @@
 import { App, Form, Input, InputNumber, Segmented, Table } from 'antd'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Aviso, Botao, Janela, Linha, ListaDeCartoes } from '@/componentes'
 import { useFormatos, useSalvarFormato } from '@/dominio/consultas'
 import type { DadosDoFormato } from '@/dominio/consultas'
 import {
   avisoDoUso,
-  estantesDoFormato,
   MAIOR_MEDIDA,
   MAXIMO_DE_LETRAS,
   medidasQueCabem,
@@ -22,6 +21,21 @@ import './FormatosDeEstante.css'
 /** "128 caixas": quantas posições o formato tem */
 const caixas = (formato: Formato) =>
   `${formato.capacidade} ${formato.capacidade === 1 ? 'caixa' : 'caixas'}`
+
+/**
+ * "E-01, E-06", ou "Nenhuma": as estantes que usam o formato. Cada número fica inteiro numa linha:
+ * sem isso, a coluna estreita quebrava no hífen ("E-" numa linha, "06" na outra)
+ */
+function EstantesDoFormato({ formato }: { formato: Formato }) {
+  if (formato.estantes.length === 0) return 'Nenhuma'
+
+  return formato.estantes.map((estante, indice) => (
+    <Fragment key={estante.id}>
+      {indice > 0 && ', '}
+      <span className="formatos__estante">{estante.numeroVisivel}</span>
+    </Fragment>
+  ))
+}
 
 /**
  * Os formatos de estante: o nome e as medidas que cada estante copia. Técnico e gestor cadastram,
@@ -66,7 +80,7 @@ export function FormatosDeEstante({ aoFechar }: { aoFechar: () => void }) {
   }
 
   return (
-    <Janela open title="Formatos de estante" onCancel={aoFechar} footer={null} width={760}>
+    <Janela open title="Formatos de estante" onCancel={aoFechar} footer={null} width={880}>
       <div className="formatos__barra">
         <Botao variante="primario" onClick={() => setEditando('novo')}>
           Novo formato
@@ -92,7 +106,7 @@ export function FormatosDeEstante({ aoFechar }: { aoFechar: () => void }) {
                     {formato.linhas} × {formato.colunas}
                   </ListaDeCartoes.Dado>
                   <ListaDeCartoes.Dado rotulo="Estantes" largo>
-                    {estantesDoFormato(formato)}
+                    <EstantesDoFormato formato={formato} />
                   </ListaDeCartoes.Dado>
                 </ListaDeCartoes.Dados>
                 <ListaDeCartoes.Acoes>
@@ -113,11 +127,14 @@ export function FormatosDeEstante({ aoFechar }: { aoFechar: () => void }) {
               { title: 'Formato', dataIndex: 'nome' },
               { title: 'Faces', dataIndex: 'faces' },
               {
-                title: 'Linhas × colunas',
+                title: <span className="formatos__titulo">Linhas × colunas</span>,
                 render: (_, formato) => `${formato.linhas} × ${formato.colunas}`,
               },
               { title: 'Caixas', dataIndex: 'capacidade' },
-              { title: 'Estantes', render: (_, formato) => estantesDoFormato(formato) },
+              {
+                title: 'Estantes',
+                render: (_, formato) => <EstantesDoFormato formato={formato} />,
+              },
               {
                 title: '',
                 align: 'right',
