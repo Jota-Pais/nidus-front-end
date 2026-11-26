@@ -7,6 +7,9 @@ import { consulta, renderizar } from '@/testes/renderizar'
 import { larguraDaTela } from '@/testes/tela'
 import { FormularioDaEstante } from './FormularioDaEstante'
 
+/** O envio passa pela validação do antd, que na suíte cheia passa de 1 s */
+const DEMORA = { timeout: 10_000 }
+
 const salvarEstante = vi.hoisted(() => vi.fn())
 const removerEstante = vi.hoisted(() => vi.fn())
 const salvarFormato = vi.hoisted(() => vi.fn())
@@ -102,11 +105,13 @@ describe('cadastro', { timeout: 60_000 }, () => {
     escolherFormato('Bancada · 1 face de 5 × 4 (20 caixas)')
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar estante' }))
 
-    await waitFor(() =>
-      expect(salvarEstante).toHaveBeenCalledWith(
-        { tipo: 'criar', dados: { idSala: 1, idFormato: 3, numeroVisivel: 'E-02' } },
-        expect.anything(),
-      ),
+    await waitFor(
+      () =>
+        expect(salvarEstante).toHaveBeenCalledWith(
+          { tipo: 'criar', dados: { idSala: 1, idFormato: 3, numeroVisivel: 'E-02' } },
+          expect.anything(),
+        ),
+      DEMORA,
     )
   })
 
@@ -141,21 +146,25 @@ describe('cadastro', { timeout: 60_000 }, () => {
     fireEvent.change(screen.getByLabelText('Colunas'), { target: { value: '4' } })
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar formato' }))
 
-    await waitFor(() =>
-      expect(salvarFormato).toHaveBeenCalledWith(
-        { tipo: 'criar', dados: { nome: 'Rack novo', faces: 2, linhas: 4, colunas: 4 } },
-        expect.anything(),
-      ),
+    await waitFor(
+      () =>
+        expect(salvarFormato).toHaveBeenCalledWith(
+          { tipo: 'criar', dados: { nome: 'Rack novo', faces: 2, linhas: 4, colunas: 4 } },
+          expect.anything(),
+        ),
+      DEMORA,
     )
     expect(await screen.findByTitle('Rack novo · 2 faces de 4 × 4 (32 caixas)')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar estante' }))
 
-    await waitFor(() =>
-      expect(salvarEstante).toHaveBeenCalledWith(
-        { tipo: 'criar', dados: { idSala: 1, idFormato: 9, numeroVisivel: 'E-02' } },
-        expect.anything(),
-      ),
+    await waitFor(
+      () =>
+        expect(salvarEstante).toHaveBeenCalledWith(
+          { tipo: 'criar', dados: { idSala: 1, idFormato: 9, numeroVisivel: 'E-02' } },
+          expect.anything(),
+        ),
+      DEMORA,
     )
   })
 })
@@ -181,6 +190,8 @@ describe('edição', { timeout: 60_000 }, () => {
     expect(
       await screen.findByText(
         'As caixas F8A e T8K ficam fora deste formato. Mude-as de lugar antes de trocar.',
+        {},
+        DEMORA,
       ),
     ).toBeTruthy()
     expect(salvar()).toHaveProperty('disabled', true)
@@ -193,7 +204,7 @@ describe('edição', { timeout: 60_000 }, () => {
     // de volta ao formato dela, nenhuma fica de fora
     escolherFormato('ALESCO Modelo 1 · 2 faces de 8 × 8 (128 caixas)')
 
-    await waitFor(() => expect(screen.queryByText(/fora deste formato/)).toBeNull())
+    await waitFor(() => expect(screen.queryByText(/fora deste formato/)).toBeNull(), DEMORA)
     expect(salvar()).toHaveProperty('disabled', false)
   })
 
@@ -206,6 +217,8 @@ describe('edição', { timeout: 60_000 }, () => {
     expect(
       await screen.findByText(
         'A caixa F8A fica fora deste formato. Mude-a de lugar antes de trocar.',
+        {},
+        DEMORA,
       ),
     ).toBeTruthy()
   })
@@ -216,15 +229,21 @@ describe('edição', { timeout: 60_000 }, () => {
     escolherFormato('Larga · 2 faces de 8 × 9 (144 caixas)')
 
     expect(
-      await screen.findByText('Com 9 colunas, as letras da face traseira mudam: T1I passa a T1J.'),
+      await screen.findByText(
+        'Com 9 colunas, as letras da face traseira mudam: T1I passa a T1J.',
+        {},
+        DEMORA,
+      ),
     ).toBeTruthy()
     fireEvent.click(salvar())
 
-    await waitFor(() =>
-      expect(salvarEstante).toHaveBeenCalledWith(
-        { tipo: 'alterar', id: 7, dados: { idFormato: 4 } },
-        expect.anything(),
-      ),
+    await waitFor(
+      () =>
+        expect(salvarEstante).toHaveBeenCalledWith(
+          { tipo: 'alterar', id: 7, dados: { idFormato: 4 } },
+          expect.anything(),
+        ),
+      DEMORA,
     )
   })
 
@@ -234,11 +253,13 @@ describe('edição', { timeout: 60_000 }, () => {
     fireEvent.change(screen.getByLabelText('Número da estante'), { target: { value: ' E-09 ' } })
     fireEvent.click(salvar())
 
-    await waitFor(() =>
-      expect(salvarEstante).toHaveBeenCalledWith(
-        { tipo: 'alterar', id: 7, dados: { numeroVisivel: 'E-09' } },
-        expect.anything(),
-      ),
+    await waitFor(
+      () =>
+        expect(salvarEstante).toHaveBeenCalledWith(
+          { tipo: 'alterar', id: 7, dados: { numeroVisivel: 'E-09' } },
+          expect.anything(),
+        ),
+      DEMORA,
     )
   })
 
@@ -247,7 +268,7 @@ describe('edição', { timeout: 60_000 }, () => {
 
     fireEvent.click(salvar())
 
-    await waitFor(() => expect(fechar).toHaveBeenCalled())
+    await waitFor(() => expect(fechar).toHaveBeenCalled(), DEMORA)
     expect(salvarEstante).not.toHaveBeenCalled()
   })
 
@@ -264,7 +285,7 @@ describe('edição', { timeout: 60_000 }, () => {
     escolherFormato('Larga · 2 faces de 8 × 9 (144 caixas)')
     fireEvent.click(salvar())
 
-    expect(await screen.findByText('Escolha um formato cadastrado.')).toBeTruthy()
+    expect(await screen.findByText('Escolha um formato cadastrado.', {}, DEMORA)).toBeTruthy()
     expect(fechar).not.toHaveBeenCalled()
   })
 
@@ -277,7 +298,7 @@ describe('edição', { timeout: 60_000 }, () => {
     fireEvent.change(screen.getByLabelText('Número da estante'), { target: { value: 'E-03' } })
     fireEvent.click(salvar())
 
-    expect(await screen.findByText('Já existe a estante E-03 na Sala 1.')).toBeTruthy()
+    expect(await screen.findByText('Já existe a estante E-03 na Sala 1.', {}, DEMORA)).toBeTruthy()
     expect(fechar).not.toHaveBeenCalled()
   })
 })
@@ -331,8 +352,11 @@ describe('remover a estante', { timeout: 60_000 }, () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Remover' }))
 
-    await waitFor(() => expect(removerEstante).toHaveBeenCalledWith({ tipo: 'remover', id: 7 }))
-    expect(await screen.findByText('Estante E-01 removida.')).toBeTruthy()
+    await waitFor(
+      () => expect(removerEstante).toHaveBeenCalledWith({ tipo: 'remover', id: 7 }),
+      DEMORA,
+    )
+    expect(await screen.findByText('Estante E-01 removida.', {}, DEMORA)).toBeTruthy()
     expect(fechar).toHaveBeenCalled()
   })
 })

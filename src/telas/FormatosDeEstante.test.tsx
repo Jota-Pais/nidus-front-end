@@ -8,6 +8,9 @@ import { consulta, renderizar } from '@/testes/renderizar'
 import { larguraDaTela } from '@/testes/tela'
 import { FormatosDeEstante } from './FormatosDeEstante'
 
+/** O envio passa pela validação do antd, que na suíte cheia passa de 1 s */
+const DEMORA = { timeout: 10_000 }
+
 const salvarFormato = vi.hoisted(() => vi.fn())
 const removerFormato = vi.hoisted(() => vi.fn())
 
@@ -91,8 +94,11 @@ describe('a lista dos formatos', { timeout: 60_000 }, () => {
     const confirmacao = document.querySelector<HTMLElement>('.ant-modal-confirm')!
     fireEvent.click(within(confirmacao).getByRole('button', { name: 'Remover' }))
 
-    await waitFor(() => expect(removerFormato).toHaveBeenCalledWith({ tipo: 'remover', id: 3 }))
-    expect(await screen.findByText('Formato Bancada removido.')).toBeTruthy()
+    await waitFor(
+      () => expect(removerFormato).toHaveBeenCalledWith({ tipo: 'remover', id: 3 }),
+      DEMORA,
+    )
+    expect(await screen.findByText('Formato Bancada removido.', {}, DEMORA)).toBeTruthy()
   })
 })
 
@@ -115,13 +121,15 @@ describe('o formulário do formato', { timeout: 60_000 }, () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar formato' }))
 
-    await waitFor(() =>
-      expect(salvarFormato).toHaveBeenCalledWith(
-        { tipo: 'criar', dados: { nome: 'Rack novo', faces: 2, linhas: 4, colunas: 4 } },
-        expect.anything(),
-      ),
+    await waitFor(
+      () =>
+        expect(salvarFormato).toHaveBeenCalledWith(
+          { tipo: 'criar', dados: { nome: 'Rack novo', faces: 2, linhas: 4, colunas: 4 } },
+          expect.anything(),
+        ),
+      DEMORA,
     )
-    expect(await screen.findByText('Formato Rack novo cadastrado.')).toBeTruthy()
+    expect(await screen.findByText('Formato Rack novo cadastrado.', {}, DEMORA)).toBeTruthy()
   })
 
   it('faces × colunas não passa de 26, com as palavras da API', async () => {
@@ -133,13 +141,13 @@ describe('o formulário do formato', { timeout: 60_000 }, () => {
     digitar('Colunas', '14')
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar formato' }))
 
-    expect(await screen.findByText(MENSAGEM_DAS_LETRAS)).toBeTruthy()
+    expect(await screen.findByText(MENSAGEM_DAS_LETRAS, {}, DEMORA)).toBeTruthy()
     expect(salvarFormato).not.toHaveBeenCalled()
 
     // com uma face só, as 14 colunas cabem
     fireEvent.click(screen.getByText('1 face'))
 
-    await waitFor(() => expect(screen.queryByText(MENSAGEM_DAS_LETRAS)).toBeNull())
+    await waitFor(() => expect(screen.queryByText(MENSAGEM_DAS_LETRAS)).toBeNull(), DEMORA)
   })
 
   it('o formato em uso avisa quais estantes mudam junto, e a edição manda só o que mudou', async () => {
@@ -150,6 +158,8 @@ describe('o formulário do formato', { timeout: 60_000 }, () => {
     expect(
       await screen.findByText(
         'Usado pelas estantes E-01 (Sala 1) e E-06 (Sala 2): mudar faces, linhas ou colunas muda essas estantes também.',
+        {},
+        DEMORA,
       ),
     ).toBeTruthy()
     expect(screen.getByLabelText('Nome')).toHaveProperty('value', 'ALESCO Modelo 1')
@@ -157,11 +167,13 @@ describe('o formulário do formato', { timeout: 60_000 }, () => {
     digitar('Colunas', '9')
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
 
-    await waitFor(() =>
-      expect(salvarFormato).toHaveBeenCalledWith(
-        { tipo: 'alterar', id: 1, dados: { colunas: 9 } },
-        expect.anything(),
-      ),
+    await waitFor(
+      () =>
+        expect(salvarFormato).toHaveBeenCalledWith(
+          { tipo: 'alterar', id: 1, dados: { colunas: 9 } },
+          expect.anything(),
+        ),
+      DEMORA,
     )
   })
 
@@ -182,7 +194,11 @@ describe('o formulário do formato', { timeout: 60_000 }, () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
 
     expect(
-      await screen.findByText('A E-01 tem caixa na linha 8: com 7 linhas ela ficaria de fora.'),
+      await screen.findByText(
+        'A E-01 tem caixa na linha 8: com 7 linhas ela ficaria de fora.',
+        {},
+        DEMORA,
+      ),
     ).toBeTruthy()
   })
 })
