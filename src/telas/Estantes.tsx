@@ -1,7 +1,12 @@
-import { CloseOutlined, HistoryOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import {
+  AppstoreOutlined,
+  CloseOutlined,
+  HistoryOutlined,
+  InfoCircleOutlined,
+} from '@ant-design/icons'
 import { App, Segmented } from 'antd'
 import { createContext, useContext, useState } from 'react'
-import type { DragEvent } from 'react'
+import type { DragEvent, ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { usePerfil } from '@/auth/contexto'
 import { Botao, CabecalhoDaTela, Linha, Pilha, Secao, Texto, Vazio } from '@/componentes'
@@ -22,6 +27,7 @@ import { FichaDaCaixa } from './FichaDaCaixa'
 import type { PosicaoVazia } from './FichaDaCaixa'
 import { FichaDoHistorico } from './FichaDoHistorico'
 import { LegendaDasFases } from './FaseDaCaixa'
+import { FormatosDeEstante } from './FormatosDeEstante'
 import { FormularioDaEstante } from './FormularioDaEstante'
 import './Estantes.css'
 
@@ -80,6 +86,7 @@ export function Estantes() {
   const estantes = useEstantes()
   const salasCadastradas = useSalas()
   const [cadastrando, setCadastrando] = useState(false)
+  const [comFormatos, setComFormatos] = useState(false)
   // as caixas que saíram da estante: quem opera a colônia acha ali a ficha de cada uma
   const [comHistorico, setComHistorico] = useState(false)
   const operaAColonia = perfil === 'tecnico' || perfil === 'gestor'
@@ -143,9 +150,16 @@ export function Estantes() {
         acoes={
           operaAColonia ? (
             <Linha espaco={8}>
-              <Botao icon={<HistoryOutlined />} onClick={() => setComHistorico(true)}>
-                Histórico
-              </Botao>
+              <BotaoDeConsulta
+                icone={<HistoryOutlined />}
+                rotulo="Histórico"
+                aoClicar={() => setComHistorico(true)}
+              />
+              <BotaoDeConsulta
+                icone={<AppstoreOutlined />}
+                rotulo="Formatos"
+                aoClicar={() => setComFormatos(true)}
+              />
               {perfil === 'gestor' && (
                 <Botao
                   variante="primario"
@@ -221,10 +235,35 @@ export function Estantes() {
         aoFechar={() => setAberta(null)}
       />
       {cadastrando && <FormularioDaEstante estante={null} aoFechar={() => setCadastrando(false)} />}
+      {comFormatos && <FormatosDeEstante aoFechar={() => setComFormatos(false)} />}
       {operaAColonia && (
         <FichaDoHistorico aberta={comHistorico} aoFechar={() => setComHistorico(false)} />
       )}
     </Pilha>
+  )
+}
+
+/**
+ * Os botões de consulta do cabeçalho, Histórico e Formatos. No celular fica só o ícone, com o
+ * nome no título e para o leitor de tela: com o texto, os três botões não cabiam numa linha
+ */
+function BotaoDeConsulta({
+  icone,
+  rotulo,
+  aoClicar,
+}: {
+  icone: ReactNode
+  rotulo: string
+  aoClicar: () => void
+}) {
+  const estreita = useTelaEstreita()
+
+  return estreita ? (
+    <Botao icon={icone} aria-label={rotulo} title={rotulo} onClick={aoClicar} />
+  ) : (
+    <Botao icon={icone} onClick={aoClicar}>
+      {rotulo}
+    </Botao>
   )
 }
 

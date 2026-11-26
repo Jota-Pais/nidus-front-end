@@ -20,6 +20,7 @@ import {
   useRecusarPedido,
   useRegistrarEntrega,
   useRegistrarNaFicha,
+  useSalvarFormato,
   useSemNinhada,
   useVirarCaixaDeEstoque,
 } from './consultas'
@@ -59,9 +60,12 @@ const QUE_MOSTRAM_ANIMAIS = [
   HISTORICO,
 ]
 
+/** As salas, as estantes e os formatos: o que a tela das estantes e os Cadastros leem */
+const DA_ESTRUTURA = [chaves.salas, chaves.estantes, chaves.formatos]
+
 function montar<T>(usar: () => T) {
   const cliente = new QueryClient()
-  for (const chave of QUE_MOSTRAM_ANIMAIS) cliente.setQueryData(chave, {})
+  for (const chave of [...QUE_MOSTRAM_ANIMAIS, ...DA_ESTRUTURA]) cliente.setQueryData(chave, {})
 
   const envolver = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={cliente}>{children}</QueryClientProvider>
@@ -130,6 +134,41 @@ describe('as ações da colônia recarregam tudo o que mostra animais', () => {
     await mutacao.mutateAsync(variaveis as never)
 
     expect(invalidadas(cliente)).toEqual(QUE_MOSTRAM_ANIMAIS)
+  })
+})
+
+describe('as estantes e os formatos', () => {
+  const estruturaDerrubada = (cliente: QueryClient) =>
+    DA_ESTRUTURA.filter((chave) => cliente.getQueryState(chave)?.isInvalidated)
+
+  it('salvar formato recarrega os formatos, as estantes e tudo o que mostra caixa: o código pode mudar', async () => {
+    const { cliente, mutacao } = montar(useSalvarFormato)
+
+    await mutacao.mutateAsync({ tipo: 'alterar', id: 3, dados: { colunas: 9 } })
+
+    expect(estruturaDerrubada(cliente)).toEqual([chaves.estantes, chaves.formatos])
+    expect(invalidadas(cliente)).toEqual(QUE_MOSTRAM_ANIMAIS)
+    expect(chamadas).toEqual([
+      { caminho: '/api/formatos/3', opcoes: { metodo: 'PATCH', corpo: { colunas: 9 } } },
+    ])
+  })
+
+  it('criar e remover formato vão pelos caminhos dos formatos', async () => {
+    const { mutacao } = montar(useSalvarFormato)
+
+    await mutacao.mutateAsync({
+      tipo: 'criar',
+      dados: { nome: 'Rack', faces: 2, linhas: 4, colunas: 4 },
+    })
+    await mutacao.mutateAsync({ tipo: 'remover', id: 3 })
+
+    expect(chamadas).toEqual([
+      {
+        caminho: '/api/formatos',
+        opcoes: { metodo: 'POST', corpo: { nome: 'Rack', faces: 2, linhas: 4, colunas: 4 } },
+      },
+      { caminho: '/api/formatos/3', opcoes: { metodo: 'DELETE' } },
+    ])
   })
 })
 

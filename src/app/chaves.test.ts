@@ -24,6 +24,7 @@ const FORA_DA_COLONIA = [
   chaves.catalogo,
   chaves.salas,
   chaves.estantes,
+  chaves.formatos,
   chaves.projetos,
   chaves.usuarios,
 ]
@@ -86,7 +87,7 @@ describe('invalidarColonia', () => {
     sair()
   })
 
-  it('não mexe no que não depende dos animais: sessão, catálogo, salas, estantes, contas', async () => {
+  it('não mexe no que não depende dos animais: sessão, catálogo, salas, estantes, formatos, contas', async () => {
     const cliente = cacheCheio()
 
     await invalidarColonia(cliente)

@@ -158,6 +158,11 @@ vi.mock('@/dominio/consultas', () => ({
 // a ficha tem as consultas dela; aqui ela fica fechada e não importa
 vi.mock('./FichaDaCaixa', () => ({ FichaDaCaixa: () => null }))
 
+// a janela dos formatos tem os testes dela: aqui basta saber que abriu
+vi.mock('./FormatosDeEstante', () => ({
+  FormatosDeEstante: () => <div>janela dos formatos</div>,
+}))
+
 beforeEach(() => {
   mover.mockReset()
 })
@@ -197,6 +202,15 @@ describe('tela Estantes', { timeout: 20_000 }, () => {
     expect(screen.queryByRole('button', { name: 'Nova estante' })).toBeNull()
   })
 
+  it.each(['tecnico', 'gestor'] as const)('o %s abre a janela dos formatos', (perfil) => {
+    renderizar(<Estantes />, perfil)
+    expect(screen.queryByText('janela dos formatos')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /Formatos/ }))
+
+    expect(screen.getByText('janela dos formatos')).toBeTruthy()
+  })
+
   it.each(['tecnico', 'gestor'] as const)('o %s tem o botão Histórico, que abre as caixas liberadas', async (perfil) => {
     renderizar(<Estantes />, perfil)
 
@@ -206,10 +220,11 @@ describe('tela Estantes', { timeout: 20_000 }, () => {
     expect(await screen.findByRole('dialog', { name: 'Histórico das estantes' })).toBeTruthy()
   })
 
-  it('o pesquisador não vê o botão Histórico', () => {
+  it('o pesquisador não vê os botões Histórico e Formatos', () => {
     renderizar(<Estantes />, 'pesquisador')
 
     expect(screen.queryByRole('button', { name: /Histórico/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Formatos/ })).toBeNull()
   })
 
   it('não tem a descrição embaixo do título', () => {
@@ -229,6 +244,23 @@ describe('tela Estantes', { timeout: 20_000 }, () => {
 })
 
 describe('no celular', { timeout: 20_000 }, () => {
+  it('Histórico e Formatos ficam só com o ícone, com o nome no título, e Nova estante com o texto', () => {
+    const voltar = larguraDaTela(390)
+
+    try {
+      renderizar(<Estantes />, 'gestor')
+
+      for (const nome of ['Histórico', 'Formatos']) {
+        const botao = screen.getByRole('button', { name: nome })
+        expect(botao.getAttribute('title')).toBe(nome)
+        expect(botao.textContent).toBe('')
+      }
+      expect(screen.getByRole('button', { name: 'Nova estante' }).textContent).toBe('Nova estante')
+    } finally {
+      voltar()
+    }
+  })
+
   it('as colunas cabem na largura, ninguém arrasta e a legenda fica atrás de um botão', () => {
     const voltar = larguraDaTela(390)
 

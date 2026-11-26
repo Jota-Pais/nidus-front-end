@@ -14,6 +14,7 @@ import type {
   Estante,
   FaltaDoPedido,
   FichaDaCaixa,
+  Formato,
   Grade,
   LugarDaRetirada,
   Parto,
@@ -148,6 +149,62 @@ export function useSalvarEstante() {
       return api(`/api/estantes/${pedido.id}`, { metodo: 'DELETE' })
     },
     onSuccess: () => invalidarSalasEEstantes(cliente),
+  })
+}
+
+/** Os formatos ativos, pelo nome, cada um com as estantes que o usam */
+export function useFormatos() {
+  return useQuery({
+    queryKey: chaves.formatos,
+    queryFn: async () => (await api<{ formatos: Formato[] }>('/api/formatos')).formatos,
+  })
+}
+
+/** O nome e as medidas do formato */
+export interface DadosDoFormato {
+  nome: string
+  faces: number
+  linhas: number
+  colunas: number
+}
+
+/**
+ * As medidas do formato valem para as estantes que o usam, e as colunas dão a letra das posições
+ * da face traseira: salvar recarrega os formatos, as estantes e tudo o que mostra caixa, que pode
+ * ter mudado de código
+ */
+function invalidarFormatos(cliente: QueryClient) {
+  return Promise.all([
+    cliente.invalidateQueries({ queryKey: chaves.formatos }),
+    cliente.invalidateQueries({ queryKey: chaves.estantes }),
+    invalidarColonia(cliente),
+  ])
+}
+
+/**
+ * Criar e alterar devolvem o formato como ficou: a estante escolhe o que acabou de nascer. A
+ * alteração leva só o que mudou, ao menos um; a API recusa a medida que deixaria caixa de fora de
+ * alguma estante, e só remove o formato que nenhuma estante usa
+ */
+export function useSalvarFormato() {
+  const cliente = useQueryClient()
+
+  return useMutation({
+    mutationFn: (
+      pedido:
+        | { tipo: 'criar'; dados: DadosDoFormato }
+        | { tipo: 'alterar'; id: number; dados: Partial<DadosDoFormato> }
+        | { tipo: 'remover'; id: number },
+    ): Promise<Formato | undefined> => {
+      if (pedido.tipo === 'criar') {
+        return api<Formato>('/api/formatos', { metodo: 'POST', corpo: pedido.dados })
+      }
+      if (pedido.tipo === 'alterar') {
+        return api<Formato>(`/api/formatos/${pedido.id}`, { metodo: 'PATCH', corpo: pedido.dados })
+      }
+      return api<undefined>(`/api/formatos/${pedido.id}`, { metodo: 'DELETE' })
+    },
+    onSuccess: () => invalidarFormatos(cliente),
   })
 }
 

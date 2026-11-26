@@ -13,6 +13,7 @@ export const chaves = {
   catalogo: ['catalogo'] as const,
   salas: ['salas'] as const,
   estantes: ['estantes'] as const,
+  formatos: ['formatos'] as const,
   projetos: ['projetos'] as const,
   usuarios: ['usuarios'] as const,
   colonia: [COLONIA] as const,

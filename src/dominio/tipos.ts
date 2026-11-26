@@ -125,6 +125,27 @@ export interface Estante {
   colunas: number
 }
 
+/** Uma estante ativa que usa o formato */
+export interface EstanteDoFormato {
+  id: number
+  numeroVisivel: string
+  sala: string
+}
+
+// GET /api/formatos: os formatos ativos, pelo nome
+export interface Formato {
+  id: number
+  nome: string
+  /** 1 ou 2 */
+  faces: number
+  linhas: number
+  colunas: number
+  /** faces × linhas × colunas: quantas caixas cabem */
+  capacidade: number
+  /** as estantes ativas que usam o formato, por sala e número */
+  estantes: EstanteDoFormato[]
+}
+
 /** Na grade só aparece caixa ativa */
 export interface CaixaNaGrade {
   id: number

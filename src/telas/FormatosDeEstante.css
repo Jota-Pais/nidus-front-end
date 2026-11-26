@@ -1,0 +1,29 @@
+/* Os formatos de estante: a janela da lista, aberta pelo botão Formatos das estantes, e o
+   formulário de cada formato */
+
+.formatos__barra {
+  display: flex;
+  justify-content: flex-end;
+  margin: 12px 0 16px;
+}
+
+.formatos__lado {
+  color: var(--cor-suave-frente);
+  white-space: nowrap;
+}
+
+/* o erro e o aviso de quem usa o formato, um embaixo do outro, em cima dos campos */
+.formatos__avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* As linhas e as colunas lado a lado, dividindo a largura: a recusa das colunas quebra embaixo
+   delas sem espremer */
+.formatos__medidas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 12px;
+}

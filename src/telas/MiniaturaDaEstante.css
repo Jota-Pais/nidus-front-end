@@ -1,0 +1,60 @@
+/*
+ * A estante em miniatura dos formulários da estante e do formato: as faces lado a lado e uma
+ * célula pequena por posição. Não se clica; mostra as medidas e, na estante que já existe, onde há
+ * caixa
+ */
+.miniatura {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.miniatura__faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.miniatura__face {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* o mesmo rótulo da estante em miniatura do Mudar de lugar */
+.miniatura__rotulo {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cor-suave-frente);
+}
+
+.miniatura__celulas {
+  display: grid;
+  gap: 2px;
+}
+
+.miniatura__celula {
+  aspect-ratio: 1;
+  border: 1px solid var(--cor-borda);
+  border-radius: 2px;
+  background: var(--cor-cartao);
+}
+
+.miniatura__celula--ocupada {
+  border-color: var(--cor-suave-frente);
+  background: var(--cor-suave-frente);
+}
+
+.miniatura__legenda {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--cor-suave-frente);
+}
+
+.miniatura__legenda > .miniatura__celula {
+  width: 12px;
+}
