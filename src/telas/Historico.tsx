@@ -15,6 +15,7 @@ const ENTIDADES = [
   { value: 'pedido', label: 'Pedido' },
   { value: 'sala', label: 'Sala' },
   { value: 'estante', label: 'Estante' },
+  { value: 'formato', label: 'Formato' },
   { value: 'usuario', label: 'Conta' },
   { value: 'projeto', label: 'Projeto' },
   { value: 'linhagem', label: 'Linhagem' },

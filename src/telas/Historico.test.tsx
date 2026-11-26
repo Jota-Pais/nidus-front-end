@@ -87,6 +87,15 @@ describe('tela Histórico', { timeout: 20_000 }, () => {
     expect(screen.queryByTitle('Solicitação')).toBeNull()
   })
 
+  it('filtra pelo formato da estante, que vai para a consulta', () => {
+    renderizar(<Historico />, 'gestor')
+
+    fireEvent.mouseDown(screen.getByRole('combobox'))
+    fireEvent.click(screen.getByTitle('Formato'))
+
+    expect(filtros.at(-1)).toMatchObject({ entidade: 'formato' })
+  })
+
   it('a busca vai para a consulta', () => {
     renderizar(<Historico />, 'gestor')
 
