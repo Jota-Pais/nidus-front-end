@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Sala } from '@/dominio/tipos'
+import type { Perfil, Sala } from '@/dominio/tipos'
 import { consulta, mutacao, renderizar } from '@/testes/renderizar'
 import { larguraDaTela } from '@/testes/tela'
 import { Cadastros } from './Cadastros'
@@ -28,10 +28,10 @@ beforeEach(() => {
   removerSala.mockReset()
 })
 
-/** Os Cadastros na aba das salas: a tela abre nas linhagens */
-function abrirAba() {
-  renderizar(<Cadastros />, 'gestor')
-  fireEvent.click(screen.getByRole('tab', { name: 'Salas' }))
+/** Os Cadastros na aba das salas: o gestor abre nas linhagens, e o técnico só tem as salas */
+function abrirAba(perfil: Perfil = 'gestor') {
+  renderizar(<Cadastros />, perfil)
+  if (perfil === 'gestor') fireEvent.click(screen.getByRole('tab', { name: 'Salas' }))
 }
 
 /** A linha da tabela com o texto */
@@ -50,13 +50,24 @@ describe('abas', () => {
     expect(screen.getAllByRole('tab').map((aba) => aba.textContent)).toEqual(['Linhagens', 'Salas'])
   })
 
-  // sem useEstantes no mock: se os Cadastros voltassem a listar estantes, a tela nem abriria
-  it('a estante mora na tela das estantes: aqui não tem estante', () => {
-    abrirAba()
+  it('o técnico cuida só das salas', () => {
+    renderizar(<Cadastros />, 'tecnico')
 
-    expect(descricao()).not.toMatch(/estante/i)
-    expect(screen.queryByRole('button', { name: 'Nova estante' })).toBeNull()
+    expect(screen.getAllByRole('tab').map((aba) => aba.textContent)).toEqual(['Salas'])
+    expect(screen.getByRole('button', { name: 'Nova sala' })).toBeTruthy()
+    expect(descricao()).not.toMatch(/linhage/i)
   })
+
+  // sem useEstantes no mock: se os Cadastros voltassem a listar estantes, a tela nem abriria
+  it.each(['tecnico', 'gestor'] as const)(
+    'a estante mora na tela das estantes: o %s não acha estante aqui',
+    (perfil) => {
+      abrirAba(perfil)
+
+      expect(descricao()).not.toMatch(/estante/i)
+      expect(screen.queryByRole('button', { name: 'Nova estante' })).toBeNull()
+    },
+  )
 })
 
 // A aba monta a tabela do antd: no jsdom cada caso leva segundos, e os 5 s padrão falham à toa
@@ -68,8 +79,8 @@ describe('salas', { timeout: 60_000 }, () => {
     expect(within(linha('Sala 1')).getByText('1')).toBeTruthy()
   })
 
-  it('renomear manda o nome novo da sala', async () => {
-    abrirAba()
+  it.each(['tecnico', 'gestor'] as const)('o %s renomeia a sala', async (perfil) => {
+    abrirAba(perfil)
 
     fireEvent.click(within(linha('Sala 4')).getByRole('button', { name: 'Renomear' }))
     fireEvent.change(await screen.findByLabelText('Nome'), { target: { value: ' Sala B ' } })

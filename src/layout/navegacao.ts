@@ -16,7 +16,8 @@ const ITENS_DE_MENU: ItemDeMenu[] = [
 
 /** O que fica em Configurações, no menu da conta do cabeçalho, fora do menu do dia a dia */
 const ITENS_DE_CONFIGURACAO: ItemDeMenu[] = [
-  { rotulo: 'Cadastros', caminho: '/cadastros', perfis: ['gestor'] },
+  // o técnico cuida das salas; as linhagens, o histórico e as contas são do gestor
+  { rotulo: 'Cadastros', caminho: '/cadastros', perfis: ['tecnico', 'gestor'] },
   { rotulo: 'Histórico', caminho: '/historico', perfis: ['gestor'] },
   { rotulo: 'Contas', caminho: '/usuarios', perfis: ['gestor'] },
 ]

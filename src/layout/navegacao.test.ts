@@ -29,13 +29,19 @@ describe('pedidos', () => {
 })
 
 describe('configurações', () => {
-  it('cadastros, histórico e usuários ficam em Configurações, só para o gestor', () => {
+  it('cadastros, histórico e usuários ficam em Configurações do gestor', () => {
     expect(configuracoesDoPerfil('gestor').map((item) => item.caminho)).toEqual([
       '/cadastros',
       '/historico',
       '/usuarios',
     ])
-    expect(configuracoesDoPerfil('tecnico')).toEqual([])
+  })
+
+  it('o técnico tem só os Cadastros, onde cuida das salas', () => {
+    expect(configuracoesDoPerfil('tecnico').map((item) => item.caminho)).toEqual(['/cadastros'])
+  })
+
+  it('o pesquisador não tem nada a configurar', () => {
     expect(configuracoesDoPerfil('pesquisador')).toEqual([])
   })
 })

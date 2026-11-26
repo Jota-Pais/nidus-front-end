@@ -1,5 +1,6 @@
 import { App, Form, Input, InputNumber, Select, Switch, Table, Tabs } from 'antd'
 import { useState } from 'react'
+import { usePerfil } from '@/auth/contexto'
 import {
   Botao,
   CabecalhoDaTela,
@@ -44,22 +45,30 @@ const SITUACOES: { value: SituacaoDoProjeto; label: string }[] = [
 const MOSTRAR_PROJETOS = false
 
 /**
- * Linhagens e salas: o que antes só entrava pela carga inicial. A estante tem um lugar só, a tela
- * das estantes
+ * Linhagens e salas: o que antes só entrava pela carga inicial. O técnico cuida só das salas; as
+ * linhagens são do gestor. A estante tem um lugar só, a tela das estantes
  */
 export function Cadastros() {
+  const { perfil } = usePerfil()
+  const doGestor = perfil === 'gestor'
   const abas = [
     { key: 'projetos', label: 'Projetos CEUA', children: <Projetos /> },
     { key: 'linhagens', label: 'Linhagens', children: <Linhagens /> },
     { key: 'salas', label: 'Salas', children: <Salas /> },
-  ].filter((aba) => MOSTRAR_PROJETOS || aba.key !== 'projetos')
+  ]
+    .filter((aba) => MOSTRAR_PROJETOS || aba.key !== 'projetos')
+    .filter((aba) => doGestor || aba.key === 'salas')
 
   return (
     <Pilha>
       <CabecalhoDaTela
         rotulo="Configurações"
         titulo="Cadastros"
-        descricao="Linhagens e salas. Nada é apagado: linhagem fora de uso fica inativa, e sala removida sai das listas, mas fica no histórico."
+        descricao={
+          doGestor
+            ? 'Linhagens e salas. Nada é apagado: linhagem fora de uso fica inativa, e sala removida sai das listas, mas fica no histórico.'
+            : 'Salas. Nada é apagado: sala removida sai das listas, mas fica no histórico.'
+        }
       />
       <Tabs items={abas} />
     </Pilha>

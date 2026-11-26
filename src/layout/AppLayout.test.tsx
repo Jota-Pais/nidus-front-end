@@ -108,6 +108,18 @@ describe('menu da conta', () => {
     expect(gatilho().getAttribute('aria-expanded')).toBe('true')
   })
 
+  it('o técnico tem Cadastros em Configurações, sem o Histórico e as Contas', async () => {
+    abrirCasca('tecnico')
+
+    fireEvent.click(gatilho())
+
+    expect(await screen.findByText('Configurações')).toBeTruthy()
+    // a barra lateral também tem itens de menu: aqui conta só o menu da conta
+    const menuDaConta = document.querySelector<HTMLElement>('.ant-dropdown')!
+    const itens = within(menuDaConta).getAllByRole('menuitem')
+    expect(itens.map((i) => i.textContent)).toEqual(['Cadastros', 'Tema escuro', 'Sair'])
+  })
+
   it('quem não tem nada a configurar abre o menu só com o tema e o Sair', async () => {
     abrirCasca('pesquisador')
 

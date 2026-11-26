@@ -73,7 +73,7 @@ export const rotas = createBrowserRouter([
       {
         path: 'cadastros',
         element: (
-          <RotaProtegida perfis={['gestor']}>
+          <RotaProtegida perfis={[...COLONIA]}>
             <Cadastros />
           </RotaProtegida>
         ),

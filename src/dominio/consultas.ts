@@ -81,7 +81,7 @@ export function useGrade(idEstante: number | null) {
   })
 }
 
-/** As salas ativas, com quantas estantes cada uma tem. Só o gestor muda, nos Cadastros */
+/** As salas ativas, com quantas estantes cada uma tem. Técnico e gestor mudam, nos Cadastros */
 export function useSalas() {
   return useQuery({
     queryKey: chaves.salas,
